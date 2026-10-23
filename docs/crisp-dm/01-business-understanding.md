@@ -6,7 +6,7 @@
 
 **Work item:** [#5 — Business Understanding](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/5)
 
-**Phase status:** Draft for PM review. This document defines the problem and evidence plan; it does not authorize Phase 2 or claim empirical results.
+**Phase status:** PM Gate PASS (2026-10-23). Issue #5 was closed after formal acceptance; Phase 2 is authorized. This approval does not claim empirical results.
 
 ## 1. Executive Summary
 
@@ -143,7 +143,7 @@ PM/教師若要求數值通過門檻，應提供正式標準後再納入評分�
 
 ## 11. Phase 2 Entry Criteria
 
-Phase 2 尚未開始。進入 Data Understanding 前，需由 PM 審查 Phase 1 文件，並完成以下條件：
+Phase 1 已獲 PM Gate PASS，Phase 2 已授權開始。以下資料與實證條件仍須於 Phase 2 完成；本文件不代表已完成 EDA：
 
 - **資料存取與權限：**Owner 以允許方式取得 Kaggle 檔案並確認適用條款；原始 CSV 留在 ignored `local/datasets/`，不傳入 Git、Web build 或公開測試資料。
 - **來源與版本：**記錄官方來源 URL、取得日期、資料版本／競賽版本及原始檔 SHA-256；不公開原始資料或敏感 metadata。
@@ -152,7 +152,7 @@ Phase 2 尚未開始。進入 Data Understanding 前，需由 PM 審查 Phase 1 
 - **分析計畫：**PM/教師確認至少 14 個特徵的解讀（候選可用或最終使用）、RMSE/MAE/R² 的報告尺度，以及 Kaggle RMSLE 是否需要另行報告。
 - **工具與安全：**固定 Python 套件環境及可重現分析入口；測試用合成資料，不複製真實 Kaggle row；掃描 public artifacts，確認原始資料仍在 local。
 
-Phase 2 entry evidence should include a source/provenance record, a data dictionary mapping, a real-data profiling report with public-safe aggregate results, and documented open questions. PM must explicitly accept Phase 1 before the team treats the Phase 2 gate as passed.
+Phase 2 entry evidence includes a source/provenance record, a data dictionary mapping, a real-data profiling report with public-safe aggregate results, and documented open questions. PM formally accepted Phase 1 on 2026-10-23; empirical data work remains subject to the Kaggle access gate documented in the Phase 2 report.
 
 ## 12. Open Questions
 
@@ -166,7 +166,7 @@ Phase 2 entry evidence should include a source/provenance record, a data diction
 
 ## 13. Phase 1 Review Gate
 
-本文件提出可審查的研究問題、無任意效能門檻的成功標準、scope/limitations、風險、作業追溯及 Phase 2 入場證據。文件完成不等於 Phase 1 Gate PASS；須由 PM 審查本 PR 並決定是否接受未決問題及准許 Phase 2 開始。W1P1 不自行宣告 Gate 通過。
+PM Gate Decision — PASS (2026-10-23): Phase 1 was formally accepted in [Issue #5](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/5#issuecomment-6369354450) after PR #6 merged at `dd766bc1e9c17a0734acbb3caf842519b35fe3a2`. The minor writing-guide metadata warning was accepted as low risk; source and rubric ambiguities remain open questions rather than verified facts. Issue #5 is closed, and Phase 2 is authorized. This decision does not waive Phase 2's Kaggle login/terms gate or authorize invented results.
 
 ## 14. References
 

@@ -4,4 +4,5 @@ This directory holds public project materials organized around the six CRISP-DM 
 
 ## Current phase documents
 
-- [01 — Business Understanding](01-business-understanding.md): research problem, success criteria, assignment traceability, risks, and Phase 2 entry gate. The document is awaiting PM review; it does not declare the gate passed.
+- [01 — Business Understanding](01-business-understanding.md): PM Gate PASS; research problem, success criteria, assignment traceability, risks, and Phase 2 entry gate.
+- [02 — Data Understanding](02-data-understanding.md): Kaggle provenance, data-dictionary crosswalk, blocked empirical profile, reproducible EDA entrypoint, and Phase 3 handoff.
