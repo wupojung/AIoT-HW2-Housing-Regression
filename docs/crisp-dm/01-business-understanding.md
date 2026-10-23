@@ -166,7 +166,7 @@ Phase 2 entry evidence includes a source/provenance record, a data dictionary ma
 
 ## 13. Phase 1 Review Gate
 
-PM Gate Decision — PASS (2026-10-23): Phase 1 was formally accepted in [Issue #5](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/5#issuecomment-6369354450) after PR #6 merged at `dd766bc1e9c17a0734acbb3caf842519b35fe3a2`. The minor writing-guide metadata warning was accepted as low risk; source and rubric ambiguities remain open questions rather than verified facts. Issue #5 is closed, and Phase 2 is authorized. This decision does not waive Phase 2's Kaggle login/terms gate or authorize invented results.
+PM Gate Decision — PASS (2026-10-23): Phase 1 was formally accepted in [Issue #5](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/5#issuecomment-6369354450) after PR #6 merged at `dd766bc1e9c17a0734acbb3caf842519b35fe3a2`. The minor writing-guide metadata warning was accepted as low risk; source and rubric ambiguities remain open questions rather than verified facts. Issue #5 is closed, and Phase 2 is authorized. This decision does not waive Phase 2's Kaggle login/terms gate or authorize invented results. W1P1 不自行宣告 Gate 通過；本文件記錄的是 PM 已在 Issue #5 作出的決定。
 
 ## 14. References
 
