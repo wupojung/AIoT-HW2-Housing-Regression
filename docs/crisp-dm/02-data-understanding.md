@@ -75,7 +75,7 @@ No cleaning, feature selection, model fitting, modeling split, or performance sc
 - Reproducible entrypoint: [`tools/eda/profile_ames.py`](../../tools/eda/profile_ames.py)
 - Synthetic-only tests: [`tests/tools/eda/test_profile_ames.py`](../../tests/tools/eda/test_profile_ames.py)
 - Runtime dependencies: Python standard library only.
-- W1P2 independent review by agy (`w1:p2`): completed against the working tree on 2026-10-24. Scope covered the profiler, its synthetic tests, and this document; real Kaggle CSVs were not inspected and no files were changed. The reviewer checked dictionary heading matching, local path confinement, `Id` exclusion, pairwise-complete correlations, and the descriptive-only boundary; reported no actionable defects. Full collaboration checkpoint is recorded in Issue #9.
+- W1P2 independent review by agy (`w1:p2`): completed against the working tree on 2026-10-24. Scope covered the profiler, its synthetic tests, and this document; real Kaggle CSVs were not inspected and no files were changed. The reviewer checked dictionary heading matching, local path confinement, `Id` exclusion, pairwise-complete correlations, and the descriptive-only boundary. A follow-up identified a missing test for individual input-file symlinks (the runtime guard was already present); a synthetic test was added to cover it. Full collaboration checkpoint is recorded in Issue #9.
 - Dataset tests use generated synthetic rows only. They do not embed Kaggle rows.
 - Empirical EDA and file hashes: blocked pending Owner-supplied files.
 

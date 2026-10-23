@@ -203,6 +203,8 @@ def run(data_dir: Path, output_dir: Path, access_date: str, terms_confirmed: boo
         local_root = Path(__file__).resolve().parents[2] / "local"
     if not local_root.exists() or not local_root.is_dir():
         raise ValueError("The ignored local/ directory must exist before profiling.")
+    if data_dir.absolute().is_symlink():
+        raise ValueError("local/datasets/ must not be a symlink.")
     safe_data_dir = _safe_local_path(data_dir, local_root)
     if safe_data_dir != (local_root / "datasets").resolve() or safe_data_dir.is_symlink():
         raise ValueError("Input CSVs must be directly in ignored local/datasets/.")
@@ -213,6 +215,8 @@ def run(data_dir: Path, output_dir: Path, access_date: str, terms_confirmed: boo
     missing = EXPECTED - {p.name for p in data_dir.iterdir() if p.is_file()}
     if missing:
         raise FileNotFoundError(f"Missing required Owner-provided files: {', '.join(sorted(missing))}")
+    if any((safe_data_dir / name).is_symlink() for name in EXPECTED):
+        raise ValueError("Dataset and dictionary files must not be symlinks.")
     safe_output_dir.mkdir(parents=True, exist_ok=True)
     # Report is an aggregate public-safe candidate; keep it local until reviewed.
     profiles = [profile_csv(safe_data_dir / name, safe_output_dir) for name in ("train.csv", "test.csv")]
