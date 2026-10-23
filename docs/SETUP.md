@@ -1,6 +1,6 @@
 # Developer Setup
 
-This guide covers the initial WSL and Python setup for contributors. Keep account credentials and personal agent configuration outside the repository.
+This guide covers optional WSL workflow and security-hook setup. The experiment environment supports Windows, macOS, and Linux without WSL; follow [Python Experiment Environment](../python/README.md) for its versioned installation instructions. Keep account credentials and personal agent configuration outside the repository.
 
 ## Open the project in WSL
 
@@ -14,7 +14,7 @@ git status --short --branch
 
 Use a `feature/*` branch for changes and submit a pull request to `main`. Reserve `deploy` for reviewed production releases.
 
-## Prepare Python tools
+## Optional WSL tooling
 
 ```bash
 python3 -m venv .venv
