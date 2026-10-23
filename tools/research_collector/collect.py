@@ -91,19 +91,26 @@ def load_registry(path: Path) -> list[dict[str, Any]]:
     return sources
 
 
-def collect(registry: Path, output_root: Path) -> dict[str, Any]:
-    local_root = (ROOT / "local").resolve()
+def collect(
+    registry: Path,
+    output_root: Path,
+    import_dir: Path | None = None,
+    local_root: Path | None = None,
+) -> dict[str, Any]:
+    local_root = (local_root or ROOT / "local").resolve()
     output_root = output_root.resolve()
     if not output_root.is_relative_to(local_root):
         raise ValueError("Research output must remain under the ignored local/ directory")
     records: list[dict[str, Any]] = []
     seen_hashes: set[str] = set()
     papers_dir = local_root / "papers"
+    import_dir = (import_dir or local_root / "notebooklm-import").resolve()
     for source in load_registry(registry):
         doi = source.get("doi")
         url = source.get("url")
         if not doi and not url:
             raise ValueError("Each source must include a DOI or URL")
+        metadata_lookup_failed = False
         try:
             metadata = doi_metadata(doi) if doi else url_metadata(url, source)
         except (OSError, ValueError, urllib.error.URLError, json.JSONDecodeError) as exc:
@@ -111,6 +118,7 @@ def collect(registry: Path, output_root: Path) -> dict[str, Any]:
             metadata["doi"] = doi
             metadata["acquisition_status"] = "metadata_lookup_failed"
             metadata["error"] = str(exc)
+            metadata_lookup_failed = True
         metadata["id"] = source.get("id")
         metadata["registry_url"] = url
         metadata["purpose"] = source.get("purpose")
@@ -123,7 +131,8 @@ def collect(registry: Path, output_root: Path) -> dict[str, Any]:
         if source.get("summary"):
             metadata["summary"] = source["summary"]
         metadata["license_status"] = source.get("license_status", metadata.get("license_status", "unknown"))
-        metadata["acquisition_status"] = source.get("acquisition_status", metadata.get("acquisition_status", "metadata_only"))
+        if not metadata_lookup_failed:
+            metadata["acquisition_status"] = source.get("acquisition_status", metadata.get("acquisition_status", "metadata_only"))
         pdf_url = source.get("pdf_url")
         if pdf_url:
             try:
@@ -144,7 +153,6 @@ def collect(registry: Path, output_root: Path) -> dict[str, Any]:
         "records": records,
     }
     (output_root / "collection-report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-    import_dir = ROOT / "local" / "notebooklm-import"
     import_dir.mkdir(parents=True, exist_ok=True)
     lines = [f"{record.get('title') or record.get('doi') or record.get('url')}: {record.get('url') or record.get('registry_url') or ''}" for record in records]
     (import_dir / "sources.txt").write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
