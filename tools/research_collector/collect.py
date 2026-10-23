@@ -56,8 +56,19 @@ def doi_metadata(doi: str) -> dict[str, Any]:
 
 
 def url_metadata(url: str, supplied: dict[str, Any]) -> dict[str, Any]:
-    # The collector records public URL metadata supplied by the researcher; it does not crawl pages.
-    return {"url": url, "title": supplied.get("title"), "source": "registry"}
+    # The collector records public metadata supplied by the researcher; it does not crawl pages.
+    return {
+        "url": url,
+        "title": supplied.get("title"),
+        "authors": supplied.get("authors", []),
+        "institution": supplied.get("institution"),
+        "purpose": supplied.get("purpose"),
+        "license_status": supplied.get("license_status", "unknown"),
+        "acquisition_status": supplied.get("acquisition_status", "metadata_only"),
+        "notes": supplied.get("notes"),
+        "summary": supplied.get("summary"),
+        "source": "registry",
+    }
 
 
 def save_pdf(url: str, papers_dir: Path) -> dict[str, str]:
@@ -93,15 +104,37 @@ def collect(registry: Path, output_root: Path) -> dict[str, Any]:
         url = source.get("url")
         if not doi and not url:
             raise ValueError("Each source must include a DOI or URL")
-        metadata = doi_metadata(doi) if doi else url_metadata(url, source)
+        try:
+            metadata = doi_metadata(doi) if doi else url_metadata(url, source)
+        except (OSError, ValueError, urllib.error.URLError, json.JSONDecodeError) as exc:
+            metadata = url_metadata(url or f"https://doi.org/{doi}", source)
+            metadata["doi"] = doi
+            metadata["acquisition_status"] = "metadata_lookup_failed"
+            metadata["error"] = str(exc)
         metadata["id"] = source.get("id")
         metadata["registry_url"] = url
+        metadata["purpose"] = source.get("purpose")
+        if not metadata.get("authors") and source.get("authors"):
+            metadata["authors"] = source["authors"]
+        if source.get("institution"):
+            metadata["institution"] = source["institution"]
+        if source.get("notes"):
+            metadata["notes"] = source["notes"]
+        if source.get("summary"):
+            metadata["summary"] = source["summary"]
+        metadata["license_status"] = source.get("license_status", metadata.get("license_status", "unknown"))
+        metadata["acquisition_status"] = source.get("acquisition_status", metadata.get("acquisition_status", "metadata_only"))
         pdf_url = source.get("pdf_url")
         if pdf_url:
-            pdf = save_pdf(pdf_url, papers_dir)
-            metadata["pdf"] = pdf
-            metadata["duplicate_pdf"] = pdf["sha256"] in seen_hashes
-            seen_hashes.add(pdf["sha256"])
+            try:
+                pdf = save_pdf(pdf_url, papers_dir)
+                metadata["pdf"] = pdf
+                metadata["duplicate_pdf"] = pdf["sha256"] in seen_hashes
+                seen_hashes.add(pdf["sha256"])
+                metadata["acquisition_status"] = "downloaded"
+            except (OSError, ValueError, urllib.error.URLError) as exc:
+                metadata["acquisition_status"] = "download_failed"
+                metadata["download_error"] = str(exc)
         records.append(metadata)
 
     output_root.mkdir(parents=True, exist_ok=True)
@@ -115,6 +148,54 @@ def collect(registry: Path, output_root: Path) -> dict[str, Any]:
     import_dir.mkdir(parents=True, exist_ok=True)
     lines = [f"{record.get('title') or record.get('doi') or record.get('url')}: {record.get('url') or record.get('registry_url') or ''}" for record in records]
     (import_dir / "sources.txt").write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+    manifest = {
+        "created_utc": report["created_utc"],
+        "source_count": len(records),
+        "sources": [
+            {
+                "id": record.get("id"),
+                "url": record.get("registry_url") or record.get("url"),
+                "doi": record.get("doi"),
+                "title": record.get("title"),
+                "authors": record.get("authors", []),
+                "institution": record.get("institution"),
+                "license_status": record.get("license_status", "unknown"),
+                "acquisition_status": record.get("acquisition_status", "metadata_only"),
+                "sha256": (record.get("pdf") or {}).get("sha256"),
+                "file": (record.get("pdf") or {}).get("path"),
+                "purpose": record.get("purpose"),
+                "summary": record.get("summary"),
+                "notes": record.get("notes"),
+                "error": record.get("error") or record.get("download_error"),
+            }
+            for record in records
+        ],
+    }
+    (import_dir / "sources_manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    report_lines = [
+        "# W1P1 Research Collection Report",
+        "",
+        f"Created (UTC): {report['created_utc']}",
+        f"Sources: {len(records)}",
+        "",
+        "## Source status",
+        "",
+    ]
+    for item in manifest["sources"]:
+        report_lines.extend([
+            f"### {item.get('title') or item.get('id')}",
+            f"- Original URL: {item.get('url')}",
+            f"- DOI: {item.get('doi') or 'N/A'}",
+            f"- Author/institution: {', '.join(item.get('authors') or []) or item.get('institution') or 'Not recorded'}",
+            f"- Purpose: {item.get('purpose') or 'Not recorded'}",
+            f"- Summary: {item.get('summary') or 'No summary.'}",
+            f"- License: {item.get('license_status')}",
+            f"- Acquisition: {item.get('acquisition_status')}",
+            f"- File/SHA-256: {item.get('file') or 'None'} / {item.get('sha256') or 'N/A'}",
+            f"- Notes: {item.get('notes') or item.get('error') or 'No additional notes.'}",
+            "",
+        ])
+    (import_dir / "collection_report.md").write_text("\n".join(report_lines), encoding="utf-8")
     return report
 
 
