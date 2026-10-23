@@ -26,3 +26,5 @@ jobs:
         run: python tools/security_scan.py --tracked
       - name: Run scanner unit tests
         run: python -m unittest discover -s tests/security -v
+      - name: Run web foundation tests
+        run: python -m unittest discover -s tests -p "test_web_foundation.py" -v

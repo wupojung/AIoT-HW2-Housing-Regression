@@ -40,13 +40,15 @@ Use lawful public metadata APIs and openly accessible source pages. Do not bypas
 
 Use `feature/*` branches for development and reviewed PRs into `main`, the integration branch. Reserve `deploy` for approved production releases. Vercel Production Branch must be `deploy`; commits to `main` must not update Production.
 
-**Vercel account status for PR #1: NOT VERIFIED.** The available CLI can list a `regscope` project, but it does not expose that project's Git connection, Production Branch, Preview access controls, or deployment file manifest. The Owner-confirmed public URL is `https://regscope-aiot.vercel.app/`; do not infer that this domain or branch policy is configured from repository files.
+**Vercel status for M0: Production Branch NOT VERIFIED.** Read-only CLI inspection identified the `regscope` project and its latest Production URL as `https://regscope-aiot.vercel.app/`. Deployment metadata confirms the repository is connected. The latest observed Production deployment was built from `main` at `e6f6ee0`, and the Production URL returned HTTP 404 during this audit. The required `deploy` Production Branch policy is not established by available evidence. The CLI could not inspect the project's Production Branch or the confirmed domain's settings.
 
-Vercel can create Preview deployments for branch pushes and pull requests when a Git-connected project is configured. Preview URL access controls are also account-level settings and are **NOT VERIFIED** here. Before connecting/enabling deployments, the Owner must:
+Vercel project protection reports SSO protection for deployments except custom domains, and Git fork protection is enabled. Standard Preview deployment URLs are covered by the configured SSO protection. The CLI reported no environment variables for either Preview or Production at inspection time. These read-only observations do not validate any other Vercel team or project configuration.
 
-1. In Vercel, open the `regscope` project’s **Settings → Environments → Production → Branch Tracking** and set the Production Branch to `deploy`.
+Vercel creates Preview deployments for branch pushes and pull requests. Before using this project for an approved Production release, the Owner must:
+
+1. In Vercel, open the `regscope` project's **Settings > Environments > Production > Branch Tracking** and set the Production Branch to `deploy`.
 2. Confirm `main` is the integration branch and does not publish Production; use GitHub branch rules so `deploy` only receives reviewed release commits.
-3. Open **Settings → Deployment Protection** and require Vercel Authentication for Preview deployments. Vercel Preview URLs are public by default unless protected.
-4. Confirm Preview environment variables contain no production credentials or private data, and inspect a Preview build’s output before allowing public access.
+3. Open **Settings > Deployment Protection** and require Vercel Authentication for Preview deployments.
+4. Confirm Preview environment variables contain no production credentials or private data, and inspect a Preview build output before allowing public access.
 
-The root `.vercelignore` excludes `local/` and sensitive file classes from Vercel CLI deployment uploads; Git-based deployments receive committed files only. Scan generated build output with `python tools/security_scan.py --build-dir <build-output-directory>` before an approved production release.
+The root `vercel.json` sets `web/` as the static output directory. This limits served deployment files to the reviewed site assets. The root `.vercelignore` also excludes `local/` and sensitive file classes from Vercel CLI deployment uploads; Git-based deployments receive committed files only. Scan generated build output with `python tools/security_scan.py --build-dir <build-output-directory>` before an approved production release.
