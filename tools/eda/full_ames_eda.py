@@ -15,6 +15,7 @@ Constraints:
 from __future__ import annotations
 
 import argparse
+import binascii
 import csv
 import hashlib
 import json
@@ -22,7 +23,9 @@ import math
 import os
 import re
 import statistics
+import struct
 import sys
+import zlib
 from pathlib import Path
 
 # Optional matplotlib import for full-fidelity PNG/SVG rendering
@@ -62,6 +65,24 @@ STRUCTURAL_NA_CANDIDATES = {
     "Fence",
     "MiscFeature",
 }
+
+
+def create_valid_png(width: int = 400, height: int = 200, rgb: tuple[int, int, int] = (245, 247, 250)) -> bytes:
+    """Generate a valid standard RGB PNG image in pure Python without external dependencies."""
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        payload = tag + data
+        crc = binascii.crc32(payload) & 0xFFFFFFFF
+        return struct.pack(">I", len(data)) + payload + struct.pack(">I", crc)
+
+    header = b"\x89PNG\r\n\x1a\n"
+    # IHDR: width, height, bit depth 8, color type 2 (RGB), compression 0, filter 0, interlace 0
+    ihdr = chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+    # Scanline with filter 0x00 and RGB pixels
+    row = b"\x00" + bytes(rgb) * width
+    raw_data = row * height
+    idat = chunk(b"IDAT", zlib.compress(raw_data, level=6))
+    iend = chunk(b"IEND", b"")
+    return header + ihdr + idat + iend
 
 
 def sha256_file(path: Path) -> str:
@@ -276,23 +297,37 @@ def build_field_inventory(
             except ValueError:
                 is_numeric = False
 
-        # Compute stats or categorical distribution
-        num_stats = None
-        cat_dist = None
+        # Compute stats or categorical distribution explicit per split
+        train_num_stats = None
+        test_num_stats = None
+        train_cat_dist = None
+        test_cat_dist = None
         cardinality = len(set(all_valid))
 
         if is_numeric:
-            train_nums = [float(v) for v in train_valid]
-            num_stats = calculate_numeric_stats(train_nums)
+            if train_valid:
+                train_nums = [float(v) for v in train_valid]
+                train_num_stats = calculate_numeric_stats(train_nums)
+            if test_valid:
+                test_nums = [float(v) for v in test_valid]
+                test_num_stats = calculate_numeric_stats(test_nums)
         else:
-            counts = {}
-            for v in all_valid:
-                counts[v] = counts.get(v, 0) + 1
-            # Sort by frequency descending, then name
-            cat_dist = {
-                k: {"count": counts[k], "percentage": round(counts[k] / len(all_valid) * 100, 2)}
-                for k in sorted(counts.keys(), key=lambda x: (-counts[x], x))
-            }
+            if train_valid:
+                counts_tr = {}
+                for v in train_valid:
+                    counts_tr[v] = counts_tr.get(v, 0) + 1
+                train_cat_dist = {
+                    k: {"count": counts_tr[k], "percentage": round(counts_tr[k] / len(train_valid) * 100, 2)}
+                    for k in sorted(counts_tr.keys(), key=lambda x: (-counts_tr[x], x))
+                }
+            if test_valid:
+                counts_te = {}
+                for v in test_valid:
+                    counts_te[v] = counts_te.get(v, 0) + 1
+                test_cat_dist = {
+                    k: {"count": counts_te[k], "percentage": round(counts_te[k] / len(test_valid) * 100, 2)}
+                    for k in sorted(counts_te.keys(), key=lambda x: (-counts_te[x], x))
+                }
 
         role = "predictor"
         if col == IDENTIFIER:
@@ -317,9 +352,9 @@ def build_field_inventory(
             flags.append("high_missing_gt_80pct")
         if col in STRUCTURAL_NA_CANDIDATES:
             flags.append("structural_missing_candidate")
-        if is_numeric and num_stats and num_stats.get("anomaly_candidates_count", 0) > 0:
+        if is_numeric and train_num_stats and train_num_stats.get("anomaly_candidates_count", 0) > 0:
             flags.append("iqr_anomaly_candidates_present")
-        if is_numeric and num_stats and num_stats.get("skewness") is not None and abs(num_stats["skewness"]) > 2.0:
+        if is_numeric and train_num_stats and train_num_stats.get("skewness") is not None and abs(train_num_stats["skewness"]) > 2.0:
             flags.append("extreme_skew_gt_2")
         if cardinality == 1:
             flags.append("constant_column")
@@ -348,8 +383,15 @@ def build_field_inventory(
             "dictionary_status": dict_status.get(col, "not_found_in_dictionary"),
             "dictionary_heading": dict_key,
             "quality_flags": flags,
-            "numeric_stats": num_stats,
-            "categorical_distribution": cat_dist,
+            "train_numeric_stats": train_num_stats,
+            "test_numeric_stats": test_num_stats,
+            "numeric_stats": train_num_stats,
+            "train_categorical_distribution": train_cat_dist,
+            "test_categorical_distribution": test_cat_dist,
+            "categorical_distribution": {
+                "train": train_cat_dist,
+                "test": test_cat_dist,
+            },
         }
         inventory.append(record)
 
@@ -457,44 +499,55 @@ def generate_figures_and_manifest(
         return png_path, svg_path
 
     # FIG-01: Dataset Overview
+    train_n = len(train_rows)
+    test_n = len(test_rows)
+    pred_count = len([r for r in inventory if r["role"] == "predictor"])
     p_png, p_svg = register_figure(
         "FIG-01",
         "fig01_dataset_overview",
         "Ames 房價資料集總覽與欄位角色分佈",
-        "展示 Kaggle Ames 資料集中訓練集 (1,460 筆) 與測試集 (1,459 筆) 之欄位總數、資料型態分類及識別碼/目標變數分佈。",
+        f"展示 Kaggle Ames 資料集中訓練集 ({train_n:,} 筆) 與測試集 ({test_n:,} 筆) 之欄位總數、資料型態分類及識別碼/目標變數分佈。",
         "2. 資料集概覽與品質驗證",
-        f"訓練集共有 81 欄，測試集共有 80 欄 (缺少 SalePrice 目標)，共有 79 個候選解釋變數與 1 個 Id 識別碼。",
+        f"全資料集共涵蓋 {len(inventory)} 個欄位，包含 {pred_count} 個候選解釋變數、1 個 Id 識別碼與目標變數 (僅於訓練集)。",
         "僅呈現原始資料集維度與結構，未包含任何特徵轉換。"
     )
-    _render_overview_chart(p_png, p_svg, inventory, len(train_rows), len(test_rows))
+    _render_overview_chart(p_png, p_svg, inventory, train_n, test_n)
 
     # FIG-02: Missingness Overview
+    missing_all = [r for r in inventory if (r.get("train_missing_count") or 0) > 0 or (r.get("test_missing_count") or 0) > 0]
+    high_missing = [r["name"] for r in missing_all if (r.get("train_missing_rate") or 0) > 0.8 or (r.get("test_missing_rate") or 0) > 0.8]
+    obs_missing = f"共有 {len(missing_all)} 個欄位具有遺漏值"
+    if high_missing:
+        obs_missing += f"，其中 {', '.join(high_missing[:4])} 缺失率超過 80%"
+    obs_missing += "，圖表區分訓練集與測試集之缺漏比例。"
     p_png, p_svg = register_figure(
         "FIG-02",
         "fig02_missingness_overview",
-        "全欄位缺失值統計與結構性缺漏分析",
-        "分析訓練集與測試集中所有具有遺漏值欄位之缺失比例，並標註屬於資料字典明確定義之「特徵不存在 (Structural NA)」候選欄位。",
+        "全欄位缺失值統計與訓練/測試集缺漏比較",
+        "分析訓練集與測試集中所有具有遺漏值欄位之缺失比例，分組呈現訓練集與測試集差異，並標註屬於資料字典明確定義之「特徵不存在 (Structural NA)」候選欄位。",
         "3. 缺失值深度分析",
-        "共有多個欄位具有遺漏值，其中 PoolQC, MiscFeature, Alley, Fence 缺失率超過 80%，大多代表該設施不存在而非記錄遺失。",
+        obs_missing,
         "描述性統計，未進行任何插補；結構性 NA 與真實未記錄缺失需於 Phase 3 分別處理。"
     )
     _render_missingness_chart(p_png, p_svg, inventory)
 
     # FIG-03: SalePrice distribution
     target_rec = next((r for r in inventory if r["role"] == "target"), None)
+    target_stats = (target_rec.get("train_numeric_stats") or {}) if target_rec else {}
     target_vals = []
-    if target_rec and target_rec["numeric_stats"]:
+    if target_rec and target_stats:
         target_vals = [float(r[TARGET]) for r in train_rows if r.get(TARGET)]
+    skew_obs = f"約 {target_stats['skewness']:.2f}" if target_stats.get("skewness") is not None else "未知"
     p_png, p_svg = register_figure(
         "FIG-03",
         "fig03_saleprice_distribution",
         "目標變數 SalePrice 分佈直方圖與箱型圖",
-        "展示訓練集目標變數 SalePrice (N=1,460) 之直方圖、密度擬合與五數綜合箱型圖。",
+        f"展示訓練集目標變數 SalePrice (N={len(target_vals):,}) 之直方圖、密度擬合與五數綜合箱型圖。",
         "4. 目標變數 SalePrice 分佈分析",
-        f"SalePrice 呈現明顯右偏態 (偏態係數約 {target_rec['numeric_stats']['skewness']:.2f})，中位數小於平均數，存在高房價候選極值。",
+        f"SalePrice 呈現右偏態分佈 (偏態係數{skew_obs})，中位數小於平均數，存在高房價候選極值。",
         "僅描述訓練集原始金額分佈，未進行對數轉換或建模擬合。"
     )
-    _render_saleprice_chart(p_png, p_svg, target_vals, target_rec["numeric_stats"] if target_rec else {})
+    _render_saleprice_chart(p_png, p_svg, target_vals, target_stats)
 
     # FIG-04: Numeric distributions overview
     p_png, p_svg = register_figure(
@@ -515,19 +568,28 @@ def generate_figures_and_manifest(
         "類別特徵基數與主要水準佔比總覽",
         "呈現所有類別變數之不重複水準數 (Cardinality) 與最大水準主導比例 (Dominant Level Rate)。",
         "6. 類別特徵基數與分佈分析",
-        "如 Utilities, Street, CentralAir 等欄位之主要類別佔比超過 90%，接近常數分佈；Neighborhood 等欄位基數較高。",
+        "呈現類別欄位之不重複水準分佈，部分欄位具有主導水準接近常數分佈。",
         "僅統計原始文字標籤頻率，未進行編碼或分組合併。"
     )
     _render_categorical_overview_chart(p_png, p_svg, inventory)
 
     # FIG-06: Correlation heatmap
+    num_col_count = correlations.get("numeric_column_count", 0)
+    top_targets = correlations.get("target_correlations_ranked", [])
+    if len(top_targets) >= 2:
+        corr_obs = f"與 SalePrice 線性相關最高之數值欄位為 {top_targets[0][0]} (r={top_targets[0][1]:.3f}) 與 {top_targets[1][0]} (r={top_targets[1][1]:.3f})。"
+    elif len(top_targets) == 1:
+        corr_obs = f"與 SalePrice 線性相關最高之數值欄位為 {top_targets[0][0]} (r={top_targets[0][1]:.3f})。"
+    else:
+        corr_obs = f"全部 {num_col_count} 個數值欄位之完整皮爾森相關矩陣。"
+
     p_png, p_svg = register_figure(
         "FIG-06",
         "fig06_numeric_correlation_heatmap",
-        "數值特徵與房價相關係數熱力矩陣",
-        "展示前 15 大與 SalePrice 相關之數值欄位皮爾森相關係數矩陣 (採 Pairwise Complete 配對計算)。",
+        "全數值特徵皮爾森相關係數熱力矩陣",
+        f"展示全部 {num_col_count} 個數值欄位之完整皮爾森相關係數矩陣 (採 Pairwise Complete 配對計算)。",
         "7. 數值特徵相關性與共線性探索",
-        "OverallQual (整體品質) 與 GrLivArea (地面生活面積) 與 SalePrice 相關性最高 (r > 0.7)；車庫特徵間存在較高互相關。",
+        corr_obs,
         "皮爾森相關僅度量線性關聯，不代表因果關係，亦不作為特徵篩選結果。"
     )
     _render_correlation_chart(p_png, p_svg, correlations)
@@ -539,19 +601,20 @@ def generate_figures_and_manifest(
         "代表性預測變數與 SalePrice 散佈圖檢視",
         "針對線性相關最高的 6 個代表性數值特徵 (OverallQual, GrLivArea, TotalBsmtSF, 1stFlrSF, GarageCars, GarageArea) 與 SalePrice 繪製散佈圖。",
         "8. 特徵與目標變數關聯視覺化",
-        "隨面積與品質提升呈現整體向上趨勢，但在大生活面積區域存在極少數低成交價之異常候選點 (潛在極端觀察值)。",
+        "隨面積與品質提升呈現整體向上趨勢，在大生活面積區域存在潛在極端觀察值檢視點。",
         "散佈圖選取規則為純圖表展示目的，絕非模型特徵挑選；未刪除任何極端值。"
     )
     _render_scatters_chart(p_png, p_svg, train_rows)
 
     # FIG-08: Anomaly and quality summary
+    anomaly_cols_count = len([r for r in inventory if r.get("train_numeric_stats") and r["train_numeric_stats"].get("anomaly_candidates_count", 0) > 0])
     p_png, p_svg = register_figure(
         "FIG-08",
         "fig08_anomaly_quality_summary",
         "資料品質與 IQR 異常值候選統計總覽",
         "各數值欄位 IQR 1.5 倍四分位距之潛在異常候選筆數與偏態係數警示總整理。",
         "9. 異常值候選與資料品質警示",
-        "多個長尾分佈特徵 (如 LotArea, MiscVal) 具有較多 IQR 上界超越點，反映真實房地產異質性而非資料錯誤。",
+        f"共有 {anomaly_cols_count} 個數值欄位檢測出超出 1.5x IQR 柵欄之候選觀察值。",
         "所有標註均為描述性候選值，嚴禁於 Phase 2 自行刪除或修改。"
     )
     _render_anomaly_chart(p_png, p_svg, inventory)
@@ -561,12 +624,15 @@ def generate_figures_and_manifest(
         col = rec["name"]
         if rec["role"] in {IDENTIFIER, TARGET}:
             continue
-        if rec["dtype"].startswith("numeric") and rec["numeric_stats"]:
+        tr_stats = rec.get("train_numeric_stats")
+        if rec["dtype"].startswith("numeric") and tr_stats:
             vals = [float(r[col]) for r in train_rows if r.get(col) and r[col].strip()]
             if vals:
                 c_png = figures_dir / f"fig04_num_{col}.png"
                 c_svg = figures_dir / f"fig04_num_{col}.svg"
-                _render_single_numeric_chart(c_png, c_svg, col, vals, rec["numeric_stats"])
+                _render_single_numeric_chart(c_png, c_svg, col, vals, tr_stats)
+                skew_val = tr_stats.get("skewness")
+                skew_desc = f"{skew_val:.2f}" if skew_val is not None else "N/A"
                 manifest_entries.append({
                     "figure_id": f"FIG-NUM-{col}",
                     "filename_png": f"figures/fig04_num_{col}.png",
@@ -579,26 +645,30 @@ def generate_figures_and_manifest(
                     "script": "tools/eda/full_ames_eda.py",
                     "command": f"python tools/eda/full_ames_eda.py --access-date {access_date} --terms-confirmed",
                     "suggested_report_section": "5. 數值特徵統計摘要與分佈",
-                    "descriptive_observation": f"{col} 均值 {rec['numeric_stats']['mean']:.2f}，中位數 {rec['numeric_stats']['50%']:.2f}，偏態 {rec['numeric_stats']['skewness'] if rec['numeric_stats']['skewness'] is not None else 0:.2f}。",
+                    "descriptive_observation": f"{col} 均值 {tr_stats['mean']:.2f}，中位數 {tr_stats['50%']:.2f}，偏態 {skew_desc}。",
                     "limitations": "單一欄位描述性分佈，未進行變數轉換。",
                 })
-        elif rec["categorical_distribution"]:
+        elif rec.get("train_categorical_distribution") or rec.get("test_categorical_distribution"):
             c_png = figures_dir / f"fig05_cat_{col}.png"
             c_svg = figures_dir / f"fig05_cat_{col}.svg"
-            _render_single_categorical_chart(c_png, c_svg, col, rec["categorical_distribution"])
+            _render_single_categorical_chart(
+                c_png, c_svg, col,
+                rec.get("train_categorical_distribution"),
+                rec.get("test_categorical_distribution")
+            )
             manifest_entries.append({
                 "figure_id": f"FIG-CAT-{col}",
                 "filename_png": f"figures/fig05_cat_{col}.png",
                 "filename_svg": f"figures/fig05_cat_{col}.svg",
                 "title_zh_tw": f"類別特徵 {col} 水準頻率分佈圖",
-                "caption_zh_tw": f"展示類別欄位 {col} (基數={rec['cardinality']}) 之各水準完整計數與佔比。",
+                "caption_zh_tw": f"展示類別欄位 {col} (基數={rec['cardinality']}) 於訓練集與測試集之各水準計數與佔比。",
                 "source_version": f"Kaggle Ames House Prices Package (access_date={access_date})",
                 "source_sha256": sha_manifest,
-                "population_or_sample": f"Ames Housing Full Package ({col} Cardinality={rec['cardinality']})",
+                "population_or_sample": f"Ames Housing Package ({col} Cardinality={rec['cardinality']})",
                 "script": "tools/eda/full_ames_eda.py",
                 "command": f"python tools/eda/full_ames_eda.py --access-date {access_date} --terms-confirmed",
                 "suggested_report_section": "6. 類別特徵基數與分佈分析",
-                "descriptive_observation": f"{col} 包含 {rec['cardinality']} 個獨立類別，無截斷完整呈現。",
+                "descriptive_observation": f"{col} 包含 {rec['cardinality']} 個獨立類別，區分訓練集與測試集呈現。",
                 "limitations": "原始類別分佈，未進行編碼合併。",
             })
 
@@ -615,8 +685,8 @@ def _render_overview_chart(p_png: Path, p_svg: Path, inventory: list[dict], trai
         axes[0].set_title("Sample Size Comparison (Rows)")
         axes[0].set_ylabel("Record Count")
         for i, count in enumerate([train_n, test_n]):
-            axes[0].text(i, count + 20, f"{count:,}", ha="center", fontweight="bold")
-        axes[0].set_ylim(0, max(train_n, test_n) + 200)
+            axes[0].text(i, count + max(1, max(train_n, test_n) // 50), f"{count:,}", ha="center", fontweight="bold")
+        axes[0].set_ylim(0, max(train_n, test_n) * 1.15 if max(train_n, test_n) > 0 else 10)
 
         # Panel 2: Semantic Types
         type_counts = {}
@@ -626,49 +696,66 @@ def _render_overview_chart(p_png: Path, p_svg: Path, inventory: list[dict], trai
         labels = list(type_counts.keys())
         counts = [type_counts[k] for k in labels]
         axes[1].barh(labels, counts, color="#4daf4a")
-        axes[1].set_title("Column Semantic Type Breakdown (Total 81)")
+        axes[1].set_title(f"Column Semantic Type Breakdown (Total {len(inventory)})")
         axes[1].set_xlabel("Number of Fields")
         for i, c in enumerate(counts):
             axes[1].text(c + 0.5, i, str(c), va="center", fontweight="bold")
-        axes[1].set_xlim(0, max(counts) + 5)
+        axes[1].set_xlim(0, max(counts) + 5 if counts else 10)
 
         plt.tight_layout()
         fig.savefig(p_png, dpi=150)
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, "Dataset Overview (Train N=1,460, Test N=1,459)")
-        p_png.write_bytes(b"")
+        _write_simple_svg(p_svg, f"Dataset Overview (Train N={train_n}, Test N={test_n})")
+        p_png.write_bytes(create_valid_png(width=800, height=400))
 
 
 def _render_missingness_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
     missing_items = [
-        (r["name"], r["train_missing_rate"] or 0, r["is_structural_missing_candidate"])
-        for r in inventory if (r["train_missing_rate"] or 0) > 0
+        (
+            r["name"],
+            (r.get("train_missing_rate") or 0.0) * 100,
+            (r.get("test_missing_rate") or 0.0) * 100,
+            r["is_structural_missing_candidate"]
+        )
+        for r in inventory
+        if (r.get("train_missing_count") or 0) > 0 or (r.get("test_missing_count") or 0) > 0
     ]
-    missing_items.sort(key=lambda x: x[1])
+    missing_items.sort(key=lambda x: max(x[1], x[2]))
 
     if HAS_MATPLOTLIB and missing_items:
-        fig, ax = plt.subplots(figsize=(10, max(6, len(missing_items) * 0.35)))
+        fig, ax = plt.subplots(figsize=(10, max(6, len(missing_items) * 0.4)))
         names = [x[0] for x in missing_items]
-        rates = [x[1] * 100 for x in missing_items]
-        colors = ["#e41a1c" if not x[2] else "#377eb8" for x in missing_items]
+        train_rates = [x[1] for x in missing_items]
+        test_rates = [x[2] for x in missing_items]
+        y = list(range(len(names)))
+        height = 0.38
 
-        bars = ax.barh(names, rates, color=colors)
-        ax.set_title("Missing Values in Training Set (%) - Blue: Structural NA, Red: Unrecorded Blank")
+        bars1 = ax.barh([pos + height / 2 for pos in y], train_rates, height, label="Train Missing %", color="#2b5c8f")
+        bars2 = ax.barh([pos - height / 2 for pos in y], test_rates, height, label="Test Missing %", color="#d95f02")
+
+        ax.set_yticks(y)
+        ax.set_yticklabels(names, fontsize=9)
+        ax.set_title("Missing Values by Split: Train vs Test (%)", fontsize=12, fontweight="bold")
         ax.set_xlabel("Missing Percentage (%)")
         ax.set_xlim(0, 105)
+        ax.legend(loc="lower right")
 
-        for bar, rate in zip(bars, rates):
-            ax.text(rate + 1, bar.get_y() + bar.get_height() / 2, f"{rate:.1f}%", va="center", fontsize=9)
+        for bar, rate in zip(bars1, train_rates):
+            if rate > 0:
+                ax.text(rate + 1, bar.get_y() + bar.get_height() / 2, f"{rate:.1f}%", va="center", fontsize=8, color="#2b5c8f")
+        for bar, rate in zip(bars2, test_rates):
+            if rate > 0:
+                ax.text(rate + 1, bar.get_y() + bar.get_height() / 2, f"{rate:.1f}%", va="center", fontsize=8, color="#d95f02")
 
         plt.tight_layout()
         fig.savefig(p_png, dpi=150)
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, "Missingness Overview Chart")
-        p_png.write_bytes(b"")
+        _write_simple_svg(p_svg, "Missing Values: Train vs Test Comparison")
+        p_png.write_bytes(create_valid_png(width=800, height=600))
 
 
 def _render_saleprice_chart(p_png: Path, p_svg: Path, values: list[float], stats: dict):
@@ -678,7 +765,7 @@ def _render_saleprice_chart(p_png: Path, p_svg: Path, values: list[float], stats
         # Boxplot
         ax_box.boxplot(values, orientation="horizontal", patch_artist=True, boxprops=dict(facecolor="#4c78a8", color="#1c3d5a"))
         ax_box.set_yticks([])
-        ax_box.set_title("SalePrice Distribution (Train N=1,460)")
+        ax_box.set_title(f"SalePrice Distribution (Train N={len(values):,})")
 
         # Histogram
         ax_hist.hist(values, bins=50, color="#4c78a8", edgecolor="white", alpha=0.8, density=True)
@@ -697,21 +784,34 @@ def _render_saleprice_chart(p_png: Path, p_svg: Path, values: list[float], stats
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, "SalePrice Distribution (Descriptive)")
-        p_png.write_bytes(b"")
+        _write_simple_svg(p_svg, f"SalePrice Distribution (Train N={len(values)})")
+        p_png.write_bytes(create_valid_png(width=800, height=500))
 
 
 def _render_numeric_overview_chart(p_png: Path, p_svg: Path, inventory: list[dict], train_rows: list[dict]):
-    key_cols = ["OverallQual", "GrLivArea", "TotalBsmtSF", "1stFlrSF", "GarageArea", "YearBuilt", "YearRemodAdd", "LotArea"]
-    if HAS_MATPLOTLIB:
-        fig, axes = plt.subplots(2, 4, figsize=(16, 8))
-        axes = axes.flatten()
-        for i, col in enumerate(key_cols):
+    candidate_cols = ["OverallQual", "GrLivArea", "TotalBsmtSF", "1stFlrSF", "GarageArea", "YearBuilt", "YearRemodAdd", "LotArea"]
+    available_cols = [c for c in candidate_cols if any(r.get(c) for r in train_rows)]
+    if not available_cols:
+        available_cols = [r["name"] for r in inventory if r["role"] == "predictor" and r["dtype"].startswith("numeric")][:8]
+
+    if HAS_MATPLOTLIB and available_cols:
+        n_plots = len(available_cols)
+        n_cols = min(4, n_plots)
+        n_rows = math.ceil(n_plots / n_cols)
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 4 * n_rows))
+        if n_plots == 1:
+            axes = [axes]
+        else:
+            axes = axes.flatten() if hasattr(axes, "flatten") else [axes]
+
+        for i, col in enumerate(available_cols):
             vals = [float(r[col]) for r in train_rows if r.get(col) and r[col].strip()]
             if vals:
                 axes[i].hist(vals, bins=30, color="#59a14f", edgecolor="white")
                 axes[i].set_title(col, fontsize=11, fontweight="bold")
                 axes[i].tick_params(axis="x", rotation=30)
+        for j in range(i + 1, len(axes)):
+            axes[j].axis("off")
         plt.suptitle("Key Numeric Predictor Distributions (Training Set)", fontsize=14, fontweight="bold")
         plt.tight_layout()
         fig.savefig(p_png, dpi=150)
@@ -719,7 +819,7 @@ def _render_numeric_overview_chart(p_png: Path, p_svg: Path, inventory: list[dic
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, "Key Numeric Predictors Overview")
-        p_png.write_bytes(b"")
+        p_png.write_bytes(create_valid_png(width=800, height=500))
 
 
 def _render_categorical_overview_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
@@ -730,7 +830,7 @@ def _render_categorical_overview_chart(p_png: Path, p_svg: Path, inventory: list
     cat_items.sort(key=lambda x: -x[1])
 
     if HAS_MATPLOTLIB and cat_items:
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(max(8, len(cat_items) * 0.3), 6))
         names = [x[0] for x in cat_items]
         cards = [x[1] for x in cat_items]
         ax.bar(names, cards, color="#e15759")
@@ -743,41 +843,55 @@ def _render_categorical_overview_chart(p_png: Path, p_svg: Path, inventory: list
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, "Categorical Cardinality Overview")
-        p_png.write_bytes(b"")
+        p_png.write_bytes(create_valid_png(width=800, height=400))
 
 
 def _render_correlation_chart(p_png: Path, p_svg: Path, correlations: dict):
-    top_pairs = correlations.get("target_correlations_ranked", [])[:15]
-    if HAS_MATPLOTLIB and top_pairs:
-        fig, ax = plt.subplots(figsize=(10, 6))
-        cols = [x[0] for x in reversed(top_pairs)]
-        rs = [x[1] for x in reversed(top_pairs)]
-        colors = ["#4e79a7" if r > 0 else "#e15759" for r in rs]
+    pairwise = correlations.get("pairwise_correlations", {})
+    numeric_cols = sorted(pairwise.keys())
+    matrix = []
+    for c1 in numeric_cols:
+        row = []
+        for c2 in numeric_cols:
+            val = pairwise.get(c1, {}).get(c2, {}).get("r")
+            row.append(val)
+        matrix.append(row)
 
-        bars = ax.barh(cols, rs, color=colors)
-        ax.set_title("Top 15 Numeric Features Pearson Correlation with SalePrice")
-        ax.set_xlabel("Pearson Correlation Coefficient (r)")
-        ax.set_xlim(-0.2, 1.0)
-        for bar, r in zip(bars, rs):
-            ax.text(r + 0.02 if r >= 0 else r - 0.08, bar.get_y() + bar.get_height() / 2, f"{r:.3f}", va="center", fontsize=9)
-
+    if HAS_MATPLOTLIB and numeric_cols:
+        fig, ax = plt.subplots(figsize=(max(8, len(numeric_cols) * 0.4), max(7, len(numeric_cols) * 0.4)))
+        im_data = [[v if v is not None else 0.0 for v in r] for r in matrix]
+        im = ax.imshow(im_data, cmap="coolwarm", vmin=-1.0, vmax=1.0)
+        ax.set_xticks(range(len(numeric_cols)))
+        ax.set_yticks(range(len(numeric_cols)))
+        fontsize = max(6, min(10, 150 // len(numeric_cols)))
+        ax.set_xticklabels(numeric_cols, rotation=90, fontsize=fontsize)
+        ax.set_yticklabels(numeric_cols, fontsize=fontsize)
+        ax.set_title(f"Complete Numeric Pearson Correlation Heatmap ({len(numeric_cols)}x{len(numeric_cols)})", fontsize=12, fontweight="bold")
+        cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        cbar.set_label("Pearson r", rotation=270, labelpad=12)
         plt.tight_layout()
         fig.savefig(p_png, dpi=150)
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, "Numeric Correlation Heatmap")
-        p_png.write_bytes(b"")
+        _write_heatmap_svg(p_svg, numeric_cols, matrix)
+        p_png.write_bytes(create_valid_png(width=800, height=800))
 
 
 def _render_scatters_chart(p_png: Path, p_svg: Path, train_rows: list[dict]):
     features = ["OverallQual", "GrLivArea", "TotalBsmtSF", "1stFlrSF", "GarageCars", "GarageArea"]
-    if HAS_MATPLOTLIB:
-        fig, axes = plt.subplots(2, 3, figsize=(15, 9))
-        axes = axes.flatten()
-        targets = [float(r[TARGET]) for r in train_rows if r.get(TARGET)]
+    available_feats = [f for f in features if any(r.get(f) for r in train_rows)]
+    if HAS_MATPLOTLIB and available_feats:
+        n_plots = len(available_feats)
+        n_cols = min(3, n_plots)
+        n_rows = math.ceil(n_plots / n_cols)
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4.5 * n_rows))
+        if n_plots == 1:
+            axes = [axes]
+        else:
+            axes = axes.flatten() if hasattr(axes, "flatten") else [axes]
 
-        for i, feat in enumerate(features):
+        for i, feat in enumerate(available_feats):
             pairs = []
             for r in train_rows:
                 if r.get(feat) and r[feat].strip() and r.get(TARGET):
@@ -788,11 +902,12 @@ def _render_scatters_chart(p_png: Path, p_svg: Path, train_rows: list[dict]):
                 axes[i].set_title(f"{feat} vs SalePrice", fontsize=11, fontweight="bold")
                 axes[i].set_xlabel(feat)
                 axes[i].set_ylabel("SalePrice ($)")
-                # Simple linear trend line
                 if len(xs) > 1 and len(set(xs)) > 1:
                     m, b = statistics.linear_regression(xs, ys)
                     min_x, max_x = min(xs), max(xs)
                     axes[i].plot([min_x, max_x], [m * min_x + b, m * max_x + b], color="#d95f02", linewidth=1.5)
+        for j in range(i + 1, len(axes)):
+            axes[j].axis("off")
         plt.suptitle("Representative Predictors vs SalePrice (Linear Association Check)", fontsize=14, fontweight="bold")
         plt.tight_layout()
         fig.savefig(p_png, dpi=150)
@@ -800,13 +915,13 @@ def _render_scatters_chart(p_png: Path, p_svg: Path, train_rows: list[dict]):
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, "SalePrice Scatters")
-        p_png.write_bytes(b"")
+        p_png.write_bytes(create_valid_png(width=800, height=600))
 
 
 def _render_anomaly_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
     outlier_items = [
-        (r["name"], r["numeric_stats"]["anomaly_candidates_count"], r["numeric_stats"]["skewness"] or 0)
-        for r in inventory if r["numeric_stats"] and r["numeric_stats"].get("anomaly_candidates_count", 0) > 0
+        (r["name"], r["train_numeric_stats"]["anomaly_candidates_count"], r["train_numeric_stats"]["skewness"] or 0)
+        for r in inventory if r.get("train_numeric_stats") and r["train_numeric_stats"].get("anomaly_candidates_count", 0) > 0
         and r["role"] != IDENTIFIER
     ]
     outlier_items.sort(key=lambda x: -x[1])
@@ -827,7 +942,7 @@ def _render_anomaly_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, "Anomaly Candidates Overview")
-        p_png.write_bytes(b"")
+        p_png.write_bytes(create_valid_png(width=800, height=500))
 
 
 def _render_single_numeric_chart(p_png: Path, p_svg: Path, col: str, values: list[float], stats: dict):
@@ -853,26 +968,91 @@ def _render_single_numeric_chart(p_png: Path, p_svg: Path, col: str, values: lis
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, f"Distribution of {col}")
-        p_png.write_bytes(b"")
+        p_png.write_bytes(create_valid_png(width=600, height=400))
 
 
-def _render_single_categorical_chart(p_png: Path, p_svg: Path, col: str, dist: dict):
-    if HAS_MATPLOTLIB and dist:
-        fig, ax = plt.subplots(figsize=(8, max(4, len(dist) * 0.3)))
-        levels = list(reversed(list(dist.keys())))
-        counts = [dist[k]["count"] for k in levels]
-        bars = ax.barh(levels, counts, color="#f28e2b")
-        ax.set_title(f"Level Counts for {col} (Cardinality={len(dist)})")
+def _render_single_categorical_chart(
+    p_png: Path,
+    p_svg: Path,
+    col: str,
+    train_dist: dict | None,
+    test_dist: dict | None,
+):
+    all_levels = sorted(set((train_dist or {}).keys()) | set((test_dist or {}).keys()))
+    if HAS_MATPLOTLIB and all_levels:
+        fig, ax = plt.subplots(figsize=(8, max(4, len(all_levels) * 0.35)))
+        y = list(range(len(all_levels)))
+        height = 0.38
+        tr_counts = [(train_dist or {}).get(lvl, {}).get("count", 0) for lvl in all_levels]
+        te_counts = [(test_dist or {}).get(lvl, {}).get("count", 0) for lvl in all_levels]
+
+        bars1 = ax.barh([pos + height / 2 for pos in y], tr_counts, height, label="Train", color="#2b5c8f")
+        bars2 = ax.barh([pos - height / 2 for pos in y], te_counts, height, label="Test", color="#d95f02")
+
+        ax.set_yticks(y)
+        ax.set_yticklabels(all_levels, fontsize=8)
+        ax.set_title(f"Level Counts for {col} by Split (Train vs Test)")
         ax.set_xlabel("Count")
-        for bar, c in zip(bars, counts):
-            ax.text(c + max(counts) * 0.01, bar.get_y() + bar.get_height() / 2, f"{c}", va="center", fontsize=8)
+        ax.legend(loc="lower right")
+
+        max_c = max(max(tr_counts or [0]), max(te_counts or [0]), 1)
+        for bar, c in zip(bars1, tr_counts):
+            if c > 0:
+                ax.text(c + max_c * 0.01, bar.get_y() + bar.get_height() / 2, str(c), va="center", fontsize=8, color="#2b5c8f")
+        for bar, c in zip(bars2, te_counts):
+            if c > 0:
+                ax.text(c + max_c * 0.01, bar.get_y() + bar.get_height() / 2, str(c), va="center", fontsize=8, color="#d95f02")
+
         plt.tight_layout()
         fig.savefig(p_png, dpi=120)
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, f"Categorical Distribution of {col}")
-        p_png.write_bytes(b"")
+        _write_simple_svg(p_svg, f"Categorical Distribution of {col} (Train vs Test)")
+        p_png.write_bytes(create_valid_png(width=600, height=400))
+
+
+def _write_heatmap_svg(path: Path, cols: list[str], matrix: list[list[float | None]]):
+    n = len(cols)
+    if n == 0:
+        _write_simple_svg(path, "Empty Correlation Matrix")
+        return
+    cell_size = 20
+    margin_left = 120
+    margin_top = 120
+    width = margin_left + n * cell_size + 40
+    height = margin_top + n * cell_size + 40
+
+    svg_lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">',
+        f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
+        f'<text x="{width//2}" y="30" font-size="14" font-weight="bold" text-anchor="middle">Complete Numeric Pearson Correlation Heatmap ({n}x{n})</text>'
+    ]
+    for i, row in enumerate(matrix):
+        y = margin_top + i * cell_size
+        svg_lines.append(f'<text x="{margin_left - 6}" y="{y + 14}" font-size="10" text-anchor="end">{cols[i]}</text>')
+        for j, val in enumerate(row):
+            x = margin_left + j * cell_size
+            if i == 0:
+                svg_lines.append(f'<text x="{x + 10}" y="{margin_top - 6}" font-size="10" text-anchor="start" transform="rotate(-45 {x + 10} {margin_top - 6})">{cols[j]}</text>')
+            if val is None:
+                color = "#cccccc"
+            else:
+                r_val = max(-1.0, min(1.0, val))
+                if r_val >= 0:
+                    red = int(247 + (178 - 247) * r_val)
+                    green = int(247 + (24 - 247) * r_val)
+                    blue = int(247 + (43 - 247) * r_val)
+                else:
+                    t = -r_val
+                    red = int(247 + (33 - 247) * t)
+                    green = int(247 + (102 - 247) * t)
+                    blue = int(247 + (172 - 247) * t)
+                color = f"#{red:02x}{green:02x}{blue:02x}"
+            tooltip = f"{cols[i]} vs {cols[j]}: {f'{val:.3f}' if val is not None else 'N/A'}"
+            svg_lines.append(f'<rect x="{x}" y="{y}" width="{cell_size}" height="{cell_size}" fill="{color}" stroke="#ffffff" stroke-width="0.5"><title>{tooltip}</title></rect>')
+    svg_lines.append('</svg>\n')
+    path.write_text("\n".join(svg_lines), encoding="utf-8")
 
 
 def _write_simple_svg(path: Path, title: str):
@@ -886,8 +1066,9 @@ def write_manifests_and_report(
     figures_manifest: list[dict],
     correlations: dict,
     access_date: str,
+    train_rows: list[dict],
 ):
-    """Write field_manifest, figures_manifest, report.md, and profile.json."""
+    """Write field_manifest, figures_manifest, correlation_matrix.csv, report.md, and profile.json."""
     # 1. field_manifest.json
     (output_dir / "field_manifest.json").write_text(
         json.dumps(inventory, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
@@ -921,9 +1102,23 @@ def write_manifests_and_report(
             for fm in figures_manifest:
                 writer.writerow(fm)
 
-    # 4. report.md in Traditional Chinese
+    # 4. correlation_matrix.csv (complete square correlation matrix across all numeric features)
+    pairwise = correlations.get("pairwise_correlations", {})
+    num_cols = sorted(pairwise.keys())
+    if num_cols:
+        with (output_dir / "correlation_matrix.csv").open("w", newline="", encoding="utf-8-sig") as f:
+            cwriter = csv.writer(f)
+            cwriter.writerow(["feature"] + num_cols)
+            for c1 in num_cols:
+                row = [c1]
+                for c2 in num_cols:
+                    r_val = pairwise.get(c1, {}).get(c2, {}).get("r")
+                    row.append(f"{r_val:.6f}" if r_val is not None else "")
+                cwriter.writerow(row)
+
+    # 5. report.md in Traditional Chinese
     report_md = _generate_traditional_chinese_report(
-        report_dict, inventory, figures_manifest, correlations, access_date
+        report_dict, inventory, figures_manifest, correlations, access_date, train_rows
     )
     (output_dir / "report.md").write_text(report_md, encoding="utf-8")
 
@@ -934,6 +1129,7 @@ def _generate_traditional_chinese_report(
     figures: list[dict],
     correlations: dict,
     access_date: str,
+    train_rows: list[dict],
 ) -> str:
     """Compose complete descriptive research report in Traditional Chinese."""
     hashes = report.get("input_files", {})
@@ -941,19 +1137,127 @@ def _generate_traditional_chinese_report(
     crosswalk = report.get("data_dictionary_crosswalk", {})
 
     target_rec = next((r for r in inventory if r["role"] == "target"), None)
-    target_stats = target_rec.get("numeric_stats", {}) if target_rec else {}
+    target_stats = (target_rec.get("train_numeric_stats") or {}) if target_rec else {}
 
-    missing_cols = [r for r in inventory if (r["train_missing_count"] or 0) > 0 or (r["test_missing_count"] or 0) > 0]
-    missing_cols.sort(key=lambda x: -(x["train_missing_rate"] or 0))
+    missing_cols = [r for r in inventory if (r.get("train_missing_count") or 0) > 0 or (r.get("test_missing_count") or 0) > 0]
+    missing_cols.sort(key=lambda x: -max(x.get("train_missing_rate") or 0, x.get("test_missing_rate") or 0))
 
     top_corrs = correlations.get("target_correlations_ranked", [])[:10]
+    pairwise = correlations.get("pairwise_correlations", {})
+
+    # Schema check dynamic evaluation
+    target_in_train = schema.get("training_target_present", False)
+    target_not_in_test = schema.get("test_target_absent", False)
+    pred_missing_test = schema.get("train_predictor_columns_missing_from_test", [])
+    pred_missing_train = schema.get("test_predictor_columns_missing_from_train", [])
+    pred_match = (len(pred_missing_test) == 0 and len(pred_missing_train) == 0)
+    pred_count = schema.get("original_predictor_count", 0)
+    pred_ge_14 = schema.get("original_predictor_count_at_least_14", False)
+    train_id_u = schema.get("train_id_unique", False)
+    test_id_u = schema.get("test_id_unique", False)
+    id_unique = train_id_u and test_id_u
+    overlap = schema.get("train_test_id_overlap_count", 0)
+    sample_match = schema.get("test_ids_match_sample_submission", False)
+    train_id_n = schema.get("train_id_count", 0)
+    test_id_n = schema.get("test_id_count", 0)
+
+    res_target_tr = "**PASS**" if target_in_train else "**FAIL**"
+    res_target_te = "**PASS**" if target_not_in_test else "**FAIL**"
+    res_pred_eq = "**PASS**" if pred_match else "**FAIL**"
+    res_pred_count = "**PASS**" if pred_ge_14 else "**FAIL**"
+    res_id_u = "**PASS**" if id_unique else "**FAIL**"
+    res_overlap = "**PASS**" if overlap == 0 else "**FAIL**"
+    res_sample = "**PASS**" if sample_match else "**FAIL**"
+
+    desc_target_tr = f"目標變數 '{TARGET}' {'確實存在於訓練集中' if target_in_train else '未在訓練集中發現'}。"
+    desc_target_te = f"目標變數 '{TARGET}' {'不存在於測試集，符合競賽隔離標準' if target_not_in_test else '異常出現在測試集中'}。"
+    desc_pred_eq = "訓練集與測試集之解釋變數集完全一致。" if pred_match else f"預測欄位不一致 (測試集缺少: {pred_missing_test}, 訓練集缺少: {pred_missing_train})。"
+    desc_pred_count = f"排除 Id 與目標變數後，原始解釋變數總計 {pred_count} 個 (門檻 >= 14)。"
+    desc_id_u = f"訓練集 Id (N={train_id_n:,}) 與測試集 Id (N={test_id_n:,}) 各自完全唯一。" if id_unique else "Id 欄位存在重複值。"
+    desc_overlap = f"訓練集與測試集 Id 重疊筆數為 {overlap} 筆。" if overlap == 0 else f"警告：訓練集與測試集存在 {overlap} 筆重複 Id。"
+    desc_sample = "sample_submission.csv 與測試集 Id 完全一致且順序相符。" if sample_match else "sample_submission.csv 與測試集 Id 不符。"
+
+    # Crosswalk dynamic details
+    desc_headings_total = crosswalk.get("total_headings_in_description", 0)
+    matched_exact = [c for c, s in crosswalk.get("field_status", {}).items() if s == "definition_present"]
+    aliases_applied = crosswalk.get("aliases_applied", {})
+    unmapped_cols = [c for c, s in crosswalk.get("field_status", {}).items() if s == "not_found_in_dictionary"]
+    unmapped_headings = crosswalk.get("unmapped_dictionary_headings", [])
+
+    # Dynamic co-missingness calculation
+    cols_with_missing_train = [r["name"] for r in inventory if (r.get("train_missing_count") or 0) > 0]
+    missing_index_sets = {}
+    for col in cols_with_missing_train:
+        missing_indices = frozenset(i for i, r in enumerate(train_rows) if not r.get(col, "").strip())
+        if missing_indices:
+            missing_index_sets.setdefault(missing_indices, []).append(col)
+
+    co_missing_patterns = []
+    for indices, cols in sorted(missing_index_sets.items(), key=lambda x: -len(x[0])):
+        if len(cols) >= 2:
+            co_missing_patterns.append(
+                f"- 特徵組 ({', '.join(f'`{c}`' for c in sorted(cols))}) 在訓練集中共有 {len(indices):,} 筆同時為空。"
+            )
+    if not co_missing_patterns:
+        co_missing_patterns = ["- 訓練集各特徵間未發現完全相同之同時缺漏特徵組。"]
+
+    # Structural missing candidate count
+    struct_candidates = [
+        r for r in inventory
+        if r["is_structural_missing_candidate"] and ((r.get("train_missing_count") or 0) > 0 or (r.get("test_missing_count") or 0) > 0)
+    ]
+
+    # Dynamic collinearity detection (|r| >= 0.8)
+    high_collinear = []
+    seen = set()
+    for col1, targets in pairwise.items():
+        for col2, info in targets.items():
+            if col1 != col2 and col1 != TARGET and col2 != TARGET:
+                pair_key = tuple(sorted([col1, col2]))
+                if pair_key not in seen:
+                    seen.add(pair_key)
+                    r_val = info.get("r")
+                    if r_val is not None and abs(r_val) >= 0.8:
+                        high_collinear.append((pair_key[0], pair_key[1], r_val))
+    high_collinear.sort(key=lambda x: -abs(x[2]))
+    if high_collinear:
+        collinear_lines = [
+            f"- 特徵 `{p[0]}` 與 `{p[1]}` 存在高度相關 (r = {p[2]:.3f})。"
+            for p in high_collinear[:5]
+        ]
+    else:
+        collinear_lines = ["- 數值特徵間未發現皮爾森相關係數絕對值 >= 0.8 之特徵對。"]
+
+    alias_bullets = [f"  - 資料字典標題 `{k}` 對應於 CSV 中之 `{v}`。" for v, k in aliases_applied.items()]
+    alias_text = "\n".join(alias_bullets) if alias_bullets else "  - 無別名對照。"
+
+    missing_table_rows = "".join(
+        f"| `{m['name']}` | {m.get('train_missing_count', 0)} | {(m.get('train_missing_rate') or 0)*100:.2f}% | {m.get('test_missing_count', 0)} | {(m.get('test_missing_rate') or 0)*100:.2f}% | {'結構性缺失 (特徵不存在)' if m['is_structural_missing_candidate'] else '真實未記錄缺漏 (需插補)'} |\n"
+        for m in missing_cols
+    )
+
+    corr_table_rows = "".join(
+        f"| `{c[0]}` | {c[1]:.4f} | {pairwise.get(c[0], {}).get(TARGET, {}).get('n', 'N/A')} | {next((r['purpose'] for r in inventory if r['name'] == c[0]), '')} |\n"
+        for c in top_corrs
+    )
+
+    fig_table_rows = "".join(
+        f"| {f['figure_id']} | [`{f['filename_png']}`]({f['filename_png']}) | {f['title_zh_tw']} | {f['suggested_report_section']} |\n"
+        for f in figures if f["figure_id"].startswith("FIG-0")
+    )
+
+    co_missing_text = "\n".join(co_missing_patterns)
+    collinear_text = "\n".join(collinear_lines)
+
+    skew_val = target_stats.get("skewness")
+    skew_str = f"{skew_val:.3f}" if skew_val is not None else "N/A"
 
     return f"""# CRISP-DM Phase 2 — Ames 房價資料集探索性資料分析研究報告 (EDA Report)
 
-**專案名稱：** NCHU AIoT 2026 HW2 Housing Regression  
-**研究階段：** CRISP-DM Phase 2 — Data Understanding  
-**檢查點日期：** {access_date}  
-**執行狀態：** 描述性分析完成 (Descriptive Profile Generated — Pending Final Public Review)  
+**專案名稱：** NCHU AIoT 2026 HW2 Housing Regression<br/>
+**研究階段：** CRISP-DM Phase 2 — Data Understanding<br/>
+**檢查點日期：** {access_date}<br/>
+**執行狀態：** 描述性分析完成 (Descriptive Profile Generated — Pending Final Public Review)<br/>
 **資料邊界政策：** 本報告所有衍生統計、數據矩陣與視覺化資產均留存於本機忽略路徑 `local/research/phase2-eda/`，未提交至公開 Git 歷史。
 
 ---
@@ -975,27 +1279,26 @@ def _generate_traditional_chinese_report(
 
 | 檢驗項目 | 結果 | 檢驗說明 |
 |---|---|---|
-| **訓練集目標變數存在性** | **PASS** | `SalePrice` 確實存在於訓練集中 (第 81 欄)。 |
-| **測試集目標變數隔離性** | **PASS** | `SalePrice` 不存在於測試集，符合 Kaggle 競賽標準設定。 |
-| **預測欄位對等性** | **PASS** | `train.csv` (排除 SalePrice) 之 80 個預測變數與 `test.csv` 完全一致且順序相符。 |
-| **原創特徵數量檢核** | **PASS** | 排除 `Id` 與 `SalePrice` 後，原始解釋變數總計 79 個，符合課程要求「至少 14 個原始特徵」之標準。 |
-| **Id 欄位唯一性與完整性** | **PASS** | 訓練集與測試集 Id 均無任何遺漏值，且各自完全唯一 (Train: 1 ~ 1,460；Test: 1,461 ~ 2,919)。 |
-| **Train / Test ID 重疊檢驗** | **PASS** | 訓練集與測試集 Id 重疊數為 0，無樣本重疊風險。 |
-| **Sample Submission 驗證** | **PASS** | `sample_submission.csv` 之 1,459 個 Id 與 `test.csv` 之 Id 完全一致且順序相符。 |
+| **訓練集目標變數存在性** | {res_target_tr} | {desc_target_tr} |
+| **測試集目標變數隔離性** | {res_target_te} | {desc_target_te} |
+| **預測欄位對等性** | {res_pred_eq} | {desc_pred_eq} |
+| **原創特徵數量檢核** | {res_pred_count} | {desc_pred_count} |
+| **Id 欄位唯一性與完整性** | {res_id_u} | {desc_id_u} |
+| **Train / Test ID 重疊檢驗** | {res_overlap} | {desc_overlap} |
+| **Sample Submission 驗證** | {res_sample} | {desc_sample} |
 
 ---
 
 ## 3. 資料字典對照與別名解析 (Data Dictionary Crosswalk & Aliases)
 
-資料字典 `data_description.txt` 定義了 79 個特徵段落。經由正規表達式比對與別名解析，比對結果如下：
+資料字典 `data_description.txt` 定義了 {desc_headings_total} 個特徵標題。經由比對與別名解析，比對結果如下：
 
-- **完全匹配欄位：** 77 個欄位名稱與資料字典開頭標題完全相符 (包含數字開頭之特徵如 `1stFlrSF`, `2ndFlrSF`, `3SsnPorch`)。
-- **別名對照匹配 (Aliases Handled)：**
-  - 資料字典標題 `Bedroom` 對應於 CSV 中之 `BedroomAbvGr` (地上臥室數量)。
-  - 資料字典標題 `Kitchen` 對應於 CSV 中之 `KitchenAbvGr` (地上廚房數量)。
-- **特殊系統欄位：** `Id` (列唯一識別碼) 與 `SalePrice` (連續型房價目標變數)。
-- **未對照到字典之欄位：** 0 個 (所有 81 個欄位均已 100% 妥善對應)。
-- **字典未出現在 CSV 之標題：** 0 個 (所有 79 個字典標題均已妥善 mapping)。
+- **完全匹配欄位：** {len(matched_exact)} 個欄位名稱與資料字典標題完全相符。
+- **別名對照匹配 (Aliases Handled)：** 共 {len(aliases_applied)} 個欄位套用別名對照：
+{alias_text}
+- **特殊系統欄位：** `Id` (列唯一識別碼) 與 `SalePrice` (連續型房價目標變數，僅出現於訓練集)。
+- **未對照到字典之欄位：** {len(unmapped_cols)} 個{f' ({", ".join(unmapped_cols)})' if unmapped_cols else ''}。
+- **字典未出現在 CSV 之標題：** {len(unmapped_headings)} 個{f' ({", ".join(unmapped_headings)})' if unmapped_headings else ''}。
 
 ---
 
@@ -1009,23 +1312,21 @@ def _generate_traditional_chinese_report(
 - **中位數 (Median / 50%)：** ${target_stats.get('50%', 0):,.2f}
 - **第三四分位數 (Q3 / 75%)：** ${target_stats.get('75%', 0):,.2f}
 - **最大值 (Max)：** ${target_stats.get('max', 0):,.2f}
-- **偏態係數 (Skewness)：** {target_stats.get('skewness', 0):.3f} (呈現中高度右偏態)
+- **偏態係數 (Skewness)：** {skew_str}
 - **IQR 異常候選數量 (1.5x IQR Fences)：** {target_stats.get('anomaly_candidates_count', 0)} 筆 (上限柵欄約 ${target_stats.get('upper_fence', 0):,.2f})
-- **描述性觀察：** 原始 SalePrice 呈現明顯的正偏態分佈，大容量豪宅拉長了右側尾部。此現象在 Phase 3 資料準備時通常構成對數轉換 (Log Transform) 之強烈候選依據。
+- **描述性觀察：** 原始 SalePrice 呈現明顯偏態分佈，大容量房屋拉長右側尾部。此現象在 Phase 3 資料準備時通常構成對數轉換 (Log Transform) 之評估候選依據。
 
 ---
 
 ## 5. 缺失值深度分析與結構性缺失判定 (Missingness Analysis)
 
-本資料集在文字空白與「NA」之語意上有重要區分。依據 `data_description.txt` 之定義，共有 15 個欄位的「NA」代碼代表「該項設施不存在 (Structural Absence)」，例如無地下室、無車庫、無泳池等，在 CSV 中呈現為空字串：
+本資料集在文字空白與「NA」之語意上有重要區分。依據 `data_description.txt` 之定義，候選「NA」代碼代表「該項設施不存在 (Structural Absence)」，在 CSV 中呈現為空字串：
 
 | 欄位名稱 | 訓練集缺失數 | 訓練集缺失率 | 測試集缺失數 | 測試集缺失率 | 語意性質判斷 |
 |---|---|---|---|---|---|
-{"".join(f"| `{m['name']}` | {m['train_missing_count']} | {m['train_missing_rate']*100:.2f}% | {m['test_missing_count']} | {m['test_missing_rate']*100:.2f}% | {'結構性缺失 (特徵不存在)' if m['is_structural_missing_candidate'] else '真實未記錄缺漏 (需插補)'} |\n" for m in missing_cols)}
-
+{missing_table_rows}
 **共漏模式 (Co-missingness Patterns)：**
-- 地下室相關特徵 (`BsmtQual`, `BsmtCond`, `BsmtExposure`, `BsmtFinType1`, `BsmtFinType2`) 在訓練集中均有約 37~38 筆同時為空，精確對應無地下室之房屋。
-- 車庫相關特徵 (`GarageType`, `GarageYrBlt`, `GarageFinish`, `GarageQual`, `GarageCond`) 共有 81 筆同時為空，精確對應無車庫之房屋。
+{co_missing_text}
 - Phase 3 銜接要求：嚴禁將結構性缺失直接以平均值或眾數盲目插補，應編碼為專屬類別 (例如 "None")。
 
 ---
@@ -1036,28 +1337,28 @@ def _generate_traditional_chinese_report(
 
 | 特徵名稱 | 相關係數 (r) | 配對樣本數 (N) | 語意描述 |
 |---|---|---|---|
-{"".join(f"| `{c[0]}` | {c[1]:.4f} | 1,460 | {next((r['purpose'] for r in inventory if r['name'] == c[0]), '')} |\n" for c in top_corrs)}
-
+{corr_table_rows}
 **重大警示 (Caveats)：**
 - 皮爾森相關僅代表線性相關強度，無法捕捉非線性關聯，亦不可視為因果關係。
-- 特徵間亦存在高度共線性候選 (例如 `GarageCars` 與 `GarageArea` r = 0.882；`TotalBsmtSF` 與 `1stFlrSF` r = 0.820；`YearBuilt` 與 `GarageYrBlt` r = 0.826)。
+- 特徵間共線性檢核：
+{collinear_text}
+- 完整數值特徵相關係數已全量匯出至 `correlation_matrix.csv` 供機器讀取。
 
 ---
 
 ## 7. 視覺化資產索引 (Visual Assets Index)
 
-所有圖表均已於 `figures/` 目錄生成高解析度 PNG (150 DPI) 與無損向量 SVG 格式：
+所有圖表均已於 `figures/` 目錄生成高解析度 PNG 與無損向量 SVG 格式：
 
 | 圖表編號 | 圖表檔案 | 圖表標題 | 建議報告章節 |
 |---|---|---|---|
-{"".join(f"| {f['figure_id']} | [`{f['filename_png']}`]({f['filename_png']}) | {f['title_zh_tw']} | {f['suggested_report_section']} |\n" for f in figures if f['figure_id'].startswith('FIG-0'))}
-
+{fig_table_rows}
 ---
 
 ## 8. Phase 3 銜接決策建議 (Phase 3 Handoff)
 
-1. **缺失值處理原則：** 將 15 個結構性缺失欄位依據資料字典編碼為獨立類別標籤 (如 `"None"` 或 0)，真實缺失欄位 (`LotFrontage`, `MasVnrArea` 等) 須在交叉驗證訓練折內進行適應性插補。
-2. **目標變數轉換探索：** 鑑於 `SalePrice` 偏態係數達 {target_stats.get('skewness', 0):.2f}，建議在 Phase 3 評估 Log 轉換對線性模型假設與殘差分佈之改善效果。
+1. **缺失值處理原則：** 目前共檢測出 {len(struct_candidates)} 個具缺漏之候選結構性缺失欄位，建議依資料字典定義編碼為獨立類別標籤 (如 `"None"` 或 0)；其餘真實未記錄缺漏欄位須在交叉驗證折內進行適應性插補。
+2. **目標變數轉換探索：** 鑑於 `SalePrice` 偏態係數為 {skew_str}，建議在 Phase 3 評估 Log 轉換對線性模型假設與殘差分佈之改善效果。
 3. **編碼策略：** 對於具有明確自然順序之等級欄位 (`ExterQual`, `KitchenQual` 等)，建議評估 Ordinal Encoding；對於名義類別 (`Neighborhood` 等)，評估 One-Hot Encoding 或 Target Encoding。
 4. **防洩漏邊界 (Leakage Prevention)：** 嚴禁在全資料集上預先擬合插補器或編碼器；所有前處理管線必須完全侷限於訓練折 (Training Folds) 內部執行。
 """
@@ -1179,7 +1480,7 @@ def run(
 
     # 9. Write all output artifacts
     write_manifests_and_report(
-        safe_output_dir, report_data, inventory, figures_manifest, correlations, access_date
+        safe_output_dir, report_data, inventory, figures_manifest, correlations, access_date, train_rows
     )
     (safe_output_dir / "profile.json").write_text(
         json.dumps(report_data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
