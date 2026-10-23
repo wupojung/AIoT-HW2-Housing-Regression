@@ -1,3 +1,3 @@
 # Python source tree
 
-Add the Python package here when implementation begins. Repository initialization intentionally leaves model code out of scope.
+The experiment environment smoke check lives here as `environment_check.py`. Later application and modeling code may be added under this directory after its own issue and review. The smoke check only imports dependencies; it does not load data or fit a model.

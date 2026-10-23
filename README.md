@@ -23,7 +23,8 @@ The team uses parallel agent collaboration: agents work on separate tasks and re
 
 ## Repository map
 
-- `python/src/` — Python application and modeling package.
+- `python/src/` - experiment environment smoke check and future Python code.
+- `requirements.in` / `requirements.lock` - pinned Python 3.12 experiment dependencies.
 - `web/` — web application and dashboard.
 - `tools/research_collector/` — public-source metadata collection utilities.
 - `tests/` — automated checks, including security scanner cases.
@@ -46,4 +47,4 @@ Copy `.env.example` to `.env` for local configuration. Never put real credential
 
 Install the pre-commit hook with `pre-commit install`. It scans staged and tracked files once at commit time; CI scans each pull request once. Use `python tools/security_scan.py --all` for a manual audit when the hook was bypassed or before an initial public release. Follow **BUILD → RUN → TEST → VERIFY → PASS** and record validation evidence in the pull request.
 
-For WSL and Python environment setup, see [Developer Setup](docs/SETUP.md).
+For Windows, macOS, and Linux experiment setup, see [Python Experiment Environment](python/README.md). Optional WSL notes remain in [Developer Setup](docs/SETUP.md).
