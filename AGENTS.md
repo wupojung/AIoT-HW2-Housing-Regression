@@ -9,7 +9,7 @@ This repository is the NCHU AIoT 2026 HW2 Housing Regression Lab. Public reposit
 - Read [Developer Setup](docs/SETUP.md) when documenting WSL or agent CLI setup.
 - Keep `local/` entirely untracked. Never copy its contents into public docs, test fixtures, build output, or deployment artifacts.
 - Use `.env.example` for variable names and safe defaults. Read real secrets from environment variables or ignored local configuration.
-- Run `python tools/security_scan.py --all` before proposing a change that adds files or modifies build configuration.
+- Let pre-commit scan staged/tracked files at commit time and CI scan the pull request. Use `python tools/security_scan.py --all` for an initial public-release audit or when the hook was bypassed, not as a repeated routine check.
 
 ## Workflow
 

@@ -25,12 +25,13 @@ python -m pip install pre-commit
 pre-commit install
 ```
 
-Run the repository checks before opening a pull request:
+The installed pre-commit hook scans staged/tracked files when you commit. Run the tests before opening a pull request; GitHub Actions scans the pull request once.
 
 ```bash
-python tools/security_scan.py --all
 python -m unittest discover -s tests/security -v
 ```
+
+Use `python tools/security_scan.py --all` for an initial release audit or if you bypassed the hook, not for every routine change.
 
 ## Agent CLI launch modes
 

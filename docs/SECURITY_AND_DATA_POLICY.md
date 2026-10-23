@@ -28,9 +28,9 @@ Use environment variables or ignored local configuration for credentials. `.env.
 
 ## Git checks
 
-`.gitignore` is a convenience, not a security boundary. The pre-commit hook and CI scan staged/tracked content for forbidden local paths, research/data file types, credential files, and common secret patterns. Review `git status` and the staged diff before every commit. If a sensitive file is already tracked, stop and remove it from the index/history using the repository owner’s incident procedure before pushing; do not continue as if ignore rules repaired it.
+`.gitignore` is a convenience, not a security boundary. The pre-commit hook scans staged/tracked content once at commit time; CI scans each pull request once. Both check forbidden local paths, research/data file types, credential files, and common secret patterns. This avoids running the same routine scan on both branch pushes and pull requests. Use `python tools/security_scan.py --all` for an initial public-release audit or when the hook was bypassed. Review `git status` and the staged diff before every commit. If a sensitive file is already tracked, stop and remove it from the index/history using the repository owner’s incident procedure before pushing; do not continue as if ignore rules repaired it.
 
-The scanner is a guardrail, not a proof that content is safe. Review generated files, archives, and diffs manually. Never include local data in build inputs or artifacts. Before publishing a build, scan its output with `python tools/security_scan.py --build-dir <build-output-directory>`; CI checks repository contents. Build/deployment changes must preserve this boundary and must be reviewed before enabling deployment.
+The scanner is a guardrail, not a proof that content is safe. Review generated files, archives, and diffs manually. Never include local data in build inputs or artifacts. Before a production release, scan the generated output once with `python tools/security_scan.py --build-dir <build-output-directory>`. Build/deployment changes must preserve this boundary and must be reviewed before enabling deployment.
 
 ## Research collection
 
