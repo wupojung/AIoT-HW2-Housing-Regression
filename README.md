@@ -2,7 +2,7 @@
 
 **Production site:** [https://regscope-aiot.vercel.app/](https://regscope-aiot.vercel.app/)
 
-This repository is an independent home for the HW2 Housing Regression Lab. It will explore housing regression, feature selection, and a web dashboard. The initial repository setup establishes project and data-safety practices; it does not claim that the model or dashboard is implemented.
+This repository is an independent home for the HW2 Housing Regression Lab. RegScope M0 provides a responsive, static showcase for the project scope and CRISP-DM workflow. Housing regression models, feature selection, and evaluated results are future work and are not represented as completed.
 
 ## Project method: CRISP-DM
 
