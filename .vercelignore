@@ -1,0 +1,27 @@
+# Local research, private data, and credentials must never enter a Vercel upload.
+local/
+local/**
+.env
+.env.*
+*.pdf
+*.csv
+*.tsv
+*.parquet
+*.pkl
+*.pickle
+*.joblib
+*.sqlite
+*.db
+*.zip
+*.tar
+*.ipynb
+*.gz
+*.xlsx
+*.xls
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+token.json
+service-account*.json
