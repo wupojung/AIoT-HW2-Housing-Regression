@@ -12,7 +12,7 @@
 
 本研究以 Kaggle「House Prices — Advanced Regression Techniques」作為教學基準，探討如何使用 Multiple Linear Regression (MLR) 解釋 Ames, Iowa 房屋資料中的特徵與 `SalePrice` 的關係，並比較 Feature Selection 對可解釋性及預測表現評估的影響。專案首先建立可重現、可審查的線性迴歸基準流程；結果僅適用於後續確認版本的 Kaggle/Ames 資料，不是台灣房價估價系統，也不支援信貸、交易或政策決策。
 
-CRISP-DM Phase 1 的交付是明確研究問題、驗證方式、限制、風險、作業追溯及 Phase 2 入場條件。尚未進行 EDA、資料清理、建模、NotebookLM 分析或效能評估；任何模型數字與特徵效果都須待後續有證據後才能提出。
+CRISP-DM Phase 1 的交付是明確研究問題、驗證方式、限制、風險、作業追溯及 Phase 2 入場條件。Owner 已提供 NotebookLM 文獻報告並完成來源核對摘要；本專案尚未進行 EDA、資料清理、建模或效能評估，任何模型數字與特徵效果都須待後續有證據後才能提出。
 
 ## 2. Business Problem
 
@@ -77,7 +77,7 @@ Phase 2 取得並核對獲准使用的 Kaggle 資料後，後續建模工作的�
 | Feature Selection 學習目標 | 記錄方法、選擇依據、選中欄位與不穩定性；與 baseline 以相同驗證設計比較 | Phase 3–5 |
 | 公平且可解讀的模型評估 | 在明確保留的驗證／測試程序上計算 RMSE、MAE、R²；說明其尺度、比較對象及限制 | Phase 4–5 |
 | 預測與不確定性視覺化 | 實際值對預測值圖及至少一種明確標為 confidence interval 或 prediction interval 的圖；圖表附資料子集、模型與區間解釋 | Phase 5 |
-| 作業與研究完整性 | 完成六階段追溯；NotebookLM 摘要僅在 Owner 提供實際 NotebookLM 分析後引用，且繁體中文摘要至少 100 字；ChatGPT PDF 與 GitHub/Web 交付留下證據 | 全 Epic；各項依矩陣 gate |
+| 作業與研究完整性 | 完成六階段追溯；Owner 已提供 NotebookLM 報告，公開的人工審查繁體中文摘要超過 100 字並附來源對照；ChatGPT PDF 與 GitHub/Web 交付留下證據 | NotebookLM 摘要已提供；其餘依 Epic 各階段完成 |
 
 PM/教師若要求數值通過門檻，應提供正式標準後再納入評分，不在此自行創造。
 
@@ -88,6 +88,7 @@ PM/教師若要求數值通過門檻，應提供正式標準後再納入評分�
 - Epic #4 與 Issue #5 是本工作單的要求來源；它們將目標指定為 `SalePrice`、要求 MLR、Feature Selection、RMSE/MAE/R²、預測圖及 CI/PI，並記錄至少 14 個原始候選特徵與不設 39 個上限。[1]
 - De Cock 論文摘要描述 Ames 2006–2010 年房屋銷售、2,930 筆觀察，以及名目、序位、離散與連續類型的解釋變數。[3]
 - Kaggle 資料需透過競賽頁取得；頁面存取與參賽規則可能要求登入／接受條款。尚未在本 Phase 1 驗證任何本機 CSV 的版本或內容。[4]
+- Owner 已提供 NotebookLM 研究報告；Phase 1 可用的人工審查摘要與引用對照已整理於 [NotebookLM Phase 1 Research Synthesis](../research/notebooklm/phase1-research-synthesis.md)。原始 NotebookLM 報告留在 ignored `local/`，不提交 GitHub。
 - scikit-learn 指出測試資料不得參與 fit；含特徵選擇的前處理應限制在訓練資料，Pipeline 可協助避免洩漏。[5][6]
 - statsmodels OLS prediction API 可產生平均預測及新觀測預測結果／區間；這是套件能力，不代表本專案已建立模型或計算區間。[7]
 
@@ -132,8 +133,8 @@ PM/教師若要求數值通過門檻，應提供正式標準後再納入評分�
 | Model Evaluation | 報告 RMSE、MAE、R²、驗證設計、比較基準及限制；不預造門檻 | P4–P5 |
 | 預測圖及 Confidence Interval 或 Prediction Interval | 提供 actual-vs-predicted 圖及一種明確標示區間的結果圖，附解讀與假設 | P5 Evaluation |
 | CRISP-DM 六階段 | 建立六階段 issue / PR / artifact 追溯；Phase 1 只完成本文件 | Epic 全程；P1 文件定義後續交付 |
-| NotebookLM 研究及至少 100 字繁體中文摘要 | Owner 手動匯入已授權來源；取得 NotebookLM 原始回答與引用後，保存標註來源的 100 字以上摘要。未取得前標記待辦，不以 GPT 內容代替 | 全 Epic 後續；NotebookLM 尚未產出 |
-| 區分 ChatGPT 與 NotebookLM 產出 | 分別標示作者／工具及引用；NotebookLM 摘要只能在實際取得後標記 | 研究報告與提交包 |
+| NotebookLM 研究及至少 100 字繁體中文摘要 | Owner 已提供 NotebookLM 報告；本 PR 附上超過 100 字、明確標註 NotebookLM 歸屬的繁體中文人工審查摘要及來源對照。未核實的報告數字不納入公開結論，也不冒稱 Python 結果 | 本 PR 的 Phase 1 研究證據；摘要與引用待 PM Review |
+| 區分 ChatGPT 與 NotebookLM 產出 | 分別標示作者／工具及引用；NotebookLM 報告的來源摘要與 ChatGPT 輔助撰寫內容不得混稱 | 研究報告與提交包 |
 | ChatGPT 對話 PDF 匯出 | 匯出相關對話作為提交證據；私人 PDF 留在 `local/`，未審查不得公開 | 最終提交準備 |
 | GitHub 與 Web 交付 | GitHub PR、程式與公開安全文件；Web/RegScope 展示僅放經審查內容，Phase 1 PR 不觸發 Production | 全 Epic；Phase 6 交付 |
 | Optional bonus：切換兩個迴歸問題（+1） | 非核心要求，不納入 Phase 1 成功 gate；需確認作業 rubric 與範圍後另立決策 | Optional / 待確認 |
@@ -160,7 +161,7 @@ Phase 2 entry evidence should include a source/provenance record, a data diction
 3. Kaggle 競賽版實際欄位、樣本與 De Cock 論文原始 2,930 筆資料如何對應？須待獲准資料與 data dictionary 核實。
 4. 作業是否要求 Kaggle 的 RMSLE，或以一般尺度 RMSE/MAE/R² 為主？是否同時報告需確認。
 5. CI/PI 的指定類型、信賴水準、圖表格式與是否要求覆蓋率檢查，是否由教師另有規範？
-6. NotebookLM 可使用的來源授權及 Owner 匯入後可引用的回答，目前有哪些已確認紀錄？在取得 NotebookLM 原文與 citations 前不填寫歸屬於 NotebookLM 的摘要。
+6. NotebookLM 原始報告已收到，但報告未提供逐段 URL／頁碼且來源清單數量不一致；未定位原文的 R²、離群點及異質變異主張是否應保留於最終報告，待 PM 決定。公開摘要僅納入可對照來源的內容。
 7. Web 交付要求的公開內容、交付網址與截止時間，是否有 Issue #4 以外的正式 rubric？
 
 ## 13. Phase 1 Review Gate
@@ -179,3 +180,5 @@ Phase 2 entry evidence should include a source/provenance record, a data diction
 8. Repository [Security and Data Policy](../SECURITY_AND_DATA_POLICY.md): raw data, PDFs, private NotebookLM materials and credentials remain in ignored `local/`.
 
 IBM, [CRISP-DM View](https://www.ibm.com/docs/en/spss-modeler/saas?topic=projects-crisp-dm-view). IBM describes the six phases and notes Business Understanding as requirements/goals work, not model analysis.
+
+**Non-research writing reference — `writing-guidelines`:** Instructor-provided *A2Z outline example* (version 2020-03-05; local PDF and DOCX copies). Use only for report/paper section organization, writing method, and format checks. It is not research evidence and does not replace academic citations. Its contents have not been used to change the approved project design; any conflicting advice must be brought to PM for a decision.
