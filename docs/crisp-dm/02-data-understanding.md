@@ -57,6 +57,25 @@ The Owner must replace the date with the actual access/download date and confirm
 
 The script records file hashes, shapes, predictor counts, dtypes, missingness and co-missingness patterns, duplicate rows, identifier uniqueness and train/test overlap, categorical cardinality, numeric summaries, IQR anomaly candidate counts, target summaries, numeric target correlations, and train/test schema checks. It parses dictionary field headings and reports a name-level crosswalk against the training schema; it does not publish definitions or infer measurement types. `Id` remains in integrity checks but is excluded from numeric distributions, IQR flags, and target correlations. Input must be `local/datasets/`, and all output paths are resolved and constrained to ignored `local/`; symlinked local roots and output escapes are rejected. It does not alter data, impute, select features, split data for modeling, or fit models. Treat distribution extremes and IQR flags as descriptive candidates for human review, not errors or causal evidence.
 
+### Figure plan after authorized files arrive
+
+No real-data figures are generated while the CSVs are absent. Once the Owner provides authorized files, choose only report-useful descriptive figures; do not generate a chart for every column by default.
+
+| Candidate | Descriptive content | Selection / boundary |
+|---|---|---|
+| F01 | Dataset and field overview | Show train/test rows, columns, source roles, and verified predictor count. |
+| F02 | Missingness counts and percentages | Summarize fields and co-missing patterns; do not infer structural meaning from counts alone. |
+| F03 | `SalePrice` histogram and boxplot | Training target only; describe observed distribution and candidate extremes. |
+| F04 | Selected numeric-feature distributions | Select a small set after reviewing ranges and skew; do not dump all 36+ plots. |
+| F05 | Selected feature-versus-`SalePrice` scatterplots | Exploratory association only; select fields with a clear report purpose. |
+| F06 | Selected numeric correlation view | Clearly label exploratory; correlation is not causal evidence. |
+| F07 | Selected categorical count plots | Show useful category levels/cardinality without overwhelming the report. |
+| F08 | Duplicate and anomaly-candidate summary | Descriptive counts only; no rows are removed and IQR candidates are not declared errors. |
+
+Keep provisional figures and the short manifest under ignored `local/research/phase2-eda/` until reviewed. Each selected figure record must include: figure ID; Traditional Chinese title and caption; source dataset version and CSV SHA-256; measured population/sample; generator script and exact command; whether the text is an observation or hypothesis; and suggested report section. Example manifest fields (placeholders only; no observation is asserted): `figure_id`, `title_zh_tw`, `caption_zh_tw`, `source_version`, `source_sha256`, `population_or_sample`, `script`, `command`, `statement_kind`, `suggested_report_section`, `local_artifact_path`.
+
+This plan covers only Phase 2 description and problem identification. Decisions about imputation, encoding, transformations, split/leakage protections and before/after comparisons remain Phase 3; model results remain Phase 4–5. No holdout-based or future-phase decisions are made here.
+
 ## 5. Phase 3 handoff
 
 Decisions to make only after dictionary and profile review:
