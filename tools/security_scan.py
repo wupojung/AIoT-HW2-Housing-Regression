@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import io
+import os
 import re
 import subprocess
 import sys
@@ -11,6 +13,8 @@ from pathlib import Path
 from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_GIT_TIMEOUT = float(os.getenv("SECURITY_SCAN_GIT_TIMEOUT", "15.0"))
+
 FORBIDDEN_PARTS = {"local", ".vercel", ".next"}
 FORBIDDEN_SUFFIXES = {
     ".pdf", ".parquet", ".pkl", ".pickle", ".joblib", ".sqlite", ".db",
@@ -29,25 +33,47 @@ SECRET_PATTERNS = (
 )
 
 
-def _run_git(*args: str) -> list[str]:
-    result = subprocess.run(
-        ["git", *args], cwd=ROOT, check=False, capture_output=True, text=True
-    )
+class GitScanError(RuntimeError):
+    """Raised when a Git command fails, times out, or produces invalid output."""
+
+
+def _run_git(
+    *args: str,
+    cwd: Path = ROOT,
+    timeout: float = DEFAULT_GIT_TIMEOUT,
+) -> list[str]:
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise GitScanError(f"git {' '.join(args)} timed out after {timeout}s") from exc
+    except OSError as exc:
+        raise GitScanError(f"git {' '.join(args)} failed to execute: {exc}") from exc
+
     if result.returncode != 0:
-        return []
+        err = result.stderr.strip()
+        raise GitScanError(
+            f"git {' '.join(args)} failed with exit code {result.returncode}: {err}"
+        )
     return [line for line in result.stdout.splitlines() if line]
 
 
-def staged_paths() -> list[str]:
-    return _run_git("diff", "--cached", "--name-only", "--diff-filter=ACMR")
+def staged_paths(cwd: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> list[str]:
+    return _run_git("diff", "--cached", "--name-only", "--diff-filter=ACMR", cwd=cwd, timeout=timeout)
 
 
-def tracked_paths() -> list[str]:
-    return _run_git("ls-files")
+def tracked_paths(cwd: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> list[str]:
+    return _run_git("ls-files", cwd=cwd, timeout=timeout)
 
 
-def public_untracked_paths() -> list[str]:
-    return _run_git("ls-files", "--others", "--exclude-standard")
+def public_untracked_paths(cwd: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> list[str]:
+    return _run_git("ls-files", "--others", "--exclude-standard", cwd=cwd, timeout=timeout)
 
 
 def is_forbidden_path(path: str) -> bool:
@@ -73,36 +99,121 @@ def content_findings(content: bytes) -> list[str]:
     return [label for label, pattern in SECRET_PATTERNS if pattern.search(content)]
 
 
-def _staged_content(path: str) -> bytes | None:
-    result = subprocess.run(
-        ["git", "show", f":{path}"], cwd=ROOT, check=False, capture_output=True
-    )
-    return result.stdout if result.returncode == 0 else None
+def batch_staged_blobs(
+    paths: Iterable[str],
+    cwd: Path = ROOT,
+    timeout: float = DEFAULT_GIT_TIMEOUT,
+) -> dict[str, bytes | None]:
+    path_list = list(dict.fromkeys(paths))
+    if not path_list:
+        return {}
+
+    for path in path_list:
+        if "\n" in path or "\r" in path:
+            raise GitScanError(f"Invalid path containing newline: {path!r}")
+
+    stdin_bytes = "".join(f":{p}\n" for p in path_list).encode("utf-8")
+    try:
+        with subprocess.Popen(
+            ["git", "cat-file", "--batch"],
+            cwd=cwd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ) as proc:
+            try:
+                stdout_bytes, stderr_bytes = proc.communicate(input=stdin_bytes, timeout=timeout)
+            except subprocess.TimeoutExpired as exc:
+                proc.kill()
+                try:
+                    proc.communicate()
+                except Exception:
+                    pass
+                raise GitScanError(f"git cat-file --batch timed out after {timeout}s") from exc
+
+            if proc.returncode != 0:
+                err = stderr_bytes.decode("utf-8", errors="replace").strip()
+                raise GitScanError(f"git cat-file --batch failed with exit code {proc.returncode}: {err}")
+    except OSError as exc:
+        raise GitScanError(f"git cat-file --batch failed to execute: {exc}") from exc
+
+    bio = io.BytesIO(stdout_bytes)
+    blobs: dict[str, bytes | None] = {}
+    for path in path_list:
+        header_line = bio.readline()
+        if not header_line:
+            raise GitScanError(f"Unexpected end of output from git cat-file for path '{path}'")
+        header_str = header_line.decode("utf-8", errors="replace").rstrip("\r\n")
+        if header_str.endswith(" missing"):
+            blobs[path] = None
+            continue
+        parts = header_str.split()
+        if len(parts) < 3:
+            raise GitScanError(f"Malformed git cat-file header for path '{path}': {header_str}")
+        try:
+            size = int(parts[2])
+        except ValueError as exc:
+            raise GitScanError(f"Invalid size in git cat-file header for path '{path}': {header_str}") from exc
+
+        content = bio.read(size)
+        if len(content) != size:
+            raise GitScanError(f"Truncated blob for path '{path}': expected {size} bytes, got {len(content)}")
+        trailing = bio.read(1)
+        if trailing != b"\n":
+            raise GitScanError(f"Missing expected trailing newline for path '{path}'")
+
+        if parts[1] == "blob":
+            blobs[path] = content
+        else:
+            blobs[path] = None
+
+    return blobs
 
 
-def scan(mode: str) -> list[str]:
+def _staged_content(path: str, cwd: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> bytes | None:
+    return batch_staged_blobs([path], cwd=cwd, timeout=timeout).get(path)
+
+
+def scan(mode: str, root: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> list[str]:
     findings: list[str] = []
-    if mode == "staged":
-        paths = sorted(set(staged_paths()) | set(tracked_paths()))
-    elif mode == "tracked":
-        paths = tracked_paths()
-    else:
-        # Git itself applies ignore rules here, so local/ remains usable on disk.
-        paths = sorted(set(tracked_paths()) | set(public_untracked_paths()))
+    try:
+        if mode == "staged":
+            paths = sorted(set(staged_paths(cwd=root, timeout=timeout)) | set(tracked_paths(cwd=root, timeout=timeout)))
+        elif mode == "tracked":
+            paths = tracked_paths(cwd=root, timeout=timeout)
+        else:
+            # Git itself applies ignore rules here, so local/ remains usable on disk.
+            paths = sorted(set(tracked_paths(cwd=root, timeout=timeout)) | set(public_untracked_paths(cwd=root, timeout=timeout)))
+    except GitScanError as err:
+        findings.append(f"Git metadata scan error: {err}")
+        return findings
 
+    paths_to_inspect: list[str] = []
     for path in paths:
         if is_forbidden_path(path):
             findings.append(f"{path}: forbidden sensitive/local file path")
-            continue
-        file_path = ROOT / Path(path)
-        content = _staged_content(path) if mode == "staged" else None
+        else:
+            paths_to_inspect.append(path)
+
+    blobs: dict[str, bytes | None] = {}
+    if mode == "staged" and paths_to_inspect:
+        try:
+            blobs = batch_staged_blobs(paths_to_inspect, cwd=root, timeout=timeout)
+        except GitScanError as err:
+            findings.append(f"Git blob scan error: {err}")
+            return findings
+
+    for path in paths_to_inspect:
+        content = blobs.get(path) if mode == "staged" else None
         if content is None:
+            file_path = root / Path(path)
             try:
                 content = file_path.read_bytes()
             except (OSError, IsADirectoryError):
                 continue
         for label in content_findings(content):
             findings.append(f"{path}: possible {label}")
+
     return findings
 
 
@@ -138,7 +249,10 @@ def main() -> int:
     if not (args.staged or args.tracked or args.all or args.build_dir):
         parser.error("choose a repository scan mode or at least one --build-dir")
     mode = "staged" if args.staged else "tracked" if args.tracked else "all" if args.all else None
-    findings = scan(mode) if mode else []
+    try:
+        findings = scan(mode) if mode else []
+    except GitScanError as err:
+        findings = [f"Git scan error: {err}"]
     for build_dir in args.build_dir:
         findings.extend(scan_build_dir(build_dir if build_dir.is_absolute() else ROOT / build_dir))
     if findings:
