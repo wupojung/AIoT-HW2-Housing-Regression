@@ -1,2 +1,53 @@
-# Public source registry. Keep only public identifiers and URLs here.
-sources: []
+# Public source registry. Keep only public identifiers, URLs, and reviewed metadata.
+sources:
+  - id: decock-2011-ames
+    doi: 10.1080/10691898.2011.11889627
+    url: https://doi.org/10.1080/10691898.2011.11889627
+    title: "Ames, Iowa: Alternative to the Boston Housing Data as an End of Semester Regression Project"
+    authors: ["Dean De Cock"]
+    institution: "Journal of Statistics Education"
+    purpose: "Understand the Ames housing dataset, its variables, provenance, and regression-project context."
+    summary: "The paper introduces Ames, Iowa home-sale data as a regression teaching project and describes a broad set of property characteristics for explaining sale prices."
+    license_status: "Copyright notice found; Crossref has no license metadata; redistribution permission not established."
+    acquisition_status: "metadata_only"
+    notes: "Official PDF URL checked but returned 404; third-party accessible copy states personal sharing only and prohibits republication without permission. Do not package unless permission/open license is confirmed."
+  - id: kaggle-house-prices
+    url: https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data
+    title: "House Prices - Advanced Regression Techniques"
+    authors: ["Kaggle"]
+    institution: "Kaggle"
+    purpose: "Competition problem framing, target definition, and data dictionary; raw CSV is not required for NotebookLM source preparation."
+    summary: "The competition frames sale-price prediction using Ames home features and provides train/test tables plus a data description after access requirements are met."
+    license_status: "Kaggle data page lists MIT License; competition rules and login also apply, so review terms before reuse."
+    acquisition_status: "manual_login_required"
+    notes: "Data page requires Kaggle access/account for downloads. Preserve source URL; if authorized, download manually into local/datasets/ and review competition terms."
+  - id: sklearn-common-pitfalls
+    url: https://scikit-learn.org/stable/common_pitfalls.html
+    title: "Common pitfalls and recommended practices"
+    authors: ["scikit-learn developers"]
+    institution: "scikit-learn"
+    purpose: "Avoid preprocessing leakage and apply reliable model validation practices."
+    summary: "The guidance explains common estimator misuse, especially data leakage, and recommends fitting preprocessing only on training folds through sound validation workflows."
+    license_status: "BSD-3-Clause project documentation; link and concise original summary only."
+    acquisition_status: "metadata_only"
+    notes: "Public documentation page; current page version observed during collection: 1.9.1."
+  - id: sklearn-feature-selection
+    url: https://scikit-learn.org/stable/modules/feature_selection.html
+    title: "Feature selection"
+    authors: ["scikit-learn developers"]
+    institution: "scikit-learn"
+    purpose: "Compare univariate, model-based, and recursive feature-selection methods."
+    summary: "The documentation surveys filter, wrapper, and embedded feature-selection strategies and discusses estimator requirements and practical tradeoffs."
+    license_status: "BSD-3-Clause project documentation; link and concise original summary only."
+    acquisition_status: "metadata_only"
+    notes: "Public documentation page; current page version observed during collection: 1.9.1."
+  - id: statsmodels-ols-prediction
+    url: https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.OLSResults.get_prediction.html
+    title: "statsmodels.regression.linear_model.OLSResults.get_prediction"
+    authors: ["statsmodels developers"]
+    institution: "statsmodels"
+    purpose: "Understand OLS predictions and prediction intervals for new observations."
+    summary: "The API returns OLS prediction results, including predicted means and uncertainty intervals for supplied exogenous observations."
+    license_status: "BSD-3-Clause project documentation; link and concise original summary only."
+    acquisition_status: "metadata_only"
+    notes: "Public documentation page; current stable version observed during collection: 0.15.0."
