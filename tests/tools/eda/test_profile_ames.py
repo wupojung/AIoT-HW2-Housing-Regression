@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tools.eda.profile_ames import EXPECTED, run
 
@@ -43,11 +44,16 @@ class ProfileAmesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             local = Path(temp) / "local"
             local.mkdir()
-            real_data = Path(temp) / "actual-data"
-            real_data.mkdir()
-            (local / "datasets").symlink_to(real_data, target_is_directory=True)
-            with self.assertRaisesRegex(ValueError, "must not be a symlink"):
-                run(local / "datasets", local / "research", "2026-10-24", True, local_root=local)
+            data = local / "datasets"
+            data.mkdir()
+            actual = Path.is_symlink
+
+            def simulated_symlink(path):
+                return path.absolute() == data.absolute() or actual(path)
+
+            with patch.object(Path, "is_symlink", simulated_symlink):
+                with self.assertRaisesRegex(ValueError, "must not be a symlink"):
+                    run(data, local / "research", "2026-10-24", True, local_root=local)
 
     def test_rejects_symlinked_input_file(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -56,11 +62,16 @@ class ProfileAmesTests(unittest.TestCase):
             data.mkdir(parents=True)
             (data / "train.csv").write_text("Id,SalePrice\n1,100\n")
             (data / "data_description.txt").write_text("SalePrice: Target\n")
-            external_csv = Path(temp) / "external.csv"
-            external_csv.write_text("Id\n2\n")
-            (data / "test.csv").symlink_to(external_csv)
-            with self.assertRaisesRegex(ValueError, "must not be symlinks"):
-                run(data, local / "research", "2026-10-24", True, local_root=local)
+            test_csv = data / "test.csv"
+            test_csv.write_text("Id\n2\n")
+            actual = Path.is_symlink
+
+            def simulated_symlink(path):
+                return path.absolute() == test_csv.absolute() or actual(path)
+
+            with patch.object(Path, "is_symlink", simulated_symlink):
+                with self.assertRaisesRegex(ValueError, "must not be symlinks"):
+                    run(data, local / "research", "2026-10-24", True, local_root=local)
 
     def test_profiles_synthetic_data_and_hashes(self):
         with tempfile.TemporaryDirectory() as temp:
