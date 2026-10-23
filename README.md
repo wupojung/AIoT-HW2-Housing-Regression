@@ -43,3 +43,5 @@ Copy `.env.example` to `.env` for local configuration. Never put real credential
 ## Development checks
 
 Install the pre-commit hook with `pre-commit install`. Run `python tools/security_scan.py --all` to scan tracked and untracked repository files before review. CI runs the same security checks. Follow **BUILD → RUN → TEST → VERIFY → PASS** and record validation evidence in the pull request.
+
+For WSL, Python environment, and agent CLI setup, see [Developer Setup](docs/SETUP.md).
