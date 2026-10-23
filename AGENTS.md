@@ -15,5 +15,5 @@ This repository is the NCHU AIoT 2026 HW2 Housing Regression Lab. Public reposit
 - Follow BUILD → RUN → TEST → VERIFY → PASS for implementation work. Record what ran and what passed in the PR.
 - Use `feature/*` branches and PRs into `main`. `main` is the integration branch. `deploy` is reserved for approved production releases; do not use it for development.
 - Organize work with GitHub Issues. Use an Epic to group related issues and a Milestone to track a delivery point.
-- The project uses CRISP-DM and a two-agent collaboration workflow; see the README for the public process.
+- The project uses CRISP-DM and parallel agent collaboration, with up to three concurrent agents when tasks can be isolated; see the README for the public process.
 - Keep the Python package under `python/src/`, reusable tools under `tools/`, and tests under `tests/`.

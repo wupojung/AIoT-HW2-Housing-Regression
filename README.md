@@ -17,7 +17,7 @@ Work is tracked through GitHub Issues. An **Epic** groups related issues around 
 
 ## Collaboration
 
-The team uses a two-agent workflow: agents can work on separate research or implementation tasks, then review and reconcile the results before delivery. Each change remains reviewable through Issues and pull requests. Public project documentation describes this workflow without exposing private handoffs or credentials.
+The team uses parallel agent collaboration: agents work on separate tasks and review or reconcile results before delivery. The workflow can use up to three concurrent agents when tasks can be isolated. Each change remains reviewable through Issues and pull requests. Public project documentation describes this workflow without exposing private handoffs or credentials.
 
 ## Repository map
 
