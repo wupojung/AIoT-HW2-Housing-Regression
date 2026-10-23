@@ -60,7 +60,11 @@ def is_forbidden_path(path: str) -> bool:
         return False
     if name == ".env" or name.startswith(".env."):
         return True
-    if name in FORBIDDEN_NAMES or Path(name).suffix.lower() in FORBIDDEN_SUFFIXES:
+    if (
+        name in FORBIDDEN_NAMES
+        or (name.startswith("service-account") and name.endswith(".json"))
+        or Path(name).suffix.lower() in FORBIDDEN_SUFFIXES
+    ):
         return True
     return False
 

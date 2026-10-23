@@ -13,6 +13,7 @@ class SecurityScanTests(unittest.TestCase):
             "data/housing.csv",
             ".env",
             "credentials.json",
+            "service-account-prod.json",
         ):
             with self.subTest(path=path):
                 self.assertTrue(is_forbidden_path(path))
@@ -21,6 +22,13 @@ class SecurityScanTests(unittest.TestCase):
         for path in ("README.md", "tools/research_collector/sources.yaml", ".env.example"):
             with self.subTest(path=path):
                 self.assertFalse(is_forbidden_path(path))
+
+    def test_vercelignore_excludes_local_and_sensitive_file_classes(self):
+        ignore_file = Path(__file__).resolve().parents[2] / ".vercelignore"
+        patterns = set(ignore_file.read_text(encoding="utf-8").splitlines())
+        for pattern in ("local/", ".env", "*.pdf", "*.csv", "credentials.json", "service-account*.json"):
+            with self.subTest(pattern=pattern):
+                self.assertIn(pattern, patterns)
 
     def test_detects_synthetic_secret_patterns(self):
         synthetic_samples = (
@@ -40,6 +48,13 @@ class SecurityScanTests(unittest.TestCase):
             artifact = Path(temp_dir) / "assets" / "bundle.js"
             artifact.parent.mkdir()
             artifact.write_bytes(b"client_secret='" + b"synthetic-build-secret-123456'")
+            self.assertTrue(scan_build_dir(Path(temp_dir)))
+
+    def test_build_scan_blocks_local_pdf_artifacts(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            artifact = Path(temp_dir) / "local" / "papers" / "synthetic-paper.pdf"
+            artifact.parent.mkdir(parents=True)
+            artifact.write_bytes(b"synthetic placeholder")
             self.assertTrue(scan_build_dir(Path(temp_dir)))
 
 

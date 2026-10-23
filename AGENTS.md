@@ -6,7 +6,7 @@ This repository is the NCHU AIoT 2026 HW2 Housing Regression Lab. Public reposit
 
 - Keep downloaded papers, raw datasets, private or sensitive data, NotebookLM import files, credentials, temporary data, and caches under `local/` or another ignored local path.
 - Read [the data and security policy](docs/SECURITY_AND_DATA_POLICY.md) before adding research material, data, credentials, or deployment configuration.
-- Read [Developer Setup](docs/SETUP.md) when documenting WSL or agent CLI setup.
+- Read [Developer Setup](docs/SETUP.md) when documenting WSL or Python environment setup.
 - Keep `local/` entirely untracked. Never copy its contents into public docs, test fixtures, build output, or deployment artifacts.
 - Use `.env.example` for variable names and safe defaults. Read real secrets from environment variables or ignored local configuration.
 - Let pre-commit scan staged/tracked files at commit time and CI scan the pull request. Use `python tools/security_scan.py --all` for an initial public-release audit or when the hook was bypassed, not as a repeated routine check.

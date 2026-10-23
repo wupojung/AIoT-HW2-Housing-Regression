@@ -1,6 +1,6 @@
 # Developer Setup
 
-This guide covers the initial WSL and Python setup, plus the agent CLI modes shown in the maintainer setup screenshots. Keep account credentials outside the repository.
+This guide covers the initial WSL and Python setup for contributors. Keep account credentials and personal agent configuration outside the repository.
 
 ## Open the project in WSL
 
@@ -33,27 +33,6 @@ python -m unittest discover -s tests/security -v
 
 Use `python tools/security_scan.py --all` for an initial release audit or if you bypassed the hook, not for every routine change.
 
-## Agent CLI launch modes
+## Data boundary
 
-The screenshots below show the maintainer's WSL launch commands:
-
-![Codex and Antigravity CLI launch commands](assets/setup/agent-cli-launch-redacted.png)
-
-![Codex Full Access prompt and Antigravity CLI session](assets/setup/agent-cli-permissions-redacted.png)
-
-```bash
-codex --yolo --no-daemon
-agy --mode accept-edits --dangerously-skip-permissions
-```
-
-`--no-daemon` starts the interactive Codex CLI without its shared background server. Codex `--yolo` bypasses approval prompts and sandboxing. For ordinary repository work, prefer the scoped mode:
-
-```bash
-codex --no-daemon --sandbox workspace-write --ask-for-approval on-request
-```
-
-In Antigravity CLI, `--mode accept-edits` automatically approves workspace file edits; by itself it still asks before terminal commands. `--dangerously-skip-permissions` auto-approves tool permission requests. These flags change tool approvals; they do not bypass account sign-in, billing, or organizational policy.
-
-The full-access commands can read and modify files available to the WSL user. `.gitignore` prevents `local/` files from being committed, but it does not prevent an agent from reading them. Run broad-permission agents only in a clean, isolated worktree that contains no local datasets, internal notes, or credentials. Keep `local/` in the main checkout and use separate worktrees for agent tasks.
-
-See the [Codex CLI reference](https://learn.chatgpt.com/docs/developer-commands?surface=cli) and [Antigravity CLI modes](https://www.agy.dev/docs/cli/modes/) for current flag behavior.
+Keep papers, raw datasets, credentials, private notes, and NotebookLM import files in the ignored `local/` directory. Do not add local files to build inputs. Read the [Security and Data Policy](SECURITY_AND_DATA_POLICY.md) before changing deployment configuration.

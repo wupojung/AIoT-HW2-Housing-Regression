@@ -1,4 +1,6 @@
-# NCHU AIoT 2026 — HW2 Housing Regression Lab
+# RegScope | NCHU AIoT 2026 — HW2 Housing Regression Lab
+
+**Production site:** [https://regscope-aiot.vercel.app/](https://regscope-aiot.vercel.app/)
 
 This repository is an independent home for the HW2 Housing Regression Lab. It will explore housing regression, feature selection, and a web dashboard. The initial repository setup establishes project and data-safety practices; it does not claim that the model or dashboard is implemented.
 
@@ -44,4 +46,4 @@ Copy `.env.example` to `.env` for local configuration. Never put real credential
 
 Install the pre-commit hook with `pre-commit install`. It scans staged and tracked files once at commit time; CI scans each pull request once. Use `python tools/security_scan.py --all` for a manual audit when the hook was bypassed or before an initial public release. Follow **BUILD → RUN → TEST → VERIFY → PASS** and record validation evidence in the pull request.
 
-For WSL, Python environment, and agent CLI setup, see [Developer Setup](docs/SETUP.md).
+For WSL and Python environment setup, see [Developer Setup](docs/SETUP.md).
