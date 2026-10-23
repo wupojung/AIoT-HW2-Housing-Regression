@@ -1,0 +1,40 @@
+name: Task
+description: Track a project task or research activity
+title: "[Task]: "
+labels: ["type: task"]
+body:
+  - type: dropdown
+    id: phase
+    attributes:
+      label: CRISP-DM phase
+      options:
+        - Business Understanding
+        - Data Understanding
+        - Data Preparation
+        - Modeling
+        - Evaluation
+        - Deployment
+        - Repository / operations
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What outcome should this issue produce?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions for completion.
+    validations:
+      required: true
+  - type: input
+    id: epic
+    attributes:
+      label: Related Epic
+      description: Link the parent issue or Epic, if applicable.
+    validations:
+      required: false

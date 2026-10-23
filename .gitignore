@@ -1,0 +1,52 @@
+# Local-only research, data, credentials, and working files
+/local/
+
+# Environment secrets (keep only the safe template)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Common data and research artifacts
+*.pdf
+*.ipynb
+*.parquet
+*.pkl
+*.pickle
+*.joblib
+*.sqlite
+*.db
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+*.csv
+*.tsv
+*.xlsx
+*.xls
+
+# Credentials and private keys
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+token.json
+service-account*.json
+
+# Build and tool caches
+.vercel/
+.next/
+node_modules/
+.coverage
+htmlcov/

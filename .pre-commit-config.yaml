@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: sensitive-content-scan
+        name: Scan staged and tracked files for sensitive content
+        entry: python tools/security_scan.py --staged
+        language: system
+        pass_filenames: false
+        always_run: true
