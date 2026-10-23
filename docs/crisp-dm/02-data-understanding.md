@@ -55,7 +55,7 @@ python3 tools/eda/profile_ames.py --access-date YYYY-MM-DD --terms-confirmed
 
 The Owner must replace the date with the actual access/download date and confirm the login/rules gate. Input defaults to `local/datasets/`; the JSON profile and target histogram default to ignored `local/research/phase2-eda/`. Review them for public safety before moving any aggregate result into this document.
 
-The script records file hashes, shapes, predictor counts, dtypes, missingness and co-missingness patterns, duplicate rows, identifier uniqueness and train/test overlap, categorical cardinality, numeric summaries, IQR anomaly candidate counts, target summaries, numeric target correlations, and train/test schema checks. It does not alter data, impute, select features, split data for modeling, or fit models. Treat distribution extremes and IQR flags as descriptive candidates for human review, not errors or causal evidence.
+The script records file hashes, shapes, predictor counts, dtypes, missingness and co-missingness patterns, duplicate rows, identifier uniqueness and train/test overlap, categorical cardinality, numeric summaries, IQR anomaly candidate counts, target summaries, numeric target correlations, and train/test schema checks. It parses dictionary field headings and reports a name-level crosswalk against the training schema; it does not publish definitions or infer measurement types. `Id` remains in integrity checks but is excluded from numeric distributions, IQR flags, and target correlations. Input must be `local/datasets/`, and all output paths are resolved and constrained to ignored `local/`; symlinked local roots and output escapes are rejected. It does not alter data, impute, select features, split data for modeling, or fit models. Treat distribution extremes and IQR flags as descriptive candidates for human review, not errors or causal evidence.
 
 ## 5. Phase 3 handoff
 
@@ -75,7 +75,7 @@ No cleaning, feature selection, model fitting, modeling split, or performance sc
 - Reproducible entrypoint: [`tools/eda/profile_ames.py`](../../tools/eda/profile_ames.py)
 - Synthetic-only tests: [`tests/tools/eda/test_profile_ames.py`](../../tests/tools/eda/test_profile_ames.py)
 - Runtime dependencies: Python standard library only.
-- W1P2 independent audit: Issue #9 comment, covering provenance/data dictionary and local data availability; no file edits or data inspection.
+- W1P2 independent review by agy (`w1:p2`): completed against the working tree on 2026-10-24. Scope covered the profiler, its synthetic tests, and this document; real Kaggle CSVs were not inspected and no files were changed. The reviewer checked dictionary heading matching, local path confinement, `Id` exclusion, pairwise-complete correlations, and the descriptive-only boundary; reported no actionable defects. Full collaboration checkpoint is recorded in Issue #9.
 - Dataset tests use generated synthetic rows only. They do not embed Kaggle rows.
 - Empirical EDA and file hashes: blocked pending Owner-supplied files.
 

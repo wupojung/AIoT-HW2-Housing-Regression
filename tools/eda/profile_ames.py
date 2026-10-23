@@ -10,11 +10,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from pathlib import Path
-
 import csv
 import math
+import re
 import statistics
+from pathlib import Path
 
 
 EXPECTED = {"train.csv", "test.csv", "data_description.txt"}
@@ -85,15 +85,17 @@ def profile_csv(path: Path, output_dir: Path) -> dict:
         if target:
             _write_histogram(output_dir / f"{path.stem}_saleprice_distribution.svg", target)
 
-    result["numeric_summary"] = {c: _numeric_summary(v) for c, v in numeric_values.items()}
+    result["numeric_summary"] = {
+        c: _numeric_summary(v) for c, v in numeric_values.items() if c != IDENTIFIER
+    }
     result["numeric_anomaly_candidates_iqr"] = {
-        c: _iqr_candidates(v) for c, v in numeric_values.items()
+        c: _iqr_candidates(v) for c, v in numeric_values.items() if c != IDENTIFIER
     }
     result["numeric_correlation_with_target"] = {}
     if TARGET in columns:
         result["numeric_correlation_with_target"] = {
             c: _paired_correlation(values[c], values[TARGET])
-            for c in numeric_values if c != TARGET
+            for c in numeric_values if c not in {TARGET, IDENTIFIER}
         }
     return result
 
@@ -163,27 +165,70 @@ def _write_histogram(path: Path, values: list[float]) -> None:
     path.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" width="680" height="300"><text x="40" y="22">SalePrice distribution (descriptive)</text>{bars}<text x="40" y="280">{low:g}</text><text x="600" y="280">{high:g}</text></svg>\n')
 
 
-def run(data_dir: Path, output_dir: Path, access_date: str, terms_confirmed: bool) -> dict:
+def _safe_local_path(path: Path, local_root: Path, *, allow_root: bool = False) -> Path:
+    local_root = local_root.absolute()
+    if local_root.is_symlink():
+        raise ValueError("The ignored local/ directory must not be a symlink.")
+    resolved_root = local_root.resolve()
+    resolved = path.absolute().resolve()
+    if not resolved.is_relative_to(resolved_root) or (not allow_root and resolved == resolved_root):
+        raise ValueError(f"Path must resolve inside ignored local/: {path}")
+    return resolved
+
+
+def _dictionary_crosswalk(columns: set[str], description_path: Path) -> dict:
+    text = description_path.read_text(encoding="utf-8-sig", errors="replace")
+    described = set(re.findall(r"^\s*([A-Za-z][A-Za-z0-9_]*)\s*:", text, re.MULTILINE))
+    status = {}
+    for name in sorted(columns):
+        if name == IDENTIFIER:
+            status[name] = "identifier"
+        elif name == TARGET:
+            status[name] = "target"
+        elif name in described:
+            status[name] = "definition_present"
+        else:
+            status[name] = "not_found_in_dictionary"
+    return {
+        "field_status": status,
+        "dictionary_fields_not_in_train_schema": sorted(described - columns),
+    }
+
+
+def run(data_dir: Path, output_dir: Path, access_date: str, terms_confirmed: bool,
+        local_root: Path | None = None) -> dict:
     if not terms_confirmed:
         raise ValueError("Confirm Kaggle login and applicable competition terms before profiling.")
+    if local_root is None:
+        local_root = Path(__file__).resolve().parents[2] / "local"
+    if not local_root.exists() or not local_root.is_dir():
+        raise ValueError("The ignored local/ directory must exist before profiling.")
+    safe_data_dir = _safe_local_path(data_dir, local_root)
+    if safe_data_dir != (local_root / "datasets").resolve() or safe_data_dir.is_symlink():
+        raise ValueError("Input CSVs must be directly in ignored local/datasets/.")
+    safe_output_dir = _safe_local_path(output_dir, local_root)
+    if (safe_output_dir == safe_data_dir or safe_output_dir.is_relative_to(safe_data_dir)
+            or safe_data_dir.is_relative_to(safe_output_dir)):
+        raise ValueError("EDA outputs must stay outside local/datasets/.")
     missing = EXPECTED - {p.name for p in data_dir.iterdir() if p.is_file()}
     if missing:
         raise FileNotFoundError(f"Missing required Owner-provided files: {', '.join(sorted(missing))}")
-    output_dir.mkdir(parents=True, exist_ok=True)
+    safe_output_dir.mkdir(parents=True, exist_ok=True)
     # Report is an aggregate public-safe candidate; keep it local until reviewed.
-    profiles = [profile_csv(data_dir / name, output_dir) for name in ("train.csv", "test.csv")]
+    profiles = [profile_csv(safe_data_dir / name, safe_output_dir) for name in ("train.csv", "test.csv")]
     train_columns = set(profiles[0]["dtypes"])
     test_columns = set(profiles[1]["dtypes"])
-    with (data_dir / "train.csv").open(newline="", encoding="utf-8-sig") as stream:
+    with (safe_data_dir / "train.csv").open(newline="", encoding="utf-8-sig") as stream:
         train_ids = {row[IDENTIFIER] for row in csv.DictReader(stream) if row.get(IDENTIFIER)}
-    with (data_dir / "test.csv").open(newline="", encoding="utf-8-sig") as stream:
+    with (safe_data_dir / "test.csv").open(newline="", encoding="utf-8-sig") as stream:
         test_ids = {row[IDENTIFIER] for row in csv.DictReader(stream) if row.get(IDENTIFIER)}
     report = {
         "status": "descriptive_profile_generated_pending_review",
         "source_url": "https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data",
         "access_date": access_date,
         "terms_confirmed_by_owner": True,
-        "data_dictionary_sha256": sha256(data_dir / "data_description.txt"),
+        "data_dictionary_sha256": sha256(safe_data_dir / "data_description.txt"),
+        "data_dictionary_crosswalk": _dictionary_crosswalk(train_columns, safe_data_dir / "data_description.txt"),
         "schema_checks": {
             "training_target_present": TARGET in train_columns,
             "test_target_absent": TARGET not in test_columns,
@@ -195,7 +240,7 @@ def run(data_dir: Path, output_dir: Path, access_date: str, terms_confirmed: boo
         "files": profiles,
         "limitations": ["Descriptive only; no cleaning, feature selection, splitting, or model fitting."],
     }
-    (output_dir / "profile.json").write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    (safe_output_dir / "profile.json").write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     return report
 
 
