@@ -30,6 +30,10 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _is_missing_cell(val: str | None) -> bool:
+    return val is None or not str(val).strip() or str(val).strip() == "NA"
+
+
 def profile_csv(path: Path, output_dir: Path) -> dict:
     with path.open(newline="", encoding="utf-8-sig") as stream:
         reader = csv.reader(stream)
@@ -48,12 +52,12 @@ def profile_csv(path: Path, output_dir: Path) -> dict:
                 )
             rows.append(dict(zip(columns, row)))
     values = {c: [row.get(c, "") for row in rows] for c in columns}
-    missing = {c: sum(v is None or not v.strip() for v in vs) for c, vs in values.items()}
+    missing = {c: sum(_is_missing_cell(v) for v in vs) for c, vs in values.items()}
     predictors = [c for c in columns if c not in {TARGET, IDENTIFIER}]
     numeric_values = {}
     dtypes = {}
     for column, items in values.items():
-        present = [v for v in items if v is not None and v.strip()]
+        present = [v for v in items if not _is_missing_cell(v)]
         nums = []
         is_numeric = True
         for v in present:
@@ -90,7 +94,7 @@ def profile_csv(path: Path, output_dir: Path) -> dict:
             "missing": missing[IDENTIFIER] if IDENTIFIER in columns else None,
         },
         "categorical_cardinality": {
-            c: len({v for v in values[c] if v is not None and v.strip()})
+            c: len({v for v in values[c] if not _is_missing_cell(v)})
             for c in columns if c not in numeric_values
         },
         "missingness_patterns": _missingness_patterns(columns, rows),
@@ -150,7 +154,7 @@ def _skew(values: list[float]) -> float | None:
 
 
 def _paired_correlation(left_values: list[str], right_values: list[str]) -> float | None:
-    pairs = [(float(a), float(b)) for a, b in zip(left_values, right_values) if a and a.strip() and b and b.strip()]
+    pairs = [(float(a), float(b)) for a, b in zip(left_values, right_values) if not _is_missing_cell(a) and not _is_missing_cell(b)]
     left, right = [p[0] for p in pairs], [p[1] for p in pairs]
     if len(left) < 2 or len(set(left)) < 2 or len(set(right)) < 2:
         return None
@@ -171,7 +175,7 @@ def _iqr_candidates(values: list[float]) -> dict:
 def _missingness_patterns(columns: list[str], rows: list[dict]) -> list[dict]:
     patterns = {}
     for row in rows:
-        absent = tuple(c for c in columns if row.get(c) is None or not row[c].strip())
+        absent = tuple(c for c in columns if _is_missing_cell(row.get(c)))
         if absent:
             patterns[absent] = patterns.get(absent, 0) + 1
     return [{"missing_fields": list(fields), "rows": count}
@@ -195,7 +199,16 @@ def _safe_local_path(path: Path, local_root: Path, *, allow_root: bool = False) 
     if local_root.is_symlink():
         raise ValueError("The ignored local/ directory must not be a symlink.")
     resolved_root = local_root.resolve()
-    resolved = path.absolute().resolve()
+    if path.is_absolute():
+        resolved = path.resolve()
+    else:
+        resolved_from_parent = (local_root.parent / path).resolve()
+        if resolved_from_parent.is_relative_to(resolved_root):
+            resolved = resolved_from_parent
+        elif (local_root / path).resolve().is_relative_to(resolved_root):
+            resolved = (local_root / path).resolve()
+        else:
+            resolved = path.absolute().resolve()
     if not resolved.is_relative_to(resolved_root) or (not allow_root and resolved == resolved_root):
         raise ValueError(f"Path must resolve inside ignored local/: {path}")
     return resolved
@@ -220,12 +233,16 @@ def _dictionary_crosswalk(columns: set[str], description_path: Path) -> dict:
     }
 
 
-def run(data_dir: Path, output_dir: Path, access_date: str, terms_confirmed: bool,
+def run(data_dir: Path | None, output_dir: Path | None, access_date: str, terms_confirmed: bool,
         local_root: Path | None = None) -> dict:
     if not terms_confirmed:
         raise ValueError("Confirm Kaggle login and applicable competition terms before profiling.")
     if local_root is None:
         local_root = Path(__file__).resolve().parents[2] / "local"
+    if data_dir is None:
+        data_dir = local_root / "datasets"
+    if output_dir is None:
+        output_dir = local_root / "research" / "phase2-eda"
     if not local_root.exists() or not local_root.is_dir():
         raise ValueError("The ignored local/ directory must exist before profiling.")
     if data_dir.absolute().is_symlink():
@@ -237,7 +254,7 @@ def run(data_dir: Path, output_dir: Path, access_date: str, terms_confirmed: boo
     if (safe_output_dir == safe_data_dir or safe_output_dir.is_relative_to(safe_data_dir)
             or safe_data_dir.is_relative_to(safe_output_dir)):
         raise ValueError("EDA outputs must stay outside local/datasets/.")
-    missing = EXPECTED - {p.name for p in data_dir.iterdir() if p.is_file()}
+    missing = EXPECTED - {p.name for p in safe_data_dir.iterdir() if p.is_file()}
     if missing:
         raise FileNotFoundError(f"Missing required Owner-provided files: {', '.join(sorted(missing))}")
     if any((safe_data_dir / name).is_symlink() for name in EXPECTED):
@@ -255,7 +272,8 @@ def run(data_dir: Path, output_dir: Path, access_date: str, terms_confirmed: boo
         "status": "descriptive_profile_generated_pending_review",
         "source_url": "https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data",
         "access_date": access_date,
-        "terms_confirmed_by_owner": True,
+        "terms_confirmed_by_owner": bool(terms_confirmed),
+        "output_dir": str(safe_output_dir),
         "data_dictionary_sha256": sha256(safe_data_dir / "data_description.txt"),
         "data_dictionary_crosswalk": _dictionary_crosswalk(train_columns, safe_data_dir / "data_description.txt"),
         "schema_checks": {
@@ -275,13 +293,27 @@ def run(data_dir: Path, output_dir: Path, access_date: str, terms_confirmed: boo
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=Path("local/datasets"))
-    parser.add_argument("--output-dir", type=Path, default=Path("local/research/phase2-eda"))
+    parser.add_argument("--local-root", type=Path, default=None, help="Root ignored local/ directory.")
+    parser.add_argument("--data-dir", type=Path, default=None)
+    parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--access-date", required=True, help="Owner-recorded Kaggle access/download date (YYYY-MM-DD).")
     parser.add_argument("--terms-confirmed", action="store_true", help="Owner confirms login and current competition terms.")
     args = parser.parse_args()
-    result = run(args.data_dir, args.output_dir, args.access_date, args.terms_confirmed)
-    print(json.dumps({"status": result["status"], "output": str(args.output_dir / "profile.json")}, ensure_ascii=False))
+    data_dir = args.data_dir
+    output_dir = args.output_dir
+    if args.local_root:
+        if data_dir is None:
+            data_dir = args.local_root / "datasets"
+        if output_dir is None:
+            output_dir = args.local_root / "research" / "phase2-eda"
+    elif data_dir is None:
+        data_dir = Path("local/datasets")
+    if output_dir is None:
+        output_dir = Path("local/research/phase2-eda")
+
+    result = run(data_dir, output_dir, args.access_date, args.terms_confirmed, local_root=args.local_root)
+    out_dir = Path(result["output_dir"]) if "output_dir" in result else output_dir
+    print(json.dumps({"status": result["status"], "output": str(out_dir / "profile.json")}, ensure_ascii=False))
 
 
 if __name__ == "__main__":

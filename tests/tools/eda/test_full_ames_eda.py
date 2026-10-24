@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 import zlib
@@ -187,6 +188,8 @@ class FullAmesEdaTests(unittest.TestCase):
             self.assertTrue((output / "field_manifest.csv").exists())
             self.assertTrue((output / "figures_manifest.json").exists())
             self.assertTrue((output / "figures_manifest.csv").exists())
+            figures = __import__("json").loads((output / "figures_manifest.json").read_text())
+            self.assertFalse(any(item["figure_id"] == "FIG-NUM-Id" for item in figures))
             self.assertTrue((output / "correlation_matrix.csv").exists())
             self.assertTrue((output / "report.md").exists())
 
@@ -674,6 +677,156 @@ class FullAmesEdaTests(unittest.TestCase):
                     mock_ax.text.assert_called_once()
                     self.assertIn("No numeric predictors", mock_ax.text.call_args[0][2])
                     self.assertTrue(p_png.exists())
+
+    def test_recognizes_literal_na_string_as_missing_in_full_eda(self):
+        """Verify full EDA treats literal 'NA' as missing in inventory and report."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            (datasets / "train.csv").write_text(
+                "Id,MSSubClass,LotFrontage,Alley,SalePrice\n"
+                "1,20,60,NA,100000\n"
+                "2,20,NA,Grvl,200000\n"
+            )
+            (datasets / "test.csv").write_text(
+                "Id,MSSubClass,LotFrontage,Alley\n"
+                "3,20,70,NA\n"
+            )
+            (datasets / "sample_submission.csv").write_text(
+                "Id,SalePrice\n"
+                "3,150000\n"
+            )
+            (datasets / "data_description.txt").write_text(
+                "MSSubClass: Dwelling type\n"
+                "LotFrontage: Linear feet\n"
+                "Alley: Alley access\n"
+                "       NA\tNo alley access\n"
+            )
+
+            res = run(datasets, output, "2026-10-24", True, local_root=local)
+            with (output / "field_manifest.json").open() as f:
+                manifest = json.load(f)
+            lf = next(m for m in manifest if m["name"] == "LotFrontage")
+            self.assertEqual(lf["train_missing_count"], 1)
+            self.assertEqual(lf["test_missing_count"], 0)
+            self.assertTrue(lf["dtype"].startswith("numeric"))
+
+            alley = next(m for m in manifest if m["name"] == "Alley")
+            self.assertEqual(alley["train_missing_count"], 1)
+            self.assertEqual(alley["test_missing_count"], 1)
+            self.assertTrue(alley["is_structural_missing_candidate"])
+
+            report_text = (output / "report.md").read_text(encoding="utf-8")
+            self.assertIn("| `LotFrontage` | 1 | 50.00% | 0 | 0.00% | 真實未記錄缺漏 (需插補) |", report_text)
+            self.assertIn("| `Alley` | 1 | 50.00% | 1 | 100.00% | 結構性缺失 (特徵不存在) |", report_text)
+            self.assertIn("訓練集 literal `NA` 2 格、空白 0 格；測試集 literal `NA` 1 格、空白 0 格", report_text)
+
+    def test_configurable_local_root_option_in_full_eda(self):
+        """Verify full EDA supports configurable local_root without explicit data/output dirs."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "custom_local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+
+            (datasets / "train.csv").write_text("Id,MSSubClass,SalePrice\n1,20,100000\n")
+            (datasets / "test.csv").write_text("Id,MSSubClass\n2,20\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n2,100000\n")
+            (datasets / "data_description.txt").write_text("MSSubClass: Dwelling type\n")
+
+            res = run(None, None, "2026-10-24", True, local_root=local)
+            self.assertTrue((local / "research" / "phase2-eda" / "report.md").exists())
+            self.assertTrue((local / "research" / "phase2-eda" / "profile.json").exists())
+            self.assertEqual(res["status"], "descriptive_profile_generated_pending_review")
+
+    def test_figures_exclude_id_and_target_from_predictors(self):
+        """Verify FIG-NUM-Id is excluded from figures_manifest and Id does not appear as predictor chart."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            (datasets / "train.csv").write_text("Id,GrLivArea,SalePrice\n1,1500,200000\n2,1800,250000\n")
+            (datasets / "test.csv").write_text("Id,GrLivArea\n3,1600\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n3,220000\n")
+            (datasets / "data_description.txt").write_text("GrLivArea: Above grade area\n")
+
+            run(datasets, output, "2026-10-24", True, local_root=local)
+
+            manifest_path = output / "figures_manifest.json"
+            self.assertTrue(manifest_path.exists())
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+            fig_ids = [m["figure_id"] for m in manifest]
+            self.assertNotIn("FIG-NUM-Id", fig_ids)
+            self.assertNotIn("FIG-NUM-SalePrice", fig_ids)
+            self.assertIn("FIG-NUM-GrLivArea", fig_ids)
+            self.assertIn("FIG-03", fig_ids)
+
+            self.assertFalse((output / "figures" / "fig04_num_Id.png").exists())
+            self.assertFalse((output / "figures" / "fig04_num_Id.svg").exists())
+            self.assertTrue((output / "figures" / "fig04_num_GrLivArea.png").exists())
+            self.assertTrue((output / "figures" / "fig04_num_GrLivArea.svg").exists())
+
+    def test_figure_manifest_command_uses_configurable_local_root_env_var(self):
+        """Verify figure manifest commands use ${REGSCOPE_LOCAL_ROOT:-local} without machine absolute paths."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            (datasets / "train.csv").write_text("Id,GrLivArea,SalePrice\n1,1500,200000\n")
+            (datasets / "test.csv").write_text("Id,GrLivArea\n2,1600\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n2,200000\n")
+            (datasets / "data_description.txt").write_text("GrLivArea: Area\n")
+
+            run(datasets, output, "2026-10-24", True, local_root=local)
+
+            manifest = json.loads((output / "figures_manifest.json").read_text(encoding="utf-8"))
+            for entry in manifest:
+                cmd = entry.get("command", "")
+                self.assertIn('--local-root "${REGSCOPE_LOCAL_ROOT:-local}"', cmd)
+                self.assertNotIn(str(temp), cmd)
+                self.assertNotIn("/mnt/d", cmd)
+
+    def test_pure_python_svg_fallbacks_are_structured_and_readable(self):
+        """Verify fallback SVGs contain structured vector elements (rect, text, line) with labels."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            (datasets / "train.csv").write_text(
+                "Id,GrLivArea,Neighborhood,SalePrice\n"
+                "1,1500,CollgCr,200000\n"
+                "2,1800,NA,250000\n"
+                "3,2100,CollgCr,300000\n"
+            )
+            (datasets / "test.csv").write_text("Id,GrLivArea,Neighborhood\n4,1600,CollgCr\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n4,200000\n")
+            (datasets / "data_description.txt").write_text("GrLivArea: Area\nNeighborhood: Location\n")
+
+            run(datasets, output, "2026-10-24", True, local_root=local)
+
+            fig01_svg = (output / "figures" / "fig01_dataset_overview.svg").read_text(encoding="utf-8")
+            self.assertIn("<rect", fig01_svg)
+            self.assertIn("Train (train.csv)", fig01_svg)
+            self.assertIn("<line", fig01_svg)
+
+            fig03_svg = (output / "figures" / "fig03_saleprice_distribution.svg").read_text(encoding="utf-8")
+            self.assertIn("SalePrice Distribution", fig03_svg)
+            self.assertIn("Summary Statistics", fig03_svg)
+            self.assertIn("Mean:", fig03_svg)
+            self.assertIn("Median:", fig03_svg)
+
+            fig04_svg = (output / "figures" / "fig04_num_GrLivArea.svg").read_text(encoding="utf-8")
+            self.assertIn("Distribution of Numeric Feature: GrLivArea", fig04_svg)
+            self.assertIn("Mean:", fig04_svg)
 
 
 if __name__ == "__main__":
