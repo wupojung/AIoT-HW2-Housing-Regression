@@ -61,14 +61,16 @@ class RealDataPreparationValidationTests(unittest.TestCase):
         val_res = pipeline.transform(val_rows, split_name="val")
         test_res = pipeline.transform(self.test_raw, split_name="test")
 
-        # Check encoded feature counts match across all splits
-        self.assertEqual(train_res.n_features, 246)
-        self.assertEqual(val_res.n_features, 246)
-        self.assertEqual(test_res.n_features, 246)
+        # Check encoded feature counts match across all splits (248 features)
+        self.assertEqual(train_res.n_features, 248)
+        self.assertEqual(val_res.n_features, 248)
+        self.assertEqual(test_res.n_features, 248)
 
         # Check feature names are identical and ordered
         self.assertEqual(train_res.feature_names, val_res.feature_names)
         self.assertEqual(train_res.feature_names, test_res.feature_names)
+        self.assertIn("MasVnrType_is_missing", train_res.feature_names)
+        self.assertIn("MasVnrArea_is_missing", train_res.feature_names)
 
         # Verify zero missing values in all matrices
         for name, res in [("train", train_res), ("validation", val_res), ("test", test_res)]:

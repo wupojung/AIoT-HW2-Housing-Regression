@@ -52,7 +52,7 @@ class DataPreparationDocumentTests(unittest.TestCase):
         self.assertIn("1,459", self.content)
         self.assertIn("42", self.content)
         self.assertIn("79", self.content)
-        self.assertIn("246", self.content)
+        self.assertIn("248", self.content)
         self.assertIn("61", self.content)
 
         # Hashes

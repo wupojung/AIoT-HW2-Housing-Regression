@@ -9,6 +9,7 @@ from typing import Any, Mapping, Sequence
 
 from .constants import (
     ALL_PREDICTOR_COLUMNS,
+    GENUINE_MISSING_INDICATORS,
     ID_COLUMN,
     NOMINAL_COLUMNS,
     NUMERIC_COLUMNS,
@@ -214,6 +215,16 @@ class AmesDataPreparationPipeline:
                     "imputation_strategy": "deterministic_physical_presence",
                 })
 
+        # (b2) Explicit missingness indicators for genuine non-structural missing fields
+        for ind in GENUINE_MISSING_INDICATORS:
+            self.feature_names.append(ind)
+            self.feature_manifest.append({
+                "feature_name": ind,
+                "source_column": ind.replace("_is_missing", ""),
+                "encoding_type": "binary_missingness_indicator",
+                "imputation_strategy": "explicit_genuine_missing_flag",
+            })
+
         # (c) Ordinal features (hierarchically mapped)
         for col in ORDINAL_COLUMNS:
             self.feature_names.append(col)
@@ -251,6 +262,7 @@ class AmesDataPreparationPipeline:
             "encoded_features_count": len(self.feature_names),
             "numeric_count": len(NUMERIC_COLUMNS),
             "indicators_count": len(STRUCTURAL_INDICATORS) if self.add_structural_indicators else 0,
+            "missing_indicators_count": len(GENUINE_MISSING_INDICATORS),
             "ordinal_count": len(ORDINAL_COLUMNS),
             "nominal_onehot_count": sum(len(lvl) for lvl in self.nominal_levels.values()),
         }
@@ -352,6 +364,10 @@ class AmesDataPreparationPipeline:
                 row_feats["HasFence"] = has_fence
                 row_feats["HasAlley"] = has_alley
                 row_feats["HasMiscFeature"] = has_misc
+
+            # 4b. Explicit missingness indicators for genuine non-structural missing fields
+            row_feats["MasVnrType_is_missing"] = 1.0 if self._is_missing(row.get("MasVnrType")) else 0.0
+            row_feats["MasVnrArea_is_missing"] = 1.0 if self._is_missing(row.get("MasVnrArea")) else 0.0
 
             # 5. Ordinal features
             for col in ORDINAL_COLUMNS:

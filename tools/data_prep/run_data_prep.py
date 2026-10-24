@@ -178,8 +178,9 @@ def run_pipeline(
             "encoded_features": train_res.n_features,
             "numeric_features": len(NUMERIC_COLUMNS),
             "structural_indicators": 7,
+            "missingness_indicators": 2,
             "ordinal_features": len(ORDINAL_COLUMNS),
-            "onehot_nominal_features": train_res.n_features - (len(NUMERIC_COLUMNS) + 7 + len(ORDINAL_COLUMNS)),
+            "onehot_nominal_features": train_res.n_features - (len(NUMERIC_COLUMNS) + 7 + 2 + len(ORDINAL_COLUMNS)),
         },
         "iqr_outlier_candidates": {
             "lower_fence": lower_fence,
@@ -252,12 +253,13 @@ def run_pipeline(
         f"- **Validation unseen levels:** {val_res.unseen_categories}",
         f"- **Competition test unseen levels:** {test_res.unseen_categories}",
         "",
-        "## Structural Absence Handling",
+        "## Structural and Missingness Handling",
         "",
         "15 structural absence fields were handled separately from genuine missingness:",
         "- 14 categorical features mapped to sentinel `'None'` or ordinal score `0`.",
         "- `GarageYrBlt` mapped to sentinel `0.0` with explicit `HasGarage` binary structural presence indicator.",
-        "- Non-structural missing values imputed strictly using training partition medians and modes.",
+        "- Genuine missingness in `MasVnrType` and `MasVnrArea` explicitly tracked with `MasVnrType_is_missing` and `MasVnrArea_is_missing` binary indicators to distinguish unrecorded values from genuine 'None'/0 absence.",
+        "- Non-structural missing values imputed strictly using training partition medians, modes, and ordinal mapped score medians.",
     ]
     with open(report_md_path, "w", encoding="utf-8") as f:
         f.write("\n".join(report_lines) + "\n")

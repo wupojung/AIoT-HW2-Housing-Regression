@@ -144,6 +144,13 @@ STRUCTURAL_INDICATORS: list[str] = [
     "HasMiscFeature",
 ]
 
+# Explicit missingness indicators for genuine non-structural missing fields
+# whose training mode/median coincides with physical absence ('None'/0.0)
+GENUINE_MISSING_INDICATORS: list[str] = [
+    "MasVnrType_is_missing",
+    "MasVnrArea_is_missing",
+]
+
 ALL_PREDICTOR_COLUMNS: list[str] = sorted(
     list(set(ORDINAL_COLUMNS + NOMINAL_COLUMNS + NUMERIC_COLUMNS))
 )

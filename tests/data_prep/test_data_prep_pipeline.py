@@ -164,6 +164,65 @@ class DataPreparationPipelineTests(unittest.TestCase):
         # GarageYrBlt should receive documented sentinel (0.0)
         self.assertEqual(f["GarageYrBlt"], 0.0)
 
+    def test_masvnr_missingness_distinguishable_from_genuine_none_and_zero(self):
+        """Verify genuine missing MasVnrType/Area are explicitly indicated and distinguishable from None/0."""
+        # Row 1: Property with verified genuine "No Veneer" (MasVnrType='None', MasVnrArea='0')
+        row_genuine_none = {
+            "Id": "1",
+            "MSSubClass": "20",
+            "MasVnrType": "None",
+            "MasVnrArea": "0",
+            "Neighborhood": "CollgCr",
+        }
+        # Row 2: Property with unrecorded/missing veneer (MasVnrType='NA', MasVnrArea='NA')
+        row_missing_veneer = {
+            "Id": "2",
+            "MSSubClass": "20",
+            "MasVnrType": "NA",
+            "MasVnrArea": "NA",
+            "Neighborhood": "CollgCr",
+        }
+        # Row 3: Property with actual brick veneer (MasVnrType='BrkFace', MasVnrArea='200')
+        row_brick_veneer = {
+            "Id": "3",
+            "MSSubClass": "20",
+            "MasVnrType": "BrkFace",
+            "MasVnrArea": "200",
+            "Neighborhood": "CollgCr",
+        }
+
+        pipeline = AmesDataPreparationPipeline()
+        pipeline.fit([row_genuine_none, row_brick_veneer])
+
+        # Fitted mode for MasVnrType is 'BrkFace' or 'None' (both present)
+        # Transform all three rows
+        result = pipeline.transform([row_genuine_none, row_missing_veneer, row_brick_veneer], split_name="test")
+
+        f_none = result.features[0]
+        f_missing = result.features[1]
+        f_brick = result.features[2]
+
+        # Row 1 (Genuine None/0): missingness indicators must be 0.0
+        self.assertEqual(f_none["MasVnrType_is_missing"], 0.0)
+        self.assertEqual(f_none["MasVnrArea_is_missing"], 0.0)
+        self.assertEqual(f_none["MasVnrArea"], 0.0)
+
+        # Row 2 (Unrecorded/Missing): missingness indicators must be 1.0!
+        self.assertEqual(f_missing["MasVnrType_is_missing"], 1.0)
+        self.assertEqual(f_missing["MasVnrArea_is_missing"], 1.0)
+
+        # Crucial: Row 1 and Row 2 MUST NOT be identical in feature space!
+        self.assertNotEqual(
+            (f_none["MasVnrType_is_missing"], f_none["MasVnrArea_is_missing"]),
+            (f_missing["MasVnrType_is_missing"], f_missing["MasVnrArea_is_missing"]),
+            "Genuine None/0 and unrecorded missing MasVnr must be distinguishable via explicit indicators"
+        )
+
+        # Row 3 (Actual Veneer): missingness indicators must be 0.0, area is 200.0
+        self.assertEqual(f_brick["MasVnrType_is_missing"], 0.0)
+        self.assertEqual(f_brick["MasVnrArea_is_missing"], 0.0)
+        self.assertEqual(f_brick["MasVnrArea"], 200.0)
+
 
 if __name__ == "__main__":
     unittest.main()
