@@ -1,10 +1,10 @@
 # CRISP-DM Phase 2 — Data Understanding
 
-**Project:** NCHU AIoT 2026 HW2 Housing Regression  
-**Parent Epic:** [#4 — HW2 Regression Research](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/4)  
-**Work item:** [#9 — Ames Housing — Data Understanding](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/9)  
-**Phase status:** COMPLETED (Empirical descriptive profile completed — Kaggle account terms evidence limits recorded as OPEN)  
-**Checkpoint date:** 2026-10-24  
+**Project:** NCHU AIoT 2026 HW2 Housing Regression
+**Parent Epic:** [#4 — HW2 Regression Research](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/4)
+**Work item:** [#9 — Ames Housing — Data Understanding](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/9)
+**Phase status:** Phase 2 empirical descriptive EDA completed; independent QA and PM review pending
+**Checkpoint date:** 2026-10-24
 
 ---
 
@@ -16,8 +16,8 @@
 | **Verified** | Continuous target `SalePrice` present in `train.csv` (1,460 rows × 81 columns); target absent from `test.csv` (1,459 rows × 80 columns), preserving competition holdout isolation. Explanatory predictor count: exactly 79 (excluding `Id` and `SalePrice`), satisfying course requirement (>= 14). |
 | **Verified** | `Id` uniqueness verified in train and test (0 duplicates in train, 0 in test); train/test `Id` overlap is exactly 0. `sample_submission.csv` matches test IDs and ordering. |
 | **Verified** | Full field-level data dictionary crosswalk completed against `data_description.txt` (77 exact matches, 2 documented aliases: `BedroomAbvGr` -> `Bedroom`, `KitchenAbvGr` -> `Kitchen`). |
-| **Verified** | Full empirical profiling executed via reproducible pipelines `tools/eda/profile_ames.py` and `tools/eda/full_ames_eda.py` with outputs preserved in ignored `local/research/phase2-eda/`. |
-| **Open** | Kaggle account holder identity, direct download access log, and acceptance of current competition terms. Local file availability is proven; terms acceptance is recorded as OPEN pending Owner evidence. |
+| **Verified** | Full empirical profiling executed via reproducible pipelines `tools/eda/profile_ames.py` and `tools/eda/full_ames_eda.py` with outputs preserved in ignored `local/research/phase2-eda-mpl/`. |
+| **Verified** | Owner confirmed formal acquisition of the dataset and acceptance of its applicable competition terms. External account identifiers and access logs are not retained in this repository. |
 | **Boundary** | Phase 2 strictly descriptive. No data imputation, cleaning, feature engineering, train/test splitting, model training, or performance evaluation. |
 
 ---
@@ -26,7 +26,7 @@
 
 - **Official source:** Kaggle, [House Prices — Advanced Regression Techniques, Data](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data); [competition overview](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/overview); [rules](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/rules).
 - **Access checked:** 2026-10-24. Local files provided in ignored `local/datasets/`.
-- **License / Terms evidence limits:** Downloaded files are present locally and verified by SHA-256 hashes. Kaggle competition access rules require account holder login and terms agreement; because direct account access logs are external to this repository, current competition terms acceptance remains documented as **OPEN**.
+- **License / Terms evidence limits:** Downloaded files are present locally and verified by SHA-256 hashes. Kaggle competition access rules require account holder login and terms agreement; because direct account access logs are external to this repository, the Owner has confirmed formal acquisition and acceptance of the applicable terms. No account credentials or access logs are stored in this repository.
 - **Exact File Manifest and SHA-256 Hashes:**
   - `train.csv`: SHA-256 `1e18addf81e5e4d347cc17ee6075bbe4a42b7fa26b9e5b063e8f692a5f929d41` (1,460 rows × 81 columns, 460,676 bytes)
   - `test.csv`: SHA-256 `8fdd3d829d4d986b58f845c9553b225e67dd8383624d90fb6ca1d4bed5798c1e` (1,459 rows × 80 columns, 451,405 bytes)
@@ -52,6 +52,10 @@ The Kaggle `data_description.txt` defines 79 explanatory feature headings. All 7
 | **Nominal Categorical (Unordered Levels)** | `MSZoning`, `Street`, `Alley`, `LotShape`, `LandContour`, `Utilities`, `LotConfig`, `LandSlope`, `Neighborhood`, `Condition1`, `Condition2`, `BldgType`, `HouseStyle`, `RoofStyle`, `RoofMatl`, `Exterior1st`, `Exterior2nd`, `MasVnrType`, `Foundation`, `Heating`, `CentralAir`, `Electrical`, `GarageType`, `PavedDrive`, `MiscFeature`, `SaleType`, `SaleCondition` | Unordered discrete attributes. Candidate for one-hot encoding or target encoding in Phase 3. |
 
 ### 3.2 Structural missingness vs unrecorded missingness
+
+![缺失值總覽](assets/phase2/fig02_missingness_overview.png)
+
+*Figure 4. Field-level missingness across train and test; summary counts only. Kaggle `NA` sentinels are interpreted with dictionary semantics. SVG version: [`fig02_missingness_overview.svg`](assets/phase2/fig02_missingness_overview.svg).*
 
 In the Kaggle Ames package, missing cells are encoded as literal `"NA"`. The dictionary explicitly documents that for 15 features, `"NA"` indicates **structural absence** (the physical facility does not exist on the property):
 
@@ -96,7 +100,15 @@ In the Kaggle Ames package, missing cells are encoded as literal `"NA"`. The dic
 
 ## 4. Empirical descriptive profile & statistical findings
 
+![Ames 資料集總覽](assets/phase2/fig01_dataset_overview.png)
+
+*Figure 1. Train/test shape and field-role summary; aggregate counts only. SVG version: [`fig01_dataset_overview.svg`](assets/phase2/fig01_dataset_overview.svg).*
+
 ### 4.1 Target variable `SalePrice` distribution (N = 1,460)
+
+![SalePrice 分布](assets/phase2/fig03_saleprice_distribution.png)
+
+*Figure 2. Target histogram and boxplot; aggregate distribution, no source rows. SVG version: [`fig03_saleprice_distribution.svg`](assets/phase2/fig03_saleprice_distribution.svg).*
 
 - **Sample count:** 1,460
 - **Mean:** $180,921.20
@@ -111,6 +123,10 @@ In the Kaggle Ames package, missing cells are encoded as literal `"NA"`. The dic
 - **Distribution observation:** `SalePrice` exhibits notable right-skewness where the mean ($180,921) exceeds the median ($163,000) by over $17,000. High-value luxury homes extend the right tail to $755,000.
 
 ### 4.2 Top numeric correlations with `SalePrice`
+
+![數值特徵相關矩陣](assets/phase2/fig06_numeric_correlation_heatmap.png)
+
+*Figure 3. Pairwise-complete Pearson correlations for numeric fields; exploratory association only. SVG version: [`fig06_numeric_correlation_heatmap.svg`](assets/phase2/fig06_numeric_correlation_heatmap.svg).*
 
 Calculated using pairwise-complete observations (Pearson $r$):
 
@@ -147,8 +163,8 @@ Calculated using pairwise-complete observations (Pearson $r$):
 
 ## 5. Quality risks & research limitations
 
-1. **Target skewness and non-normality:** `SalePrice` skewness of 1.881 indicates that unregularized linear models fitted directly on raw prices will be heavily influenced by high-value outliers and violate homoscedasticity assumptions. Evaluating a logarithmic transformation (`log1p(SalePrice)`) in Phase 3 is strongly indicated.
-2. **Predictor multicollinearity:** Pairs such as `GarageCars`/`GarageArea` ($r = 0.882$) and `TotalBsmtSF`/`1stFlrSF` ($r = 0.820$) introduce severe variance inflation for standard ordinary least squares (OLS) regression. Regularization (Ridge, Lasso, ElasticNet) or selective feature pruning is necessary in Phase 4.
+1. **Target skewness and non-normality:** `SalePrice` skewness of 1.881 indicates that the right tail and 61 IQR candidates merit examination in Phase 3. Whether a target transformation improves the selected evaluation metrics remains an empirical question.
+2. **Predictor multicollinearity:** Pairs such as `GarageCars`/`GarageArea` ($r = 0.882$) and `TotalBsmtSF`/`1stFlrSF` ($r = 0.820$) may create unstable coefficient estimates in some model families. Phase 3 should compare suitable approaches without treating correlation as a feature-selection decision.
 3. **Imputation risk for structural absence:** Imputing missing values with global means or medians would mischaracterize properties lacking garages or basements. Structural absence must be explicitly encoded as dedicated categorical levels (`"None"`) or zero square footage.
 4. **Test-set exclusive missingness:** The test set contains isolated missing entries in features that are complete in the training set (`TotalBsmtSF`, `GarageCars`, `MSZoning`, `Utilities`, etc.). Preprocessing pipelines must be robust against novel missingness in future inference.
 5. **Correlation vs causality limit:** Pearson correlation measures linear association only and does not establish causal housing price drivers or optimal feature subsets.
@@ -168,14 +184,15 @@ Calculated using pairwise-complete observations (Pearson $r$):
 ## 7. Reproducibility & verification record
 
 - **Reproducible entrypoints:**
+  Set `REGSCOPE_LOCAL_ROOT` to the primary checkout’s ignored `local/` directory before running; do not commit an absolute machine-specific path. For example: `export REGSCOPE_LOCAL_ROOT=/path/to/repository/local`.
   - Fast summary profiler: [`tools/eda/profile_ames.py`](../../tools/eda/profile_ames.py)
     ```bash
-    python3 tools/eda/profile_ames.py --access-date 2026-10-24 --terms-confirmed
+    python3 tools/eda/profile_ames.py --local-root "$REGSCOPE_LOCAL_ROOT" --access-date 2026-10-24 --terms-confirmed
     ```
     Supports optional `--local-root` to target an external ignored `local/` data store.
   - Full comprehensive EDA pipeline: [`tools/eda/full_ames_eda.py`](../../tools/eda/full_ames_eda.py)
     ```bash
-    python3 tools/eda/full_ames_eda.py --access-date 2026-10-24 --terms-confirmed
+    python3 tools/eda/full_ames_eda.py --local-root "$REGSCOPE_LOCAL_ROOT" --output-dir "$REGSCOPE_LOCAL_ROOT/research/phase2-eda-mpl" --access-date 2026-10-24 --terms-confirmed
     ```
     Supports optional `--local-root` to target an external ignored `local/` data store and output directory.
 - **Automated test suites executed:**
@@ -183,7 +200,7 @@ Calculated using pairwise-complete observations (Pearson $r$):
   - Security scanning suite: `python3 -m unittest discover -s tests/security -v` (26 tests passed)
   - Tracked repository scan: `python3 tools/security_scan.py --tracked` (passed, no findings)
 - **Private research artifacts:**
-  - All detailed machine-readable manifests (`field_manifest.json`, `figures_manifest.json`, `profile.json`, `correlation_matrix.csv`, Traditional Chinese research report `report.md`, and 89 visual figure assets) are preserved under ignored `local/research/phase2-eda/`.
+  - The reproducible run produced 87 figure entries (PNG/SVG pairs) and machine-readable manifests, profile, correlation matrix, and detailed report under ignored `local/research/phase2-eda-mpl/`. Four aggregate chart pairs are committed here; raw CSV files and row-level artifacts remain ignored under `local/`.
 
 ---
 
