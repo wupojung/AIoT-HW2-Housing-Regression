@@ -518,6 +518,43 @@ class FullAmesEdaTests(unittest.TestCase):
             self.assertIn("訓練集重複: 1 筆", report_text)
             self.assertIn("測試集重複: 1 筆", report_text)
 
+    def test_single_main_entrypoint_guard(self):
+        """Regression test ensuring full_ames_eda.py contains exactly one __main__ guard."""
+        import tools.eda.full_ames_eda
+        script_path = Path(tools.eda.full_ames_eda.__file__).resolve()
+        content = script_path.read_text(encoding="utf-8")
+        guard_matches = content.count('if __name__ == "__main__":')
+        self.assertEqual(guard_matches, 1, "Expected exactly one '__main__' entrypoint guard in full_ames_eda.py")
+
+    def test_main_cli_invokes_run_exactly_once(self):
+        """Verify CLI main entrypoint invokes run exactly once."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            (datasets / "train.csv").write_text("Id,MSSubClass,SalePrice\n1,20,100000\n")
+            (datasets / "test.csv").write_text("Id,MSSubClass\n2,20\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n2,100000\n")
+            (datasets / "data_description.txt").write_text("MSSubClass: Type\n")
+
+            from tools.eda.full_ames_eda import main
+            test_args = [
+                "full_ames_eda.py",
+                "--data-dir", str(datasets),
+                "--output-dir", str(output),
+                "--access-date", "2026-10-24",
+                "--terms-confirmed",
+            ]
+            with patch("sys.argv", test_args), patch("tools.eda.full_ames_eda.run") as mock_run, patch("builtins.print"):
+                mock_run.return_value = {
+                    "status": "ok",
+                    "figure_count_total": 0,
+                }
+                main()
+                self.assertEqual(mock_run.call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
