@@ -32,9 +32,21 @@ def sha256(path: Path) -> str:
 
 def profile_csv(path: Path, output_dir: Path) -> dict:
     with path.open(newline="", encoding="utf-8-sig") as stream:
-        reader = csv.DictReader(stream)
-        columns = list(reader.fieldnames or [])
-        rows = list(reader)
+        reader = csv.reader(stream)
+        try:
+            header = next(reader)
+        except StopIteration:
+            header = []
+        columns = [c.strip() for c in header]
+        expected_len = len(columns)
+        rows = []
+        for line_no, row in enumerate(reader, start=2):
+            if len(row) != expected_len:
+                raise ValueError(
+                    f"Malformed CSV in '{path.name}' at line {line_no}: "
+                    f"expected {expected_len} fields, got {len(row)}"
+                )
+            rows.append(dict(zip(columns, row)))
     values = {c: [row.get(c, "") for row in rows] for c in columns}
     missing = {c: sum(v is None or not v.strip() for v in vs) for c, vs in values.items()}
     predictors = [c for c in columns if c not in {TARGET, IDENTIFIER}]
@@ -42,11 +54,23 @@ def profile_csv(path: Path, output_dir: Path) -> dict:
     dtypes = {}
     for column, items in values.items():
         present = [v for v in items if v is not None and v.strip()]
-        try:
-            nums = [float(v) for v in present]
+        nums = []
+        is_numeric = True
+        for v in present:
+            try:
+                fval = float(v)
+                if not math.isfinite(fval):
+                    raise ValueError(f"Non-finite numeric value '{v}' detected in column '{column}'")
+                nums.append(fval)
+            except ValueError as exc:
+                if "Non-finite" in str(exc):
+                    raise
+                is_numeric = False
+                break
+        if is_numeric:
             numeric_values[column] = nums
             dtypes[column] = "numeric (inferred from non-empty values)"
-        except ValueError:
+        else:
             dtypes[column] = "categorical/text (inferred from non-empty values)"
     result = {
         "file": path.name,
@@ -62,6 +86,7 @@ def profile_csv(path: Path, output_dir: Path) -> dict:
         "id": {
             "present": IDENTIFIER in columns,
             "unique": len(set(values[IDENTIFIER])) == len(rows) if IDENTIFIER in columns else None,
+            "duplicate_count": (len(values[IDENTIFIER]) - len(set(values[IDENTIFIER]))) if IDENTIFIER in columns else None,
             "missing": missing[IDENTIFIER] if IDENTIFIER in columns else None,
         },
         "categorical_cardinality": {
@@ -244,7 +269,7 @@ def run(data_dir: Path, output_dir: Path, access_date: str, terms_confirmed: boo
         "files": profiles,
         "limitations": ["Descriptive only; no cleaning, feature selection, splitting, or model fitting."],
     }
-    (safe_output_dir / "profile.json").write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    (safe_output_dir / "profile.json").write_text(json.dumps(report, indent=2, ensure_ascii=False, allow_nan=False) + "\n")
     return report
 
 
