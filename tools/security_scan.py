@@ -64,16 +64,43 @@ def _run_git(
     return [line for line in result.stdout.splitlines() if line]
 
 
+def _run_git_paths(
+    *args: str,
+    cwd: Path = ROOT,
+    timeout: float = DEFAULT_GIT_TIMEOUT,
+) -> list[str]:
+    try:
+        result = subprocess.run(
+            ["git", *args, "-z"],
+            cwd=cwd,
+            check=False,
+            capture_output=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise GitScanError(f"git {' '.join(args)} -z timed out after {timeout}s") from exc
+    except OSError as exc:
+        raise GitScanError(f"git {' '.join(args)} -z failed to execute: {exc}") from exc
+
+    if result.returncode != 0:
+        err = result.stderr.decode("utf-8", errors="replace").strip()
+        raise GitScanError(
+            f"git {' '.join(args)} -z failed with exit code {result.returncode}: {err}"
+        )
+    raw_parts = result.stdout.split(b"\0")
+    return [os.fsdecode(part) for part in raw_parts if part]
+
+
 def staged_paths(cwd: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> list[str]:
-    return _run_git("diff", "--cached", "--name-only", "--diff-filter=ACMR", cwd=cwd, timeout=timeout)
+    return _run_git_paths("diff", "--cached", "--name-only", "--diff-filter=ACMR", cwd=cwd, timeout=timeout)
 
 
 def tracked_paths(cwd: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> list[str]:
-    return _run_git("ls-files", cwd=cwd, timeout=timeout)
+    return _run_git_paths("ls-files", cwd=cwd, timeout=timeout)
 
 
 def public_untracked_paths(cwd: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> list[str]:
-    return _run_git("ls-files", "--others", "--exclude-standard", cwd=cwd, timeout=timeout)
+    return _run_git_paths("ls-files", "--others", "--exclude-standard", cwd=cwd, timeout=timeout)
 
 
 def is_forbidden_path(path: str) -> bool:
@@ -103,19 +130,15 @@ def batch_staged_blobs(
     paths: Iterable[str],
     cwd: Path = ROOT,
     timeout: float = DEFAULT_GIT_TIMEOUT,
-) -> dict[str, bytes | None]:
+) -> dict[str, bytes]:
     path_list = list(dict.fromkeys(paths))
     if not path_list:
         return {}
 
-    for path in path_list:
-        if "\n" in path or "\r" in path:
-            raise GitScanError(f"Invalid path containing newline: {path!r}")
-
-    stdin_bytes = "".join(f":{p}\n" for p in path_list).encode("utf-8")
+    stdin_bytes = b"".join(b":" + os.fsencode(p) + b"\0" for p in path_list)
     try:
         with subprocess.Popen(
-            ["git", "cat-file", "--batch"],
+            ["git", "cat-file", "--batch", "-Z"],
             cwd=cwd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -129,27 +152,38 @@ def batch_staged_blobs(
                     proc.communicate()
                 except Exception:
                     pass
-                raise GitScanError(f"git cat-file --batch timed out after {timeout}s") from exc
+                raise GitScanError(f"git cat-file --batch -Z timed out after {timeout}s") from exc
 
             if proc.returncode != 0:
                 err = stderr_bytes.decode("utf-8", errors="replace").strip()
-                raise GitScanError(f"git cat-file --batch failed with exit code {proc.returncode}: {err}")
+                raise GitScanError(f"git cat-file --batch -Z failed with exit code {proc.returncode}: {err}")
     except OSError as exc:
-        raise GitScanError(f"git cat-file --batch failed to execute: {exc}") from exc
+        raise GitScanError(f"git cat-file --batch -Z failed to execute: {exc}") from exc
 
     bio = io.BytesIO(stdout_bytes)
-    blobs: dict[str, bytes | None] = {}
+    blobs: dict[str, bytes] = {}
     for path in path_list:
-        header_line = bio.readline()
-        if not header_line:
+        header_bytes = b""
+        while True:
+            ch = bio.read(1)
+            if not ch or ch == b"\0":
+                break
+            header_bytes += ch
+
+        if not header_bytes:
             raise GitScanError(f"Unexpected end of output from git cat-file for path '{path}'")
-        header_str = header_line.decode("utf-8", errors="replace").rstrip("\r\n")
+
+        header_str = header_bytes.decode("utf-8", errors="replace").strip()
         if header_str.endswith(" missing"):
-            blobs[path] = None
-            continue
+            raise GitScanError(f"Staged blob missing for path '{path}': {header_str}")
+
         parts = header_str.split()
         if len(parts) < 3:
             raise GitScanError(f"Malformed git cat-file header for path '{path}': {header_str}")
+
+        if parts[1] != "blob":
+            raise GitScanError(f"Staged object for path '{path}' is not a blob ({parts[1]}): {header_str}")
+
         try:
             size = int(parts[2])
         except ValueError as exc:
@@ -158,20 +192,19 @@ def batch_staged_blobs(
         content = bio.read(size)
         if len(content) != size:
             raise GitScanError(f"Truncated blob for path '{path}': expected {size} bytes, got {len(content)}")
-        trailing = bio.read(1)
-        if trailing != b"\n":
-            raise GitScanError(f"Missing expected trailing newline for path '{path}'")
 
-        if parts[1] == "blob":
-            blobs[path] = content
-        else:
-            blobs[path] = None
+        trailing = bio.read(1)
+        if trailing != b"\0":
+            raise GitScanError(f"Missing expected NUL delimiter after blob for path '{path}'")
+
+        blobs[path] = content
 
     return blobs
 
 
-def _staged_content(path: str, cwd: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> bytes | None:
-    return batch_staged_blobs([path], cwd=cwd, timeout=timeout).get(path)
+def _staged_content(path: str, cwd: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> bytes:
+    blobs = batch_staged_blobs([path], cwd=cwd, timeout=timeout)
+    return blobs[path]
 
 
 def scan(mode: str, root: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> list[str]:
@@ -195,7 +228,7 @@ def scan(mode: str, root: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> 
         else:
             paths_to_inspect.append(path)
 
-    blobs: dict[str, bytes | None] = {}
+    blobs: dict[str, bytes] = {}
     if mode == "staged" and paths_to_inspect:
         try:
             blobs = batch_staged_blobs(paths_to_inspect, cwd=root, timeout=timeout)
@@ -204,13 +237,21 @@ def scan(mode: str, root: Path = ROOT, timeout: float = DEFAULT_GIT_TIMEOUT) -> 
             return findings
 
     for path in paths_to_inspect:
-        content = blobs.get(path) if mode == "staged" else None
-        if content is None:
+        if mode == "staged":
+            content = blobs.get(path)
+            if content is None:
+                findings.append(f"{path}: staged blob could not be retrieved")
+                continue
+        else:
             file_path = root / Path(path)
+            if file_path.is_dir():
+                continue
             try:
                 content = file_path.read_bytes()
-            except (OSError, IsADirectoryError):
+            except OSError as exc:
+                findings.append(f"{path}: failed to read file content ({exc})")
                 continue
+
         for label in content_findings(content):
             findings.append(f"{path}: possible {label}")
 
@@ -231,7 +272,8 @@ def scan_build_dir(directory: Path) -> list[str]:
             continue
         try:
             content = path.read_bytes()
-        except OSError:
+        except OSError as exc:
+            findings.append(f"{directory / relative}: failed to read build artifact ({exc})")
             continue
         for label in content_findings(content):
             findings.append(f"{directory / relative}: possible {label} in build output")
