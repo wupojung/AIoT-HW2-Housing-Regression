@@ -3,9 +3,42 @@
 **Project:** NCHU AIoT 2026 HW2 Housing Regression
 **Parent Epic:** [#4 — HW2 Regression Research](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/4)
 **Work item:** [#9 — Ames Housing — Data Understanding](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/9)
-**Phase status:** REVIEW_PENDING (Empirical descriptive profile completed — PM Review and independent QA pending)
+**Phase status:** COMPLETED (Phase 2 Empirical Descriptive Profiling completed; Independent QA PASSED; PM Review and Epic Closeout PENDING)
 **Data inspection date:** 2026-10-24
 **Owner download / access date:** UNKNOWN / UNRECORDED (local package verified via SHA-256 integrity match on 2026-10-24)
+
+---
+
+## 執行摘要 (Executive Summary)
+
+本文件為 NCHU AIoT 2026 HW2 房價迴歸研究專案之 CRISP-DM Phase 2（資料理解，Data Understanding）成果報告。技術層面之實證描述性統計剖析已全數完成，獨立 QA 審查檢驗通過（QA PASSED），目前處於等待專案管理審查與 Epic 結案狀態（PM Review & Closeout PENDING）。
+
+### 1. 研究資料總覽 [Verified / 已驗證]
+- **競賽來源與授權決議**：本研究採用 Kaggle [House Prices: Advanced Regression Techniques](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques) 官方競賽資料包。資料存放於私有 ignored `local/datasets/`，經 SHA-256 完整雜湊比對與官方套件一致。Owner 於 2026-10-24 檢查點決議中正式確認取得資料管道合規並同意 Kaggle 競賽規則，條款狀態已由先前的 OPEN 正式更新為 Verified。
+- **資料維度與盲測隔離**：
+  - 訓練集（`train.csv`）：1,460 列 × 81 欄，包含連續型目標變數 `SalePrice`。
+  - 測試集（`test.csv`）：1,459 列 × 80 欄，無目標變數，完全維護 Kaggle 競賽之盲測隔離邊界。
+  - 解釋變數規模：排除識別碼 `Id` 與目標變數 `SalePrice` 後，具備 79 個候選預測特徵（完全符合且遠超課程要求的至少 14 個特徵）。
+- **識別碼唯一性**：`Id` 欄位於訓練集與測試集內各自唯一（重複數均為 0），兩集合間交集數精確為 0；`sample_submission.csv` 之 ID 序列及順序與測試集完全吻合。
+- **資料字典全面對照**：全數 79 個特徵定義與官方 `data_description.txt` 完整交叉對照（77 項完全吻合，2 項為已記錄欄位別名：`BedroomAbvGr` 對應 `Bedroom`、`KitchenAbvGr` 對應 `Kitchen`）。
+
+### 2. 主要統計發現 [Verified / 已驗證]
+- **目標變數分佈特性**：目標變數 `SalePrice` 邊際分佈呈現明顯右偏（正偏態）。樣本均值為 $180,921.20，中位數為 $163,000.00，標準差為 $79,442.50，極端價格延伸至 $755,000.00。未校正之母體三階動差偏態係數（population-moment skewness）為 1.881。依據 1.5 × IQR 準則識別出 61 個上界候選離群值（超過上邊界 $340,037.50）。
+- **關鍵線性相關特徵**：在兩兩完整觀測值下，與 `SalePrice` 展現最高成對線性相關（Pearson $r$）之特徵包括：建物整體建材品質評分 `OverallQual` ($r = 0.7910$)、地面居住面積 `GrLivArea` ($r = 0.7086$)、車庫容納車數 `GarageCars` ($r = 0.6404$)、車庫面積 `GarageArea` ($r = 0.6234$)、地下室總面積 `TotalBsmtSF` ($r = 0.6136$) 與一樓面積 `1stFlrSF` ($r = 0.6059$)。
+- **物理結構性缺失之辨識**：原始資料集缺失值以字面值 `"NA"` 編碼（訓練集 6,965 個、測試集 7,000 個，全表無空白儲存格）。依據資料字典，有 15 個欄位之 `"NA"` 屬於房屋未具備該項設施之「物理結構性不存在」（如無泳池 `PoolQC` 99.52%、無雜項設施 `MiscFeature` 96.30%、無巷道通聯 `Alley` 93.77%、無圍欄 `Fence` 80.75%、無壁爐 `FireplaceQu` 47.26%、無車庫相關 5.55%、無地下室相關 2.53% 等），不可直接視為觀測遺漏。
+- **特徵多重共線性與共缺現象**：數值解釋變數間存在顯著線性共線性，如 `GarageCars` 與 `GarageArea` ($r = 0.882$)、`GrLivArea` 與 `TotRmsAbvGrd` ($r = 0.825$)、`TotalBsmtSF` 與 `1stFlrSF` ($r = 0.820$)。車庫與地下室各群組內部亦呈現高度共同缺失（Co-missingness）聚集現象。
+
+### 3. 研究限制與陳述邊界 [Verified & Assumed]
+- **相關非因果界線 [Verified]**：本報告所有 Pearson 相關係數僅度量雙變數之成對線性關聯強度，不代表任何因果驅動關係（Causality），亦不代表該特徵在多元迴歸模型中必然具備獨立邊際定價能力。
+- **目標偏態與殘差界線 [Assumed / 待檢定假說]**：`SalePrice` 邊際分佈之右偏與離群值，僅描述未條件化之目標變數形態，不等同於模型殘差必然違背常態性或等分散性假定。此觀察僅作為 Phase 3 探索對數轉換之實驗動機，非強制先驗決策。
+- **地端私有性與圖表資產邊界 [Verified]**：自動化管線共產出 87 筆圖表項目（每項具備 PNG 與 SVG 雙格式，共 174 個影像圖檔）及 7 項結構化清單與分析報告。本公開報告僅精選審查 4 組彙總性代表圖表項目（FIG-01、FIG-02、FIG-03、FIG-06，共 8 份影像檔案），其餘 83 筆單一特徵分佈圖（166 份圖檔）及原始列資料嚴格保留於 ignored `local/`，絕不提交至公開儲存庫。
+
+### 4. Phase 3 待辦與候選假設 (Candidate Hypotheses) [Assumed / 待檢定假說]
+Phase 2 嚴格遵守描述性研究邊界，未執行任何資料插補、特徵工程、訓練集/測試集分割或模型訓練。後續 Phase 3（資料準備）將系統性檢定以下候選假說：
+1. **目標對數轉換假說**：評估採用 $\log(1 + \text{SalePrice})$ 建模是否能穩定變異數、優化 Kaggle RMSLE 競賽指標，並落實反向還原計算以回報課程要求的 RMSE、MAE 與 $R^2$。
+2. **結構缺失分離插補假說**：針對 15 個結構性缺失特徵編碼為獨立類別等級（`"None"`）或 0 數值，而其餘真實未記錄缺失則嚴格限制於交叉驗證訓練折內以中位數或眾數插補，杜絕資料洩漏。
+3. **類別特徵編碼比較假說**：評估評等類有序特徵（如 `OverallQual`, `ExterQual`）採用有序整數映射，與名義類特徵採用 One-Hot 或目標編碼在驗證集上的表現差異。
+4. **多重共線性管理假說**：在 Phase 4 迴歸建模中，針對高度共線特徵對評估正則化懲罰（Ridge, Lasso, ElasticNet）或特徵降維/複合特徵建構之成效。
 
 ---
 
@@ -19,6 +52,8 @@
 | **Verified** | Full field-level data dictionary crosswalk completed against `data_description.txt` (77 exact matches, 2 documented aliases: `BedroomAbvGr` -> `Bedroom`, `KitchenAbvGr` -> `Kitchen`). |
 | **Verified** | Full empirical profiling executed via reproducible pipelines `tools/eda/profile_ames.py` and `tools/eda/full_ames_eda.py` with outputs preserved in ignored `local/research/phase2-eda/`. |
 | **Verified** | Kaggle account terms and competition rules acceptance: Previously recorded as OPEN; updated to Verified per Owner decision (2026-10-24 checkpoint resolution). Owner explicitly confirmed that the Ames dataset package was formally acquired and applicable Kaggle competition rules were agreed to, satisfying the terms gate. Provenance recorded with byte-for-byte SHA-256 integrity match. |
+| **Verified** | Independent QA validation: W1P3 independent QA completed and PASSED; 50 automated tests passed across schema checks, synthetic profiling, security boundaries, and regression suites. |
+| **Pending** | PM Review and Epic Closeout: Technical Phase 2 profiling complete; awaiting final PM review and Epic closeout sign-off. |
 | **Boundary** | Phase 2 strictly descriptive. No data imputation, cleaning, feature engineering, train/test splitting, model training, or performance evaluation. |
 
 ---
@@ -41,6 +76,10 @@
 
 The Kaggle `data_description.txt` defines 79 explanatory feature headings. All 79 feature headings map completely to the dataset schema (77 exact matches, 2 documented aliases: `BedroomAbvGr` -> `Bedroom`, `KitchenAbvGr` -> `Kitchen`).
 
+![Ames 資料集總覽](assets/phase2/fig01_dataset_overview.png)
+
+*圖 1（FIG-01）：Ames 資料集總覽 — 訓練集 (1,460 列) 與測試集 (1,459 列) 樣本規模對比及 81 個欄位之語意類型分佈摘要。僅呈現聚合統計。無損向量 SVG：[fig01_dataset_overview.svg](assets/phase2/fig01_dataset_overview.svg)。*
+
 ### 3.1 Field-level classification by semantic measurement type
 
 | Semantic Category | Fields | Description & Modeling Considerations |
@@ -57,7 +96,7 @@ The Kaggle `data_description.txt` defines 79 explanatory feature headings. All 7
 
 ![缺失值總覽](assets/phase2/fig02_missingness_overview.png)
 
-*圖 4：訓練集與測試集欄位缺失摘要。僅呈現彙總數量。SVG：[fig02_missingness_overview.svg](assets/phase2/fig02_missingness_overview.svg)。*
+*圖 2（FIG-02）：缺失值總覽 — 訓練集與測試集主要特徵缺失比例對比與 15 個結構性缺失標記。僅呈現聚合缺失率。無損向量 SVG：[fig02_missingness_overview.svg](assets/phase2/fig02_missingness_overview.svg)。*
 
 The delivered CSV files encode missing cells as literal `"NA"`. A raw-cell scan found 6,965 such cells in train and 7,000 in test, with zero blank cells in either file. The dictionary explicitly documents that for 15 features, `"NA"` indicates **structural absence** (the physical facility does not exist on the property); other `"NA"` values represent unrecorded missingness:
 
@@ -102,15 +141,11 @@ The delivered CSV files encode missing cells as literal `"NA"`. A raw-cell scan 
 
 ## 4. Empirical descriptive profile & statistical findings
 
-![Ames 資料集總覽](assets/phase2/fig01_dataset_overview.png)
-
-*圖 1：訓練／測試資料列數與欄位角色摘要。僅呈現彙總數量。SVG：[fig01_dataset_overview.svg](assets/phase2/fig01_dataset_overview.svg)。*
-
 ### 4.1 Target variable `SalePrice` distribution (N = 1,460)
 
 ![SalePrice 分布](assets/phase2/fig03_saleprice_distribution.png)
 
-*圖 2：目標直方圖與箱型圖，未呈現原始列。SVG：[fig03_saleprice_distribution.svg](assets/phase2/fig03_saleprice_distribution.svg)。*
+*圖 3（FIG-03）：目標變數 SalePrice 邊際分佈直方圖與箱型圖 (N=1,460)。未呈現個別原始資料點。無損向量 SVG：[fig03_saleprice_distribution.svg](assets/phase2/fig03_saleprice_distribution.svg)。*
 
 - **Sample count:** 1,460
 - **Mean:** $180,921.20
@@ -128,9 +163,12 @@ The delivered CSV files encode missing cells as literal `"NA"`. A raw-cell scan 
 
 ![數值特徵相關矩陣](assets/phase2/fig06_numeric_correlation_heatmap.png)
 
-*圖 3：數值欄位兩兩完整觀測的 Pearson 相關係數；僅供探索關聯。SVG：[fig06_numeric_correlation_heatmap.svg](assets/phase2/fig06_numeric_correlation_heatmap.svg)。*
+*圖 4（FIG-06）：數值特徵成對完整觀測之 Pearson 相關係數熱圖。僅度量成對線性關聯強度，不代表因果關係。無損向量 SVG：[fig06_numeric_correlation_heatmap.svg](assets/phase2/fig06_numeric_correlation_heatmap.svg)。*
 
 Calculated using pairwise-complete observations (Pearson $r$):
+
+> [!NOTE]
+> **成對線性相關與因果界線 (Correlation vs Causality)**：下表所列之 Pearson 相關係數 ($r$) 僅度量各解釋變數與 `SalePrice` 之成對雙變數線性相關強度，絕不代表任何因果驅動關係（Causality），亦不代表在多元迴歸模型中該特徵具備獨立的邊際預測能力。
 
 | Rank | Feature | Correlation ($r$) | Pairwise $N$ | Description |
 |---|---|---|---|---|
@@ -204,7 +242,17 @@ The following items represent exploratory candidate hypotheses and open research
   - Security scanning suite: `python3 -m unittest discover -s tests/security -v` (26 tests passed)
   - Tracked repository scan: `python3 tools/security_scan.py --tracked` (passed, no findings)
 - **Private research artifacts:**
-  - The verified rerun produced profile/manifests and 87 figure entries under ignored `local/research/phase2-eda-verified/`; raw source CSVs remain under ignored `local/datasets/`. Four aggregate chart pairs are included in this report. Detailed per-feature plots, if present, remain private local artifacts.
+  - **87 筆圖表項目（Figure entries / items）**：自動化驗證執行管線共產生 87 筆圖表項目，記錄於 ignored `local/research/phase2-eda-verified/figures_manifest.json` 與 `figures_manifest.csv`。排除識別碼 `Id`，且連續目標變數 `SalePrice` 僅收錄於目標專用圖 `FIG-03`。
+  - **雙格式圖檔（共 174 份影像檔案）**：上述 87 筆圖表項目中，每一項目均包含無損向量 SVG (`.svg`) 與點陣 PNG (`.png`) 兩種格式輸出，地端共計產出 174 個影像檔案。
+  - **7 項結構化清單與分析報告**：除圖檔外，地端管線產出以下完整研究資產：
+    1. `profile.json`：機器可讀資料描述與模式檢核報告。
+    2. `field_manifest.json`：全 81 欄位屬性清單 (JSON)。
+    3. `field_manifest.csv`：全 81 欄位屬性清單 (CSV)。
+    4. `figures_manifest.json`：完整 87 筆圖表清單、雜湊、腳本與重現命令 (JSON)。
+    5. `figures_manifest.csv`：完整 87 筆圖表清單 (CSV)。
+    6. `correlation_matrix.csv`：完整數值欄位成對 Pearson 相關係數矩陣。
+    7. `report.md`：繁體中文完整描述性統計分析報告。
+  - **公開文件精選審查資產**：全數 87 筆項目中，僅精選審查 4 組彙總性代表圖表項目（包含 4 個 PNG 與 4 個 SVG，共 8 份影像檔案）納入公開儲存庫之 `docs/crisp-dm/assets/phase2/`（FIG-01、FIG-02、FIG-03、FIG-06）。其餘 83 筆單一特徵分佈圖（166 份圖檔）及原始列資料嚴格保留於 ignored `local/`，絕不提交至公開版本控制。
 
 ---
 
