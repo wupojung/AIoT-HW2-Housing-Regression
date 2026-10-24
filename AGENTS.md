@@ -198,24 +198,71 @@ STOP REASON / OWNER ACTION: <ONE LINE>
 
 No secrets, dataset rows, terminal session dumps or sensitive file contents in public Issue comments.
 
-## Completion and restart handoff
+## Completion, knowledge transfer and final Owner merge gate
 
-Coordinator posts a concise checkpoint to the relevant Issue with BASE/HEAD, review and test evidence, active Issue/PR, outstanding blockers, agent role-to-Herdr mapping (if currently verified), and the worktree ledger. On restart, each agent reads this checkpoint and its assigned local handoff; do not re-run historical work by default.
+**Ordering is mandatory:** PM technical Review PASS → notify Owner → Coordinator-led agent closeout and knowledge preservation → authorized worktree cleanup → PM closeout verification → Owner's explicit final merge authorization → Coordinator merges → post-merge Issue confirmation. A technical PASS is **not** final merge approval.
+
+1. **PM Review PASS / Owner notice.** PM tells Owner the reviewed exact PR HEAD, result and remaining risks and requests a **closeout assignment**. Do not immediately merge. Owner's authorization to perform closeout permits only the scope stated; it is not permission to delete unknown paths or merge.
+2. **W1P1 closeout dispatch.** Coordinator checks `herdr agent list` once and sends one bounded task each to W1P2 (implementation and runtime handoff), W1P3 (independent QA and residual risks), and self (integration/worktree ownership). Each agent inventories **its own** assigned checkout, commits, changes, tests, unresolved defects, lessons learned, reproducible commands and next-stage recommendations. Each stops and sends a single Herdr summary with an ignored local handoff path. No agents monitor each other.
+3. **Durable project handoff.** W1P1 consolidates project purpose, current CRISP-DM phase and gates, completed work, key decisions, PR/Issue/SHA links, code entrypoints and execution commands, actual test/CI evidence, data boundaries, outstanding defects, next authorized action and known agent/CLI failures into a concise **public-safe** GitHub Issue checkpoint or reviewed project document. This must be sufficient for fresh agents without reading old terminal sessions. Full private notes remain local; redact raw datasets, credentials, session history, personal paths and unreviewed artifacts. No automatically generated speculative root causes.
+4. **Worktree pre-merge cleanup.** W1P1 creates a path-specific KEEP/REUSE/REMOVE/HOLD ledger and obtains **explicit Owner authorization for the named paths** (this is independent of final merge authorization). Before any removal, confirm that the clean checkout is idle/released, its changes are preserved in commits and reachable refs or remote PR head, no untracked/ignored work product will be lost, and any private handoffs needed later have been copied into a safe preserved ignored location. The integration/PR branch must remain reachable until final merge; removing a disposable checkout **must not delete its unmerged branch/ref**. Remove only approved safe worktrees using normal `git worktree remove` with no force. If a candidate is dirty, contains important ignored local data, is active, or has unverified commits, classify HOLD; report it as a **closeout exception** rather than deleting it. An Owner may approve retaining HOLD until after merge. Never delete the active Coordinator worktree while using it.
+5. **Closeout evidence.** W1P1 posts final SHA, links, tests, lessons, worktree list before/after, successfully removed paths, protected refs, HOLD exceptions and the handoff location to the Issue/PR. Use `git worktree list --porcelain` for actual verification; do not claim worktrees were removed unless checked. No merge yet.
+6. **PM closeout Review.** PM checks handoff completeness, safety and the specific cleanup evidence (or explicitly documented HOLD exceptions), and issues **CLOSEOUT PASS or BLOCKED**. If BLOCKED, resolve only the listed items; do not recursively repeat full reviews.
+7. **Owner final merge authorization.** Only after PM issues CLOSEOUT PASS does the Owner approve the **specific PR and reviewed HEAD** for squash merge. W1P1 checks that HEAD and required checks are still current, then merges **once**, updates Issue with merge SHA and residual worktree/HOLD items, and stops. New commits after PM Review require targeted re-review before merge.
+
+### Exact closeout commands (run only in Coordinator's designated checkout)
+
+```bash
+# Read-only: record PR integration state and worktree inventory
+git status --short --branch
+git rev-parse HEAD
+git worktree list --porcelain
+git branch -vv
+git worktree prune --dry-run
+```
+
+For each **verified** released candidate, use the individual inspection commands in section 4. Do **not** bulk-clean. After Owner authorizes its exact path and all safety checks pass:
+
+```bash
+git worktree remove "<OWNER_APPROVED_SAFE_WORKTREE_PATH>"
+git worktree list --porcelain
+```
+
+If worktree removal is unsafe or fails, **STOP and mark HOLD**, not `--force`. Only the Coordinator is allowed to perform cleanup. QA/Implementer provide release reports; they do not delete each other's worktrees.
+
+### Final closeout report contract
+
+```text
+PR / Issue: <URLS> | Reviewed HEAD: <SHA> | PM technical review: PASS
+Completed scope / acceptance / actual tests: <SHORT EVIDENCE>
+Handoff: <PUBLIC-SAFE ISSUE LINK> | Private notes: <IGNORED PATH>
+Agent lessons: <CONFIRMED / SUSPECTED / UNKNOWN; IMPROVEMENTS>
+Worktrees BEFORE/AFTER: <COUNTS AND PATHS>
+REMOVED: <EXACT OWNER-AUTHORIZED PATHS> | HOLD: <PATH AND REASON>
+Remaining risks / next task: <SUMMARY> | PM CLOSEOUT: PASS/BLOCKED
+Owner final squash merge approval: PENDING / AUTHORIZED for PR <N>, HEAD <SHA>
+```
+
+### Flow
 
 ```mermaid
 flowchart TD
-  A[Owner request / Issue] --> B[Coordinator checks scope, authorization and worktree ledger]
-  B --> C{Task authorized and agent idle?}
-  C -->|No| H[Report BLOCKED or WAIT; stop]
-  C -->|Yes| D[One scoped Herdr dispatch]
-  D --> E[Implementer: build, bounded test, commit, handoff, stop]
-  E --> F[Coordinator: incremental diff review]
-  F --> G[Independent QA: exact SHA review]
-  G --> I{PASS and Owner merge authorization?}
-  I -->|No| H
-  I -->|Yes| J[Squash merge; update Issue]
-  J --> K[Inventory worktrees and propose KEEP / REUSE / REMOVE / HOLD]
-  K --> L{Owner approves exact cleanup paths?}
-  L -->|No| M[Preserve worktrees and finish checkpoint]
-  L -->|Yes| N[Normal, non-force cleanup; verify and report]
+  A[Owner Issue authorization] --> B[W1P1 bounded dispatch via Herdr]
+  B --> C[W1P2 implement and commit]
+  C --> D[W1P1 incremental Review]
+  D --> E[W1P3 independent QA]
+  E --> F{PM technical Review PASS?}
+  F -->|No| R[Targeted fixes and review]
+  R --> D
+  F -->|Yes| G[PM notifies Owner: ready for closeout]
+  G --> H[W1P1 requests W1P2/W1P3 final inventories and handoffs]
+  H --> I[Preserve project knowledge in Issue and local handoff]
+  I --> J[Worktree ledger and Owner path-specific cleanup approval]
+  J --> K[Coordinator safely removes approved idle worktrees]
+  K --> L[Verify removal and document HOLD exceptions]
+  L --> M{PM closeout Review PASS?}
+  M -->|No| N[Resolve listed closeout gaps only]
+  N --> M
+  M -->|Yes| O[Owner authorizes final PR and HEAD squash merge]
+  O --> P[Coordinator merges once, records merge SHA, closes stage]
 ```
