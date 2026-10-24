@@ -62,6 +62,142 @@ Coordinator records a single snapshot using bounded, read-only commands: `git wo
 
 If worktree ownership is ambiguous, branch HEAD changed unexpectedly, a checkout is in use, D-state/Git I/O stalls, a safety ref is missing, or disk pressure could jeopardize preservation: **STOP cleanup**. Report known evidence; do not spin up a scavenger agent or retry indefinitely.
 
+## Exact CLI runbook (WSL / Herdr 0.9.5)
+
+Use the commands below **as written**. Lines containing `<PLACEHOLDER>` are templates, **not runnable commands**; first fill them with verified values. Never invent Herdr subcommands or a pane ID. These are manual, bounded steps, not polling scripts.
+
+### 1. Identify agent and inspect state (read-only)
+
+```bash
+cd /mnt/d/project/nchu/aiot/AIoT-HW2-Housing-Regression
+pwd
+git rev-parse --show-toplevel
+git status --short --branch
+git rev-parse HEAD
+herdr --version
+herdr agent list
+herdr agent --help
+herdr agent prompt --help
+herdr agent get --help
+herdr agent read --help
+```
+
+If a documented option is not supported by the **installed** version, **stop and report the actual error**; do not guess another syntax. Pane identifiers such as `w1:p1` are illustrative until confirmed in the current `herdr agent list`. One check per session or after identity/permission changes; no recurring introspection.
+
+### 2. One-time assignment and completion notice
+
+Coordinator first writes a shared ignored handoff containing Issue, scope, BASE SHA, worktree, acceptance tests and STOP conditions. After confirming the target pane is idle and is the intended role, send **once**:
+
+```bash
+herdr agent get <VERIFIED_TARGET_ID>
+herdr agent prompt <VERIFIED_TARGET_ID> "Issue #<N>: execute only the assigned scope in <SHARED_HANDOFF_ABSOLUTE_PATH>. BASE <SHA>. Commit, run bounded tests, report HEAD and stop. No merge/deploy or monitoring."
+```
+
+Check for `type: agent_prompted`. This means **delivered only**; not accepted, running, complete or approved. If delivery is ambiguous, **do not resend automatically**. For a single bounded manual diagnostic, **only if supported by installed CLI**, use:
+
+```bash
+herdr agent read <VERIFIED_TARGET_ID> --source recent-unwrapped --lines 20
+```
+
+Implementer/QA sends its **one** proactive completion report:
+
+```bash
+herdr agent prompt <VERIFIED_COORDINATOR_ID> "Issue #<N> STATUS PASS/BLOCKED; BASE <SHA>; HEAD <SHA>; tests <RESULT>; handoff <ABSOLUTE_PATH>; stopped. No merge/deploy."
+```
+
+Do **not** use `herdr notification show` for handoff. Do **not** run `herdr agent ... --wait` continuously or create timers, watchdogs, repeated `get/read/list` calls or retry loops.
+
+### 3. Exact incremental review commands (read-only)
+
+In the **designated checkout**, after obtaining actual SHA values from handoff:
+
+```bash
+git status --short --branch
+git rev-parse HEAD
+git diff --stat <VERIFIED_BASE_SHA> <VERIFIED_HEAD_SHA>
+git diff --check <VERIFIED_BASE_SHA> <VERIFIED_HEAD_SHA>
+git diff <VERIFIED_BASE_SHA> <VERIFIED_HEAD_SHA>
+```
+
+To review only a follow-up fix, replace BASE with **previously reviewed HEAD**, not the project genesis. Reviewers must not auto-approve newer commits or rerun all suites without a concrete requirement. Tests are explicit in the Issue; prefer focused synthetic tests with a bounded timeout, e.g.:
+
+```bash
+timeout --signal=TERM --kill-after=3s 45s python3 -m unittest discover -s tests/tools/eda -v
+timeout --signal=TERM --kill-after=3s 45s python3 -m unittest tests.security.test_security_scan -v
+```
+
+Only run when the required Python environment is ready. A timeout or failed test is a reportable failure, **not** an invitation to recursively retry.
+
+### 4. Worktree inventory: read-only first, every time
+
+Run from the repo root. The first set does **not** modify branches, files or worktree registration:
+
+```bash
+git worktree list --porcelain
+git branch -vv
+git status --short --branch
+git rev-parse HEAD
+git worktree prune --dry-run
+```
+
+For **each reported actual worktree path**, inspect it individually (do **not** iterate blindly over stale paths). Replace the placeholder with the exact verified quoted path:
+
+```bash
+git -C "<VERIFIED_WORKTREE_PATH>" status --porcelain=v1 --untracked-files=all
+git -C "<VERIFIED_WORKTREE_PATH>" rev-parse HEAD
+git -C "<VERIFIED_WORKTREE_PATH>" branch --show-current
+git -C "<VERIFIED_WORKTREE_PATH>" ls-files --others --ignored --exclude-standard
+git -C "<VERIFIED_WORKTREE_PATH>" log --oneline --decorate -5
+```
+
+`ls-files --others --ignored` can be large; **summarize counts/paths only**, do not paste private names or data into public GitHub. Check local-only commits and branch integration after identifying the actual branch and comparison ref:
+
+```bash
+git log --oneline <VERIFIED_BASE_REF>..<VERIFIED_TASK_BRANCH>
+git branch --merged <VERIFIED_BASE_REF>
+```
+
+**IMPORTANT:** `git branch --merged` and a clean status alone **do not** prove safe deletion; inspect ignored `local/`, handoffs, agent use and whether local commits exist. If in doubt, classify HOLD.
+
+### 5. Creation and removal: explicit Owner approval gate
+
+**Creation example, only if Coordinator has Owner-authorized task and verified unused path/branch:**
+
+```bash
+git worktree add -b <NEW_UNIQUE_TASK_BRANCH> "<APPROVED_NEW_WORKTREE_PATH>" <VERIFIED_BASE_REF>
+git worktree list --porcelain
+```
+
+**Removal example, only after the Owner approves the *specific path* and Coordinator confirms it is clean, idle, integrated, has no important ignored/untracked data or unresolved handoffs:**
+
+```bash
+git -C "<OWNER_APPROVED_WORKTREE_PATH>" status --porcelain=v1 --untracked-files=all
+git worktree remove "<OWNER_APPROVED_WORKTREE_PATH>"
+git worktree list --porcelain
+```
+
+If removal fails, **STOP**. Never add `--force`. Optional branch deletion requires separately covered Owner scope and confirmed merge:
+
+```bash
+git branch -d <OWNER_APPROVED_MERGED_BRANCH>
+```
+
+Only if `git worktree prune --dry-run` revealed stale registration **and** the actual directory is verified gone, Coordinator may propose regular `git worktree prune` for Owner approval. Do not run cleanup automatically or batch over every listed path.
+
+### 6. Status and incident reporting format
+
+Use one compact report per boundary:
+
+```text
+Issue: #<N> | ROLE: Coordinator/Implementer/QA | HERDR: <VERIFIED_ID>
+WORKTREE: <PATH> | BRANCH: <NAME> | BASE: <SHA> | HEAD: <SHA>
+RESULT: PASS/BLOCKED/UNKNOWN | TESTS: <COMMAND AND OUTCOME>
+WORKTREES: KEEP <...>; REUSE <...>; REMOVE-PROPOSED <...>; HOLD <...>
+STOP REASON / OWNER ACTION: <ONE LINE>
+```
+
+No secrets, dataset rows, terminal session dumps or sensitive file contents in public Issue comments.
+
 ## Completion and restart handoff
 
 Coordinator posts a concise checkpoint to the relevant Issue with BASE/HEAD, review and test evidence, active Issue/PR, outstanding blockers, agent role-to-Herdr mapping (if currently verified), and the worktree ledger. On restart, each agent reads this checkpoint and its assigned local handoff; do not re-run historical work by default.
