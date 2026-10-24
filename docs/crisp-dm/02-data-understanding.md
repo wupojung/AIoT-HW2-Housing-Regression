@@ -31,7 +31,7 @@
 ### 3. 研究限制與陳述邊界 [Verified & Assumed]
 - **相關非因果界線 [Verified]**：本報告所有 Pearson 相關係數僅度量雙變數之成對線性關聯強度，不代表任何因果驅動關係（Causality），亦不代表該特徵在多元迴歸模型中必然具備獨立邊際定價能力。
 - **目標偏態與殘差界線 [Assumed / 待檢定假說]**：`SalePrice` 邊際分佈之右偏與離群值，僅描述未條件化之目標變數形態，不等同於模型殘差必然違背常態性或等分散性假定。此觀察僅作為 Phase 3 探索對數轉換之實驗動機，非強制先驗決策。
-- **地端私有性與圖表資產邊界 [Verified]**：自動化管線共產出 87 筆圖表項目（每項具備 PNG 與 SVG 雙格式，共 174 個影像圖檔）及 7 項結構化清單與分析報告。本公開報告僅精選審查 4 組彙總性代表圖表項目（FIG-01、FIG-02、FIG-03、FIG-06，共 8 份影像檔案），其餘 83 筆單一特徵分佈圖（166 份圖檔）及原始列資料嚴格保留於 ignored `local/`，絕不提交至公開儲存庫。
+- **地端私有性與圖表資產邊界 [Verified]**：自動化管線共產出 87 筆圖表項目（每項具備 PNG 與 SVG 雙格式，共 174 個影像圖檔）及 7 項結構化清單與分析報告。本公開報告僅精選審查 4 組彙總性代表圖表項目（FIG-01、FIG-02、FIG-03、FIG-06，共 8 份影像檔案）；其餘 4 筆總覽圖與 79 筆單欄位分布圖（合計 83 筆、166 份圖檔），以及原始列資料，均保留於 ignored `local/`，不提交至公開儲存庫。
 
 ### 4. Phase 3 待辦與候選假設 (Candidate Hypotheses) [Assumed / 待檢定假說]
 Phase 2 嚴格遵守描述性研究邊界，未執行任何資料插補、特徵工程、訓練集/測試集分割或模型訓練。後續 Phase 3（資料準備）將系統性檢定以下候選假說：
@@ -50,9 +50,9 @@ Phase 2 嚴格遵守描述性研究邊界，未執行任何資料插補、特徵
 | **Verified** | Continuous target `SalePrice` present in `train.csv` (1,460 rows × 81 columns); target absent from `test.csv` (1,459 rows × 80 columns), preserving competition holdout isolation. Explanatory predictor count: exactly 79 (excluding `Id` and `SalePrice`), satisfying course requirement (>= 14). |
 | **Verified** | `Id` uniqueness verified in train and test (0 duplicates in train, 0 in test); train/test `Id` overlap is exactly 0. `sample_submission.csv` matches test IDs and ordering. |
 | **Verified** | Full field-level data dictionary crosswalk completed against `data_description.txt` (77 exact matches, 2 documented aliases: `BedroomAbvGr` -> `Bedroom`, `KitchenAbvGr` -> `Kitchen`). |
-| **Verified** | Full empirical profiling executed via reproducible pipelines `tools/eda/profile_ames.py` and `tools/eda/full_ames_eda.py` with outputs preserved in ignored `local/research/phase2-eda/`. |
+| **Verified** | Full empirical profiling executed via reproducible pipelines `tools/eda/profile_ames.py` and `tools/eda/full_ames_eda.py` with outputs preserved in ignored `local/research/phase2-eda-verified/`. |
 | **Verified** | Kaggle account terms and competition rules acceptance: Previously recorded as OPEN; updated to Verified per Owner decision (2026-10-24 checkpoint resolution). Owner explicitly confirmed that the Ames dataset package was formally acquired and applicable Kaggle competition rules were agreed to, satisfying the terms gate. Provenance recorded with byte-for-byte SHA-256 integrity match. |
-| **Verified** | Independent QA validation: W1P3 independent QA completed and PASSED; 50 automated tests passed across schema checks, synthetic profiling, security boundaries, and regression suites. |
+| **Verified** | Independent QA: W1P3 completed the read-only incremental review and PASSED. Separately, W1P2 verification passed 50 EDA, 26 security, 4 documentation, and 5 Web Foundation tests. |
 | **Pending** | PM Review and Epic Closeout: Technical Phase 2 profiling complete; awaiting final PM review and Epic closeout sign-off. |
 | **Boundary** | Phase 2 strictly descriptive. No data imputation, cleaning, feature engineering, train/test splitting, model training, or performance evaluation. |
 
@@ -252,7 +252,7 @@ The following items represent exploratory candidate hypotheses and open research
     5. `figures_manifest.csv`：完整 87 筆圖表清單 (CSV)。
     6. `correlation_matrix.csv`：完整數值欄位成對 Pearson 相關係數矩陣。
     7. `report.md`：繁體中文完整描述性統計分析報告。
-  - **公開文件精選審查資產**：全數 87 筆項目中，僅精選審查 4 組彙總性代表圖表項目（包含 4 個 PNG 與 4 個 SVG，共 8 份影像檔案）納入公開儲存庫之 `docs/crisp-dm/assets/phase2/`（FIG-01、FIG-02、FIG-03、FIG-06）。其餘 83 筆單一特徵分佈圖（166 份圖檔）及原始列資料嚴格保留於 ignored `local/`，絕不提交至公開版本控制。
+  - **公開文件精選審查資產**：全數 87 筆項目中，僅精選審查 4 組彙總性代表圖表項目（包含 4 個 PNG 與 4 個 SVG，共 8 份影像檔案）納入公開儲存庫之 `docs/crisp-dm/assets/phase2/`（FIG-01、FIG-02、FIG-03、FIG-06）。其餘 4 筆總覽圖及 79 筆單欄位分布圖（合計 83 筆、166 份圖檔）與原始列資料均保留於 ignored `local/`，不提交至公開版本控制。
 
 ---
 
