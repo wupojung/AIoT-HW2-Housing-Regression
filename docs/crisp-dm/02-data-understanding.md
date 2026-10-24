@@ -3,8 +3,9 @@
 **Project:** NCHU AIoT 2026 HW2 Housing Regression
 **Parent Epic:** [#4 — HW2 Regression Research](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/4)
 **Work item:** [#9 — Ames Housing — Data Understanding](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/9)
-**Phase status:** Phase 2 empirical descriptive EDA completed; independent QA and PM review pending
-**Checkpoint date:** 2026-10-24
+**Phase status:** REVIEW_PENDING (Empirical descriptive profile completed — PM Review and independent QA pending)
+**Data inspection date:** 2026-10-24
+**Owner download / access date:** UNKNOWN / UNRECORDED (local package verified via SHA-256 integrity match on 2026-10-24)
 
 ---
 
@@ -16,8 +17,8 @@
 | **Verified** | Continuous target `SalePrice` present in `train.csv` (1,460 rows × 81 columns); target absent from `test.csv` (1,459 rows × 80 columns), preserving competition holdout isolation. Explanatory predictor count: exactly 79 (excluding `Id` and `SalePrice`), satisfying course requirement (>= 14). |
 | **Verified** | `Id` uniqueness verified in train and test (0 duplicates in train, 0 in test); train/test `Id` overlap is exactly 0. `sample_submission.csv` matches test IDs and ordering. |
 | **Verified** | Full field-level data dictionary crosswalk completed against `data_description.txt` (77 exact matches, 2 documented aliases: `BedroomAbvGr` -> `Bedroom`, `KitchenAbvGr` -> `Kitchen`). |
-| **Verified** | Full empirical profiling executed via reproducible pipelines `tools/eda/profile_ames.py` and `tools/eda/full_ames_eda.py` with outputs preserved in ignored `local/research/phase2-eda-mpl/`. |
-| **Verified** | Owner confirmed formal acquisition of the dataset and acceptance of its applicable competition terms. External account identifiers and access logs are not retained in this repository. |
+| **Verified** | Full empirical profiling executed via reproducible pipelines `tools/eda/profile_ames.py` and `tools/eda/full_ames_eda.py` with outputs preserved in ignored `local/research/phase2-eda/`. |
+| **Verified** | Kaggle official competition terms and rules agreement confirmed by Owner decision (2026-10-24 checkpoint resolution). Direct data acquisition and competition rules agreement officially confirmed; provenance recorded with SHA-256 integrity match. |
 | **Boundary** | Phase 2 strictly descriptive. No data imputation, cleaning, feature engineering, train/test splitting, model training, or performance evaluation. |
 
 ---
@@ -25,8 +26,9 @@
 ## 2. Source and provenance
 
 - **Official source:** Kaggle, [House Prices — Advanced Regression Techniques, Data](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data); [competition overview](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/overview); [rules](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/rules).
-- **Access checked:** 2026-10-24. Local files provided in ignored `local/datasets/`.
-- **License / Terms evidence limits:** Downloaded files are present locally and verified by SHA-256 hashes. Kaggle competition access rules require account holder login and terms agreement; because direct account access logs are external to this repository, the Owner has confirmed formal acquisition and acceptance of the applicable terms. No account credentials or access logs are stored in this repository.
+- **Access checked / Data inspection:** 2026-10-24. Local files provided in ignored `local/datasets/`.
+- **Original download date:** UNKNOWN / UNRECORDED (byte-for-byte SHA-256 hashes match Kaggle distribution package).
+- **License / Terms evidence:** Downloaded files are present locally and verified by SHA-256 hashes. Kaggle official competition terms and rules agreement are officially confirmed per Owner resolution (2026-10-24 checkpoint decision), satisfying data acquisition authorization.
 - **Exact File Manifest and SHA-256 Hashes:**
   - `train.csv`: SHA-256 `1e18addf81e5e4d347cc17ee6075bbe4a42b7fa26b9e5b063e8f692a5f929d41` (1,460 rows × 81 columns, 460,676 bytes)
   - `test.csv`: SHA-256 `8fdd3d829d4d986b58f845c9553b225e67dd8383624d90fb6ca1d4bed5798c1e` (1,459 rows × 80 columns, 451,405 bytes)
@@ -45,19 +47,19 @@ The Kaggle `data_description.txt` defines 79 explanatory feature headings. All 7
 |---|---|---|
 | **Identifier** | `Id` | Row index; excluded from feature sets and modeling. |
 | **Continuous Target** | `SalePrice` | Housing sale price in USD; training target only. |
-| **Numeric-Coded Ordinal / Discrete Categorical** | `MSSubClass`, `OverallQual`, `OverallCond` | Coded as integers, but represent nominal dwelling types (`MSSubClass`) or ordinal ratings (`OverallQual`, `OverallCond`). Must not be treated naively as continuous measurements. |
+| **Numeric-Coded Ordinal / Discrete Categorical** | `MSSubClass`, `OverallQual`, `OverallCond` | Coded as integers, but represent nominal dwelling types (`MSSubClass`) or ordinal ratings (`OverallQual`, `OverallCond`). Candidate hypothesis: evaluate whether treating as discrete/ordinal representations outperforms naive linear scales. |
 | **Discrete Numeric (Counts & Dates)** | `YearBuilt`, `YearRemodAdd`, `GarageYrBlt`, `MoSold`, `YrSold`, `BsmtFullBath`, `BsmtHalfBath`, `FullBath`, `HalfBath`, `BedroomAbvGr`, `KitchenAbvGr`, `TotRmsAbvGrd`, `Fireplaces`, `GarageCars` | Integer counts of rooms/baths or calendar years. Appropriate for linear or tree-based modeling; calendar years may yield duration features (e.g. house age at sale) in Phase 3. |
 | **Continuous Numeric (Areas & Dimensions)** | `LotFrontage`, `LotArea`, `MasVnrArea`, `BsmtFinSF1`, `BsmtFinSF2`, `BsmtUnfSF`, `TotalBsmtSF`, `1stFlrSF`, `2ndFlrSF`, `LowQualFinSF`, `GrLivArea`, `GarageArea`, `WoodDeckSF`, `OpenPorchSF`, `EnclosedPorch`, `3SsnPorch`, `ScreenPorch`, `PoolArea`, `MiscVal` | Physical dimensions in square feet or linear feet. Positive continuous values with heavy zeros (no porch, no pool). |
-| **Ordinal Categorical (Ranked Levels)** | `ExterQual`, `ExterCond`, `BsmtQual`, `BsmtCond`, `BsmtExposure`, `BsmtFinType1`, `BsmtFinType2`, `HeatingQC`, `KitchenQual`, `Functional`, `FireplaceQu`, `GarageFinish`, `GarageQual`, `GarageCond`, `PoolQC`, `Fence` | Ordered textual evaluations (e.g., Ex, Gd, TA, Fa, Po). Candidate for ordinal integer mapping in Phase 3. |
-| **Nominal Categorical (Unordered Levels)** | `MSZoning`, `Street`, `Alley`, `LotShape`, `LandContour`, `Utilities`, `LotConfig`, `LandSlope`, `Neighborhood`, `Condition1`, `Condition2`, `BldgType`, `HouseStyle`, `RoofStyle`, `RoofMatl`, `Exterior1st`, `Exterior2nd`, `MasVnrType`, `Foundation`, `Heating`, `CentralAir`, `Electrical`, `GarageType`, `PavedDrive`, `MiscFeature`, `SaleType`, `SaleCondition` | Unordered discrete attributes. Candidate for one-hot encoding or target encoding in Phase 3. |
+| **Ordinal Categorical (Ranked Levels)** | `ExterQual`, `ExterCond`, `BsmtQual`, `BsmtCond`, `BsmtExposure`, `BsmtFinType1`, `BsmtFinType2`, `HeatingQC`, `KitchenQual`, `Functional`, `FireplaceQu`, `GarageFinish`, `GarageQual`, `GarageCond`, `PoolQC`, `Fence` | Ordered textual evaluations (e.g., Ex, Gd, TA, Fa, Po). Candidate hypothesis: evaluate whether ordinal integer mapping or one-hot encoding yields lower validation error in Phase 3/4. |
+| **Nominal Categorical (Unordered Levels)** | `MSZoning`, `Street`, `Alley`, `LotShape`, `LandContour`, `Utilities`, `LotConfig`, `LandSlope`, `Neighborhood`, `Condition1`, `Condition2`, `BldgType`, `HouseStyle`, `RoofStyle`, `RoofMatl`, `Exterior1st`, `Exterior2nd`, `MasVnrType`, `Foundation`, `Heating`, `CentralAir`, `Electrical`, `GarageType`, `PavedDrive`, `MiscFeature`, `SaleType`, `SaleCondition` | Unordered discrete attributes. Candidate hypothesis: evaluate one-hot vs target encoding under cross-validation in Phase 3/4. |
 
 ### 3.2 Structural missingness vs unrecorded missingness
 
 ![缺失值總覽](assets/phase2/fig02_missingness_overview.png)
 
-*Figure 4. Field-level missingness across train and test; summary counts only. Kaggle `NA` sentinels are interpreted with dictionary semantics. SVG version: [`fig02_missingness_overview.svg`](assets/phase2/fig02_missingness_overview.svg).*
+*圖 4：訓練集與測試集欄位缺失摘要。僅呈現彙總數量。SVG：[fig02_missingness_overview.svg](assets/phase2/fig02_missingness_overview.svg)。*
 
-The delivered files use literal `"NA"` sentinels: 6,965 cells in train and 7,000 in test; a raw-cell scan found zero blank cells. The dictionary explicitly documents that for 15 features, `"NA"` indicates **structural absence** (the physical facility does not exist on the property); remaining `"NA"` values are unrecorded missingness:
+The delivered CSV files encode missing cells as literal `"NA"`. A raw-cell scan found 6,965 such cells in train and 7,000 in test, with zero blank cells in either file. The dictionary explicitly documents that for 15 features, `"NA"` indicates **structural absence** (the physical facility does not exist on the property); other `"NA"` values represent unrecorded missingness:
 
 | Field Name | Train Missing (Rate) | Test Missing (Rate) | Nature of Missingness | Dictionary Definition |
 |---|---|---|---|---|
@@ -102,13 +104,13 @@ The delivered files use literal `"NA"` sentinels: 6,965 cells in train and 7,000
 
 ![Ames 資料集總覽](assets/phase2/fig01_dataset_overview.png)
 
-*Figure 1. Train/test shape and field-role summary; aggregate counts only. SVG version: [`fig01_dataset_overview.svg`](assets/phase2/fig01_dataset_overview.svg).*
+*圖 1：訓練／測試資料列數與欄位角色摘要。僅呈現彙總數量。SVG：[fig01_dataset_overview.svg](assets/phase2/fig01_dataset_overview.svg)。*
 
 ### 4.1 Target variable `SalePrice` distribution (N = 1,460)
 
 ![SalePrice 分布](assets/phase2/fig03_saleprice_distribution.png)
 
-*Figure 2. Target histogram and boxplot; aggregate distribution, no source rows. SVG version: [`fig03_saleprice_distribution.svg`](assets/phase2/fig03_saleprice_distribution.svg).*
+*圖 2：目標直方圖與箱型圖，未呈現原始列。SVG：[fig03_saleprice_distribution.svg](assets/phase2/fig03_saleprice_distribution.svg)。*
 
 - **Sample count:** 1,460
 - **Mean:** $180,921.20
@@ -118,7 +120,7 @@ The delivered files use literal `"NA"` sentinels: 6,965 cells in train and 7,000
 - **Median (50%):** $163,000.00
 - **75th percentile (Q3):** $214,000.00
 - **Maximum:** $755,000.00
-- **Population-moment skewness (unadjusted standardized third central moment):** 1.881 (substantial right/positive skew; this is not the bias-adjusted sample skewness)
+- **Population-moment skewness (unadjusted standardized third central moment):** 1.881 (substantial right/positive skew; not bias-adjusted sample skewness)
 - **IQR outlier candidates (1.5 × IQR):** 61 observations exceeding upper fence ($340,037.50). Lower fence is $3,937.50 (no observations fall below).
 - **Distribution observation:** `SalePrice` exhibits notable right-skewness where the mean ($180,921) exceeds the median ($163,000) by over $17,000. High-value luxury homes extend the right tail to $755,000.
 
@@ -126,7 +128,7 @@ The delivered files use literal `"NA"` sentinels: 6,965 cells in train and 7,000
 
 ![數值特徵相關矩陣](assets/phase2/fig06_numeric_correlation_heatmap.png)
 
-*Figure 3. Pairwise-complete Pearson correlations for numeric fields; exploratory association only. SVG version: [`fig06_numeric_correlation_heatmap.svg`](assets/phase2/fig06_numeric_correlation_heatmap.svg).*
+*圖 3：數值欄位兩兩完整觀測的 Pearson 相關係數；僅供探索關聯。SVG：[fig06_numeric_correlation_heatmap.svg](assets/phase2/fig06_numeric_correlation_heatmap.svg)。*
 
 Calculated using pairwise-complete observations (Pearson $r$):
 
@@ -163,44 +165,46 @@ Calculated using pairwise-complete observations (Pearson $r$):
 
 ## 5. Quality risks & research limitations
 
-1. **Target skewness and non-normality:** `SalePrice` skewness of 1.881 indicates that the right tail and 61 IQR candidates merit examination in Phase 3. Whether a target transformation improves the selected evaluation metrics remains an empirical question.
-2. **Predictor multicollinearity:** Pairs such as `GarageCars`/`GarageArea` ($r = 0.882$) and `TotalBsmtSF`/`1stFlrSF` ($r = 0.820$) may create unstable coefficient estimates in some model families. Phase 3 should compare suitable approaches without treating correlation as a feature-selection decision.
-3. **Imputation risk for structural absence:** Imputing missing values with global means or medians would mischaracterize properties lacking garages or basements. Structural absence must be explicitly encoded as dedicated categorical levels (`"None"`) or zero square footage.
+1. **Target skewness and non-normality:** `SalePrice` skewness of 1.881 indicates that unregularized linear models fitted directly on raw prices will be heavily influenced by high-value outliers and violate homoscedasticity assumptions. Evaluating a logarithmic transformation (`log1p(SalePrice)`) in Phase 3 is an exploratory hypothesis to stabilize variance and optimize for Kaggle's evaluation metric.
+2. **Predictor multicollinearity:** Pairs such as `GarageCars`/`GarageArea` ($r = 0.882$) and `TotalBsmtSF`/`1stFlrSF` ($r = 0.820$) introduce severe variance inflation for standard ordinary least squares (OLS) regression. Regularization (Ridge, Lasso, ElasticNet) or selective feature pruning represents a key candidate strategy in Phase 4.
+3. **Imputation risk for structural absence:** Imputing missing values with naive global means or medians would mischaracterize properties lacking garages or basements. Structural absence must be explicitly distinguished and encoded as dedicated categorical levels (`"None"`) or zero square footage.
 4. **Test-set exclusive missingness:** The test set contains isolated missing entries in features that are complete in the training set (`TotalBsmtSF`, `GarageCars`, `MSZoning`, `Utilities`, etc.). Preprocessing pipelines must be robust against novel missingness in future inference.
 5. **Correlation vs causality limit:** Pearson correlation measures linear association only and does not establish causal housing price drivers or optimal feature subsets.
 
 ---
 
-## 6. Phase 3 handoff & decision questions
+## 6. Phase 3 exploratory research questions & candidate hypotheses
 
-1. **Target transformation:** Confirm whether Phase 3 will benchmark models on `log(SalePrice)` to optimize for Kaggle's evaluation metric (RMSLE) while reporting course-required back-transformed RMSE, MAE, and R².
-2. **Categorical encoding strategy:** Establish whether ordinal features (`OverallQual`, `ExterQual`, `KitchenQual`) should be ordinal-integer encoded, while nominal features (`Neighborhood`, `MSSubClass`) are one-hot encoded or frequency-encoded.
-3. **Structured imputation pipeline:** Separate the 15 structural absence features (encode as `"None"` / 0) from the genuine unrecorded missing features (impute using training fold medians or mode within CV).
-4. **Collinearity resolution:** Determine whether to retain both `GarageCars` and `GarageArea` with regularized regression, or construct composite/selected features.
-5. **Strict leakage boundary:** Enforce that all preprocessing transformers (imputers, scalers, encoders) are fitted strictly on training folds and never across the combined dataset.
+The following items represent exploratory candidate hypotheses and open research questions for Phase 3 (Data Preparation) and Phase 4 (Modeling) exploration, not mandatory or binding modeling decisions:
+
+1. **Target transformation hypothesis:** Evaluate whether training linear and tree-based models on `log(SalePrice)` optimizes Kaggle's evaluation metric (RMSLE) while reporting back-transformed RMSE, MAE, and R² for course grading.
+2. **Categorical encoding hypothesis:** Test whether ordinal features (`OverallQual`, `ExterQual`, `KitchenQual`) yield better cross-validation performance with ordinal-integer encoding compared to one-hot encoding.
+3. **Structured imputation hypothesis:** Test whether separating the 15 structural absence features (encoded as `"None"` / 0) from genuine unrecorded missing features (imputed using training fold medians/modes) prevents artificial distortion.
+4. **Collinearity management hypothesis:** Investigate whether retaining collinear pairs (`GarageCars`/`GarageArea`) under regularized models (Ridge/Lasso) or constructing composite features yields superior generalization.
+5. **Leakage prevention requirement:** Confirm that all preprocessing transformations (imputers, encoders, scalers) are strictly fit on training cross-validation folds and never across the combined dataset.
 
 ---
 
 ## 7. Reproducibility & verification record
 
 - **Reproducible entrypoints:**
-  Set `REGSCOPE_LOCAL_ROOT` to the primary checkout’s ignored `local/` directory before running; do not commit an absolute machine-specific path. For example: `export REGSCOPE_LOCAL_ROOT=/path/to/repository/local`.
   - Fast summary profiler: [`tools/eda/profile_ames.py`](../../tools/eda/profile_ames.py)
     ```bash
-    python3 tools/eda/profile_ames.py --local-root "$REGSCOPE_LOCAL_ROOT" --access-date 2026-10-24 --terms-confirmed
+    python3 tools/eda/profile_ames.py --local-root "${REGSCOPE_LOCAL_ROOT:-local}" --access-date 2026-10-24 --terms-confirmed
     ```
     Supports optional `--local-root` to target an external ignored `local/` data store.
   - Full comprehensive EDA pipeline: [`tools/eda/full_ames_eda.py`](../../tools/eda/full_ames_eda.py)
     ```bash
-    python3 tools/eda/full_ames_eda.py --local-root "$REGSCOPE_LOCAL_ROOT" --output-dir "$REGSCOPE_LOCAL_ROOT/research/phase2-eda-mpl" --access-date 2026-10-24 --terms-confirmed
+    python3 tools/eda/full_ames_eda.py --local-root "${REGSCOPE_LOCAL_ROOT:-local}" --output-dir "${REGSCOPE_LOCAL_ROOT:-local}/research/phase2-eda-verified" --access-date 2026-10-24 --terms-confirmed
     ```
     Supports optional `--local-root` to target an external ignored `local/` data store and output directory.
 - **Automated test suites executed:**
-  - EDA focused suite: `python3 -m unittest discover -s tests/tools/eda -v` (47 tests passed)
+  - Post-review integration run: `python3 -m unittest discover -s tests/tools/eda -v`, `python3 -m unittest discover -s tests/security -v`, `python3 -m unittest discover -s tests/docs -v`; exact results are recorded in the Gate Checkpoint/PR.
+  - EDA focused suite: `python3 -m unittest discover -s tests/tools/eda -v` (50 tests passed)
   - Security scanning suite: `python3 -m unittest discover -s tests/security -v` (26 tests passed)
   - Tracked repository scan: `python3 tools/security_scan.py --tracked` (passed, no findings)
 - **Private research artifacts:**
-  - The reproducible run produced 87 feature/overview figure entries (PNG/SVG pairs; `Id` is excluded from per-feature plots) and machine-readable manifests, profile, correlation matrix, and detailed report under ignored `local/research/phase2-eda-mpl/`. Four aggregate chart pairs are committed here; raw CSV files and row-level artifacts remain ignored under `local/`.
+  - The verified rerun produced profile/manifests and 87 figure entries under ignored `local/research/phase2-eda-verified/`; raw source CSVs remain under ignored `local/datasets/`. Four aggregate chart pairs are included in this report. Detailed per-feature plots, if present, remain private local artifacts.
 
 ---
 

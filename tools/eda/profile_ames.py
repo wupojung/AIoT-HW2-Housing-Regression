@@ -272,7 +272,7 @@ def run(data_dir: Path | None, output_dir: Path | None, access_date: str, terms_
         "status": "descriptive_profile_generated_pending_review",
         "source_url": "https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data",
         "access_date": access_date,
-        "terms_confirmed_by_owner": True,
+        "terms_confirmed_by_owner": bool(terms_confirmed),
         "output_dir": str(safe_output_dir),
         "data_dictionary_sha256": sha256(safe_data_dir / "data_description.txt"),
         "data_dictionary_crosswalk": _dictionary_crosswalk(train_columns, safe_data_dir / "data_description.txt"),
