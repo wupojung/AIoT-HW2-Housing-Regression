@@ -68,6 +68,11 @@ STRUCTURAL_NA_CANDIDATES = {
 }
 
 
+def _is_missing_cell(val: str | None) -> bool:
+    """Return True if value represents an empty cell or NA sentinel."""
+    return val is None or not str(val).strip() or str(val).strip() == "NA"
+
+
 def _encode_png(width: int, height: int, pixels: bytearray) -> bytes:
     """Encode an RGB bytearray buffer into standard PNG format."""
     def chunk(tag: bytes, data: bytes) -> bytes:
@@ -135,7 +140,16 @@ def safe_local_path(path: Path, local_root: Path, *, allow_root: bool = False) -
     if local_root.is_symlink():
         raise ValueError("The ignored local/ directory must not be a symlink.")
     resolved_root = local_root.resolve()
-    resolved = path.absolute().resolve()
+    if path.is_absolute():
+        resolved = path.resolve()
+    else:
+        resolved_from_parent = (local_root.parent / path).resolve()
+        if resolved_from_parent.is_relative_to(resolved_root):
+            resolved = resolved_from_parent
+        elif (local_root / path).resolve().is_relative_to(resolved_root):
+            resolved = (local_root / path).resolve()
+        else:
+            resolved = path.absolute().resolve()
     if not resolved.is_relative_to(resolved_root) or (not allow_root and resolved == resolved_root):
         raise ValueError(f"Path must resolve inside ignored local/: {path}")
     return resolved
@@ -330,8 +344,8 @@ def build_field_inventory(
         train_vals = [r.get(col, "") for r in train_rows] if col in train_cols else []
         test_vals = [r.get(col, "") for r in test_rows] if col in test_cols else []
 
-        train_valid = [v for v in train_vals if v is not None and v.strip() != ""]
-        test_valid = [v for v in test_vals if v is not None and v.strip() != ""]
+        train_valid = [v for v in train_vals if not _is_missing_cell(v)]
+        test_valid = [v for v in test_vals if not _is_missing_cell(v)]
 
         train_missing_count = train_n - len(train_valid) if col in train_cols else None
         train_missing_rate = (train_missing_count / train_n) if train_n > 0 and train_missing_count is not None else None
@@ -466,7 +480,7 @@ def calculate_numeric_correlations(train_cols: list[str], train_rows: list[dict]
         if col == IDENTIFIER:
             continue
         vals = [r.get(col, "") for r in train_rows]
-        valid = [v for v in vals if v is not None and v.strip() != ""]
+        valid = [v for v in vals if not _is_missing_cell(v)]
         nums = []
         is_num = True
         for v in valid:
@@ -493,7 +507,7 @@ def calculate_numeric_correlations(train_cols: list[str], train_rows: list[dict]
             if i <= j:
                 pairs = []
                 for v1, v2 in zip(col_values[col1], col_values[col2]):
-                    if v1 and v1.strip() and v2 and v2.strip():
+                    if not _is_missing_cell(v1) and not _is_missing_cell(v2):
                         pairs.append((float(v1), float(v2)))
                 if len(pairs) >= 2:
                     xs, ys = [p[0] for p in pairs], [p[1] for p in pairs]
@@ -596,7 +610,7 @@ def _is_column_numeric(col: str, rows: list[dict]) -> bool:
     """Check if a column contains valid finite numeric data in at least one row and no non-numeric strings."""
     if not rows:
         return False
-    valid_vals = [r.get(col, "").strip() for r in rows if r.get(col) is not None and r.get(col, "").strip() != ""]
+    valid_vals = [r.get(col, "").strip() for r in rows if not _is_missing_cell(r.get(col))]
     if not valid_vals:
         return False
     for v in valid_vals:
@@ -838,7 +852,7 @@ def generate_figures_and_manifest(
             continue
         tr_stats = rec.get("train_numeric_stats")
         if rec["dtype"].startswith("numeric") and tr_stats:
-            vals = [float(r[col]) for r in train_rows if r.get(col) and r[col].strip()]
+            vals = [float(r[col]) for r in train_rows if not _is_missing_cell(r.get(col))]
             if vals:
                 c_png = figures_dir / f"fig04_num_{col}.png"
                 c_svg = figures_dir / f"fig04_num_{col}.svg"
@@ -969,7 +983,7 @@ def _draw_numeric_overview_png(cols: list[str], train_rows: list[dict]) -> bytes
         py = 50 + (i // 3) * 220
         canvas.draw_line_h(py + 160, px, px + 200, rgb=(100, 100, 100), thickness=1)
         canvas.draw_line_v(px, py, py + 160, rgb=(100, 100, 100), thickness=1)
-        vals = [float(r[col]) for r in train_rows if r.get(col) and r[col].strip()]
+        vals = [float(r[col]) for r in train_rows if not _is_missing_cell(r.get(col))]
         if vals:
             min_v, max_v = min(vals), max(vals)
             span = max_v - min_v if max_v > min_v else 1.0
@@ -1049,7 +1063,7 @@ def _draw_scatters_png(features: list[str], train_rows: list[dict]) -> bytes:
         for r in train_rows:
             v_feat = r.get(feat)
             v_target = r.get(TARGET)
-            if v_feat is not None and v_feat.strip() and v_target is not None and v_target.strip():
+            if not _is_missing_cell(v_feat) and not _is_missing_cell(v_target):
                 try:
                     pairs.append((float(v_feat), float(v_target)))
                 except (ValueError, TypeError):
@@ -1261,7 +1275,7 @@ def _render_numeric_overview_chart(p_png: Path, p_svg: Path, inventory: list[dic
             axes = axes.flatten() if hasattr(axes, "flatten") else [axes]
 
         for i, col in enumerate(available_cols):
-            vals = [float(r[col]) for r in train_rows if r.get(col) and r[col].strip()]
+            vals = [float(r[col]) for r in train_rows if not _is_missing_cell(r.get(col))]
             if vals:
                 axes[i].hist(vals, bins=30, color="#59a14f", edgecolor="white")
                 axes[i].set_title(col, fontsize=11, fontweight="bold")
@@ -1363,7 +1377,7 @@ def _render_scatters_chart(p_png: Path, p_svg: Path, train_rows: list[dict]):
                 for r in train_rows:
                     v_feat = r.get(feat)
                     v_target = r.get(TARGET)
-                    if v_feat is not None and v_feat.strip() and v_target is not None and v_target.strip():
+                    if not _is_missing_cell(v_feat) and not _is_missing_cell(v_target):
                         try:
                             pairs.append((float(v_feat), float(v_target)))
                         except (ValueError, TypeError):
@@ -1676,7 +1690,7 @@ def _generate_traditional_chinese_report(
     cols_with_missing_train = [r["name"] for r in inventory if (r.get("train_missing_count") or 0) > 0]
     missing_index_sets = {}
     for col in cols_with_missing_train:
-        missing_indices = frozenset(i for i, r in enumerate(train_rows) if not r.get(col, "").strip())
+        missing_indices = frozenset(i for i, r in enumerate(train_rows) if _is_missing_cell(r.get(col)))
         if missing_indices:
             missing_index_sets.setdefault(missing_indices, []).append(col)
 
@@ -1867,8 +1881,8 @@ def _generate_traditional_chinese_report(
 
 
 def run(
-    data_dir: Path,
-    output_dir: Path,
+    data_dir: Path | None,
+    output_dir: Path | None,
     access_date: str,
     terms_confirmed: bool,
     local_root: Path | None = None,
@@ -1880,6 +1894,10 @@ def run(
         raise ValueError("Confirm Kaggle login and applicable competition terms before profiling.")
     if local_root is None:
         local_root = Path(__file__).resolve().parents[2] / "local"
+    if data_dir is None:
+        data_dir = local_root / "datasets"
+    if output_dir is None:
+        output_dir = local_root / "research" / "phase2-eda"
     if not local_root.exists() or not local_root.is_dir():
         raise ValueError("The ignored local/ directory must exist before profiling.")
 
@@ -1895,7 +1913,7 @@ def run(
             or safe_data_dir.is_relative_to(safe_output_dir)):
         raise ValueError("EDA outputs must stay outside local/datasets/.")
 
-    missing = EXPECTED - {p.name for p in data_dir.iterdir() if p.is_file()}
+    missing = EXPECTED - {p.name for p in safe_data_dir.iterdir() if p.is_file()}
     if missing:
         raise FileNotFoundError(f"Missing required Owner-provided files: {', '.join(sorted(missing))}")
 
@@ -1976,6 +1994,7 @@ def run(
         "source_url": "https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data",
         "access_date": access_date,
         "terms_confirmed_by_owner": True,
+        "output_dir": str(safe_output_dir),
         "input_files": input_files_summary,
         "data_dictionary_crosswalk": crosswalk,
         "schema_checks": schema_checks,
@@ -2004,20 +2023,34 @@ def run(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=Path("local/datasets"))
-    parser.add_argument("--output-dir", type=Path, default=Path("local/research/phase2-eda"))
+    parser.add_argument("--local-root", type=Path, default=None, help="Root ignored local/ directory.")
+    parser.add_argument("--data-dir", type=Path, default=None)
+    parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--access-date", required=True, help="Owner-recorded Kaggle access/download date (YYYY-MM-DD).")
     parser.add_argument("--terms-confirmed", action="store_true", help="Owner confirms login and current competition terms.")
     args = parser.parse_args()
-    result = run(args.data_dir, args.output_dir, args.access_date, args.terms_confirmed)
+    data_dir = args.data_dir
+    output_dir = args.output_dir
+    if args.local_root:
+        if data_dir is None:
+            data_dir = args.local_root / "datasets"
+        if output_dir is None:
+            output_dir = args.local_root / "research" / "phase2-eda"
+    elif data_dir is None:
+        data_dir = Path("local/datasets")
+    if output_dir is None:
+        output_dir = Path("local/research/phase2-eda")
+
+    result = run(data_dir, output_dir, args.access_date, args.terms_confirmed, local_root=args.local_root)
+    out_dir = Path(result["output_dir"]) if "output_dir" in result else output_dir
     print(json.dumps({
         "status": result["status"],
-        "output_dir": str(args.output_dir),
-        "profile": str(args.output_dir / "profile.json"),
-        "field_manifest": str(args.output_dir / "field_manifest.json"),
-        "figures_manifest": str(args.output_dir / "figures_manifest.json"),
-        "report": str(args.output_dir / "report.md"),
-        "figures_count": result["figure_count_total"],
+        "output_dir": str(out_dir),
+        "profile": str(out_dir / "profile.json"),
+        "field_manifest": str(out_dir / "field_manifest.json"),
+        "figures_manifest": str(out_dir / "figures_manifest.json"),
+        "report": str(out_dir / "report.md"),
+        "figures_count": result.get("figure_count_total", 0),
     }, indent=2, ensure_ascii=False, allow_nan=False))
 
 

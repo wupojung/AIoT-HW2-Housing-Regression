@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 import zlib
@@ -674,6 +675,68 @@ class FullAmesEdaTests(unittest.TestCase):
                     mock_ax.text.assert_called_once()
                     self.assertIn("No numeric predictors", mock_ax.text.call_args[0][2])
                     self.assertTrue(p_png.exists())
+
+    def test_recognizes_literal_na_string_as_missing_in_full_eda(self):
+        """Verify full EDA treats literal 'NA' as missing in inventory and report."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            (datasets / "train.csv").write_text(
+                "Id,MSSubClass,LotFrontage,Alley,SalePrice\n"
+                "1,20,60,NA,100000\n"
+                "2,20,NA,Grvl,200000\n"
+            )
+            (datasets / "test.csv").write_text(
+                "Id,MSSubClass,LotFrontage,Alley\n"
+                "3,20,70,NA\n"
+            )
+            (datasets / "sample_submission.csv").write_text(
+                "Id,SalePrice\n"
+                "3,150000\n"
+            )
+            (datasets / "data_description.txt").write_text(
+                "MSSubClass: Dwelling type\n"
+                "LotFrontage: Linear feet\n"
+                "Alley: Alley access\n"
+                "       NA\tNo alley access\n"
+            )
+
+            res = run(datasets, output, "2026-10-24", True, local_root=local)
+            with (output / "field_manifest.json").open() as f:
+                manifest = json.load(f)
+            lf = next(m for m in manifest if m["name"] == "LotFrontage")
+            self.assertEqual(lf["train_missing_count"], 1)
+            self.assertEqual(lf["test_missing_count"], 0)
+            self.assertTrue(lf["dtype"].startswith("numeric"))
+
+            alley = next(m for m in manifest if m["name"] == "Alley")
+            self.assertEqual(alley["train_missing_count"], 1)
+            self.assertEqual(alley["test_missing_count"], 1)
+            self.assertTrue(alley["is_structural_missing_candidate"])
+
+            report_text = (output / "report.md").read_text(encoding="utf-8")
+            self.assertIn("| `LotFrontage` | 1 | 50.00% | 0 | 0.00% | 真實未記錄缺漏 (需插補) |", report_text)
+            self.assertIn("| `Alley` | 1 | 50.00% | 1 | 100.00% | 結構性缺失 (特徵不存在) |", report_text)
+
+    def test_configurable_local_root_option_in_full_eda(self):
+        """Verify full EDA supports configurable local_root without explicit data/output dirs."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "custom_local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+
+            (datasets / "train.csv").write_text("Id,MSSubClass,SalePrice\n1,20,100000\n")
+            (datasets / "test.csv").write_text("Id,MSSubClass\n2,20\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n2,100000\n")
+            (datasets / "data_description.txt").write_text("MSSubClass: Dwelling type\n")
+
+            res = run(None, None, "2026-10-24", True, local_root=local)
+            self.assertTrue((local / "research" / "phase2-eda" / "report.md").exists())
+            self.assertTrue((local / "research" / "phase2-eda" / "profile.json").exists())
+            self.assertEqual(res["status"], "descriptive_profile_generated_pending_review")
 
 
 if __name__ == "__main__":

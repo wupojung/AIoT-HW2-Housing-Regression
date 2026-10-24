@@ -144,6 +144,32 @@ class ProfileAmesTests(unittest.TestCase):
             self.assertFalse(train["id"]["unique"])
             self.assertEqual(train["id"]["duplicate_count"], 1)
 
+    def test_recognizes_literal_na_string_as_missing(self):
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            root = local / "datasets"
+            root.mkdir(parents=True)
+            (root / "train.csv").write_text("Id,Quality,LotFrontage,SalePrice\n1,5,60,100000\n2,6,NA,200000\n")
+            (root / "test.csv").write_text("Id,Quality,LotFrontage\n3,6,70\n")
+            (root / "data_description.txt").write_text("Quality: Rating\nLotFrontage: Linear feet\n")
+            report = run(root, local / "research", "2026-10-24", True, local_root=local)
+            train = report["files"][0]
+            self.assertEqual(train["missing"]["columns"], {"LotFrontage": 1})
+            self.assertEqual(train["dtypes"]["LotFrontage"], "numeric (inferred from non-empty values)")
+            self.assertEqual(train["numeric_summary"]["LotFrontage"]["count"], 1)
+
+    def test_configurable_local_root_option(self):
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "custom_local"
+            root = local / "datasets"
+            root.mkdir(parents=True)
+            (root / "train.csv").write_text("Id,Quality,SalePrice\n1,5,100000\n")
+            (root / "test.csv").write_text("Id,Quality\n2,6\n")
+            (root / "data_description.txt").write_text("Quality: Rating\n")
+            report = run(None, None, "2026-10-24", True, local_root=local)
+            self.assertTrue((local / "research" / "phase2-eda" / "profile.json").exists())
+            self.assertEqual(report["status"], "descriptive_profile_generated_pending_review")
+
 
 if __name__ == "__main__":
     unittest.main()

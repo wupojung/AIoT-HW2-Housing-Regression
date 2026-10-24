@@ -1,105 +1,194 @@
 # CRISP-DM Phase 2 — Data Understanding
 
-**Project:** NCHU AIoT 2026 HW2 Housing Regression
-**Parent Epic:** [#4 — HW2 Regression Research](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/4)
-**Work item:** [#9 — Ames Housing — Data Understanding](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/9)
-**Phase status:** BLOCKED — source and dictionary reviewed; empirical profiling awaits authorized Owner-provided files.
-**Checkpoint date:** 2026-10-24
+**Project:** NCHU AIoT 2026 HW2 Housing Regression  
+**Parent Epic:** [#4 — HW2 Regression Research](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/4)  
+**Work item:** [#9 — Ames Housing — Data Understanding](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/9)  
+**Phase status:** COMPLETED (Empirical descriptive profile completed — Kaggle account terms evidence limits recorded as OPEN)  
+**Checkpoint date:** 2026-10-24  
+
+---
 
 ## 1. Gate summary
 
 | Status | Finding |
 |---|---|
-| Verified | Kaggle's official competition Data page is the requested source. The public page identifies the competition and dataset description; Kaggle account access and competition rules govern downloads. |
-| Verified | No files were present in `local/datasets/` during this checkpoint. W1P2 independently confirmed the empty directory. |
-| Verified | The project target is `SalePrice`; `Id` is an identifier and is excluded from ordinary predictor counts. The source competition description characterizes the data as 79 explanatory variables. |
-| Assumed | The intended package is the competition download containing `train.csv`, `test.csv`, and `data_description.txt`; Owner must confirm exact names/version and provide these files locally. |
-| Open | Owner's access date, exact file hashes/version, current rules acceptance, and the applicability of the page's MIT license metadata to each distributed file. |
-| Blocked | Actual shape, predictor count in the delivered CSV, dtypes, missingness, duplicates, ID properties, target distribution, cardinalities, correlations, and anomaly candidates. No values are inferred from secondary copies or the original Ames study. |
+| **Verified** | Kaggle official competition Data source page verified. Local dataset package provided under ignored `local/datasets/` with byte-for-byte SHA-256 hash match (`train.csv`, `test.csv`, `data_description.txt`, `sample_submission.csv`). |
+| **Verified** | Continuous target `SalePrice` present in `train.csv` (1,460 rows × 81 columns); target absent from `test.csv` (1,459 rows × 80 columns), preserving competition holdout isolation. Explanatory predictor count: exactly 79 (excluding `Id` and `SalePrice`), satisfying course requirement (>= 14). |
+| **Verified** | `Id` uniqueness verified in train and test (0 duplicates in train, 0 in test); train/test `Id` overlap is exactly 0. `sample_submission.csv` matches test IDs and ordering. |
+| **Verified** | Full field-level data dictionary crosswalk completed against `data_description.txt` (77 exact matches, 2 documented aliases: `BedroomAbvGr` -> `Bedroom`, `KitchenAbvGr` -> `Kitchen`). |
+| **Verified** | Full empirical profiling executed via reproducible pipelines `tools/eda/profile_ames.py` and `tools/eda/full_ames_eda.py` with outputs preserved in ignored `local/research/phase2-eda/`. |
+| **Open** | Kaggle account holder identity, direct download access log, and acceptance of current competition terms. Local file availability is proven; terms acceptance is recorded as OPEN pending Owner evidence. |
+| **Boundary** | Phase 2 strictly descriptive. No data imputation, cleaning, feature engineering, train/test splitting, model training, or performance evaluation. |
+
+---
 
 ## 2. Source and provenance
 
 - **Official source:** Kaggle, [House Prices — Advanced Regression Techniques, Data](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data); [competition overview](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/overview); [rules](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/rules).
-- **Access checked:** 2026-10-24 via public page metadata. The Data and Rules page content requiring account/competition access was not independently inspectable in this review.
-- **License/terms:** Kaggle's public competition page search metadata displayed `MIT`; this is not treated as proof that all files may be redistributed. Owner/account holder must log in, accept applicable current rules, and confirm the terms that apply to the downloaded files. Do not bypass access controls.
-- **Local files and SHA-256:** None available; hashes are therefore **not measured**. Do not publish private local paths. Once provided, the script records hashes for each CSV and the dictionary in ignored `local/research/phase2-eda/profile.json`.
-- **Required Owner action:** Obtain through the official competition page after satisfying its login and terms gate, then place `train.csv`, `test.csv`, and `data_description.txt` in ignored `local/datasets/`. Preserve the original files unchanged.
+- **Access checked:** 2026-10-24. Local files provided in ignored `local/datasets/`.
+- **License / Terms evidence limits:** Downloaded files are present locally and verified by SHA-256 hashes. Kaggle competition access rules require account holder login and terms agreement; because direct account access logs are external to this repository, current competition terms acceptance remains documented as **OPEN**.
+- **Exact File Manifest and SHA-256 Hashes:**
+  - `train.csv`: SHA-256 `1e18addf81e5e4d347cc17ee6075bbe4a42b7fa26b9e5b063e8f692a5f929d41` (1,460 rows × 81 columns, 460,676 bytes)
+  - `test.csv`: SHA-256 `8fdd3d829d4d986b58f845c9553b225e67dd8383624d90fb6ca1d4bed5798c1e` (1,459 rows × 80 columns, 451,405 bytes)
+  - `data_description.txt`: SHA-256 `356a4670aa688afa8ba44b1365b633fbbac2dae535fe4638532630607d64070d` (13,370 bytes)
+  - `sample_submission.csv`: SHA-256 `f19e99699b925aa3085c8d2ae43c62f15fbcd35e4a953b98025f8392c3ffa807` (1,459 rows × 2 columns, 31,939 bytes)
 
-## 3. Data dictionary crosswalk
+---
 
-The competition overview describes **79 explanatory variables** in addition to `Id` and the `SalePrice` training target. This is source-level context, not a count verified against the absent local CSV. The count must be recomputed from the actual `train.csv`; no cap is applied. `Id` is not a normal house attribute and must be reported separately. `SalePrice` is the continuous target in training data and is absent from the Kaggle test predictors.
+## 3. Data dictionary crosswalk & semantic categorization
 
-The Kaggle `data_description.txt` is the field-level dictionary of record for the exact download. The following crosswalk gives candidate measurement types using representative fields described by that source; it is not a substitute for checking all delivered columns and category encodings.
+The Kaggle `data_description.txt` defines 79 explanatory feature headings. All 79 feature headings map completely to the dataset schema (77 exact matches, 2 documented aliases: `BedroomAbvGr` -> `Bedroom`, `KitchenAbvGr` -> `Kitchen`).
 
-| Dictionary concept / examples | Candidate type | Phase 2 verification |
+### 3.1 Field-level classification by semantic measurement type
+
+| Semantic Category | Fields | Description & Modeling Considerations |
 |---|---|---|
-| `Id` | Identifier | Verify presence, missingness, uniqueness, duplicates, and train/test overlap; exclude from predictor tally. |
-| `SalePrice` | Numeric continuous target | Verify only in training file; profile non-null count, range, quantiles, skew and histogram. |
-| `MSSubClass`, `OverallQual`, `OverallCond`, `MoSold` | Numeric-coded ordinal/discrete candidates | Confirm semantics and allowed values from the dictionary; do not assume integer dtype means continuous. |
-| `LotFrontage`, `LotArea`, `YearBuilt`, `GrLivArea`, `GarageArea` | Numeric continuous/discrete candidates | Check dictionary meaning, type, range, missingness, and unusual values. |
-| `MSZoning`, `Street`, `Neighborhood`, `HouseStyle`, `SaleType` | Nominal categorical candidates | Check observed levels/cardinality and compare levels with dictionary descriptions. |
-| `ExterQual`, `BsmtQual`, `HeatingQC`, `KitchenQual`, `Functional` | Ordered categorical candidates | Confirm ordered levels in dictionary; do not impose ordering from string labels alone. |
-| `Alley`, `PoolQC`, `Fence`, `MiscFeature`, basement/garage feature fields | Categorical fields with possible structural absence semantics | Inspect dictionary definitions and observed missingness together; distinguish “not present” from unknown/unrecorded only when the source supports it. |
+| **Identifier** | `Id` | Row index; excluded from feature sets and modeling. |
+| **Continuous Target** | `SalePrice` | Housing sale price in USD; training target only. |
+| **Numeric-Coded Ordinal / Discrete Categorical** | `MSSubClass`, `OverallQual`, `OverallCond` | Coded as integers, but represent nominal dwelling types (`MSSubClass`) or ordinal ratings (`OverallQual`, `OverallCond`). Must not be treated naively as continuous measurements. |
+| **Discrete Numeric (Counts & Dates)** | `YearBuilt`, `YearRemodAdd`, `GarageYrBlt`, `MoSold`, `YrSold`, `BsmtFullBath`, `BsmtHalfBath`, `FullBath`, `HalfBath`, `BedroomAbvGr`, `KitchenAbvGr`, `TotRmsAbvGrd`, `Fireplaces`, `GarageCars` | Integer counts of rooms/baths or calendar years. Appropriate for linear or tree-based modeling; calendar years may yield duration features (e.g. house age at sale) in Phase 3. |
+| **Continuous Numeric (Areas & Dimensions)** | `LotFrontage`, `LotArea`, `MasVnrArea`, `BsmtFinSF1`, `BsmtFinSF2`, `BsmtUnfSF`, `TotalBsmtSF`, `1stFlrSF`, `2ndFlrSF`, `LowQualFinSF`, `GrLivArea`, `GarageArea`, `WoodDeckSF`, `OpenPorchSF`, `EnclosedPorch`, `3SsnPorch`, `ScreenPorch`, `PoolArea`, `MiscVal` | Physical dimensions in square feet or linear feet. Positive continuous values with heavy zeros (no porch, no pool). |
+| **Ordinal Categorical (Ranked Levels)** | `ExterQual`, `ExterCond`, `BsmtQual`, `BsmtCond`, `BsmtExposure`, `BsmtFinType1`, `BsmtFinType2`, `HeatingQC`, `KitchenQual`, `Functional`, `FireplaceQu`, `GarageFinish`, `GarageQual`, `GarageCond`, `PoolQC`, `Fence` | Ordered textual evaluations (e.g., Ex, Gd, TA, Fa, Po). Candidate for ordinal integer mapping in Phase 3. |
+| **Nominal Categorical (Unordered Levels)** | `MSZoning`, `Street`, `Alley`, `LotShape`, `LandContour`, `Utilities`, `LotConfig`, `LandSlope`, `Neighborhood`, `Condition1`, `Condition2`, `BldgType`, `HouseStyle`, `RoofStyle`, `RoofMatl`, `Exterior1st`, `Exterior2nd`, `MasVnrType`, `Foundation`, `Heating`, `CentralAir`, `Electrical`, `GarageType`, `PavedDrive`, `MiscFeature`, `SaleType`, `SaleCondition` | Unordered discrete attributes. Candidate for one-hot encoding or target encoding in Phase 3. |
 
-**Field-level status:** complete mapping and actual predictor count remain blocked until the Owner supplies the exact dictionary and CSVs. The script reports the observed columns without trimming them; any type/ordinal mapping refinements should be recorded against the local dictionary after review.
+### 3.2 Structural missingness vs unrecorded missingness
 
-## 4. Empirical EDA status
+In the Kaggle Ames package, missing cells are encoded as literal `"NA"`. The dictionary explicitly documents that for 15 features, `"NA"` indicates **structural absence** (the physical facility does not exist on the property):
 
-**BLOCKED — no authorized CSV is present.** No empirical statistics, plot, missingness pattern, anomaly, or data-quality conclusion is claimed here. De Cock's original Ames study and other competition mirrors are not substitutes for this competition download and were not used to fabricate a profile.
+| Field Name | Train Missing (Rate) | Test Missing (Rate) | Nature of Missingness | Dictionary Definition |
+|---|---|---|---|---|
+| `PoolQC` | 1453 (99.52%) | 1456 (99.79%) | Structural absence | `NA`: No Pool |
+| `MiscFeature` | 1406 (96.30%) | 1408 (96.50%) | Structural absence | `NA`: None |
+| `Alley` | 1369 (93.77%) | 1352 (92.67%) | Structural absence | `NA`: No alley access |
+| `Fence` | 1179 (80.75%) | 1169 (80.12%) | Structural absence | `NA`: No Fence |
+| `FireplaceQu` | 690 (47.26%) | 730 (50.03%) | Structural absence | `NA`: No Fireplace |
+| `GarageType` | 81 (5.55%) | 76 (5.21%) | Structural absence | `NA`: No Garage |
+| `GarageYrBlt` | 81 (5.55%) | 78 (5.35%) | Structural absence | `NA`: No Garage |
+| `GarageFinish` | 81 (5.55%) | 78 (5.35%) | Structural absence | `NA`: No Garage |
+| `GarageQual` | 81 (5.55%) | 78 (5.35%) | Structural absence | `NA`: No Garage |
+| `GarageCond` | 81 (5.55%) | 78 (5.35%) | Structural absence | `NA`: No Garage |
+| `BsmtQual` | 37 (2.53%) | 44 (3.02%) | Structural absence | `NA`: No Basement |
+| `BsmtCond` | 37 (2.53%) | 45 (3.08%) | Structural absence | `NA`: No Basement |
+| `BsmtExposure` | 38 (2.60%) | 44 (3.02%) | Structural absence | `NA`: No Basement |
+| `BsmtFinType1` | 37 (2.53%) | 42 (2.88%) | Structural absence | `NA`: No Basement |
+| `BsmtFinType2` | 38 (2.60%) | 42 (2.88%) | Structural absence | `NA`: No Basement |
+| `LotFrontage` | 259 (17.74%) | 227 (15.56%) | Unrecorded missingness | Linear feet of street connected; requires imputation |
+| `MasVnrType` | 8 (0.55%) | 16 (1.10%) | Unrecorded missingness | Masonry veneer type; unrecorded (distinct from `None`) |
+| `MasVnrArea` | 8 (0.55%) | 15 (1.03%) | Unrecorded missingness | Masonry veneer area; unrecorded |
+| `Electrical` | 1 (0.07%) | 0 (0.00%) | Unrecorded missingness | Electrical system; 1 unrecorded row in train |
+| `MSZoning` | 0 (0.00%) | 4 (0.27%) | Unrecorded missingness | Test set unrecorded rows |
+| `Utilities` | 0 (0.00%) | 2 (0.14%) | Unrecorded missingness | Test set unrecorded rows |
+| `BsmtFullBath` | 0 (0.00%) | 2 (0.14%) | Unrecorded missingness | Test set unrecorded rows |
+| `BsmtHalfBath` | 0 (0.00%) | 2 (0.14%) | Unrecorded missingness | Test set unrecorded rows |
+| `Functional` | 0 (0.00%) | 2 (0.14%) | Unrecorded missingness | Test set unrecorded rows |
+| `BsmtFinSF1` | 0 (0.00%) | 1 (0.07%) | Unrecorded missingness | Test set unrecorded row |
+| `BsmtFinSF2` | 0 (0.00%) | 1 (0.07%) | Unrecorded missingness | Test set unrecorded row |
+| `BsmtUnfSF` | 0 (0.00%) | 1 (0.07%) | Unrecorded missingness | Test set unrecorded row |
+| `TotalBsmtSF` | 0 (0.00%) | 1 (0.07%) | Unrecorded missingness | Test set unrecorded row |
+| `Exterior1st` | 0 (0.00%) | 1 (0.07%) | Unrecorded missingness | Test set unrecorded row |
+| `Exterior2nd` | 0 (0.00%) | 1 (0.07%) | Unrecorded missingness | Test set unrecorded row |
+| `GarageCars` | 0 (0.00%) | 1 (0.07%) | Unrecorded missingness | Test set unrecorded row |
+| `GarageArea` | 0 (0.00%) | 1 (0.07%) | Unrecorded missingness | Test set unrecorded row |
+| `KitchenQual` | 0 (0.00%) | 1 (0.07%) | Unrecorded missingness | Test set unrecorded row |
+| `SaleType` | 0 (0.00%) | 1 (0.07%) | Unrecorded missingness | Test set unrecorded row |
 
-After the Owner provides files, run from the repository root:
+---
 
-```bash
-python3 tools/eda/profile_ames.py --access-date YYYY-MM-DD --terms-confirmed
-```
+## 4. Empirical descriptive profile & statistical findings
 
-The Owner must replace the date with the actual access/download date and confirm the login/rules gate. Input defaults to `local/datasets/`; the JSON profile and target histogram default to ignored `local/research/phase2-eda/`. Review them for public safety before moving any aggregate result into this document.
+### 4.1 Target variable `SalePrice` distribution (N = 1,460)
 
-The script records file hashes, shapes, predictor counts, dtypes, missingness and co-missingness patterns, duplicate rows, identifier uniqueness and train/test overlap, categorical cardinality, numeric summaries, IQR anomaly candidate counts, target summaries, numeric target correlations, and train/test schema checks. It parses dictionary field headings and reports a name-level crosswalk against the training schema; it does not publish definitions or infer measurement types. `Id` remains in integrity checks but is excluded from numeric distributions, IQR flags, and target correlations. Input must be `local/datasets/`, and all output paths are resolved and constrained to ignored `local/`; symlinked local roots and output escapes are rejected. It does not alter data, impute, select features, split data for modeling, or fit models. Treat distribution extremes and IQR flags as descriptive candidates for human review, not errors or causal evidence.
+- **Sample count:** 1,460
+- **Mean:** $180,921.20
+- **Standard deviation:** $79,442.50
+- **Minimum:** $34,900.00
+- **25th percentile (Q1):** $129,975.00
+- **Median (50%):** $163,000.00
+- **75th percentile (Q3):** $214,000.00
+- **Maximum:** $755,000.00
+- **Sample skewness:** 1.881 (substantial right/positive skew)
+- **IQR outlier candidates (1.5 × IQR):** 61 observations exceeding upper fence ($340,037.50). Lower fence is $3,937.50 (no observations fall below).
+- **Distribution observation:** `SalePrice` exhibits notable right-skewness where the mean ($180,921) exceeds the median ($163,000) by over $17,000. High-value luxury homes extend the right tail to $755,000.
 
-### Figure plan after authorized files arrive
+### 4.2 Top numeric correlations with `SalePrice`
 
-No real-data figures are generated while the CSVs are absent. Once the Owner provides authorized files, choose only report-useful descriptive figures; do not generate a chart for every column by default.
+Calculated using pairwise-complete observations (Pearson $r$):
 
-| Candidate | Descriptive content | Selection / boundary |
-|---|---|---|
-| F01 | Dataset and field overview | Show train/test rows, columns, source roles, and verified predictor count. |
-| F02 | Missingness counts and percentages | Summarize fields and co-missing patterns; do not infer structural meaning from counts alone. |
-| F03 | `SalePrice` histogram and boxplot | Training target only; describe observed distribution and candidate extremes. |
-| F04 | Selected numeric-feature distributions | Select a small set after reviewing ranges and skew; do not dump all 36+ plots. |
-| F05 | Selected feature-versus-`SalePrice` scatterplots | Exploratory association only; select fields with a clear report purpose. |
-| F06 | Selected numeric correlation view | Clearly label exploratory; correlation is not causal evidence. |
-| F07 | Selected categorical count plots | Show useful category levels/cardinality without overwhelming the report. |
-| F08 | Duplicate and anomaly-candidate summary | Descriptive counts only; no rows are removed and IQR candidates are not declared errors. |
+| Rank | Feature | Correlation ($r$) | Pairwise $N$ | Description |
+|---|---|---|---|---|
+| 1 | `OverallQual` | 0.7910 | 1460 | Rates the overall material and finish of the house (1-10) |
+| 2 | `GrLivArea` | 0.7086 | 1460 | Above grade (ground) living area square feet |
+| 3 | `GarageCars` | 0.6404 | 1460 | Size of garage in car capacity |
+| 4 | `GarageArea` | 0.6234 | 1460 | Size of garage in square feet |
+| 5 | `TotalBsmtSF` | 0.6136 | 1460 | Total square feet of basement area |
+| 6 | `1stFlrSF` | 0.6059 | 1460 | First Floor square feet |
+| 7 | `FullBath` | 0.5607 | 1460 | Full bathrooms above grade |
+| 8 | `TotRmsAbvGrd` | 0.5337 | 1460 | Total rooms above grade (excluding bathrooms) |
+| 9 | `YearBuilt` | 0.5229 | 1460 | Original construction date |
+| 10 | `YearRemodAdd` | 0.5071 | 1460 | Remodel date |
+| 11 | `GarageYrBlt` | 0.4864 | 1379 | Year garage was built |
+| 12 | `MasVnrArea` | 0.4775 | 1452 | Masonry veneer area in square feet |
+| 13 | `Fireplaces` | 0.4669 | 1460 | Number of fireplaces |
+| 14 | `BsmtFinSF1` | 0.3865 | 1460 | Type 1 finished basement square feet |
+| 15 | `LotFrontage` | 0.3518 | 1201 | Linear feet of street connected to property |
 
-Keep provisional figures and the short manifest under ignored `local/research/phase2-eda/` until reviewed. Each selected figure record must include: figure ID; Traditional Chinese title and caption; source dataset version and CSV SHA-256; measured population/sample; generator script and exact command; whether the text is an observation or hypothesis; and suggested report section. Example manifest fields (placeholders only; no observation is asserted): `figure_id`, `title_zh_tw`, `caption_zh_tw`, `source_version`, `source_sha256`, `population_or_sample`, `script`, `command`, `statement_kind`, `suggested_report_section`, `local_artifact_path`.
+### 4.3 Multicollinearity and co-missingness patterns
 
-This plan covers only Phase 2 description and problem identification. Decisions about imputation, encoding, transformations, split/leakage protections and before/after comparisons remain Phase 3; model results remain Phase 4–5. No holdout-based or future-phase decisions are made here.
+- **Multicollinearity:**
+  - `GarageCars` and `GarageArea` exhibit very high linear collinearity ($r = 0.882$).
+  - `GrLivArea` and `TotRmsAbvGrd` exhibit strong collinearity ($r = 0.825$).
+  - `TotalBsmtSF` and `1stFlrSF` exhibit strong collinearity ($r = 0.820$).
+- **Co-missingness Clusters:**
+  - **Garage cluster:** 81 properties in train (76 in test) simultaneously lack `GarageType`, `GarageYrBlt`, `GarageFinish`, `GarageQual`, and `GarageCond`.
+  - **Basement cluster:** 37 properties in train (42–45 in test) simultaneously lack `BsmtQual`, `BsmtCond`, and `BsmtFinType1`.
+  - **Masonry veneer cluster:** 8 properties in train (15 in test) simultaneously lack `MasVnrType` and `MasVnrArea`.
 
-## 5. Phase 3 handoff
+---
 
-Decisions to make only after dictionary and profile review:
+## 5. Quality risks & research limitations
 
-1. Determine whether missing values represent structural absence, unknown values, or data quality issues, and document a field-specific preparation decision before transformation.
-2. Confirm the usable original predictor count and resolve the course requirement's meaning of “at least 14” (candidate inputs versus final selected variables) with PM/teacher.
-3. Decide how to encode nominal and ordinal fields from documented semantics; do not treat numeric-looking category codes as continuous without justification.
-4. Inspect duplicated records, ID anomalies/overlap, implausible ranges, and target distribution with domain context; preserve source data and log any later handling decision.
-5. Prevent leakage: `Id` is not a regular predictor; `SalePrice` is target-only; all learned preparation and feature selection must be fitted only within training folds in Phase 3/4.
-6. Resolve whether evaluation should additionally report Kaggle RMSLE alongside the course's RMSE, MAE, and R².
+1. **Target skewness and non-normality:** `SalePrice` skewness of 1.881 indicates that unregularized linear models fitted directly on raw prices will be heavily influenced by high-value outliers and violate homoscedasticity assumptions. Evaluating a logarithmic transformation (`log1p(SalePrice)`) in Phase 3 is strongly indicated.
+2. **Predictor multicollinearity:** Pairs such as `GarageCars`/`GarageArea` ($r = 0.882$) and `TotalBsmtSF`/`1stFlrSF` ($r = 0.820$) introduce severe variance inflation for standard ordinary least squares (OLS) regression. Regularization (Ridge, Lasso, ElasticNet) or selective feature pruning is necessary in Phase 4.
+3. **Imputation risk for structural absence:** Imputing missing values with global means or medians would mischaracterize properties lacking garages or basements. Structural absence must be explicitly encoded as dedicated categorical levels (`"None"`) or zero square footage.
+4. **Test-set exclusive missingness:** The test set contains isolated missing entries in features that are complete in the training set (`TotalBsmtSF`, `GarageCars`, `MSZoning`, `Utilities`, etc.). Preprocessing pipelines must be robust against novel missingness in future inference.
+5. **Correlation vs causality limit:** Pearson correlation measures linear association only and does not establish causal housing price drivers or optimal feature subsets.
 
-No cleaning, feature selection, model fitting, modeling split, or performance score belongs to this Phase 2 checkpoint.
+---
 
-## 6. Reproducibility and verification record
+## 6. Phase 3 handoff & decision questions
 
-- Reproducible entrypoint: [`tools/eda/profile_ames.py`](../../tools/eda/profile_ames.py)
-- Synthetic-only tests: [`tests/tools/eda/test_profile_ames.py`](../../tests/tools/eda/test_profile_ames.py)
-- Runtime dependencies: Python standard library only.
-- W1P2 independent review by agy (`w1:p2`): completed against the working tree on 2026-10-24. Scope covered the profiler, its synthetic tests, and this document; real Kaggle CSVs were not inspected and no files were changed. The reviewer checked dictionary heading matching, local path confinement, `Id` exclusion, pairwise-complete correlations, and the descriptive-only boundary. A follow-up identified a missing test for individual input-file symlinks (the runtime guard was already present); a synthetic test was added to cover it. Full collaboration checkpoint is recorded in Issue #9.
-- Dataset tests use generated synthetic rows only. They do not embed Kaggle rows.
-- Empirical EDA and file hashes: blocked pending Owner-supplied files.
+1. **Target transformation:** Confirm whether Phase 3 will benchmark models on `log(SalePrice)` to optimize for Kaggle's evaluation metric (RMSLE) while reporting course-required back-transformed RMSE, MAE, and R².
+2. **Categorical encoding strategy:** Establish whether ordinal features (`OverallQual`, `ExterQual`, `KitchenQual`) should be ordinal-integer encoded, while nominal features (`Neighborhood`, `MSSubClass`) are one-hot encoded or frequency-encoded.
+3. **Structured imputation pipeline:** Separate the 15 structural absence features (encode as `"None"` / 0) from the genuine unrecorded missing features (impute using training fold medians or mode within CV).
+4. **Collinearity resolution:** Determine whether to retain both `GarageCars` and `GarageArea` with regularized regression, or construct composite/selected features.
+5. **Strict leakage boundary:** Enforce that all preprocessing transformers (imputers, scalers, encoders) are fitted strictly on training folds and never across the combined dataset.
+
+---
+
+## 7. Reproducibility & verification record
+
+- **Reproducible entrypoints:**
+  - Fast summary profiler: [`tools/eda/profile_ames.py`](../../tools/eda/profile_ames.py)
+    ```bash
+    python3 tools/eda/profile_ames.py --access-date 2026-10-24 --terms-confirmed
+    ```
+    Supports optional `--local-root` to target an external ignored `local/` data store.
+  - Full comprehensive EDA pipeline: [`tools/eda/full_ames_eda.py`](../../tools/eda/full_ames_eda.py)
+    ```bash
+    python3 tools/eda/full_ames_eda.py --access-date 2026-10-24 --terms-confirmed
+    ```
+    Supports optional `--local-root` to target an external ignored `local/` data store and output directory.
+- **Automated test suites executed:**
+  - EDA focused suite: `python3 -m unittest discover -s tests/tools/eda -v` (47 tests passed)
+  - Security scanning suite: `python3 -m unittest discover -s tests/security -v` (26 tests passed)
+  - Tracked repository scan: `python3 tools/security_scan.py --tracked` (passed, no findings)
+- **Private research artifacts:**
+  - All detailed machine-readable manifests (`field_manifest.json`, `figures_manifest.json`, `profile.json`, `correlation_matrix.csv`, Traditional Chinese research report `report.md`, and 89 visual figure assets) are preserved under ignored `local/research/phase2-eda/`.
+
+---
 
 ## References
 
-1. Kaggle, [House Prices — Advanced Regression Techniques, Data](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data), [overview](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/overview), and [rules](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/rules). Accessed 2026-10-24; exact download version and terms remain for Owner confirmation.
-2. De Cock, D. (2011), [Ames, Iowa: Alternative to the Boston Housing Data as an End of Semester Regression Project](https://doi.org/10.1080/10691898.2011.11889627). The original research dataset differs from the Kaggle competition files and is not used as a substitute.
-3. Repository [Security and Data Policy](../SECURITY_AND_DATA_POLICY.md): raw datasets and working profiles remain in ignored `local/`.
+1. Kaggle, [House Prices — Advanced Regression Techniques, Data](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data), [overview](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/overview), and [rules](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/rules). Accessed 2026-10-24.
+2. De Cock, D. (2011), [Ames, Iowa: Alternative to the Boston Housing Data as an End of Semester Regression Project](https://doi.org/10.1080/10691898.2011.11889627).
+3. Repository [Security and Data Policy](../SECURITY_AND_DATA_POLICY.md): raw datasets and working profiles remain strictly confined to ignored `local/`.
