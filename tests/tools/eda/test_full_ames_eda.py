@@ -188,6 +188,8 @@ class FullAmesEdaTests(unittest.TestCase):
             self.assertTrue((output / "field_manifest.csv").exists())
             self.assertTrue((output / "figures_manifest.json").exists())
             self.assertTrue((output / "figures_manifest.csv").exists())
+            figures = __import__("json").loads((output / "figures_manifest.json").read_text())
+            self.assertFalse(any(item["figure_id"] == "FIG-NUM-Id" for item in figures))
             self.assertTrue((output / "correlation_matrix.csv").exists())
             self.assertTrue((output / "report.md").exists())
 

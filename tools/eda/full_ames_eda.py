@@ -848,7 +848,7 @@ def generate_figures_and_manifest(
     # Also render individual distribution charts for all predictors
     for rec in inventory:
         col = rec["name"]
-        if rec["role"] in {IDENTIFIER, TARGET}:
+        if col in {IDENTIFIER, TARGET} or rec.get("role") in {"identifier", "target"}:
             continue
         tr_stats = rec.get("train_numeric_stats")
         if rec["dtype"].startswith("numeric") and tr_stats:
@@ -1828,7 +1828,7 @@ def _generate_traditional_chinese_report(
 - **中位數 (Median / 50%)：** {fmt_curr(target_stats.get('50%'))}
 - **第三四分位數 (Q3 / 75%)：** {fmt_curr(target_stats.get('75%'))}
 - **最大值 (Max)：** {fmt_curr(target_stats.get('max'))}
-- **偏態係數 (Skewness)：** {skew_str}
+- **偏態係數 (未校正標準化三階中心動差)：** {skew_str}
 - **IQR 異常候選數量 (1.5x IQR Fences)：** {fmt_cnt(target_stats.get('anomaly_candidates_count'))} 筆 (上限柵欄約 {fmt_curr(target_stats.get('upper_fence'))})
 - **描述性觀察：** {_describe_target_distribution(target_stats)}
 
@@ -1836,7 +1836,7 @@ def _generate_traditional_chinese_report(
 
 ## 5. 缺失值深度分析與結構性缺失判定 (Missingness Analysis)
 
-本資料集在文字空白與「NA」之語意上有重要區分。依據 `data_description.txt` 之定義，候選「NA」代碼代表「該項設施不存在 (Structural Absence)」，在 CSV 中呈現為空字串：
+本資料集以空白儲存格及字面字串 `NA` 表示缺失；本次檔案掃描在 CSV 中觀察到字面 `NA`，未發現空白儲存格。依據 `data_description.txt`，15 個欄位的 `NA` 代表該項設施不存在 (Structural Absence)，其餘 `NA` 則屬未記錄缺漏：
 
 | 欄位名稱 | 訓練集缺失數 | 訓練集缺失率 | 測試集缺失數 | 測試集缺失率 | 語意性質判斷 |
 |---|---|---|---|---|---|

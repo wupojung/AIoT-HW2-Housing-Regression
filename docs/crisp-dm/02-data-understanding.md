@@ -57,7 +57,7 @@ The Kaggle `data_description.txt` defines 79 explanatory feature headings. All 7
 
 *Figure 4. Field-level missingness across train and test; summary counts only. Kaggle `NA` sentinels are interpreted with dictionary semantics. SVG version: [`fig02_missingness_overview.svg`](assets/phase2/fig02_missingness_overview.svg).*
 
-In the Kaggle Ames package, missing cells are encoded as literal `"NA"`. The dictionary explicitly documents that for 15 features, `"NA"` indicates **structural absence** (the physical facility does not exist on the property):
+The delivered files use literal `"NA"` sentinels: 6,965 cells in train and 7,000 in test; a raw-cell scan found zero blank cells. The dictionary explicitly documents that for 15 features, `"NA"` indicates **structural absence** (the physical facility does not exist on the property); remaining `"NA"` values are unrecorded missingness:
 
 | Field Name | Train Missing (Rate) | Test Missing (Rate) | Nature of Missingness | Dictionary Definition |
 |---|---|---|---|---|
@@ -118,7 +118,7 @@ In the Kaggle Ames package, missing cells are encoded as literal `"NA"`. The dic
 - **Median (50%):** $163,000.00
 - **75th percentile (Q3):** $214,000.00
 - **Maximum:** $755,000.00
-- **Sample skewness:** 1.881 (substantial right/positive skew)
+- **Population-moment skewness (unadjusted standardized third central moment):** 1.881 (substantial right/positive skew; this is not the bias-adjusted sample skewness)
 - **IQR outlier candidates (1.5 × IQR):** 61 observations exceeding upper fence ($340,037.50). Lower fence is $3,937.50 (no observations fall below).
 - **Distribution observation:** `SalePrice` exhibits notable right-skewness where the mean ($180,921) exceeds the median ($163,000) by over $17,000. High-value luxury homes extend the right tail to $755,000.
 
@@ -200,7 +200,7 @@ Calculated using pairwise-complete observations (Pearson $r$):
   - Security scanning suite: `python3 -m unittest discover -s tests/security -v` (26 tests passed)
   - Tracked repository scan: `python3 tools/security_scan.py --tracked` (passed, no findings)
 - **Private research artifacts:**
-  - The reproducible run produced 87 figure entries (PNG/SVG pairs) and machine-readable manifests, profile, correlation matrix, and detailed report under ignored `local/research/phase2-eda-mpl/`. Four aggregate chart pairs are committed here; raw CSV files and row-level artifacts remain ignored under `local/`.
+  - The reproducible run produced 87 feature/overview figure entries (PNG/SVG pairs; `Id` is excluded from per-feature plots) and machine-readable manifests, profile, correlation matrix, and detailed report under ignored `local/research/phase2-eda-mpl/`. Four aggregate chart pairs are committed here; raw CSV files and row-level artifacts remain ignored under `local/`.
 
 ---
 
