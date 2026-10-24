@@ -1,18 +1,18 @@
 # CRISP-DM Phase 3: Data Preparation (Ames Housing Regression)
 
-- **Phase status:** COMPLETED (Phase 3 Reproducible Data Preparation Pipeline completed; Leakage & Boundary QA PASSED; PM Review and Milestone Checkpoint PENDING)
+- **Phase status:** IMPLEMENTATION_COMPLETED (Phase 3 Reproducible Data Preparation Pipeline implemented and verified by internal test suite; Independent QA PENDING; PM Review and Milestone Checkpoint PENDING)
 - **Task ID:** Issue #15 (Epic #4)
-- **Implementation Worktree:** `/mnt/d/project/nchu/aiot/AIoT-HW2-Housing-Regression-issue15-phase3`
+- **Implementation Worktree:** `AIoT-HW2-Housing-Regression-issue15-phase3` (isolated Phase 3 worktree)
 - **Branch:** `feature/phase3-data-preparation-issue-15`
 - **BASE Commit:** `fe287cb7b0dc759c7f1a5519cd662690625df584`
 - **Author / Role:** `w1:p2` (Implementer / Antigravity)
-- **Coordination Handoff:** [`local/handoff/issue-15-phase3-coordination-2026-10-24.md`](file:///mnt/d/project/nchu/aiot/AIoT-HW2-Housing-Regression/local/handoff/issue-15-phase3-coordination-2026-10-24.md)
+- **Coordination Handoff:** `local/handoff/issue-15-phase3-coordination-2026-10-24.md` (primary checkout untracked handoff)
 
 ---
 
 ## 執行摘要 (Executive Summary)
 
-本文件記載 Ames 房價迴歸專案在 CRISP-DM 第三階段（資料準備，Data Preparation）之實作成果與實證紀錄。本階段依據 Phase 2 資料理解產出之 81 項欄位清冊與領域字典，建立了一套具備嚴格防資料洩漏（Leakage-Free）、可完全重現、支援自訂路徑的訓練配適與轉換管線（Train-Fit / Transform-Only Pipeline）。所有預處理參數（中位數、眾數、名義類別水準）皆 100% 僅由訓練分割集學習，並保留所有 61 筆標的變數 IQR 異常值候選供後續階段檢定。
+本文件記載 Ames 房價迴歸專案在 CRISP-DM 第三階段（資料準備，Data Preparation）之實作成果與實證紀錄。本階段依據 Phase 2 資料理解產出之 81 項原始欄位清冊（包含 79 個預測變數、1 個外部識別碼 `Id` 與 1 個目標變數 `SalePrice`）與領域字典，建立了一套具備嚴格防資料洩漏（Leakage-Free）、可完全重現、支援自訂路徑的訓練配適與轉換管線（Train-Fit / Transform-Only Pipeline）。所有預處理參數（中位數、眾數、名義類別水準）皆 100% 僅由訓練分割集學習，並保留所有 61 筆標的變數 IQR 異常值候選供後續階段檢定。
 
 ### 1. 資料集規模與切分架構 `[Verified / 已驗證]`
 - **標籤資料切分**：僅從具備標籤的 1,460 筆 `train.csv` 中，使用固定亂數種子 `random_state = 42` 進行 80/20 的內部切分，精確劃分為 **1,168 筆訓練集（Train Partition）** 與 **292 筆內部驗證集（Validation Partition）**。兩者索引集合互斥（交集為 0），確保劃分無重疊。
@@ -33,7 +33,7 @@
 - **未知類別容錯防護（Unknown Category Handling）**：名義類別 One-Hot 編碼採用 `handle_unknown='ignore'` 原則。當驗證集出現訓練集未見之類別（如 `RoofMatl = Metal`，1 筆）或測試集出現罕見類別（如 `MSSubClass = 150`，1 筆）時，管線自動將所有 Dummy 設為 0，絕不拋出例外亦不改變欄位數量與排列，並忠實記錄於中繼摘要檔中。
 
 ### 4. 異常值候選與資料治理邊界 `[Assumed / 假設]`
-- **61 筆 IQR 異常值候選全數保留**：在 Phase 2 所標記之 61 筆 `SalePrice` 邊際 IQR 離群候選（下圍欄 $4,000.00，上圍欄 $340,000.00），在本階段資料準備中 **100% 完整保留，無任何刪除、截斷（Winsorization）或過濾**。保留原因在於高價房屋代表合理的真實市場交易樣態，其離群特質屬於 Phase 4 應評估是否採用對數轉換（Log Transformation）或強健迴歸之重要實證對象。
+- **61 筆 IQR 異常值候選全數保留**：在 Phase 2 所標記之 61 筆 `SalePrice` 邊際 IQR 離群候選（精確值：下圍欄 $3,937.50，上圍欄 $340,037.50；四捨五入整數表示為 $4,000 與 $340,000），在本階段資料準備中 **100% 完整保留，無任何刪除、截斷（Winsorization）或過濾**。保留原因在於高價房屋代表合理的真實市場交易樣態，其離群特質屬於 Phase 4 應評估是否採用對數轉換（Log Transformation）或強健迴歸之重要實證對象。
 - **資料治理承諾**：所有逐筆資料與轉換後的特徵矩陣僅保留於主 checkout ignored 之 `local/` 本地目錄，嚴禁將未去識別化或高維逐筆數據提交至公共 Git 版本庫。
 
 ### 5. Phase 4 候選假設與建模待辦 (Candidate Hypotheses) `[Open / 待檢定]`
@@ -169,7 +169,7 @@
 - **目標變數 (`SalePrice`)**：僅於具備標籤之資料集產出於 `TransformResult.y`，競賽測試集之 `y` 為 `None`。
 
 ### 5.2 61 筆 SalePrice IQR 異常值候選處置 `[Verified & Assumed]`
-在 Phase 2 資料理解階段，透過 Tukey 四分位距準則（$IQR = Q_3 - Q_1 = \$214,000 - \$129,975 = \$84,025$）標記出 61 筆離群候選值（下界 $\$3,937.50$，上界 $\$340,037.50$）。
+在 Phase 2 資料理解階段，透過 Tukey 四分位距準則（$IQR = Q_3 - Q_1 = \$214,000 - \$129,975 = \$84,025$）標記出 61 筆離群候選值（精確下界 $\$3,937.50$，精確上界 $\$340,037.50$；四捨五入整數表示為 $\$4,000$ 與 $\$340,000$）。
 
 本階段資料準備針對此 61 筆候選之決策與執行如下：
 1. **100% 完整保留**：在 1,168 筆訓練集與 292 筆驗證集之目標向量 $y$ 中，61 筆異常值全數在位，未執行任何刪除、截斷或替換。
@@ -184,7 +184,7 @@
 
 ### 6.1 產出目錄與清單 `[Verified / 已驗證]`
 所有資料準備之中繼結構與元資料均儲存於主 checkout ignored 目錄：
-`/mnt/d/project/nchu/aiot/AIoT-HW2-Housing-Regression/local/research/phase3-data-prep/`
+`<local-root>/research/phase3-data-prep/`（預設為專案主 checkout 之 `local/research/phase3-data-prep/`）
 
 | 產物檔案名稱 | 內容摘要與用途 | 資料治理屬性 |
 |---|---|---|
