@@ -18,7 +18,7 @@
 | **Verified** | `Id` uniqueness verified in train and test (0 duplicates in train, 0 in test); train/test `Id` overlap is exactly 0. `sample_submission.csv` matches test IDs and ordering. |
 | **Verified** | Full field-level data dictionary crosswalk completed against `data_description.txt` (77 exact matches, 2 documented aliases: `BedroomAbvGr` -> `Bedroom`, `KitchenAbvGr` -> `Kitchen`). |
 | **Verified** | Full empirical profiling executed via reproducible pipelines `tools/eda/profile_ames.py` and `tools/eda/full_ames_eda.py` with outputs preserved in ignored `local/research/phase2-eda/`. |
-| **Verified** | Kaggle official competition terms and rules agreement confirmed by Owner decision (2026-10-24 checkpoint resolution). Direct data acquisition and competition rules agreement officially confirmed; provenance recorded with SHA-256 integrity match. |
+| **Verified** | Kaggle account terms and competition rules acceptance: Previously recorded as OPEN; updated to Verified per Owner decision (2026-10-24 checkpoint resolution). Owner explicitly confirmed that the Ames dataset package was formally acquired and applicable Kaggle competition rules were agreed to, satisfying the terms gate. Provenance recorded with byte-for-byte SHA-256 integrity match. |
 | **Boundary** | Phase 2 strictly descriptive. No data imputation, cleaning, feature engineering, train/test splitting, model training, or performance evaluation. |
 
 ---
@@ -28,7 +28,7 @@
 - **Official source:** Kaggle, [House Prices — Advanced Regression Techniques, Data](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data); [competition overview](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/overview); [rules](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/rules).
 - **Access checked / Data inspection:** 2026-10-24. Local files provided in ignored `local/datasets/`.
 - **Original download date:** UNKNOWN / UNRECORDED (byte-for-byte SHA-256 hashes match Kaggle distribution package).
-- **License / Terms evidence:** Downloaded files are present locally and verified by SHA-256 hashes. Kaggle official competition terms and rules agreement are officially confirmed per Owner resolution (2026-10-24 checkpoint decision), satisfying data acquisition authorization.
+- **License / Terms evidence:** Downloaded files are present locally and verified by SHA-256 hashes. Kaggle official competition terms and rules agreement (previously documented as OPEN) are now officially confirmed based on Owner resolution (2026-10-24 checkpoint decision confirming formal data acquisition and competition rules agreement), satisfying data acquisition authorization.
 - **Exact File Manifest and SHA-256 Hashes:**
   - `train.csv`: SHA-256 `1e18addf81e5e4d347cc17ee6075bbe4a42b7fa26b9e5b063e8f692a5f929d41` (1,460 rows × 81 columns, 460,676 bytes)
   - `test.csv`: SHA-256 `8fdd3d829d4d986b58f845c9553b225e67dd8383624d90fb6ca1d4bed5798c1e` (1,459 rows × 80 columns, 451,405 bytes)
