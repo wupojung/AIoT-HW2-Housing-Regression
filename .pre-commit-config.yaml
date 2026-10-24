@@ -1,9 +1,4 @@
-repos:
-  - repo: local
-    hooks:
-      - id: sensitive-content-scan
-        name: Scan staged and tracked files for sensitive content
-        entry: python tools/security_scan.py --staged
-        language: system
-        pass_filenames: false
-        always_run: true
+# Per Owner decision 6372021318, automatic local commit scanning is disabled.
+# Mandatory security scans run as a fail-closed CI gate on PRs to main and deploy.
+# Manual scans remain available via `python tools/security_scan.py --all` or `--staged`.
+repos: []
