@@ -67,7 +67,7 @@ def profile_csv(path: Path, output_dir: Path) -> dict:
                     raise
                 is_numeric = False
                 break
-        if is_numeric and present:
+        if is_numeric:
             numeric_values[column] = nums
             dtypes[column] = "numeric (inferred from non-empty values)"
         else:

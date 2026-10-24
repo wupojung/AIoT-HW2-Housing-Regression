@@ -65,13 +65,15 @@ Contract rules:
 
 Before a website consumes v1, tests should validate: required keys and supported version; count types and null semantics; field role uniqueness for target and identifier; missing-rate bounds; allowed status enums; stable figure ID uniqueness; figure provenance completeness; no raw-row or local-path keys; and correct rendering of `blocked`/`partial` reports without numeric placeholders. Contract fixtures must be synthetic and contain no real dataset values.
 
-## Findings and known gaps
+## Historical baseline findings and resolution status
 
-- The current profiler emits no Figure ID, figure manifest, generator command, population/sample declaration, or provenance linkage for generated SVGs. The Phase 2 document has a figure plan, but it is not connected to generated files.
-- It does not explicitly count duplicate IDs; only the boolean `id.unique` is reported.
-- `csv.DictReader` tolerates extra fields on a row by placing them under a `None` key; the profiler currently ignores that key. Thus malformed wide rows may be silently accepted. Minimal synthetic reproduction: a header `Id,SalePrice` followed by `1,100,unexpected`.
-- Numeric parsing accepts `NaN` and infinity as floats; downstream summary values may then be non-finite and unsuitable for JSON consumers.
-- SVG output is parseable and dimensioned, but contains no axis labels/units or machine-readable figure provenance.
-- The existing code expects local `train.csv`, `test.csv`, and `data_description.txt`. This QA does not use or require those files.
+The following points were recorded as initial QA baseline findings during Issue #11 evaluation against the early profiler, and their current resolution status in the integrated pipeline is tracked below:
 
-The findings are for W1P1 / W1P2 review. This QA branch deliberately does not modify `tools/eda/profile_ames.py` or change the analysis behavior.
+- **Figure Manifest & Provenance Linkage**: Initially, the baseline profiler emitted no figure manifest, command, or provenance metadata. *Resolution:* Addressed in the integrated Phase 2 EDA pipeline (`tools/eda/full_ames_eda.py`), which generates `figures_manifest.json` and `figures_manifest.csv` with figure IDs, captions, source SHAs, generation commands, and limitations.
+- **Duplicate ID Counting**: Initially, only boolean `id.unique` was reported. *Resolution:* Both `profile_ames.py` and `full_ames_eda.py` now explicitly report duplicate ID counts (`duplicate_count` in profile and `train_duplicate_id_count` / `test_duplicate_id_count` in schema checks).
+- **Malformed CSV Row Validation**: Initially, `csv.DictReader` tolerated extra or missing cells without error. *Resolution:* Both profiling tools now enforce strict field counts per line (`csv.reader` with header length check) and fail closed with a descriptive `ValueError`.
+- **Non-Finite Numeric Value Rejection**: Initially, numeric parsing could accept `NaN` and infinity into float summaries. *Resolution:* Both pipelines validate with `math.isfinite` and serialize JSON with `allow_nan=False`, rejecting non-finite values before output.
+- **Figure Labeling and Truthfulness**: Initially, fallback charts lacked axis labeling and provenance. *Resolution:* Integrated SVG and pure-Python rasterized charts render explicit axes, labels, data-derived observations, and masked legends for undefined correlations.
+- **Synthetic Test Isolation**: Confirmed; all QA and unit test suites operate strictly on synthetic fixtures and require no local Kaggle data files.
+
+These historical baseline notes document the QA contract evolution from initial Issue #11 findings through the integrated Issue #9 Package B / PR #12 deliverables.

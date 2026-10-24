@@ -7,8 +7,6 @@ import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-import pytest
-
 from tools.eda.profile_ames import _iqr_candidates, _numeric_summary, _paired_correlation, _skew, profile_csv, run
 
 
@@ -127,7 +125,6 @@ class ProfileAmesStatisticalQATests(unittest.TestCase):
             self.assertTrue((output / "train_saleprice_distribution.svg").is_file())
             self.assertEqual(report["files"][0]["predictor_count_excluding_Id_and_target"], 1)
 
-    @pytest.mark.xfail(reason="Known gap: DictReader silently ignores excess CSV fields; see QA findings.")
     def test_rejects_csv_row_with_more_cells_than_header(self):
         with tempfile.TemporaryDirectory() as temp:
             csv_path = Path(temp) / "malformed.csv"
