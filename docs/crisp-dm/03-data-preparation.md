@@ -25,7 +25,7 @@
   - **數值欄位**：以訓練集之中位數（Median）填補（如 `LotFrontage` 補以 70.0）。
   - **名義欄位**：以訓練集之眾數（Mode）填補（如 `Electrical` 補以 `'SBrkr'`、測試集缺失之 `MSZoning` 補以 `'RL'`、`Utilities` 補以 `'AllPub'`）。
   - **有序欄位**：非結構性缺漏（如測試集出現之 `KitchenQual`, `Functional`）以訓練集映射整數等級之 **中位數（Median of Training-Mapped Integer Scores）** 填補，而非字面眾數，確保等級空間中心性。
-  - **磚石飾面（`MasVnrType` 與 `MasVnrArea`）之特殊處置**：雖然訓練集之眾數與中位數恰為 `'None'` 與 `0.0`，但其本質為非結構性之隨機觀測遺漏。管線除了以訓練統計量補值外，額外建立專屬指示變數 `MasVnrType_is_missing` 與 `MasVnrArea_is_missing`，使「真實無飾面（None/0）」與「未記錄遺漏（補值為 None/0）」在特徵矩陣中完全可區隔。轉換後所有分割集之缺失值皆降至 0（100% 完整）。
+  - **磚石飾面（`MasVnrType` 與 `MasVnrArea`）之特殊處置**：雖然訓練集之眾數與中位數恰為 `'None'` 與 `0.0`，但其本質為非結構性之未記錄遺漏。管線除了以訓練統計量補值外，額外建立專屬指示變數 `MasVnrType_is_missing` 與 `MasVnrArea_is_missing`，使「真實無飾面（None/0）」與「未記錄遺漏（補值為 None/0）」在特徵矩陣中完全可區隔。轉換後所有分割集之缺失值皆降至 0（100% 完整）。
 
 ### 3. 特徵分類與編碼轉換 `[Verified / 已驗證]`
 - **特徵維度擴展**：原始 79 個預測變數經重構為：
@@ -35,7 +35,7 @@
   - **19 個有序特徵**（Ordinal Features，依據字典層級嚴格對應為整數等級 0 至 8）。
   - **25 個名義類別特徵**（Nominal Features，採 One-Hot 編碼，包含依規範將 `MSSubClass` 視為名義類別），共展開出 **185 個二元 Dummy 特徵**。
   - **最終編碼特徵總數為 248 個**（35 + 7 + 2 + 19 + 185 = 248）。
-- **未知類別容錯防護（Unknown Category Handling）**：名義類別 One-Hot 編碼採用 `handle_unknown='ignore'` 原則。當驗證集出現訓練集未見之類別（如 `RoofMatl = Metal`，共 1 次觀測）或測試集出現罕見類別（如 `MSSubClass = 150`，共 1 次觀測）時，管線自動將所有 Dummy 設為 0，絕不拋出例外亦不改變欄位數量與排列，並忠實記錄於中繼摘要檔中。
+- **未知類別容錯防護（Unknown Category Handling）**：名義類別 One-Hot 編碼採用 `handle_unknown='ignore'` 原則。當驗證集出現訓練集未見之名義類別（共 1 次未見水準觀測）或測試集出現罕見類別（共 1 次未見水準觀測）時，管線自動將該特徵所有 Dummy 設為 0，絕不拋出例外亦不改變欄位數量與排列，並忠實記錄於地端中繼摘要檔中。
 
 ### 4. 異常值候選與資料治理邊界 `[Assumed / 假設]`
 - **61 筆 IQR 異常值候選全數保留**：在 Phase 2 所標記之 61 筆 `SalePrice` 邊際 IQR 離群候選（精確值：下圍欄 $3,937.50，上圍欄 $340,037.50；四捨五入整數表示為 $4,000 與 $340,000），在本階段資料準備中 **100% 完整保留，無任何刪除、截斷（Winsorization）或過濾**。保留原因在於高價房屋代表合理的真實市場交易樣態，其離群特質屬於 Phase 4 應評估是否採用對數轉換（Log Transformation）或強健迴歸之重要實證對象。
@@ -126,11 +126,11 @@
 7. `HasMiscFeature`：具備雜項設施時為 `1.0`，否則為 `0.0`。
 
 ### 3.3 非結構性未知遺漏補值與結果驗證 `[Verified / 已驗證]`
-對於非屬結構性特徵之隨機遺漏，全數採用訓練集配適之統計量：
+對於非屬結構性特徵之未記錄/非結構性遺漏，全數採用訓練集配適之統計量：
 - **數值欄位**：以訓練集連續/計數數值之 **中位數（Median）** 填補（如 `LotFrontage` 補以 70.0、`MasVnrArea` 補以 0.0、測試集零星缺漏之地下室與車庫面積補以 0.0）。
 - **名義欄位**：以訓練集類別之 **眾數（Mode）** 填補（如 `Electrical` 補以 `'SBrkr'`、`MSZoning` 補以 `'RL'`、`Utilities` 補以 `'AllPub'`、`Exterior1st` 與 `Exterior2nd` 補以 `'VinylSd'`、`SaleType` 補以 `'WD'`）。
 - **有序欄位**：非結構性缺漏（如測試集出現之 `KitchenQual`, `Functional`）以訓練集映射整數等級之 **中位數（Median of Training-Mapped Integer Scores）** 填補（如 `KitchenQual` 補以 3 即 TA，`Functional` 補以 8 即 Typ），而非字面眾數，確保等級空間之統計中心性。
-- **磚石飾面（`MasVnrType` 與 `MasVnrArea`）顯式缺失指標**：因訓練集之眾數與中位數恰為 `'None'` 與 `0.0`，為防止未記錄之觀測遺漏與真實無飾面設施相混淆，管線建立專屬之二元指示變數 `MasVnrType_is_missing` 與 `MasVnrArea_is_missing`，使兩者在特徵空間中具備嚴格可區隔性。
+- **磚石飾面（`MasVnrType` 與 `MasVnrArea`）顯式缺失指標**：因訓練集之眾數與中位數恰為 `'None'` 與 `0.0`，為防止未記錄/非結構性遺漏與真實無飾面設施相混淆，管線建立專屬之二元指示變數 `MasVnrType_is_missing` 與 `MasVnrArea_is_missing`，使兩者在特徵空間中具備嚴格可區隔性。
 - **轉換後完整性**：訓練集、驗證集與測試集在轉換後的 248 個特徵中，**NaN 總數均為 0**（100% 完整無遺漏）。
 
 ---
@@ -163,10 +163,10 @@
 在真實預測環境中，測試資料常包含訓練階段未見之罕見類別。本管線實作 `handle_unknown='ignore'` 防護：
 - 當遇見未知類別時，該欄位所對應的所有訓練 One-Hot Dummy 一律設為 `0.0`。
 - 管線不拋出例外，維持特徵矩陣之維度固定為 248 欄。
-- 實證觀測之未知類別事件（僅保留安全匯總證據，無逐筆或特定列號資訊）：
-  - **驗證集**：`RoofMatl = Metal`（共 1 次觀測）。因訓練分割集中未包含金屬屋頂樣本，故所有 `RoofMatl_*` 特徵在該觀測值皆安全設為 0。
-  - **競賽測試集**：`MSSubClass = 150`（共 1 次觀測，為字典所列「1-1/2 STORY PUD - ALL AGES」，但訓練集中未曾出現）。所有 `MSSubClass_*` 特徵在該觀測值皆安全設為 0。
-- 上述未知類別事件皆完整追蹤於 `prep_profile.json` 與品質報告中。
+- 實證觀測之未知類別事件（僅保留分割集層級安全匯總計數，精確類別值僅記錄於地端 ignored 產物中）：
+  - **驗證集**：觀測到 1 次未見名義類別事件（One-Hot Dummy 安全設為全 0）。
+  - **競賽測試集**：觀測到 1 次未見名義類別事件（One-Hot Dummy 安全設為全 0）。
+- 上述未知類別事件之精確欄位與水準皆安全隔離追蹤於本地 ignored 之 `prep_profile.json` 與品質報告中。
 
 ---
 

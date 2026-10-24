@@ -165,63 +165,59 @@ class DataPreparationPipelineTests(unittest.TestCase):
         self.assertEqual(f["GarageYrBlt"], 0.0)
 
     def test_masvnr_missingness_distinguishable_from_genuine_none_and_zero(self):
-        """Verify genuine missing MasVnrType/Area are explicitly indicated and distinguishable from None/0."""
-        # Row 1: Property with verified genuine "No Veneer" (MasVnrType='None', MasVnrArea='0')
-        row_genuine_none = {
-            "Id": "1",
-            "MSSubClass": "20",
-            "MasVnrType": "None",
-            "MasVnrArea": "0",
-            "Neighborhood": "CollgCr",
-        }
-        # Row 2: Property with unrecorded/missing veneer (MasVnrType='NA', MasVnrArea='NA')
-        row_missing_veneer = {
-            "Id": "2",
-            "MSSubClass": "20",
-            "MasVnrType": "NA",
-            "MasVnrArea": "NA",
-            "Neighborhood": "CollgCr",
-        }
-        # Row 3: Property with actual brick veneer (MasVnrType='BrkFace', MasVnrArea='200')
-        row_brick_veneer = {
-            "Id": "3",
-            "MSSubClass": "20",
-            "MasVnrType": "BrkFace",
-            "MasVnrArea": "200",
-            "Neighborhood": "CollgCr",
-        }
-
+        """Verify genuine missing MasVnrType/Area reproduce collision and are only distinguished by flags."""
+        # 1. Fit training records where nominal mode is explicitly 'None' and numeric median is 0.0
+        # (3 rows with 'None'/0.0, 1 row with 'BrkFace'/150.0)
+        train_records = [
+            {"Id": "tr1", "MasVnrType": "None", "MasVnrArea": "0", "MSSubClass": "20"},
+            {"Id": "tr2", "MasVnrType": "None", "MasVnrArea": "0", "MSSubClass": "20"},
+            {"Id": "tr3", "MasVnrType": "None", "MasVnrArea": "0", "MSSubClass": "20"},
+            {"Id": "tr4", "MasVnrType": "BrkFace", "MasVnrArea": "150", "MSSubClass": "20"},
+        ]
         pipeline = AmesDataPreparationPipeline()
-        pipeline.fit([row_genuine_none, row_brick_veneer])
+        pipeline.fit(train_records)
 
-        # Fitted mode for MasVnrType is 'BrkFace' or 'None' (both present)
-        # Transform all three rows
-        result = pipeline.transform([row_genuine_none, row_missing_veneer, row_brick_veneer], split_name="test")
+        # Confirm that training fit actually learned mode='None' and median=0.0
+        self.assertEqual(pipeline.nominal_impute_values["MasVnrType"], "None")
+        self.assertEqual(pipeline.numeric_impute_values["MasVnrArea"], 0.0)
 
+        # 2. Test records to transform:
+        # Row A: Genuine physical absence (MasVnrType='None', MasVnrArea='0')
+        row_genuine_none = {"Id": "te1", "MasVnrType": "None", "MasVnrArea": "0", "MSSubClass": "20"}
+        # Row B: Unrecorded/non-structural missingness (MasVnrType='NA', MasVnrArea='NA')
+        row_unrecorded_missing = {"Id": "te2", "MasVnrType": "NA", "MasVnrArea": "NA", "MSSubClass": "20"}
+
+        result = pipeline.transform([row_genuine_none, row_unrecorded_missing], split_name="test")
         f_none = result.features[0]
         f_missing = result.features[1]
-        f_brick = result.features[2]
 
-        # Row 1 (Genuine None/0): missingness indicators must be 0.0
+        # 3. Assert that imputed type/area values are IDENTICAL (the collision):
+        # Both receive MasVnrType_None = 1.0, MasVnrType_BrkFace = 0.0, and MasVnrArea = 0.0
+        self.assertEqual(f_none["MasVnrType_None"], 1.0)
+        self.assertEqual(f_missing["MasVnrType_None"], 1.0)
+        self.assertEqual(f_none["MasVnrType_BrkFace"], 0.0)
+        self.assertEqual(f_missing["MasVnrType_BrkFace"], 0.0)
+        self.assertEqual(f_none["MasVnrArea"], 0.0)
+        self.assertEqual(f_missing["MasVnrArea"], 0.0)
+
+        # 4. Assert that ONLY the two missingness flags distinguish them:
         self.assertEqual(f_none["MasVnrType_is_missing"], 0.0)
         self.assertEqual(f_none["MasVnrArea_is_missing"], 0.0)
-        self.assertEqual(f_none["MasVnrArea"], 0.0)
-
-        # Row 2 (Unrecorded/Missing): missingness indicators must be 1.0!
         self.assertEqual(f_missing["MasVnrType_is_missing"], 1.0)
         self.assertEqual(f_missing["MasVnrArea_is_missing"], 1.0)
 
-        # Crucial: Row 1 and Row 2 MUST NOT be identical in feature space!
-        self.assertNotEqual(
-            (f_none["MasVnrType_is_missing"], f_none["MasVnrArea_is_missing"]),
-            (f_missing["MasVnrType_is_missing"], f_missing["MasVnrArea_is_missing"]),
-            "Genuine None/0 and unrecorded missing MasVnr must be distinguishable via explicit indicators"
+        differing_features = {k for k in f_none if f_none[k] != f_missing[k]}
+        self.assertEqual(
+            differing_features,
+            {"MasVnrType_is_missing", "MasVnrArea_is_missing"},
+            "Imputed values must collide and ONLY the two missingness indicators should distinguish them",
         )
 
-        # Row 3 (Actual Veneer): missingness indicators must be 0.0, area is 200.0
-        self.assertEqual(f_brick["MasVnrType_is_missing"], 0.0)
-        self.assertEqual(f_brick["MasVnrArea_is_missing"], 0.0)
-        self.assertEqual(f_brick["MasVnrArea"], 200.0)
+        # 5. Verify held-out data in transform does not affect fitted parameters
+        held_out_extreme = [{"MasVnrType": "Stone", "MasVnrArea": "999999", "MSSubClass": "20"}]
+        pipeline.transform(held_out_extreme, split_name="test")
+        self.assertEqual(pipeline.nominal_impute_values["MasVnrType"], "None")
+        self.assertEqual(pipeline.numeric_impute_values["MasVnrArea"], 0.0)
 
 
 if __name__ == "__main__":
