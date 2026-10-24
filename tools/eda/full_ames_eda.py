@@ -597,15 +597,18 @@ def _describe_saleprice_associations(train_rows: list[dict], correlations: dict)
     available_feats = [f for f in features if any(r.get(f) for r in train_rows)]
     if not available_feats:
         available_feats = [c[0] for c in correlations.get("target_correlations_ranked", [])[:6]]
+    if not available_feats and train_rows:
+        available_feats = [k for k in train_rows[0].keys() if k not in {IDENTIFIER, TARGET}][:6]
     if not available_feats:
-        return "未檢測到可用於散佈圖之數值解釋變數。"
+        return "散佈圖關聯性檢視：未檢測到可用於散佈圖之數值解釋變數。"
 
     pairwise = correlations.get("pairwise_correlations", {})
     pos_feats = []
     neg_feats = []
     flat_feats = []
     for f in available_feats:
-        r_val = pairwise.get(f, {}).get(TARGET, {}).get("r")
+        info = pairwise.get(f, {}).get(TARGET, {})
+        r_val = info.get("r")
         if r_val is not None:
             if r_val > 0.2:
                 pos_feats.append(f)
@@ -613,16 +616,22 @@ def _describe_saleprice_associations(train_rows: list[dict], correlations: dict)
                 neg_feats.append(f)
             else:
                 flat_feats.append(f)
+        else:
+            flat_feats.append(f)
+
     trend_parts = []
     if pos_feats:
         trend_parts.append(f"特徵 ({', '.join(f'`{c}`' for c in pos_feats[:3])}) 與目標變數呈現正向線性關聯趨勢")
     if neg_feats:
         trend_parts.append(f"特徵 ({', '.join(f'`{c}`' for c in neg_feats[:3])}) 與目標變數呈現負向線性關聯趨勢")
     if flat_feats:
-        trend_parts.append(f"特徵 ({', '.join(f'`{c}`' for c in flat_feats[:3])}) 與目標變數無明顯線性趨勢 (平緩)")
-    if not trend_parts:
-        trend_parts.append("選定特徵與目標變數間之關聯度未達明確線性趨勢門檻")
-    return f"散佈圖關聯性檢視：{'；'.join(trend_parts)}。"
+        trend_parts.append(f"特徵 ({', '.join(f'`{c}`' for c in flat_feats[:3])}) 與目標變數無明顯線性趨勢 (平緩或無線性關聯)")
+
+    clean_parts = [p.strip() for p in trend_parts if p and p.strip()]
+    if not clean_parts:
+        clean_parts = ["選定特徵與目標變數無明顯線性關聯 (平緩或無線性關聯)"]
+
+    return f"散佈圖關聯性檢視：{'；'.join(clean_parts)}。"
 
 
 def generate_figures_and_manifest(

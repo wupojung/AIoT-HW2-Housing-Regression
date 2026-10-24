@@ -441,7 +441,25 @@ class FullAmesEdaTests(unittest.TestCase):
             figs = json.loads((output / "figures_manifest.json").read_text(encoding="utf-8"))
             fig07 = next(f for f in figs if f["figure_id"] == "FIG-07")
             self.assertIn("負向線性關聯趨勢", fig07["descriptive_observation"])
+            self.assertIn("無明顯線性趨勢 (平緩或無線性關聯)", fig07["descriptive_observation"])
+            self.assertIn("GrLivArea", fig07["descriptive_observation"])
             self.assertNotIn("向上趨勢", fig07["descriptive_observation"])
+            self.assertNotEqual("散佈圖關聯性檢視：。", fig07["descriptive_observation"].strip())
+
+            # Fully flat dataset verification: all selected features flat/invariant
+            (datasets / "train.csv").write_text(
+                "Id,OverallQual,GrLivArea,SalePrice\n"
+                "1,5,1000,100000\n"
+                "2,5,1000,150000\n"
+                "3,5,1000,200000\n"
+            )
+            run(datasets, output, "2026-10-24", True, local_root=local)
+            figs_flat = json.loads((output / "figures_manifest.json").read_text(encoding="utf-8"))
+            fig07_flat = next(f for f in figs_flat if f["figure_id"] == "FIG-07")
+            self.assertIn("無明顯線性趨勢 (平緩或無線性關聯)", fig07_flat["descriptive_observation"])
+            self.assertNotIn("正向線性關聯", fig07_flat["descriptive_observation"])
+            self.assertNotIn("負向線性關聯", fig07_flat["descriptive_observation"])
+            self.assertNotEqual("散佈圖關聯性檢視：。", fig07_flat["descriptive_observation"].strip())
 
     def test_rejects_malformed_csv_rows_in_full_eda(self):
         """Verify full EDA fails closed when CSV contains malformed rows (extra or missing cells)."""
