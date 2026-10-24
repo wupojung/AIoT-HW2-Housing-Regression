@@ -67,22 +67,56 @@ STRUCTURAL_NA_CANDIDATES = {
 }
 
 
-def create_valid_png(width: int = 400, height: int = 200, rgb: tuple[int, int, int] = (245, 247, 250)) -> bytes:
-    """Generate a valid standard RGB PNG image in pure Python without external dependencies."""
+def _encode_png(width: int, height: int, pixels: bytearray) -> bytes:
+    """Encode an RGB bytearray buffer into standard PNG format."""
     def chunk(tag: bytes, data: bytes) -> bytes:
         payload = tag + data
         crc = binascii.crc32(payload) & 0xFFFFFFFF
         return struct.pack(">I", len(data)) + payload + struct.pack(">I", crc)
 
     header = b"\x89PNG\r\n\x1a\n"
-    # IHDR: width, height, bit depth 8, color type 2 (RGB), compression 0, filter 0, interlace 0
     ihdr = chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
-    # Scanline with filter 0x00 and RGB pixels
-    row = b"\x00" + bytes(rgb) * width
-    raw_data = row * height
-    idat = chunk(b"IDAT", zlib.compress(raw_data, level=6))
+    raw = bytearray()
+    row_len = width * 3
+    for y in range(height):
+        raw.append(0)  # filter type 0 (none)
+        raw.extend(pixels[y * row_len : (y + 1) * row_len])
+    idat = chunk(b"IDAT", zlib.compress(bytes(raw), level=4))
     iend = chunk(b"IEND", b"")
     return header + ihdr + idat + iend
+
+
+class Canvas:
+    def __init__(self, width: int = 800, height: int = 600, bg: tuple[int, int, int] = (255, 255, 255)):
+        self.width = width
+        self.height = height
+        self.pixels = bytearray(bytes(bg) * (width * height))
+
+    def fill_rect(self, x: int, y: int, w: int, h: int, rgb: tuple[int, int, int]):
+        if w <= 0 or h <= 0:
+            return
+        x0 = max(0, min(self.width, x))
+        y0 = max(0, min(self.height, y))
+        x1 = max(0, min(self.width, x + w))
+        y1 = max(0, min(self.height, y + h))
+        if x1 <= x0 or y1 <= y0:
+            return
+        col_bytes = bytes(rgb) * (x1 - x0)
+        for row_y in range(y0, y1):
+            idx = (row_y * self.width + x0) * 3
+            self.pixels[idx : idx + len(col_bytes)] = col_bytes
+
+    def draw_line_h(self, y: int, x0: int, x1: int, rgb: tuple[int, int, int] = (60, 60, 60), thickness: int = 1):
+        self.fill_rect(min(x0, x1), y - thickness // 2, abs(x1 - x0) + 1, thickness, rgb)
+
+    def draw_line_v(self, x: int, y0: int, y1: int, rgb: tuple[int, int, int] = (60, 60, 60), thickness: int = 1):
+        self.fill_rect(x - thickness // 2, min(y0, y1), thickness, abs(y1 - y0) + 1, rgb)
+
+    def draw_point(self, x: int, y: int, rgb: tuple[int, int, int] = (31, 119, 180), size: int = 4):
+        self.fill_rect(x - size // 2, y - size // 2, size, size, rgb)
+
+    def to_png(self) -> bytes:
+        return _encode_png(self.width, self.height, self.pixels)
 
 
 def sha256_file(path: Path) -> str:
@@ -181,11 +215,26 @@ def crosswalk_dictionary(train_columns: set[str], test_columns: set[str], dictio
 
 
 def read_csv_data(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    """Read CSV file and return header list and list of row dicts."""
+    """Read CSV file and return header list and list of row dicts.
+
+    Rejects malformed rows with extra or missing cells.
+    """
     with path.open(newline="", encoding="utf-8-sig") as stream:
-        reader = csv.DictReader(stream)
-        columns = list(reader.fieldnames or [])
-        rows = list(reader)
+        reader = csv.reader(stream)
+        try:
+            header = next(reader)
+        except StopIteration:
+            return [], []
+        columns = [c.strip() for c in header]
+        expected_len = len(columns)
+        rows = []
+        for line_no, row in enumerate(reader, start=2):
+            if len(row) != expected_len:
+                raise ValueError(
+                    f"Malformed CSV in '{path.name}' at line {line_no}: "
+                    f"expected {expected_len} fields, got {len(row)}"
+                )
+            rows.append(dict(zip(columns, row)))
     return columns, rows
 
 
@@ -193,6 +242,9 @@ def calculate_numeric_stats(values: list[float]) -> dict:
     """Calculate complete descriptive statistics and IQR anomaly fences."""
     if not values:
         return {"count": 0}
+    for v in values:
+        if not math.isfinite(v):
+            raise ValueError(f"Non-finite numeric value '{v}' detected in calculate_numeric_stats")
     ordered = sorted(values)
     n = len(ordered)
     mean = statistics.mean(ordered)
@@ -290,12 +342,19 @@ def build_field_inventory(
         is_numeric = False
         all_valid = train_valid + test_valid
         if all_valid:
-            try:
-                for v in all_valid:
-                    float(v)
-                is_numeric = True
-            except ValueError:
-                is_numeric = False
+            nums = []
+            is_numeric = True
+            for v in all_valid:
+                try:
+                    fval = float(v)
+                    if not math.isfinite(fval):
+                        raise ValueError(f"Non-finite numeric value '{v}' detected in column '{col}'")
+                    nums.append(fval)
+                except ValueError as exc:
+                    if "Non-finite" in str(exc):
+                        raise
+                    is_numeric = False
+                    break
 
         # Compute stats or categorical distribution explicit per split
         train_num_stats = None
@@ -407,13 +466,22 @@ def calculate_numeric_correlations(train_cols: list[str], train_rows: list[dict]
             continue
         vals = [r.get(col, "") for r in train_rows]
         valid = [v for v in vals if v is not None and v.strip() != ""]
-        try:
-            nums = [float(v) for v in valid]
-            if len(nums) == len(valid) and len(nums) > 0:
-                numeric_cols.append(col)
-                col_values[col] = vals
-        except ValueError:
-            continue
+        nums = []
+        is_num = True
+        for v in valid:
+            try:
+                fval = float(v)
+                if not math.isfinite(fval):
+                    raise ValueError(f"Non-finite numeric value '{v}' detected in column '{col}'")
+                nums.append(fval)
+            except ValueError as exc:
+                if "Non-finite" in str(exc):
+                    raise
+                is_num = False
+                break
+        if is_num and len(nums) == len(valid) and len(nums) > 0:
+            numeric_cols.append(col)
+            col_values[col] = vals
 
     pairwise = {}
     target_corrs = {}
@@ -454,6 +522,109 @@ def calculate_numeric_correlations(train_cols: list[str], train_rows: list[dict]
     }
 
 
+def _describe_target_distribution(target_stats: dict) -> str:
+    """Generate truthful, data-derived observation for target variable SalePrice."""
+    if not target_stats or target_stats.get("count", 0) == 0:
+        return "訓練集中未檢測到有效之目標變數數值觀察值。"
+    skew = target_stats.get("skewness")
+    mean = target_stats.get("mean")
+    median = target_stats.get("50%")
+    anomalies = target_stats.get("anomaly_candidates_count", 0)
+
+    if skew is None:
+        skew_desc = "偏態未定義 (樣本數過少或無變異)"
+    elif skew > 0.5:
+        skew_desc = f"呈現右偏態分佈 (偏態係數約 {skew:.2f})"
+    elif skew < -0.5:
+        skew_desc = f"呈現左偏態分佈 (偏態係數約 {skew:.2f})"
+    else:
+        skew_desc = f"呈現大致對稱分佈 (偏態係數約 {skew:.2f})"
+
+    if mean is not None and median is not None:
+        diff = mean - median
+        if abs(diff) < 1e-4:
+            center_desc = "中位數與平均數相近"
+        elif diff > 0:
+            center_desc = "平均數大於中位數"
+        else:
+            center_desc = "中位數大於平均數"
+    else:
+        center_desc = "集中趨勢指標不完整"
+
+    if anomalies > 0:
+        outlier_desc = f"依 1.5x IQR 柵欄檢測出 {anomalies} 筆候選極值"
+    else:
+        outlier_desc = "依 1.5x IQR 柵欄未檢測出候選極值"
+
+    return f"目標變數 SalePrice {skew_desc}，{center_desc}，{outlier_desc}。"
+
+
+def _describe_numeric_distributions(inventory: list[dict]) -> str:
+    """Generate truthful summary of numeric predictor distributions."""
+    num_items = [
+        r for r in inventory
+        if r.get("train_numeric_stats") and r["name"] != IDENTIFIER and r["name"] != TARGET
+    ]
+    if not num_items:
+        return "資料集中未檢測到數值解釋變數。"
+    right_skewed = []
+    left_skewed = []
+    symmetric = []
+    for r in num_items:
+        sk = r["train_numeric_stats"].get("skewness")
+        if sk is not None:
+            if sk > 0.5:
+                right_skewed.append(r["name"])
+            elif sk < -0.5:
+                left_skewed.append(r["name"])
+            else:
+                symmetric.append(r["name"])
+    parts = []
+    if right_skewed:
+        parts.append(f"部分特徵呈現右偏 (如 {', '.join(f'`{c}`' for c in right_skewed[:3])})")
+    if left_skewed:
+        parts.append(f"部分特徵呈現左偏 (如 {', '.join(f'`{c}`' for c in left_skewed[:3])})")
+    if symmetric:
+        parts.append(f"部分特徵分佈大致對稱 (如 {', '.join(f'`{c}`' for c in symmetric[:3])})")
+    if not parts:
+        parts.append("數值特徵樣本不足或無變異")
+    return f"數值特徵分佈概況：{'；'.join(parts)}；各特徵分佈形態依樣本資料真實呈現。"
+
+
+def _describe_saleprice_associations(train_rows: list[dict], correlations: dict) -> str:
+    """Generate truthful association summary for selected features vs SalePrice."""
+    features = ["OverallQual", "GrLivArea", "TotalBsmtSF", "1stFlrSF", "GarageCars", "GarageArea"]
+    available_feats = [f for f in features if any(r.get(f) for r in train_rows)]
+    if not available_feats:
+        available_feats = [c[0] for c in correlations.get("target_correlations_ranked", [])[:6]]
+    if not available_feats:
+        return "未檢測到可用於散佈圖之數值解釋變數。"
+
+    pairwise = correlations.get("pairwise_correlations", {})
+    pos_feats = []
+    neg_feats = []
+    flat_feats = []
+    for f in available_feats:
+        r_val = pairwise.get(f, {}).get(TARGET, {}).get("r")
+        if r_val is not None:
+            if r_val > 0.2:
+                pos_feats.append(f)
+            elif r_val < -0.2:
+                neg_feats.append(f)
+            else:
+                flat_feats.append(f)
+    trend_parts = []
+    if pos_feats:
+        trend_parts.append(f"特徵 ({', '.join(f'`{c}`' for c in pos_feats[:3])}) 與目標變數呈現正向線性關聯趨勢")
+    if neg_feats:
+        trend_parts.append(f"特徵 ({', '.join(f'`{c}`' for c in neg_feats[:3])}) 與目標變數呈現負向線性關聯趨勢")
+    if flat_feats:
+        trend_parts.append(f"特徵 ({', '.join(f'`{c}`' for c in flat_feats[:3])}) 與目標變數無明顯線性趨勢 (平緩)")
+    if not trend_parts:
+        trend_parts.append("選定特徵與目標變數間之關聯度未達明確線性趨勢門檻")
+    return f"散佈圖關聯性檢視：{'；'.join(trend_parts)}。"
+
+
 def generate_figures_and_manifest(
     inventory: list[dict],
     correlations: dict,
@@ -462,8 +633,13 @@ def generate_figures_and_manifest(
     output_dir: Path,
     sha_manifest: dict,
     access_date: str,
+    *,
+    require_matplotlib: bool = False,
 ) -> list[dict]:
     """Generate all requested SVG and PNG charts and build detailed figure metadata manifest."""
+    if require_matplotlib and not HAS_MATPLOTLIB:
+        raise RuntimeError("Matplotlib is required for rendering chart figures; fake uniform-color fallback is forbidden.")
+
     figures_dir = output_dir / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
 
@@ -537,14 +713,13 @@ def generate_figures_and_manifest(
     target_vals = []
     if target_rec and target_stats:
         target_vals = [float(r[TARGET]) for r in train_rows if r.get(TARGET)]
-    skew_obs = f"約 {target_stats['skewness']:.2f}" if target_stats.get("skewness") is not None else "未知"
     p_png, p_svg = register_figure(
         "FIG-03",
         "fig03_saleprice_distribution",
         "目標變數 SalePrice 分佈直方圖與箱型圖",
         f"展示訓練集目標變數 SalePrice (N={len(target_vals):,}) 之直方圖、密度擬合與五數綜合箱型圖。",
         "4. 目標變數 SalePrice 分佈分析",
-        f"SalePrice 呈現右偏態分佈 (偏態係數{skew_obs})，中位數小於平均數，存在高房價候選極值。",
+        _describe_target_distribution(target_stats),
         "僅描述訓練集原始金額分佈，未進行對數轉換或建模擬合。"
     )
     _render_saleprice_chart(p_png, p_svg, target_vals, target_stats)
@@ -556,7 +731,7 @@ def generate_figures_and_manifest(
         "主要數值預測變數分佈總覽",
         "選取代表性連續與離散數值欄位 (如 GrLivArea, OverallQual, TotalBsmtSF, YearBuilt 等) 之多面直方圖。",
         "5. 數值特徵統計摘要與分佈",
-        "生活面積與地坪面積等多數面積特徵呈現右偏；屋齡與裝修年份分佈反映歷史建築週期。",
+        _describe_numeric_distributions(inventory),
         "純視覺化呈現，未對離群值進行裁切或過濾。"
     )
     _render_numeric_overview_chart(p_png, p_svg, inventory, train_rows)
@@ -599,9 +774,9 @@ def generate_figures_and_manifest(
         "FIG-07",
         "fig07_saleprice_scatters",
         "代表性預測變數與 SalePrice 散佈圖檢視",
-        "針對線性相關最高的 6 個代表性數值特徵 (OverallQual, GrLivArea, TotalBsmtSF, 1stFlrSF, GarageCars, GarageArea) 與 SalePrice 繪製散佈圖。",
+        "針對代表性數值特徵與 SalePrice 繪製散佈圖。",
         "8. 特徵與目標變數關聯視覺化",
-        "隨面積與品質提升呈現整體向上趨勢，在大生活面積區域存在潛在極端觀察值檢視點。",
+        _describe_saleprice_associations(train_rows, correlations),
         "散佈圖選取規則為純圖表展示目的，絕非模型特徵挑選；未刪除任何極端值。"
     )
     _render_scatters_chart(p_png, p_svg, train_rows)
@@ -675,6 +850,246 @@ def generate_figures_and_manifest(
     return manifest_entries
 
 
+# --- Pure-Python truthful fallback PNG rendering routines ---
+
+def _draw_overview_png(train_n: int, test_n: int, inventory: list[dict]) -> bytes:
+    canvas = Canvas(800, 400)
+    canvas.draw_line_h(320, 50, 360, rgb=(80, 80, 80), thickness=2)
+    max_n = max(train_n, test_n, 1)
+    h_tr = int(train_n / max_n * 240) if max_n > 0 else 0
+    h_te = int(test_n / max_n * 240) if max_n > 0 else 0
+    canvas.fill_rect(90, 320 - h_tr, 80, h_tr, (43, 92, 143))
+    canvas.fill_rect(220, 320 - h_te, 80, h_te, (217, 95, 2))
+
+    canvas.draw_line_v(440, 50, 320, rgb=(80, 80, 80), thickness=2)
+    type_counts = {}
+    for r in inventory:
+        t = r["semantic_type"]
+        type_counts[t] = type_counts.get(t, 0) + 1
+    max_c = max(type_counts.values()) if type_counts else 1
+    y = 70
+    for t, cnt in list(type_counts.items())[:6]:
+        w = int(cnt / max_c * 280)
+        canvas.fill_rect(442, y, max(w, 2), 22, (77, 175, 74))
+        y += 35
+    return canvas.to_png()
+
+
+def _draw_missingness_png(missing_items: list[tuple[str, float, float, bool]]) -> bytes:
+    h = max(400, len(missing_items) * 30 + 100)
+    canvas = Canvas(800, h)
+    canvas.draw_line_v(180, 50, h - 50, rgb=(80, 80, 80), thickness=2)
+    canvas.draw_line_h(h - 50, 180, 750, rgb=(80, 80, 80), thickness=2)
+    for i, item in enumerate(missing_items):
+        y = 60 + i * 28
+        w_tr = int(item[1] / 100 * 500)
+        w_te = int(item[2] / 100 * 500)
+        if w_tr > 0:
+            canvas.fill_rect(182, y, w_tr, 10, (43, 92, 143))
+        if w_te > 0:
+            canvas.fill_rect(182, y + 12, w_te, 10, (217, 95, 2))
+    return canvas.to_png()
+
+
+def _draw_saleprice_png(values: list[float], stats: dict) -> bytes:
+    canvas = Canvas(800, 500)
+    canvas.draw_line_h(420, 80, 750, rgb=(80, 80, 80), thickness=2)
+    canvas.draw_line_v(80, 50, 420, rgb=(80, 80, 80), thickness=2)
+    if values:
+        min_v = stats.get("min", min(values))
+        max_v = stats.get("max", max(values))
+        span = max_v - min_v if max_v > min_v else 1.0
+        n_bins = min(30, max(5, len(values)))
+        bins = [0] * n_bins
+        for v in values:
+            b = min(n_bins - 1, max(0, int((v - min_v) / span * n_bins)))
+            bins[b] += 1
+        max_b = max(bins) if max(bins) > 0 else 1
+        bar_w = max(2, int(650 / n_bins))
+        for b, cnt in enumerate(bins):
+            bar_h = int(cnt / max_b * 320)
+            canvas.fill_rect(80 + b * bar_w, 420 - bar_h, max(1, bar_w - 2), bar_h, (76, 120, 168))
+        mean = stats.get("mean")
+        med = stats.get("50%")
+        if mean is not None:
+            x_m = int(80 + (mean - min_v) / span * 650)
+            canvas.draw_line_v(max(80, min(750, x_m)), 50, 420, rgb=(228, 26, 28), thickness=2)
+        if med is not None:
+            x_d = int(80 + (med - min_v) / span * 650)
+            canvas.draw_line_v(max(80, min(750, x_d)), 50, 420, rgb=(44, 160, 44), thickness=2)
+    return canvas.to_png()
+
+
+def _draw_numeric_overview_png(cols: list[str], train_rows: list[dict]) -> bytes:
+    canvas = Canvas(800, 500)
+    if not cols:
+        canvas.draw_line_h(420, 80, 720, rgb=(100, 100, 100), thickness=2)
+        canvas.draw_line_v(80, 80, 420, rgb=(100, 100, 100), thickness=2)
+        return canvas.to_png()
+    n_plots = min(6, len(cols))
+    for i, col in enumerate(cols[:n_plots]):
+        px = 60 + (i % 3) * 240
+        py = 50 + (i // 3) * 220
+        canvas.draw_line_h(py + 160, px, px + 200, rgb=(100, 100, 100), thickness=1)
+        canvas.draw_line_v(px, py, py + 160, rgb=(100, 100, 100), thickness=1)
+        vals = [float(r[col]) for r in train_rows if r.get(col) and r[col].strip()]
+        if vals:
+            min_v, max_v = min(vals), max(vals)
+            span = max_v - min_v if max_v > min_v else 1.0
+            n_bins = 15
+            bins = [0] * n_bins
+            for v in vals:
+                b = min(n_bins - 1, max(0, int((v - min_v) / span * n_bins)))
+                bins[b] += 1
+            max_b = max(bins) if max(bins) > 0 else 1
+            bw = int(190 / n_bins)
+            for b, cnt in enumerate(bins):
+                bh = int(cnt / max_b * 140)
+                canvas.fill_rect(px + b * bw, py + 160 - bh, max(1, bw - 1), bh, (89, 161, 79))
+    return canvas.to_png()
+
+
+def _draw_categorical_overview_png(cat_items: list[tuple[str, int]]) -> bytes:
+    canvas = Canvas(800, 400)
+    canvas.draw_line_h(340, 60, 750, rgb=(80, 80, 80), thickness=2)
+    canvas.draw_line_v(60, 40, 340, rgb=(80, 80, 80), thickness=2)
+    items = cat_items[:15]
+    if items:
+        max_c = max(x[1] for x in items) if items else 1
+        bw = max(5, int(660 / len(items)))
+        for i, (name, card) in enumerate(items):
+            bh = int(card / max_c * 260)
+            canvas.fill_rect(70 + i * bw, 340 - bh, max(2, bw - 6), bh, (225, 87, 89))
+    return canvas.to_png()
+
+
+def _draw_correlation_png(numeric_cols: list[str], matrix: list[list[float | None]]) -> bytes:
+    n = len(numeric_cols)
+    size = max(400, n * 24 + 140)
+    canvas = Canvas(size, size)
+    margin = 80
+    cell_size = max(10, min(30, (size - margin - 60) // max(n, 1)))
+    for i in range(n):
+        for j in range(n):
+            v = matrix[i][j]
+            if v is None:
+                rgb = (208, 208, 208)  # Distinct neutral masked state (#d0d0d0)
+            else:
+                r_val = max(-1.0, min(1.0, v))
+                if r_val >= 0:
+                    rgb = (int(247 + (178 - 247) * r_val), int(247 + (24 - 247) * r_val), int(247 + (43 - 247) * r_val))
+                else:
+                    t = -r_val
+                    rgb = (int(247 + (33 - 247) * t), int(247 + (102 - 247) * t), int(247 + (172 - 247) * t))
+            canvas.fill_rect(margin + j * cell_size, margin + i * cell_size, max(1, cell_size - 1), max(1, cell_size - 1), rgb)
+
+    legend_y = margin + n * cell_size + 15
+    canvas.fill_rect(margin, legend_y, 16, 16, (208, 208, 208))
+    canvas.draw_line_h(legend_y, margin, margin + 16, rgb=(120, 120, 120))
+    canvas.draw_line_h(legend_y + 16, margin, margin + 16, rgb=(120, 120, 120))
+    canvas.draw_line_v(margin, legend_y, legend_y + 16, rgb=(120, 120, 120))
+    canvas.draw_line_v(margin + 16, legend_y, legend_y + 16, rgb=(120, 120, 120))
+    return canvas.to_png()
+
+
+def _draw_scatters_png(features: list[str], train_rows: list[dict]) -> bytes:
+    canvas = Canvas(800, 600)
+    if not features and train_rows:
+        features = [k for k in train_rows[0].keys() if k not in {IDENTIFIER, TARGET}][:6]
+    if not features:
+        canvas.draw_line_h(500, 80, 720, rgb=(100, 100, 100), thickness=2)
+        canvas.draw_line_v(80, 80, 500, rgb=(100, 100, 100), thickness=2)
+        return canvas.to_png()
+    n_plots = min(6, len(features))
+    for i, feat in enumerate(features[:n_plots]):
+        px = 60 + (i % 3) * 240
+        py = 50 + (i // 3) * 260
+        canvas.draw_line_h(py + 200, px, px + 210, rgb=(100, 100, 100), thickness=1)
+        canvas.draw_line_v(px, py, py + 200, rgb=(100, 100, 100), thickness=1)
+        pairs = []
+        for r in train_rows:
+            if r.get(feat) and r[feat].strip() and r.get(TARGET):
+                try:
+                    pairs.append((float(r[feat]), float(r[TARGET])))
+                except ValueError:
+                    pass
+        if pairs:
+            xs = [p[0] for p in pairs]
+            ys = [p[1] for p in pairs]
+            min_x, max_x = min(xs), max(xs)
+            min_y, max_y = min(ys), max(ys)
+            span_x = max_x - min_x if max_x > min_x else 1.0
+            span_y = max_y - min_y if max_y > min_y else 1.0
+            for x, y in pairs:
+                cx = int(px + (x - min_x) / span_x * 190)
+                cy = int(py + 200 - (y - min_y) / span_y * 180)
+                canvas.draw_point(cx, cy, rgb=(59, 110, 140), size=3)
+    return canvas.to_png()
+
+
+def _draw_anomaly_png(top_outliers: list[tuple[str, int, float]]) -> bytes:
+    canvas = Canvas(800, 500)
+    canvas.draw_line_v(180, 50, 450, rgb=(80, 80, 80), thickness=2)
+    canvas.draw_line_h(450, 180, 750, rgb=(80, 80, 80), thickness=2)
+    if top_outliers:
+        max_c = max(x[1] for x in top_outliers) if top_outliers else 1
+        items = top_outliers[:15]
+        for i, (name, cnt, skew) in enumerate(reversed(items)):
+            y = 60 + i * 25
+            w = int(cnt / max_c * 520) if max_c > 0 else 0
+            canvas.fill_rect(182, y, max(w, 2), 16, (176, 122, 161))
+    return canvas.to_png()
+
+
+def _draw_single_numeric_png(col: str, values: list[float], stats: dict) -> bytes:
+    canvas = Canvas(600, 400)
+    canvas.draw_line_h(340, 60, 550, rgb=(80, 80, 80), thickness=2)
+    canvas.draw_line_v(60, 40, 340, rgb=(80, 80, 80), thickness=2)
+    if values:
+        min_v = stats.get("min", min(values))
+        max_v = stats.get("max", max(values))
+        span = max_v - min_v if max_v > min_v else 1.0
+        n_bins = min(25, max(5, len(values)))
+        bins = [0] * n_bins
+        for v in values:
+            b = min(n_bins - 1, max(0, int((v - min_v) / span * n_bins)))
+            bins[b] += 1
+        max_b = max(bins) if max(bins) > 0 else 1
+        bar_w = max(2, int(470 / n_bins))
+        for b, cnt in enumerate(bins):
+            bh = int(cnt / max_b * 260)
+            canvas.fill_rect(60 + b * bar_w, 340 - bh, max(1, bar_w - 2), bh, (118, 183, 178))
+        mean = stats.get("mean")
+        med = stats.get("50%")
+        if mean is not None:
+            xm = int(60 + (mean - min_v) / span * 470)
+            canvas.draw_line_v(max(60, min(550, xm)), 40, 340, rgb=(228, 26, 28), thickness=2)
+        if med is not None:
+            xd = int(60 + (med - min_v) / span * 470)
+            canvas.draw_line_v(max(60, min(550, xd)), 40, 340, rgb=(44, 160, 44), thickness=2)
+    return canvas.to_png()
+
+
+def _draw_single_categorical_png(col: str, train_dist: dict | None, test_dist: dict | None) -> bytes:
+    all_levels = sorted(set((train_dist or {}).keys()) | set((test_dist or {}).keys()))
+    h = max(300, len(all_levels) * 30 + 80)
+    canvas = Canvas(600, h)
+    canvas.draw_line_v(150, 40, h - 40, rgb=(80, 80, 80), thickness=2)
+    canvas.draw_line_h(h - 40, 150, 560, rgb=(80, 80, 80), thickness=2)
+    tr_counts = [(train_dist or {}).get(l, {}).get("count", 0) for l in all_levels]
+    te_counts = [(test_dist or {}).get(l, {}).get("count", 0) for l in all_levels]
+    max_c = max(max(tr_counts or [0]), max(te_counts or [0]), 1)
+    for i, lvl in enumerate(all_levels):
+        y = 50 + i * 28
+        w_tr = int(tr_counts[i] / max_c * 380)
+        w_te = int(te_counts[i] / max_c * 380)
+        if w_tr > 0:
+            canvas.fill_rect(152, y, w_tr, 9, (43, 92, 143))
+        if w_te > 0:
+            canvas.fill_rect(152, y + 11, w_te, 9, (217, 95, 2))
+    return canvas.to_png()
+
+
 # --- Matplotlib and fallback rendering routines ---
 
 def _render_overview_chart(p_png: Path, p_svg: Path, inventory: list[dict], train_n: int, test_n: int):
@@ -708,7 +1123,7 @@ def _render_overview_chart(p_png: Path, p_svg: Path, inventory: list[dict], trai
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, f"Dataset Overview (Train N={train_n}, Test N={test_n})")
-        p_png.write_bytes(create_valid_png(width=800, height=400))
+        p_png.write_bytes(_draw_overview_png(train_n, test_n, inventory))
 
 
 def _render_missingness_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
@@ -755,7 +1170,7 @@ def _render_missingness_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, "Missing Values: Train vs Test Comparison")
-        p_png.write_bytes(create_valid_png(width=800, height=600))
+        p_png.write_bytes(_draw_missingness_png(missing_items))
 
 
 def _render_saleprice_chart(p_png: Path, p_svg: Path, values: list[float], stats: dict):
@@ -785,7 +1200,7 @@ def _render_saleprice_chart(p_png: Path, p_svg: Path, values: list[float], stats
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, f"SalePrice Distribution (Train N={len(values)})")
-        p_png.write_bytes(create_valid_png(width=800, height=500))
+        p_png.write_bytes(_draw_saleprice_png(values, stats))
 
 
 def _render_numeric_overview_chart(p_png: Path, p_svg: Path, inventory: list[dict], train_rows: list[dict]):
@@ -819,7 +1234,7 @@ def _render_numeric_overview_chart(p_png: Path, p_svg: Path, inventory: list[dic
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, "Key Numeric Predictors Overview")
-        p_png.write_bytes(create_valid_png(width=800, height=500))
+        p_png.write_bytes(_draw_numeric_overview_png(available_cols, train_rows))
 
 
 def _render_categorical_overview_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
@@ -843,7 +1258,7 @@ def _render_categorical_overview_chart(p_png: Path, p_svg: Path, inventory: list
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, "Categorical Cardinality Overview")
-        p_png.write_bytes(create_valid_png(width=800, height=400))
+        p_png.write_bytes(_draw_categorical_overview_png(cat_items))
 
 
 def _render_correlation_chart(p_png: Path, p_svg: Path, correlations: dict):
@@ -859,8 +1274,12 @@ def _render_correlation_chart(p_png: Path, p_svg: Path, correlations: dict):
 
     if HAS_MATPLOTLIB and numeric_cols:
         fig, ax = plt.subplots(figsize=(max(8, len(numeric_cols) * 0.4), max(7, len(numeric_cols) * 0.4)))
-        im_data = [[v if v is not None else 0.0 for v in r] for r in matrix]
-        im = ax.imshow(im_data, cmap="coolwarm", vmin=-1.0, vmax=1.0)
+        import numpy as np
+        import matplotlib.patches as mpatches
+        matrix_array = np.array([[np.nan if v is None else v for v in r] for r in matrix], dtype=float)
+        cmap = plt.get_cmap("coolwarm").copy()
+        cmap.set_bad(color="#d0d0d0")
+        im = ax.imshow(matrix_array, cmap=cmap, vmin=-1.0, vmax=1.0)
         ax.set_xticks(range(len(numeric_cols)))
         ax.set_yticks(range(len(numeric_cols)))
         fontsize = max(6, min(10, 150 // len(numeric_cols)))
@@ -869,18 +1288,22 @@ def _render_correlation_chart(p_png: Path, p_svg: Path, correlations: dict):
         ax.set_title(f"Complete Numeric Pearson Correlation Heatmap ({len(numeric_cols)}x{len(numeric_cols)})", fontsize=12, fontweight="bold")
         cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
         cbar.set_label("Pearson r", rotation=270, labelpad=12)
+        masked_patch = mpatches.Patch(facecolor="#d0d0d0", edgecolor="#888888", label="Undefined / Masked (constant or insufficient pairs)")
+        ax.legend(handles=[masked_patch], loc="lower right", bbox_to_anchor=(1.0, -0.12), frameon=True)
         plt.tight_layout()
         fig.savefig(p_png, dpi=150)
         fig.savefig(p_svg)
         plt.close(fig)
     else:
         _write_heatmap_svg(p_svg, numeric_cols, matrix)
-        p_png.write_bytes(create_valid_png(width=800, height=800))
+        p_png.write_bytes(_draw_correlation_png(numeric_cols, matrix))
 
 
 def _render_scatters_chart(p_png: Path, p_svg: Path, train_rows: list[dict]):
     features = ["OverallQual", "GrLivArea", "TotalBsmtSF", "1stFlrSF", "GarageCars", "GarageArea"]
     available_feats = [f for f in features if any(r.get(f) for r in train_rows)]
+    if not available_feats and train_rows:
+        available_feats = [k for k in train_rows[0].keys() if k not in {IDENTIFIER, TARGET}][:6]
     if HAS_MATPLOTLIB and available_feats:
         n_plots = len(available_feats)
         n_cols = min(3, n_plots)
@@ -915,7 +1338,7 @@ def _render_scatters_chart(p_png: Path, p_svg: Path, train_rows: list[dict]):
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, "SalePrice Scatters")
-        p_png.write_bytes(create_valid_png(width=800, height=600))
+        p_png.write_bytes(_draw_scatters_png(available_feats, train_rows))
 
 
 def _render_anomaly_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
@@ -942,7 +1365,7 @@ def _render_anomaly_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, "Anomaly Candidates Overview")
-        p_png.write_bytes(create_valid_png(width=800, height=500))
+        p_png.write_bytes(_draw_anomaly_png(top_outliers))
 
 
 def _render_single_numeric_chart(p_png: Path, p_svg: Path, col: str, values: list[float], stats: dict):
@@ -968,7 +1391,7 @@ def _render_single_numeric_chart(p_png: Path, p_svg: Path, col: str, values: lis
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, f"Distribution of {col}")
-        p_png.write_bytes(create_valid_png(width=600, height=400))
+        p_png.write_bytes(_draw_single_numeric_png(col, values, stats))
 
 
 def _render_single_categorical_chart(
@@ -1009,7 +1432,7 @@ def _render_single_categorical_chart(
         plt.close(fig)
     else:
         _write_simple_svg(p_svg, f"Categorical Distribution of {col} (Train vs Test)")
-        p_png.write_bytes(create_valid_png(width=600, height=400))
+        p_png.write_bytes(_draw_single_categorical_png(col, train_dist, test_dist))
 
 
 def _write_heatmap_svg(path: Path, cols: list[str], matrix: list[list[float | None]]):
@@ -1021,7 +1444,7 @@ def _write_heatmap_svg(path: Path, cols: list[str], matrix: list[list[float | No
     margin_left = 120
     margin_top = 120
     width = margin_left + n * cell_size + 40
-    height = margin_top + n * cell_size + 40
+    height = margin_top + n * cell_size + 60
 
     svg_lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">',
@@ -1036,7 +1459,7 @@ def _write_heatmap_svg(path: Path, cols: list[str], matrix: list[list[float | No
             if i == 0:
                 svg_lines.append(f'<text x="{x + 10}" y="{margin_top - 6}" font-size="10" text-anchor="start" transform="rotate(-45 {x + 10} {margin_top - 6})">{cols[j]}</text>')
             if val is None:
-                color = "#cccccc"
+                color = "#d0d0d0"
             else:
                 r_val = max(-1.0, min(1.0, val))
                 if r_val >= 0:
@@ -1049,8 +1472,12 @@ def _write_heatmap_svg(path: Path, cols: list[str], matrix: list[list[float | No
                     green = int(247 + (102 - 247) * t)
                     blue = int(247 + (172 - 247) * t)
                 color = f"#{red:02x}{green:02x}{blue:02x}"
-            tooltip = f"{cols[i]} vs {cols[j]}: {f'{val:.3f}' if val is not None else 'N/A'}"
+            tooltip = f"{cols[i]} vs {cols[j]}: {f'{val:.3f}' if val is not None else 'Undefined (Masked)'}"
             svg_lines.append(f'<rect x="{x}" y="{y}" width="{cell_size}" height="{cell_size}" fill="{color}" stroke="#ffffff" stroke-width="0.5"><title>{tooltip}</title></rect>')
+    # Legend for undefined / masked state
+    legend_y = margin_top + n * cell_size + 15
+    svg_lines.append(f'<rect x="{margin_left}" y="{legend_y}" width="14" height="14" fill="#d0d0d0" stroke="#888888" stroke-width="0.5"/>')
+    svg_lines.append(f'<text x="{margin_left + 20}" y="{legend_y + 11}" font-size="11">Undefined / Masked (constant or insufficient pairs)</text>')
     svg_lines.append('</svg>\n')
     path.write_text("\n".join(svg_lines), encoding="utf-8")
 
@@ -1071,7 +1498,7 @@ def write_manifests_and_report(
     """Write field_manifest, figures_manifest, correlation_matrix.csv, report.md, and profile.json."""
     # 1. field_manifest.json
     (output_dir / "field_manifest.json").write_text(
-        json.dumps(inventory, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        json.dumps(inventory, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8"
     )
 
     # 2. field_manifest.csv
@@ -1092,7 +1519,7 @@ def write_manifests_and_report(
 
     # 3. figures_manifest.json & csv
     (output_dir / "figures_manifest.json").write_text(
-        json.dumps(figures_manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        json.dumps(figures_manifest, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8"
     )
     if figures_manifest:
         fig_keys = list(figures_manifest[0].keys())
@@ -1173,7 +1600,12 @@ def _generate_traditional_chinese_report(
     desc_target_te = f"目標變數 '{TARGET}' {'不存在於測試集，符合競賽隔離標準' if target_not_in_test else '異常出現在測試集中'}。"
     desc_pred_eq = "訓練集與測試集之解釋變數集完全一致。" if pred_match else f"預測欄位不一致 (測試集缺少: {pred_missing_test}, 訓練集缺少: {pred_missing_train})。"
     desc_pred_count = f"排除 Id 與目標變數後，原始解釋變數總計 {pred_count} 個 (門檻 >= 14)。"
-    desc_id_u = f"訓練集 Id (N={train_id_n:,}) 與測試集 Id (N={test_id_n:,}) 各自完全唯一。" if id_unique else "Id 欄位存在重複值。"
+    train_dup = schema.get("train_duplicate_id_count", 0)
+    test_dup = schema.get("test_duplicate_id_count", 0)
+    if id_unique:
+        desc_id_u = f"訓練集 Id (N={train_id_n:,}) 與測試集 Id (N={test_id_n:,}) 各自完全唯一 (重複計數: 0)。"
+    else:
+        desc_id_u = f"Id 欄位存在重複值 (訓練集重複: {train_dup} 筆, 測試集重複: {test_dup} 筆)。"
     desc_overlap = f"訓練集與測試集 Id 重疊筆數為 {overlap} 筆。" if overlap == 0 else f"警告：訓練集與測試集存在 {overlap} 筆重複 Id。"
     desc_sample = "sample_submission.csv 與測試集 Id 完全一致且順序相符。" if sample_match else "sample_submission.csv 與測試集 Id 不符。"
 
@@ -1252,6 +1684,20 @@ def _generate_traditional_chinese_report(
     skew_val = target_stats.get("skewness")
     skew_str = f"{skew_val:.3f}" if skew_val is not None else "N/A"
 
+    def fmt_curr(val: float | None) -> str:
+        return f"${val:,.2f}" if val is not None else "N/A"
+
+    def fmt_cnt(val: int | None) -> str:
+        return f"{val:,}" if val is not None else "N/A"
+
+    if skew_val is not None:
+        if abs(skew_val) > 0.5:
+            skew_eval = f"鑑於 `SalePrice` 偏態係數為 {skew_str}，建議在 Phase 3 評估 Log 轉換對線性模型假設與殘差分佈之改善效果。"
+        else:
+            skew_eval = f"鑑於 `SalePrice` 偏態係數為 {skew_str} (分佈大致對稱)，Phase 3 可視需要比較原始尺標與轉換尺標之建模效果。"
+    else:
+        skew_eval = "目標變數樣本不足以計算偏態係數。"
+
     return f"""# CRISP-DM Phase 2 — Ames 房價資料集探索性資料分析研究報告 (EDA Report)
 
 **專案名稱：** NCHU AIoT 2026 HW2 Housing Regression<br/>
@@ -1304,17 +1750,17 @@ def _generate_traditional_chinese_report(
 
 ## 4. 目標變數 SalePrice 分佈分析 (Target Distribution Analysis)
 
-- **觀測樣本數 (N)：** {target_stats.get('count', 0):,} 筆
-- **平均數 (Mean)：** ${target_stats.get('mean', 0):,.2f}
-- **標準差 (Std Dev)：** ${target_stats.get('std', 0):,.2f}
-- **最小值 (Min)：** ${target_stats.get('min', 0):,.2f}
-- **第一四分位數 (Q1 / 25%)：** ${target_stats.get('25%', 0):,.2f}
-- **中位數 (Median / 50%)：** ${target_stats.get('50%', 0):,.2f}
-- **第三四分位數 (Q3 / 75%)：** ${target_stats.get('75%', 0):,.2f}
-- **最大值 (Max)：** ${target_stats.get('max', 0):,.2f}
+- **觀測樣本數 (N)：** {fmt_cnt(target_stats.get('count'))} 筆
+- **平均數 (Mean)：** {fmt_curr(target_stats.get('mean'))}
+- **標準差 (Std Dev)：** {fmt_curr(target_stats.get('std'))}
+- **最小值 (Min)：** {fmt_curr(target_stats.get('min'))}
+- **第一四分位數 (Q1 / 25%)：** {fmt_curr(target_stats.get('25%'))}
+- **中位數 (Median / 50%)：** {fmt_curr(target_stats.get('50%'))}
+- **第三四分位數 (Q3 / 75%)：** {fmt_curr(target_stats.get('75%'))}
+- **最大值 (Max)：** {fmt_curr(target_stats.get('max'))}
 - **偏態係數 (Skewness)：** {skew_str}
-- **IQR 異常候選數量 (1.5x IQR Fences)：** {target_stats.get('anomaly_candidates_count', 0)} 筆 (上限柵欄約 ${target_stats.get('upper_fence', 0):,.2f})
-- **描述性觀察：** 原始 SalePrice 呈現明顯偏態分佈，大容量房屋拉長右側尾部。此現象在 Phase 3 資料準備時通常構成對數轉換 (Log Transform) 之評估候選依據。
+- **IQR 異常候選數量 (1.5x IQR Fences)：** {fmt_cnt(target_stats.get('anomaly_candidates_count'))} 筆 (上限柵欄約 {fmt_curr(target_stats.get('upper_fence'))})
+- **描述性觀察：** {_describe_target_distribution(target_stats)}
 
 ---
 
@@ -1358,7 +1804,7 @@ def _generate_traditional_chinese_report(
 ## 8. Phase 3 銜接決策建議 (Phase 3 Handoff)
 
 1. **缺失值處理原則：** 目前共檢測出 {len(struct_candidates)} 個具缺漏之候選結構性缺失欄位，建議依資料字典定義編碼為獨立類別標籤 (如 `"None"` 或 0)；其餘真實未記錄缺漏欄位須在交叉驗證折內進行適應性插補。
-2. **目標變數轉換探索：** 鑑於 `SalePrice` 偏態係數為 {skew_str}，建議在 Phase 3 評估 Log 轉換對線性模型假設與殘差分佈之改善效果。
+2. **目標變數轉換探索：** {skew_eval}
 3. **編碼策略：** 對於具有明確自然順序之等級欄位 (`ExterQual`, `KitchenQual` 等)，建議評估 Ordinal Encoding；對於名義類別 (`Neighborhood` 等)，評估 One-Hot Encoding 或 Target Encoding。
 4. **防洩漏邊界 (Leakage Prevention)：** 嚴禁在全資料集上預先擬合插補器或編碼器；所有前處理管線必須完全侷限於訓練折 (Training Folds) 內部執行。
 """
@@ -1370,6 +1816,8 @@ def run(
     access_date: str,
     terms_confirmed: bool,
     local_root: Path | None = None,
+    *,
+    require_matplotlib: bool = False,
 ) -> dict:
     """Execute complete descriptive EDA and produce local outputs."""
     if not terms_confirmed:
@@ -1445,8 +1893,10 @@ def run(
         "original_predictor_count_at_least_14": len([c for c in train_cols if c not in {TARGET, IDENTIFIER}]) >= 14,
         "train_id_count": len(train_ids),
         "train_id_unique": len(set(train_ids)) == len(train_ids),
+        "train_duplicate_id_count": len(train_ids) - len(set(train_ids)),
         "test_id_count": len(test_ids),
         "test_id_unique": len(set(test_ids)) == len(test_ids),
+        "test_duplicate_id_count": len(test_ids) - len(set(test_ids)),
         "train_test_id_overlap_count": len(set(train_ids) & set(test_ids)),
         "test_ids_match_sample_submission": test_ids == sample_ids,
     }
@@ -1455,7 +1905,14 @@ def run(
     safe_output_dir.mkdir(parents=True, exist_ok=True)
 
     figures_manifest = generate_figures_and_manifest(
-        inventory, correlations, train_rows, test_rows, safe_output_dir, input_files_summary, access_date
+        inventory,
+        correlations,
+        train_rows,
+        test_rows,
+        safe_output_dir,
+        input_files_summary,
+        access_date,
+        require_matplotlib=require_matplotlib,
     )
 
     report_data = {
@@ -1483,7 +1940,7 @@ def run(
         safe_output_dir, report_data, inventory, figures_manifest, correlations, access_date, train_rows
     )
     (safe_output_dir / "profile.json").write_text(
-        json.dumps(report_data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        json.dumps(report_data, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8"
     )
 
     return report_data
@@ -1505,7 +1962,11 @@ def main() -> None:
         "figures_manifest": str(args.output_dir / "figures_manifest.json"),
         "report": str(args.output_dir / "report.md"),
         "figures_count": result["figure_count_total"],
-    }, indent=2, ensure_ascii=False))
+    }, indent=2, ensure_ascii=False, allow_nan=False))
+
+
+if __name__ == "__main__":
+    main()
 
 
 if __name__ == "__main__":

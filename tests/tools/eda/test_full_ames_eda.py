@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 from unittest.mock import patch
 
@@ -9,7 +10,6 @@ from tools.eda.full_ames_eda import (
     parse_data_description,
     crosswalk_dictionary,
     calculate_numeric_stats,
-    create_valid_png,
     run,
 )
 
@@ -263,7 +263,7 @@ class FullAmesEdaTests(unittest.TestCase):
             self.assertIn("| **預測欄位對等性** | **FAIL** |", report_text)
 
     def test_png_truthfulness_when_matplotlib_unavailable(self):
-        """Verify non-zero valid PNG creation when matplotlib is unavailable."""
+        """Verify non-zero truthful (non-uniform) PNG creation when matplotlib is unavailable."""
         with tempfile.TemporaryDirectory() as temp:
             local = Path(temp) / "local"
             datasets = local / "datasets"
@@ -296,6 +296,227 @@ class FullAmesEdaTests(unittest.TestCase):
                 data = png.read_bytes()
                 self.assertGreater(len(data), 0, f"{png.name} must not be empty")
                 self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n"), f"{png.name} must be a valid PNG")
+
+                # Decompress IDAT to confirm truthful drawing with multiple distinct colors (not single-color uniform fallback)
+                idx = 8
+                idat_bytes = bytearray()
+                w = int.from_bytes(data[16:20], "big")
+                h = int.from_bytes(data[20:24], "big")
+                while idx < len(data):
+                    length = int.from_bytes(data[idx : idx + 4], "big")
+                    tag = data[idx + 4 : idx + 8]
+                    if tag == b"IDAT":
+                        idat_bytes.extend(data[idx + 8 : idx + 8 + length])
+                    idx += 12 + length
+                raw = zlib.decompress(bytes(idat_bytes))
+                unique_colors = set()
+                row_len = 1 + w * 3
+                for y in range(h):
+                    row = raw[y * row_len + 1 : (y + 1) * row_len]
+                    for x in range(0, len(row), 3):
+                        unique_colors.add(tuple(row[x : x + 3]))
+                self.assertGreater(len(unique_colors), 1, f"{png.name} must contain truthful distinct colors, not uniform block")
+
+    def test_fails_clearly_when_matplotlib_required_and_unavailable(self):
+        """Verify clear failure when matplotlib is required but unavailable."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            (datasets / "train.csv").write_text("Id,MSSubClass,SalePrice\n1,20,100000\n")
+            (datasets / "test.csv").write_text("Id,MSSubClass\n2,20\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n2,100000\n")
+            (datasets / "data_description.txt").write_text("MSSubClass: Type\n")
+
+            with patch("tools.eda.full_ames_eda.HAS_MATPLOTLIB", False):
+                with self.assertRaisesRegex(RuntimeError, "Matplotlib is required"):
+                    run(datasets, output, "2026-10-24", True, local_root=local, require_matplotlib=True)
+
+    def test_undefined_correlations_masked_not_zero(self):
+        """Verify constant columns and insufficient pairs remain undefined (None), rendered as #d0d0d0 with legend."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            # ConstantVal has 0 variance; SparseVal has only 1 observation with Target -> insufficient pairs
+            (datasets / "train.csv").write_text(
+                "Id,MSSubClass,ConstantVal,SparseVal,SalePrice\n"
+                "1,20,50,10,100000\n"
+                "2,60,50,,200000\n"
+                "3,80,50,,300000\n"
+            )
+            (datasets / "test.csv").write_text("Id,MSSubClass,ConstantVal,SparseVal\n4,20,50,\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n4,150000\n")
+            (datasets / "data_description.txt").write_text(
+                "MSSubClass: Type\nConstantVal: Constant\nSparseVal: Sparse\n"
+            )
+
+            report = run(datasets, output, "2026-10-24", True, local_root=local)
+            import json
+            profile = json.loads((output / "profile.json").read_text(encoding="utf-8"))
+
+            corrs = profile.get("correlations_summary", {})
+            # Verify ConstantVal vs SalePrice is None (masked), not 0.0
+            from tools.eda.full_ames_eda import calculate_numeric_correlations
+            cols, rows = ["Id", "MSSubClass", "ConstantVal", "SparseVal", "SalePrice"], [
+                {"Id": "1", "MSSubClass": "20", "ConstantVal": "50", "SparseVal": "10", "SalePrice": "100000"},
+                {"Id": "2", "MSSubClass": "60", "ConstantVal": "50", "SparseVal": "", "SalePrice": "200000"},
+                {"Id": "3", "MSSubClass": "80", "ConstantVal": "50", "SparseVal": "", "SalePrice": "300000"},
+            ]
+            full_corrs = calculate_numeric_correlations(cols, rows)
+            pw = full_corrs["pairwise_correlations"]
+            self.assertIsNone(pw["ConstantVal"]["SalePrice"]["r"])
+            self.assertEqual(pw["ConstantVal"]["SalePrice"]["reason"], "zero_variance")
+            self.assertIsNone(pw["SparseVal"]["SalePrice"]["r"])
+            self.assertEqual(pw["SparseVal"]["SalePrice"]["reason"], "insufficient_pairs")
+
+            # Check heatmap SVG contains #d0d0d0 and explicit legend
+            svg_text = (output / "figures/fig06_numeric_correlation_heatmap.svg").read_text(encoding="utf-8")
+            self.assertIn("#d0d0d0", svg_text)
+            self.assertIn("Undefined / Masked", svg_text)
+
+    def test_adversarial_symmetric_and_left_skewed_saleprice(self):
+        """Verify captions and narrative are data-derived and truthfully report left-skewed SalePrice."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            # Synthetic left-skewed values
+            (datasets / "train.csv").write_text(
+                "Id,MSSubClass,SalePrice\n"
+                "1,20,50000\n"
+                "2,20,180000\n"
+                "3,20,190000\n"
+                "4,20,195000\n"
+                "5,20,200000\n"
+                "6,20,205000\n"
+                "7,20,210000\n"
+            )
+            (datasets / "test.csv").write_text("Id,MSSubClass\n8,20\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n8,200000\n")
+            (datasets / "data_description.txt").write_text("MSSubClass: Type\n")
+
+            run(datasets, output, "2026-10-24", True, local_root=local)
+
+            import json
+            figs = json.loads((output / "figures_manifest.json").read_text(encoding="utf-8"))
+            fig03 = next(f for f in figs if f["figure_id"] == "FIG-03")
+            self.assertIn("左偏態分佈", fig03["descriptive_observation"])
+            self.assertNotIn("右偏態分佈", fig03["descriptive_observation"])
+
+            report_text = (output / "report.md").read_text(encoding="utf-8")
+            self.assertIn("左偏態分佈", report_text)
+            self.assertNotIn("右側尾部", report_text)
+
+    def test_adversarial_flat_and_negative_feature_associations(self):
+        """Verify FIG-07 observation truthfully reflects negative and flat associations without claiming upward trends."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            # OverallQual is negatively correlated with SalePrice; GrLivArea is flat
+            (datasets / "train.csv").write_text(
+                "Id,OverallQual,GrLivArea,SalePrice\n"
+                "1,10,1000,50000\n"
+                "2,8,1000,100000\n"
+                "3,6,1000,150000\n"
+                "4,4,1000,200000\n"
+                "5,2,1000,250000\n"
+            )
+            (datasets / "test.csv").write_text("Id,OverallQual,GrLivArea\n6,5,1000\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n6,150000\n")
+            (datasets / "data_description.txt").write_text("OverallQual: Qual\nGrLivArea: Area\n")
+
+            run(datasets, output, "2026-10-24", True, local_root=local)
+
+            import json
+            figs = json.loads((output / "figures_manifest.json").read_text(encoding="utf-8"))
+            fig07 = next(f for f in figs if f["figure_id"] == "FIG-07")
+            self.assertIn("負向線性關聯趨勢", fig07["descriptive_observation"])
+            self.assertNotIn("向上趨勢", fig07["descriptive_observation"])
+
+    def test_rejects_malformed_csv_rows_in_full_eda(self):
+        """Verify full EDA fails closed when CSV contains malformed rows (extra or missing cells)."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            (datasets / "train.csv").write_text("Id,MSSubClass,SalePrice\n1,20,100000,EXTRA\n")
+            (datasets / "test.csv").write_text("Id,MSSubClass\n2,20\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n2,100000\n")
+            (datasets / "data_description.txt").write_text("MSSubClass: Type\n")
+
+            with self.assertRaisesRegex(ValueError, "Malformed CSV.*expected 3 fields, got 4"):
+                run(datasets, output, "2026-10-24", True, local_root=local)
+
+            # Test missing cells row
+            (datasets / "train.csv").write_text("Id,MSSubClass,SalePrice\n1,20\n")
+            with self.assertRaisesRegex(ValueError, "Malformed CSV.*expected 3 fields, got 2"):
+                run(datasets, output, "2026-10-24", True, local_root=local)
+
+    def test_rejects_non_finite_numeric_values_in_full_eda(self):
+        """Verify full EDA fails closed on non-finite numeric floats (inf, nan)."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            (datasets / "train.csv").write_text("Id,MSSubClass,SalePrice\n1,20,inf\n")
+            (datasets / "test.csv").write_text("Id,MSSubClass\n2,20\n")
+            (datasets / "sample_submission.csv").write_text("Id,SalePrice\n2,100000\n")
+            (datasets / "data_description.txt").write_text("MSSubClass: Type\n")
+
+            with self.assertRaisesRegex(ValueError, "Non-finite numeric value"):
+                run(datasets, output, "2026-10-24", True, local_root=local)
+
+    def test_reports_duplicate_id_count_in_schema_checks(self):
+        """Verify duplicate ID count is explicitly reported in schema_checks and report.md."""
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            datasets = local / "datasets"
+            datasets.mkdir(parents=True)
+            output = local / "research" / "phase2-eda"
+
+            # Train has ID 1 duplicated; Test has ID 3 duplicated
+            (datasets / "train.csv").write_text(
+                "Id,MSSubClass,SalePrice\n"
+                "1,20,100000\n"
+                "1,20,110000\n"
+                "2,60,200000\n"
+            )
+            (datasets / "test.csv").write_text(
+                "Id,MSSubClass\n"
+                "3,20\n"
+                "3,20\n"
+            )
+            (datasets / "sample_submission.csv").write_text(
+                "Id,SalePrice\n"
+                "3,100000\n"
+                "3,100000\n"
+            )
+            (datasets / "data_description.txt").write_text("MSSubClass: Type\n")
+
+            report = run(datasets, output, "2026-10-24", True, local_root=local)
+
+            self.assertFalse(report["schema_checks"]["train_id_unique"])
+            self.assertEqual(report["schema_checks"]["train_duplicate_id_count"], 1)
+            self.assertFalse(report["schema_checks"]["test_id_unique"])
+            self.assertEqual(report["schema_checks"]["test_duplicate_id_count"], 1)
+
+            report_text = (output / "report.md").read_text(encoding="utf-8")
+            self.assertIn("訓練集重複: 1 筆", report_text)
+            self.assertIn("測試集重複: 1 筆", report_text)
 
 
 if __name__ == "__main__":

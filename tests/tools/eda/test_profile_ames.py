@@ -98,6 +98,52 @@ class ProfileAmesTests(unittest.TestCase):
             self.assertTrue((local / "research/profile.json").exists())
             self.assertTrue((local / "research/train_saleprice_distribution.svg").exists())
 
+    def test_rejects_malformed_csv_rows_extra_cells(self):
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            root = local / "datasets"
+            root.mkdir(parents=True)
+            (root / "train.csv").write_text("Id,Quality,SalePrice\n1,5,100000,EXTRA\n")
+            (root / "test.csv").write_text("Id,Quality\n2,6\n")
+            (root / "data_description.txt").write_text("Quality: Rating\n")
+            with self.assertRaisesRegex(ValueError, "Malformed CSV.*expected 3 fields, got 4"):
+                run(root, local / "research", "2026-10-24", True, local_root=local)
+
+    def test_rejects_malformed_csv_rows_missing_cells(self):
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            root = local / "datasets"
+            root.mkdir(parents=True)
+            (root / "train.csv").write_text("Id,Quality,SalePrice\n1,5\n")
+            (root / "test.csv").write_text("Id,Quality\n2,6\n")
+            (root / "data_description.txt").write_text("Quality: Rating\n")
+            with self.assertRaisesRegex(ValueError, "Malformed CSV.*expected 3 fields, got 2"):
+                run(root, local / "research", "2026-10-24", True, local_root=local)
+
+    def test_rejects_non_finite_numeric_values(self):
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            root = local / "datasets"
+            root.mkdir(parents=True)
+            (root / "train.csv").write_text("Id,Quality,SalePrice\n1,inf,100000\n")
+            (root / "test.csv").write_text("Id,Quality\n2,6\n")
+            (root / "data_description.txt").write_text("Quality: Rating\n")
+            with self.assertRaisesRegex(ValueError, "Non-finite numeric value"):
+                run(root, local / "research", "2026-10-24", True, local_root=local)
+
+    def test_reports_duplicate_id_count(self):
+        with tempfile.TemporaryDirectory() as temp:
+            local = Path(temp) / "local"
+            root = local / "datasets"
+            root.mkdir(parents=True)
+            (root / "train.csv").write_text("Id,Quality,SalePrice\n1,5,100000\n1,7,200000\n")
+            (root / "test.csv").write_text("Id,Quality\n2,6\n")
+            (root / "data_description.txt").write_text("Quality: Rating\n")
+            report = run(root, local / "research", "2026-10-24", True, local_root=local)
+            train = report["files"][0]
+            self.assertFalse(train["id"]["unique"])
+            self.assertEqual(train["id"]["duplicate_count"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
