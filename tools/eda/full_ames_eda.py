@@ -36,6 +36,7 @@ try:
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
+    plt = None
 
 EXPECTED = {"train.csv", "test.csv", "data_description.txt", "sample_submission.csv"}
 TARGET = "SalePrice"
@@ -591,14 +592,41 @@ def _describe_numeric_distributions(inventory: list[dict]) -> str:
     return f"數值特徵分佈概況：{'；'.join(parts)}；各特徵分佈形態依樣本資料真實呈現。"
 
 
+def _is_column_numeric(col: str, rows: list[dict]) -> bool:
+    """Check if a column contains valid finite numeric data in at least one row and no non-numeric strings."""
+    if not rows:
+        return False
+    valid_vals = [r.get(col, "").strip() for r in rows if r.get(col) is not None and r.get(col, "").strip() != ""]
+    if not valid_vals:
+        return False
+    for v in valid_vals:
+        try:
+            fval = float(v)
+            if not math.isfinite(fval):
+                return False
+        except (ValueError, TypeError):
+            return False
+    return True
+
+
+def _get_numeric_predictors(train_rows: list[dict]) -> list[str]:
+    """Return column names from train_rows that are truly numeric predictors (excluding ID and TARGET)."""
+    if not train_rows:
+        return []
+    cols = [k for k in train_rows[0].keys() if k not in {IDENTIFIER, TARGET}]
+    return [col for col in cols if _is_column_numeric(col, train_rows)]
+
+
 def _describe_saleprice_associations(train_rows: list[dict], correlations: dict) -> str:
     """Generate truthful association summary for selected features vs SalePrice."""
     features = ["OverallQual", "GrLivArea", "TotalBsmtSF", "1stFlrSF", "GarageCars", "GarageArea"]
-    available_feats = [f for f in features if any(r.get(f) for r in train_rows)]
+    numeric_preds = _get_numeric_predictors(train_rows)
+    available_feats = [f for f in features if f in numeric_preds]
     if not available_feats:
-        available_feats = [c[0] for c in correlations.get("target_correlations_ranked", [])[:6]]
-    if not available_feats and train_rows:
-        available_feats = [k for k in train_rows[0].keys() if k not in {IDENTIFIER, TARGET}][:6]
+        ranked = [c[0] for c in correlations.get("target_correlations_ranked", []) if c[0] in numeric_preds]
+        available_feats = ranked[:6]
+    if not available_feats:
+        available_feats = numeric_preds[:6]
     if not available_feats:
         return "散佈圖關聯性檢視：未檢測到可用於散佈圖之數值解釋變數。"
 
@@ -1003,24 +1031,28 @@ def _draw_correlation_png(numeric_cols: list[str], matrix: list[list[float | Non
 
 def _draw_scatters_png(features: list[str], train_rows: list[dict]) -> bytes:
     canvas = Canvas(800, 600)
-    if not features and train_rows:
-        features = [k for k in train_rows[0].keys() if k not in {IDENTIFIER, TARGET}][:6]
-    if not features:
+    numeric_preds = _get_numeric_predictors(train_rows)
+    valid_features = [f for f in features if f in numeric_preds]
+    if not valid_features and train_rows:
+        valid_features = numeric_preds[:6]
+    if not valid_features:
         canvas.draw_line_h(500, 80, 720, rgb=(100, 100, 100), thickness=2)
         canvas.draw_line_v(80, 80, 500, rgb=(100, 100, 100), thickness=2)
         return canvas.to_png()
-    n_plots = min(6, len(features))
-    for i, feat in enumerate(features[:n_plots]):
+    n_plots = min(6, len(valid_features))
+    for i, feat in enumerate(valid_features[:n_plots]):
         px = 60 + (i % 3) * 240
         py = 50 + (i // 3) * 260
         canvas.draw_line_h(py + 200, px, px + 210, rgb=(100, 100, 100), thickness=1)
         canvas.draw_line_v(px, py, py + 200, rgb=(100, 100, 100), thickness=1)
         pairs = []
         for r in train_rows:
-            if r.get(feat) and r[feat].strip() and r.get(TARGET):
+            v_feat = r.get(feat)
+            v_target = r.get(TARGET)
+            if v_feat is not None and v_feat.strip() and v_target is not None and v_target.strip():
                 try:
-                    pairs.append((float(r[feat]), float(r[TARGET])))
-                except ValueError:
+                    pairs.append((float(v_feat), float(v_target)))
+                except (ValueError, TypeError):
                     pass
         if pairs:
             xs = [p[0] for p in pairs]
@@ -1310,41 +1342,56 @@ def _render_correlation_chart(p_png: Path, p_svg: Path, correlations: dict):
 
 def _render_scatters_chart(p_png: Path, p_svg: Path, train_rows: list[dict]):
     features = ["OverallQual", "GrLivArea", "TotalBsmtSF", "1stFlrSF", "GarageCars", "GarageArea"]
-    available_feats = [f for f in features if any(r.get(f) for r in train_rows)]
-    if not available_feats and train_rows:
-        available_feats = [k for k in train_rows[0].keys() if k not in {IDENTIFIER, TARGET}][:6]
-    if HAS_MATPLOTLIB and available_feats:
-        n_plots = len(available_feats)
-        n_cols = min(3, n_plots)
-        n_rows = math.ceil(n_plots / n_cols)
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4.5 * n_rows))
-        if n_plots == 1:
-            axes = [axes]
-        else:
-            axes = axes.flatten() if hasattr(axes, "flatten") else [axes]
+    numeric_preds = _get_numeric_predictors(train_rows)
+    available_feats = [f for f in features if f in numeric_preds]
+    if not available_feats:
+        available_feats = numeric_preds[:6]
 
-        for i, feat in enumerate(available_feats):
-            pairs = []
-            for r in train_rows:
-                if r.get(feat) and r[feat].strip() and r.get(TARGET):
-                    pairs.append((float(r[feat]), float(r[TARGET])))
-            if pairs:
-                xs, ys = [p[0] for p in pairs], [p[1] for p in pairs]
-                axes[i].scatter(xs, ys, alpha=0.4, color="#3b6e8c", edgecolors="none", s=20)
-                axes[i].set_title(f"{feat} vs SalePrice", fontsize=11, fontweight="bold")
-                axes[i].set_xlabel(feat)
-                axes[i].set_ylabel("SalePrice ($)")
-                if len(xs) > 1 and len(set(xs)) > 1:
-                    m, b = statistics.linear_regression(xs, ys)
-                    min_x, max_x = min(xs), max(xs)
-                    axes[i].plot([min_x, max_x], [m * min_x + b, m * max_x + b], color="#d95f02", linewidth=1.5)
-        for j in range(i + 1, len(axes)):
-            axes[j].axis("off")
-        plt.suptitle("Representative Predictors vs SalePrice (Linear Association Check)", fontsize=14, fontweight="bold")
-        plt.tight_layout()
-        fig.savefig(p_png, dpi=150)
-        fig.savefig(p_svg)
-        plt.close(fig)
+    if HAS_MATPLOTLIB:
+        if available_feats:
+            n_plots = len(available_feats)
+            n_cols = min(3, n_plots)
+            n_rows = math.ceil(n_plots / n_cols)
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4.5 * n_rows))
+            if n_plots == 1:
+                axes = [axes]
+            else:
+                axes = axes.flatten() if hasattr(axes, "flatten") else [axes]
+
+            for i, feat in enumerate(available_feats):
+                pairs = []
+                for r in train_rows:
+                    v_feat = r.get(feat)
+                    v_target = r.get(TARGET)
+                    if v_feat is not None and v_feat.strip() and v_target is not None and v_target.strip():
+                        try:
+                            pairs.append((float(v_feat), float(v_target)))
+                        except (ValueError, TypeError):
+                            pass
+                if pairs:
+                    xs, ys = [p[0] for p in pairs], [p[1] for p in pairs]
+                    axes[i].scatter(xs, ys, alpha=0.4, color="#3b6e8c", edgecolors="none", s=20)
+                    axes[i].set_title(f"{feat} vs SalePrice", fontsize=11, fontweight="bold")
+                    axes[i].set_xlabel(feat)
+                    axes[i].set_ylabel("SalePrice ($)")
+                    if len(xs) > 1 and len(set(xs)) > 1:
+                        m, b = statistics.linear_regression(xs, ys)
+                        min_x, max_x = min(xs), max(xs)
+                        axes[i].plot([min_x, max_x], [m * min_x + b, m * max_x + b], color="#d95f02", linewidth=1.5)
+            for j in range(len(available_feats), len(axes)):
+                axes[j].axis("off")
+            plt.suptitle("Representative Predictors vs SalePrice (Linear Association Check)", fontsize=14, fontweight="bold")
+            plt.tight_layout()
+            fig.savefig(p_png, dpi=150)
+            fig.savefig(p_svg)
+            plt.close(fig)
+        else:
+            fig, ax = plt.subplots(figsize=(6, 4))
+            ax.text(0.5, 0.5, "No numeric predictors available for scatter plot", ha="center", va="center")
+            ax.axis("off")
+            fig.savefig(p_png, dpi=150)
+            fig.savefig(p_svg)
+            plt.close(fig)
     else:
         _write_simple_svg(p_svg, "SalePrice Scatters")
         p_png.write_bytes(_draw_scatters_png(available_feats, train_rows))

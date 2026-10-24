@@ -573,6 +573,108 @@ class FullAmesEdaTests(unittest.TestCase):
                 main()
                 self.assertEqual(mock_run.call_count, 1)
 
+    def test_scatters_chart_with_matplotlib_filters_categorical_fallback(self):
+        """Verify that when HAS_MATPLOTLIB is True and preferred features are absent,
+        only truly numeric predictors are selected and categorical fallback fields (e.g. Alley)
+        are never passed to float conversion or plotted as numeric predictors.
+        """
+        import tools.eda.full_ames_eda as eda
+
+        with tempfile.TemporaryDirectory() as temp:
+            out_dir = Path(temp)
+            p_png = out_dir / "fig07_scatters.png"
+            p_svg = out_dir / "fig07_scatters.svg"
+
+            # Synthetic dataset: preferred features absent.
+            # Contains numeric predictor MSSubClass, categorical predictor Alley, and target SalePrice.
+            train_rows = [
+                {"Id": "1", "MSSubClass": "20", "Alley": "Grvl", "SalePrice": "100000"},
+                {"Id": "2", "MSSubClass": "60", "Alley": "", "SalePrice": "200000"},
+            ]
+
+            # 1. Verify numeric predictor selection strictly filters categorical Alley
+            numeric_preds = eda._get_numeric_predictors(train_rows)
+            self.assertEqual(numeric_preds, ["MSSubClass"])
+            self.assertNotIn("Alley", numeric_preds)
+
+            # 2. Verify associations summary does not mislabel Alley
+            correlations = eda.calculate_numeric_correlations(["Id", "MSSubClass", "Alley", "SalePrice"], train_rows)
+            obs = eda._describe_saleprice_associations(train_rows, correlations)
+            self.assertNotIn("Alley", obs)
+            self.assertIn("MSSubClass", obs)
+
+            # 3. Exercise HAS_MATPLOTLIB=True path without float("Grvl") crash
+            if eda.HAS_MATPLOTLIB:
+                eda._render_scatters_chart(p_png, p_svg, train_rows)
+                self.assertTrue(p_png.exists())
+                self.assertGreater(p_png.stat().st_size, 0)
+                self.assertTrue(p_svg.exists())
+            else:
+                from unittest.mock import MagicMock
+                mock_plt = MagicMock()
+                mock_fig = MagicMock()
+                mock_ax = MagicMock()
+                mock_plt.subplots.return_value = (mock_fig, mock_ax)
+
+                def fake_savefig(target, *args, **kwargs):
+                    Path(target).write_bytes(b"\x89PNG\r\n\x1a\nfake_png")
+
+                mock_fig.savefig.side_effect = fake_savefig
+
+                with patch.object(eda, "HAS_MATPLOTLIB", True), patch.object(eda, "plt", mock_plt, create=True):
+                    eda._render_scatters_chart(p_png, p_svg, train_rows)
+                    self.assertEqual(mock_ax.scatter.call_count, 1)
+                    scatter_xs = mock_ax.scatter.call_args[0][0]
+                    self.assertEqual(scatter_xs, [20.0, 60.0])
+                    mock_ax.set_title.assert_called_with("MSSubClass vs SalePrice", fontsize=11, fontweight="bold")
+                    self.assertTrue(p_png.exists())
+
+    def test_scatters_chart_with_matplotlib_all_categorical_fallback(self):
+        """Verify that when HAS_MATPLOTLIB is True and all fallback predictors are categorical,
+        it does not raise ValueError and gracefully outputs placeholder figures.
+        """
+        import tools.eda.full_ames_eda as eda
+
+        with tempfile.TemporaryDirectory() as temp:
+            out_dir = Path(temp)
+            p_png = out_dir / "fig07_scatters.png"
+            p_svg = out_dir / "fig07_scatters.svg"
+
+            train_rows = [
+                {"Id": "1", "Alley": "Grvl", "SalePrice": "100000"},
+                {"Id": "2", "Alley": "Pave", "SalePrice": "200000"},
+            ]
+
+            numeric_preds = eda._get_numeric_predictors(train_rows)
+            self.assertEqual(numeric_preds, [])
+
+            correlations = eda.calculate_numeric_correlations(["Id", "Alley", "SalePrice"], train_rows)
+            obs = eda._describe_saleprice_associations(train_rows, correlations)
+            self.assertIn("未檢測到可用於散佈圖之數值解釋變數", obs)
+            self.assertNotIn("Alley", obs)
+
+            if eda.HAS_MATPLOTLIB:
+                eda._render_scatters_chart(p_png, p_svg, train_rows)
+                self.assertTrue(p_png.exists())
+                self.assertTrue(p_svg.exists())
+            else:
+                from unittest.mock import MagicMock
+                mock_plt = MagicMock()
+                mock_fig = MagicMock()
+                mock_ax = MagicMock()
+                mock_plt.subplots.return_value = (mock_fig, mock_ax)
+
+                def fake_savefig(target, *args, **kwargs):
+                    Path(target).write_bytes(b"\x89PNG\r\n\x1a\nfake_png")
+
+                mock_fig.savefig.side_effect = fake_savefig
+
+                with patch.object(eda, "HAS_MATPLOTLIB", True), patch.object(eda, "plt", mock_plt, create=True):
+                    eda._render_scatters_chart(p_png, p_svg, train_rows)
+                    mock_ax.text.assert_called_once()
+                    self.assertIn("No numeric predictors", mock_ax.text.call_args[0][2])
+                    self.assertTrue(p_png.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
