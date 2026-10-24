@@ -95,6 +95,7 @@ class ProfileAmesTests(unittest.TestCase):
             self.assertEqual(report["data_dictionary_crosswalk"]["field_status"]["Quality"], "definition_present")
             self.assertEqual(report["data_dictionary_crosswalk"]["field_status"]["SalePrice"], "target")
             self.assertEqual(len(train["sha256"]), 64)
+            self.assertTrue(report["terms_confirmed_by_owner"])
             self.assertTrue((local / "research/profile.json").exists())
             self.assertTrue((local / "research/train_saleprice_distribution.svg").exists())
 

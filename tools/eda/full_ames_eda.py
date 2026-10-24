@@ -717,7 +717,7 @@ def generate_figures_and_manifest(
             "source_sha256": sha_manifest,
             "population_or_sample": f"Ames Housing Dataset (Train N={len(train_rows)}, Test N={len(test_rows)})",
             "script": "tools/eda/full_ames_eda.py",
-            "command": f"python tools/eda/full_ames_eda.py --access-date {access_date} --terms-confirmed",
+            "command": f'python tools/eda/full_ames_eda.py --local-root "${{REGSCOPE_LOCAL_ROOT:-local}}" --access-date {access_date} --terms-confirmed',
             "suggested_report_section": section,
             "descriptive_observation": observation,
             "limitations": limitations,
@@ -848,7 +848,7 @@ def generate_figures_and_manifest(
     # Also render individual distribution charts for all predictors
     for rec in inventory:
         col = rec["name"]
-        if rec["role"] in {IDENTIFIER, TARGET}:
+        if col in {IDENTIFIER, TARGET} or rec.get("role") in {"identifier", "target"}:
             continue
         tr_stats = rec.get("train_numeric_stats")
         if rec["dtype"].startswith("numeric") and tr_stats:
@@ -869,7 +869,7 @@ def generate_figures_and_manifest(
                     "source_sha256": sha_manifest,
                     "population_or_sample": f"Ames Housing Train ({col} N={len(vals)})",
                     "script": "tools/eda/full_ames_eda.py",
-                    "command": f"python tools/eda/full_ames_eda.py --access-date {access_date} --terms-confirmed",
+                    "command": f'python tools/eda/full_ames_eda.py --local-root "${{REGSCOPE_LOCAL_ROOT:-local}}" --access-date {access_date} --terms-confirmed',
                     "suggested_report_section": "5. 數值特徵統計摘要與分佈",
                     "descriptive_observation": f"{col} 均值 {tr_stats['mean']:.2f}，中位數 {tr_stats['50%']:.2f}，偏態 {skew_desc}。",
                     "limitations": "單一欄位描述性分佈，未進行變數轉換。",
@@ -892,7 +892,7 @@ def generate_figures_and_manifest(
                 "source_sha256": sha_manifest,
                 "population_or_sample": f"Ames Housing Package ({col} Cardinality={rec['cardinality']})",
                 "script": "tools/eda/full_ames_eda.py",
-                "command": f"python tools/eda/full_ames_eda.py --access-date {access_date} --terms-confirmed",
+                "command": f'python tools/eda/full_ames_eda.py --local-root "${{REGSCOPE_LOCAL_ROOT:-local}}" --access-date {access_date} --terms-confirmed',
                 "suggested_report_section": "6. 類別特徵基數與分佈分析",
                 "descriptive_observation": f"{col} 包含 {rec['cardinality']} 個獨立類別，區分訓練集與測試集呈現。",
                 "limitations": "原始類別分佈，未進行編碼合併。",
@@ -1177,7 +1177,7 @@ def _render_overview_chart(p_png: Path, p_svg: Path, inventory: list[dict], trai
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, f"Dataset Overview (Train N={train_n}, Test N={test_n})")
+        _write_overview_svg(p_svg, inventory, train_n, test_n)
         p_png.write_bytes(_draw_overview_png(train_n, test_n, inventory))
 
 
@@ -1224,7 +1224,7 @@ def _render_missingness_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, "Missing Values: Train vs Test Comparison")
+        _write_missingness_svg(p_svg, missing_items)
         p_png.write_bytes(_draw_missingness_png(missing_items))
 
 
@@ -1254,7 +1254,7 @@ def _render_saleprice_chart(p_png: Path, p_svg: Path, values: list[float], stats
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, f"SalePrice Distribution (Train N={len(values)})")
+        _write_saleprice_svg(p_svg, values, stats)
         p_png.write_bytes(_draw_saleprice_png(values, stats))
 
 
@@ -1288,14 +1288,17 @@ def _render_numeric_overview_chart(p_png: Path, p_svg: Path, inventory: list[dic
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, "Key Numeric Predictors Overview")
+        _write_numeric_overview_svg(p_svg, available_cols, train_rows)
         p_png.write_bytes(_draw_numeric_overview_png(available_cols, train_rows))
 
 
 def _render_categorical_overview_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
     cat_items = [
         (r["name"], r["cardinality"])
-        for r in inventory if r["role"] not in {IDENTIFIER, TARGET} and not r["dtype"].startswith("numeric")
+        for r in inventory
+        if r.get("role") not in {"identifier", "target"}
+        and r["name"] not in {IDENTIFIER, TARGET}
+        and not r["dtype"].startswith("numeric")
     ]
     cat_items.sort(key=lambda x: -x[1])
 
@@ -1312,7 +1315,7 @@ def _render_categorical_overview_chart(p_png: Path, p_svg: Path, inventory: list
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, "Categorical Cardinality Overview")
+        _write_categorical_overview_svg(p_svg, cat_items)
         p_png.write_bytes(_draw_categorical_overview_png(cat_items))
 
 
@@ -1407,7 +1410,7 @@ def _render_scatters_chart(p_png: Path, p_svg: Path, train_rows: list[dict]):
             fig.savefig(p_svg)
             plt.close(fig)
     else:
-        _write_simple_svg(p_svg, "SalePrice Scatters")
+        _write_scatters_svg(p_svg, available_feats, train_rows)
         p_png.write_bytes(_draw_scatters_png(available_feats, train_rows))
 
 
@@ -1415,7 +1418,8 @@ def _render_anomaly_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
     outlier_items = [
         (r["name"], r["train_numeric_stats"]["anomaly_candidates_count"], r["train_numeric_stats"]["skewness"] or 0)
         for r in inventory if r.get("train_numeric_stats") and r["train_numeric_stats"].get("anomaly_candidates_count", 0) > 0
-        and r["role"] != IDENTIFIER
+        and r.get("role") not in {"identifier", "target"}
+        and r["name"] not in {IDENTIFIER, TARGET}
     ]
     outlier_items.sort(key=lambda x: -x[1])
     top_outliers = outlier_items[:15]
@@ -1434,7 +1438,7 @@ def _render_anomaly_chart(p_png: Path, p_svg: Path, inventory: list[dict]):
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, "Anomaly Candidates Overview")
+        _write_anomaly_svg(p_svg, top_outliers)
         p_png.write_bytes(_draw_anomaly_png(top_outliers))
 
 
@@ -1460,7 +1464,7 @@ def _render_single_numeric_chart(p_png: Path, p_svg: Path, col: str, values: lis
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, f"Distribution of {col}")
+        _write_single_numeric_svg(p_svg, col, values, stats)
         p_png.write_bytes(_draw_single_numeric_png(col, values, stats))
 
 
@@ -1501,8 +1505,399 @@ def _render_single_categorical_chart(
         fig.savefig(p_svg)
         plt.close(fig)
     else:
-        _write_simple_svg(p_svg, f"Categorical Distribution of {col} (Train vs Test)")
+        _write_single_categorical_svg(p_svg, col, train_dist, test_dist)
         p_png.write_bytes(_draw_single_categorical_png(col, train_dist, test_dist))
+
+
+def _svg_esc(val: Any) -> str:
+    s = str(val) if val is not None else ""
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
+def _write_overview_svg(path: Path, inventory: list[dict], train_n: int, test_n: int):
+    w, h = 800, 420
+    max_n = max(train_n, test_n, 1)
+    h_tr = int((train_n / max_n) * 200)
+    h_te = int((test_n / max_n) * 200)
+
+    type_counts: dict[str, int] = {}
+    for r in inventory:
+        t = r.get("semantic_type", "unknown")
+        type_counts[t] = type_counts.get(t, 0) + 1
+    max_c = max(type_counts.values()) if type_counts else 1
+
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
+        f'<rect width="{w}" height="{h}" fill="#ffffff"/>',
+        f'<text x="{w//2}" y="32" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">Dataset Overview — Sample Sizes &amp; Semantic Types</text>',
+        '<line x1="60" y1="320" x2="360" y2="320" stroke="#444444" stroke-width="1.5"/>',
+        '<line x1="60" y1="80" x2="60" y2="320" stroke="#444444" stroke-width="1.5"/>',
+        '<text x="210" y="70" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Sample Sizes (Records)</text>',
+        f'<rect x="100" y="{320 - h_tr}" width="80" height="{h_tr}" fill="#2b5c8f" rx="3"/>',
+        f'<text x="140" y="{max(90, 310 - h_tr)}" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#2b5c8f">{train_n:,}</text>',
+        '<text x="140" y="340" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">Train (train.csv)</text>',
+        f'<rect x="230" y="{320 - h_te}" width="80" height="{h_te}" fill="#d95f02" rx="3"/>',
+        f'<text x="270" y="{max(90, 310 - h_te)}" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#d95f02">{test_n:,}</text>',
+        '<text x="270" y="340" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">Test (test.csv)</text>',
+        '<line x1="430" y1="320" x2="760" y2="320" stroke="#444444" stroke-width="1.5"/>',
+        '<line x1="430" y1="80" x2="430" y2="320" stroke="#444444" stroke-width="1.5"/>',
+        f'<text x="595" y="70" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Column Semantic Type Breakdown (Total {len(inventory)})</text>',
+    ]
+    y_pos = 100
+    for stype, cnt in sorted(type_counts.items(), key=lambda x: -x[1])[:6]:
+        bw = int((cnt / max_c) * 200)
+        lines.append(f'<text x="420" y="{y_pos + 14}" font-family="system-ui, sans-serif" font-size="10" text-anchor="end">{_svg_esc(stype)}</text>')
+        lines.append(f'<rect x="432" y="{y_pos}" width="{max(bw, 4)}" height="18" fill="#4daf4a" rx="2"/>')
+        lines.append(f'<text x="{440 + bw}" y="{y_pos + 14}" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#333333">{cnt}</text>')
+        y_pos += 34
+    lines.append('</svg>\n')
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_missingness_svg(path: Path, missing_items: list[tuple[str, float, float, bool]]):
+    top_items = missing_items[-22:] if len(missing_items) > 22 else missing_items
+    h = max(380, len(top_items) * 26 + 110)
+    w = 800
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
+        f'<rect width="{w}" height="{h}" fill="#ffffff"/>',
+        f'<text x="{w//2}" y="30" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Missing Values by Split: Train vs Test (%)</text>',
+        '<rect x="250" y="45" width="14" height="10" fill="#2b5c8f" rx="1"/>',
+        '<text x="270" y="54" font-family="system-ui, sans-serif" font-size="11">Train Missing %</text>',
+        '<rect x="420" y="45" width="14" height="10" fill="#d95f02" rx="1"/>',
+        '<text x="440" y="54" font-family="system-ui, sans-serif" font-size="11">Test Missing %</text>',
+        f'<line x1="160" y1="70" x2="160" y2="{h - 35}" stroke="#444444" stroke-width="1.5"/>',
+        f'<line x1="160" y1="{h - 35}" x2="740" y2="{h - 35}" stroke="#444444" stroke-width="1.5"/>',
+    ]
+    for pct in range(0, 101, 20):
+        x = 160 + int((pct / 100) * 550)
+        lines.append(f'<line x1="{x}" y1="{h - 35}" x2="{x}" y2="{h - 30}" stroke="#444444" stroke-width="1"/>')
+        lines.append(f'<text x="{x}" y="{h - 18}" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">{pct}%</text>')
+
+    y = 75
+    for name, tr_pct, te_pct, is_struct in top_items:
+        prefix = "* " if is_struct else ""
+        label = f"{prefix}{name}"
+        lines.append(f'<text x="152" y="{y + 12}" font-family="system-ui, sans-serif" font-size="10" text-anchor="end">{_svg_esc(label)}</text>')
+        bw_tr = int((tr_pct / 100) * 550)
+        bw_te = int((te_pct / 100) * 550)
+        if bw_tr > 0:
+            lines.append(f'<rect x="162" y="{y}" width="{bw_tr}" height="9" fill="#2b5c8f" rx="1"/>')
+            lines.append(f'<text x="{166 + bw_tr}" y="{y + 8}" font-family="system-ui, sans-serif" font-size="8" fill="#2b5c8f">{tr_pct:.1f}%</text>')
+        if bw_te > 0:
+            lines.append(f'<rect x="162" y="{y + 11}" width="{bw_te}" height="9" fill="#d95f02" rx="1"/>')
+            lines.append(f'<text x="{166 + bw_te}" y="{y + 19}" font-family="system-ui, sans-serif" font-size="8" fill="#d95f02">{te_pct:.1f}%</text>')
+        y += 24
+    lines.append('</svg>\n')
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_saleprice_svg(path: Path, values: list[float], stats: dict):
+    w, h = 800, 460
+    if not values:
+        _write_simple_svg(path, "Empty SalePrice Values")
+        return
+    min_v = stats.get("min") if stats.get("min") is not None else min(values)
+    max_v = stats.get("max") if stats.get("max") is not None else max(values)
+    mean_v = stats.get("mean") if stats.get("mean") is not None else 0.0
+    med_v = stats.get("50%") if stats.get("50%") is not None else 0.0
+    std_v = stats.get("std")
+    skew_v = stats.get("skewness")
+    iqr_count = stats.get("anomaly_candidates_count", 0)
+
+    mean_str = f"${mean_v:,.0f}" if mean_v is not None else "N/A"
+    std_str = f"${std_v:,.0f}" if std_v is not None else "N/A"
+    med_str = f"${med_v:,.0f}" if med_v is not None else "N/A"
+    min_str = f"${min_v:,.0f}" if min_v is not None else "N/A"
+    max_str = f"${max_v:,.0f}" if max_v is not None else "N/A"
+    skew_str = f"{skew_v:.3f}" if skew_v is not None else "N/A"
+
+    num_bins = 25
+    step = (max_v - min_v) / num_bins if max_v > min_v else 1.0
+    bin_counts = [0] * num_bins
+    for v in values:
+        idx = min(int((v - min_v) / step), num_bins - 1)
+        bin_counts[idx] += 1
+    max_bin = max(bin_counts) if bin_counts else 1
+
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
+        f'<rect width="{w}" height="{h}" fill="#ffffff"/>',
+        f'<text x="{w//2}" y="32" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">SalePrice Distribution (Train Set, N={len(values):,})</text>',
+        '<line x1="80" y1="360" x2="560" y2="360" stroke="#444444" stroke-width="1.5"/>',
+        '<line x1="80" y1="70" x2="80" y2="360" stroke="#444444" stroke-width="1.5"/>',
+        '<text x="320" y="395" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle">SalePrice ($)</text>',
+        '<text x="35" y="215" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle" transform="rotate(-90 35 215)">Frequency</text>',
+    ]
+    bar_w = int(480 / num_bins)
+    for i, count in enumerate(bin_counts):
+        bh = int((count / max_bin) * 270)
+        bx = 80 + i * bar_w
+        by = 360 - bh
+        lines.append(f'<rect x="{bx + 1}" y="{by}" width="{bar_w - 2}" height="{bh}" fill="#4c78a8" stroke="#ffffff" stroke-width="0.5"/>')
+
+    if max_v > min_v and mean_v is not None and med_v is not None:
+        mean_x = 80 + int(((mean_v - min_v) / (max_v - min_v)) * 480)
+        med_x = 80 + int(((med_v - min_v) / (max_v - min_v)) * 480)
+        lines.append(f'<line x1="{mean_x}" y1="80" x2="{mean_x}" y2="360" stroke="#e41a1c" stroke-width="2" stroke-dasharray="4,3"/>')
+        lines.append(f'<text x="{mean_x}" y="75" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#e41a1c" text-anchor="middle">Mean: {mean_str}</text>')
+        lines.append(f'<line x1="{med_x}" y1="95" x2="{med_x}" y2="360" stroke="#2ca02c" stroke-width="2"/>')
+        lines.append(f'<text x="{med_x}" y="92" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#2ca02c" text-anchor="middle">Median: {med_str}</text>')
+
+    for tick_val in [100000, 200000, 300000, 400000, 500000, 600000, 700000]:
+        if min_v <= tick_val <= max_v and max_v > min_v:
+            tx = 80 + int(((tick_val - min_v) / (max_v - min_v)) * 480)
+            lines.append(f'<line x1="{tx}" y1="360" x2="{tx}" y2="365" stroke="#444444"/>')
+            lines.append(f'<text x="{tx}" y="378" font-family="system-ui, sans-serif" font-size="9" text-anchor="middle">${tick_val//1000}k</text>')
+
+    lines.extend([
+        '<rect x="580" y="70" width="195" height="290" fill="#f8f9fa" stroke="#cccccc" rx="4"/>',
+        '<text x="677" y="95" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Summary Statistics</text>',
+        '<line x1="595" y1="105" x2="760" y2="105" stroke="#e0e0e0"/>',
+        f'<text x="595" y="130" font-family="system-ui, sans-serif" font-size="11">N: <tspan font-weight="bold">{len(values):,}</tspan></text>',
+        f'<text x="595" y="155" font-family="system-ui, sans-serif" font-size="11">Mean: <tspan font-weight="bold">{mean_str}</tspan></text>',
+        f'<text x="595" y="180" font-family="system-ui, sans-serif" font-size="11">Std Dev: <tspan font-weight="bold">{std_str}</tspan></text>',
+        f'<text x="595" y="205" font-family="system-ui, sans-serif" font-size="11">Median: <tspan font-weight="bold">{med_str}</tspan></text>',
+        f'<text x="595" y="230" font-family="system-ui, sans-serif" font-size="11">Min: <tspan font-weight="bold">{min_str}</tspan></text>',
+        f'<text x="595" y="255" font-family="system-ui, sans-serif" font-size="11">Max: <tspan font-weight="bold">{max_str}</tspan></text>',
+        f'<text x="595" y="280" font-family="system-ui, sans-serif" font-size="11">Skewness: <tspan font-weight="bold">{skew_str}</tspan></text>',
+        f'<text x="595" y="305" font-family="system-ui, sans-serif" font-size="11">IQR Outliers: <tspan font-weight="bold">{iqr_count}</tspan></text>',
+        '<text x="595" y="335" font-family="system-ui, sans-serif" font-size="9" fill="#666666">(Right-skewed positive tail)</text>',
+        '</svg>\n',
+    ])
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_numeric_overview_svg(path: Path, cols: list[str], train_rows: list[dict]):
+    w, h = 800, 480
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
+        f'<rect width="{w}" height="{h}" fill="#ffffff"/>',
+        f'<text x="{w//2}" y="32" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">Key Numeric Predictors Summary (Training Set)</text>',
+    ]
+    card_w = 360
+    card_h = 90
+    for idx, col in enumerate(cols[:8]):
+        col_vals = [float(r[col]) for r in train_rows if not _is_missing_cell(r.get(col))]
+        row_i = idx // 2
+        col_i = idx % 2
+        x = 35 + col_i * 385
+        y = 55 + row_i * 102
+        if col_vals:
+            c_min = min(col_vals)
+            c_max = max(col_vals)
+            c_mean = sum(col_vals) / len(col_vals)
+            c_med = _quantile(col_vals, 0.5)
+            lines.extend([
+                f'<rect x="{x}" y="{y}" width="{card_w}" height="{card_h}" fill="#f8f9fa" stroke="#d0d0d0" rx="4"/>',
+                f'<text x="{x + 12}" y="{y + 22}" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#2b5c8f">{_svg_esc(col)}</text>',
+                f'<text x="{x + card_w - 12}" y="{y + 22}" font-family="system-ui, sans-serif" font-size="11" fill="#666666" text-anchor="end">N={len(col_vals):,}</text>',
+                f'<line x1="{x + 10}" y1="{y + 30}" x2="{x + card_w - 10}" y2="{y + 30}" stroke="#e5e5e5"/>',
+                f'<text x="{x + 12}" y="{y + 50}" font-family="system-ui, sans-serif" font-size="11">Mean: <tspan font-weight="bold">{c_mean:,.1f}</tspan></text>',
+                f'<text x="{x + 130}" y="{y + 50}" font-family="system-ui, sans-serif" font-size="11">Median: <tspan font-weight="bold">{c_med:,.1f}</tspan></text>',
+                f'<text x="{x + 12}" y="{y + 72}" font-family="system-ui, sans-serif" font-size="11">Min: <tspan font-weight="bold">{c_min:,.0f}</tspan></text>',
+                f'<text x="{x + 130}" y="{y + 72}" font-family="system-ui, sans-serif" font-size="11">Max: <tspan font-weight="bold">{c_max:,.0f}</tspan></text>',
+            ])
+    lines.append('</svg>\n')
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_categorical_overview_svg(path: Path, cat_items: list[tuple[str, int]]):
+    top_cats = cat_items[:24]
+    h = max(380, len(top_cats) * 22 + 90)
+    w = 800
+    max_c = max([c for _, c in top_cats], default=1)
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
+        f'<rect width="{w}" height="{h}" fill="#ffffff"/>',
+        f'<text x="{w//2}" y="30" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Categorical Predictors Cardinality (Distinct Level Count)</text>',
+        f'<line x1="160" y1="50" x2="160" y2="{h - 30}" stroke="#444444" stroke-width="1.5"/>',
+        f'<line x1="160" y1="{h - 30}" x2="740" y2="{h - 30}" stroke="#444444" stroke-width="1.5"/>',
+    ]
+    y = 55
+    for name, card in top_cats:
+        lines.append(f'<text x="152" y="{y + 13}" font-family="system-ui, sans-serif" font-size="10" text-anchor="end">{_svg_esc(name)}</text>')
+        bw = int((card / max_c) * 550) if max_c > 0 else 0
+        lines.append(f'<rect x="162" y="{y}" width="{max(bw, 3)}" height="15" fill="#e15759" rx="2"/>')
+        lines.append(f'<text x="{170 + bw}" y="{y + 12}" font-family="system-ui, sans-serif" font-size="9" font-weight="bold" fill="#333333">{card}</text>')
+        y += 22
+    lines.append('</svg>\n')
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_anomaly_svg(path: Path, top_outliers: list[tuple[str, int, float]]):
+    h = max(380, len(top_outliers) * 26 + 90)
+    w = 800
+    max_cnt = max([cnt for _, cnt, _ in top_outliers], default=1)
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
+        f'<rect width="{w}" height="{h}" fill="#ffffff"/>',
+        f'<text x="{w//2}" y="30" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Top Features with Highest 1.5x IQR Anomaly Candidate Counts</text>',
+        f'<line x1="160" y1="50" x2="160" y2="{h - 30}" stroke="#444444" stroke-width="1.5"/>',
+        f'<line x1="160" y1="{h - 30}" x2="740" y2="{h - 30}" stroke="#444444" stroke-width="1.5"/>',
+    ]
+    y = 55
+    for name, cnt, skew in top_outliers:
+        lines.append(f'<text x="152" y="{y + 13}" font-family="system-ui, sans-serif" font-size="10" text-anchor="end">{_svg_esc(name)}</text>')
+        bw = int((cnt / max_cnt) * 520) if max_cnt > 0 else 0
+        lines.append(f'<rect x="162" y="{y}" width="{max(bw, 3)}" height="16" fill="#b07aa1" rx="2"/>')
+        skew_str = f"skew: {skew:.2f}" if skew is not None else ""
+        lines.append(f'<text x="{170 + bw}" y="{y + 12}" font-family="system-ui, sans-serif" font-size="9" font-weight="bold" fill="#333333">{cnt} ({skew_str})</text>')
+        y += 24
+    lines.append('</svg>\n')
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_single_numeric_svg(path: Path, col: str, values: list[float], stats: dict):
+    w, h = 720, 380
+    if not values:
+        _write_simple_svg(path, f"Empty values for {col}")
+        return
+    min_v = stats.get("min") if stats.get("min") is not None else min(values)
+    max_v = stats.get("max") if stats.get("max") is not None else max(values)
+    mean_v = stats.get("mean") if stats.get("mean") is not None else 0.0
+    med_v = stats.get("50%") if stats.get("50%") is not None else 0.0
+    std_v = stats.get("std")
+    skew_v = stats.get("skewness")
+    iqr_count = stats.get("anomaly_candidates_count", 0)
+
+    mean_str = f"{mean_v:.2f}" if mean_v is not None else "N/A"
+    std_str = f"{std_v:.2f}" if std_v is not None else "N/A"
+    med_str = f"{med_v:.2f}" if med_v is not None else "N/A"
+    min_str = f"{min_v:.1f}" if min_v is not None else "N/A"
+    max_str = f"{max_v:.1f}" if max_v is not None else "N/A"
+    skew_str = f"{skew_v:.2f}" if skew_v is not None else "N/A"
+
+    num_bins = 20
+    step = (max_v - min_v) / num_bins if max_v > min_v else 1.0
+    bin_counts = [0] * num_bins
+    for v in values:
+        idx = min(int((v - min_v) / step), num_bins - 1)
+        bin_counts[idx] += 1
+    max_bin = max(bin_counts) if bin_counts else 1
+
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
+        f'<rect width="{w}" height="{h}" fill="#ffffff"/>',
+        f'<text x="{w//2}" y="30" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Distribution of Numeric Feature: {_svg_esc(col)} (N={len(values):,})</text>',
+        '<line x1="60" y1="300" x2="480" y2="300" stroke="#444444" stroke-width="1.5"/>',
+        '<line x1="60" y1="60" x2="60" y2="300" stroke="#444444" stroke-width="1.5"/>',
+        f'<text x="270" y="335" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">{_svg_esc(col)}</text>',
+        '<text x="25" y="180" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle" transform="rotate(-90 25 180)">Count</text>',
+    ]
+    bar_w = int(420 / num_bins)
+    for i, count in enumerate(bin_counts):
+        bh = int((count / max_bin) * 220)
+        bx = 60 + i * bar_w
+        by = 300 - bh
+        lines.append(f'<rect x="{bx + 1}" y="{by}" width="{bar_w - 2}" height="{bh}" fill="#76b7b2" stroke="#ffffff" stroke-width="0.5"/>')
+
+    if max_v > min_v and mean_v is not None and med_v is not None:
+        mean_x = 60 + int(((mean_v - min_v) / (max_v - min_v)) * 420)
+        med_x = 60 + int(((med_v - min_v) / (max_v - min_v)) * 420)
+        lines.append(f'<line x1="{mean_x}" y1="65" x2="{mean_x}" y2="300" stroke="#e41a1c" stroke-width="1.5" stroke-dasharray="3,3"/>')
+        lines.append(f'<line x1="{med_x}" y1="80" x2="{med_x}" y2="300" stroke="#2ca02c" stroke-width="1.5"/>')
+
+    lines.extend([
+        '<rect x="500" y="60" width="200" height="240" fill="#f8f9fa" stroke="#cccccc" rx="4"/>',
+        '<text x="600" y="85" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Statistics</text>',
+        '<line x1="515" y1="95" x2="685" y2="95" stroke="#e0e0e0"/>',
+        f'<text x="515" y="120" font-family="system-ui, sans-serif" font-size="10">N: <tspan font-weight="bold">{len(values):,}</tspan></text>',
+        f'<text x="515" y="142" font-family="system-ui, sans-serif" font-size="10">Mean: <tspan font-weight="bold">{mean_str}</tspan></text>',
+        f'<text x="515" y="164" font-family="system-ui, sans-serif" font-size="10">Median: <tspan font-weight="bold">{med_str}</tspan></text>',
+        f'<text x="515" y="186" font-family="system-ui, sans-serif" font-size="10">Std Dev: <tspan font-weight="bold">{std_str}</tspan></text>',
+        f'<text x="515" y="208" font-family="system-ui, sans-serif" font-size="10">Min: <tspan font-weight="bold">{min_str}</tspan></text>',
+        f'<text x="515" y="230" font-family="system-ui, sans-serif" font-size="10">Max: <tspan font-weight="bold">{max_str}</tspan></text>',
+        f'<text x="515" y="252" font-family="system-ui, sans-serif" font-size="10">Skewness: <tspan font-weight="bold">{skew_str}</tspan></text>',
+        f'<text x="515" y="274" font-family="system-ui, sans-serif" font-size="10">Outliers: <tspan font-weight="bold">{iqr_count}</tspan></text>',
+        '</svg>\n',
+    ])
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_single_categorical_svg(path: Path, col: str, train_dist: dict | None, test_dist: dict | None):
+    all_levels = sorted(set((train_dist or {}).keys()) | set((test_dist or {}).keys()))
+    top_levels = all_levels[:16]
+    h = max(340, len(top_levels) * 26 + 100)
+    w = 700
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
+        f'<rect width="{w}" height="{h}" fill="#ffffff"/>',
+        f'<text x="{w//2}" y="30" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Categorical Distribution: {_svg_esc(col)} (Train vs Test %)</text>',
+        '<rect x="220" y="45" width="12" height="10" fill="#2b5c8f" rx="1"/>',
+        '<text x="238" y="54" font-family="system-ui, sans-serif" font-size="10">Train %</text>',
+        '<rect x="360" y="45" width="12" height="10" fill="#d95f02" rx="1"/>',
+        '<text x="378" y="54" font-family="system-ui, sans-serif" font-size="10">Test %</text>',
+        f'<line x1="150" y1="70" x2="150" y2="{h - 30}" stroke="#444444" stroke-width="1.5"/>',
+        f'<line x1="150" y1="{h - 30}" x2="650" y2="{h - 30}" stroke="#444444" stroke-width="1.5"/>',
+    ]
+    y = 75
+    for lvl in top_levels:
+        tr_info = (train_dist or {}).get(lvl, {})
+        te_info = (test_dist or {}).get(lvl, {})
+        tr_pct = tr_info.get("percentage", 0.0) if isinstance(tr_info, dict) else 0.0
+        te_pct = te_info.get("percentage", 0.0) if isinstance(te_info, dict) else 0.0
+        lines.append(f'<text x="142" y="{y + 12}" font-family="system-ui, sans-serif" font-size="10" text-anchor="end">{_svg_esc(lvl)}</text>')
+        bw_tr = int((tr_pct / 100) * 450)
+        bw_te = int((te_pct / 100) * 450)
+        if bw_tr > 0:
+            lines.append(f'<rect x="152" y="{y}" width="{max(bw_tr, 2)}" height="8" fill="#2b5c8f" rx="1"/>')
+            lines.append(f'<text x="{156 + bw_tr}" y="{y + 7}" font-family="system-ui, sans-serif" font-size="8" fill="#2b5c8f">{tr_pct:.1f}%</text>')
+        if bw_te > 0:
+            lines.append(f'<rect x="152" y="{y + 10}" width="{max(bw_te, 2)}" height="8" fill="#d95f02" rx="1"/>')
+            lines.append(f'<text x="{156 + bw_te}" y="{y + 17}" font-family="system-ui, sans-serif" font-size="8" fill="#d95f02">{te_pct:.1f}%</text>')
+        y += 24
+    lines.append('</svg>\n')
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_scatters_svg(path: Path, available_feats: list[str], train_rows: list[dict]):
+    w, h = 800, 480
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">',
+        f'<rect width="{w}" height="{h}" fill="#ffffff"/>',
+        f'<text x="{w//2}" y="30" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Representative Predictors vs SalePrice (Aggregated Binned Profile)</text>',
+        f'<text x="{w//2}" y="48" font-family="system-ui, sans-serif" font-size="10" fill="#666666" text-anchor="middle">Descriptive aggregate summary. Raw individual observation records remain private under local/.</text>',
+    ]
+    card_w = 230
+    card_h = 175
+    for idx, feat in enumerate(available_feats[:6]):
+        row_i = idx // 3
+        col_i = idx % 3
+        x = 35 + col_i * 250
+        y = 70 + row_i * 195
+        pairs = []
+        for r in train_rows:
+            vf = r.get(feat)
+            vt = r.get(TARGET)
+            if not _is_missing_cell(vf) and not _is_missing_cell(vt):
+                try:
+                    pairs.append((float(vf), float(vt)))
+                except (ValueError, TypeError):
+                    pass
+        lines.append(f'<rect x="{x}" y="{y}" width="{card_w}" height="{card_h}" fill="#f8f9fa" stroke="#cccccc" rx="4"/>')
+        lines.append(f'<text x="{x + 12}" y="{y + 22}" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#2b5c8f">{_svg_esc(feat)} vs SalePrice</text>')
+        if pairs:
+            xs = [p[0] for p in pairs]
+            ys = [p[1] for p in pairs]
+            min_x, max_x = min(xs), max(xs)
+            lines.append(f'<text x="{x + 12}" y="{y + 42}" font-family="system-ui, sans-serif" font-size="10" fill="#555555">Valid Pairs N={len(pairs):,}</text>')
+            lines.append(f'<text x="{x + 12}" y="{y + 58}" font-family="system-ui, sans-serif" font-size="10" fill="#555555">Range: [{min_x:.0f}, {max_x:.0f}]</text>')
+            step = (max_x - min_x) / 4.0 if max_x > min_x else 1.0
+            bin_medians = []
+            for b in range(4):
+                b_low = min_x + b * step
+                b_high = min_x + (b + 1) * step
+                b_ys = [p[1] for p in pairs if (b_low <= p[0] <= b_high if b == 3 else b_low <= p[0] < b_high)]
+                med_price = _quantile(b_ys, 0.5) if b_ys else None
+                bin_medians.append((b_low, b_high, med_price, len(b_ys)))
+            by_pos = y + 78
+            for b_low, b_high, med_p, b_n in bin_medians:
+                p_text = f"${med_p:,.0f}" if med_p is not None else "N/A"
+                lines.append(f'<text x="{x + 12}" y="{by_pos}" font-family="system-ui, sans-serif" font-size="9" fill="#333333">Q[{b_low:.0f}-{b_high:.0f}]: <tspan font-weight="bold">{p_text}</tspan> (n={b_n})</text>')
+                by_pos += 20
+    lines.append('</svg>\n')
+    path.write_text("\n".join(lines), encoding="utf-8")
 
 
 def _write_heatmap_svg(path: Path, cols: list[str], matrix: list[list[float | None]]):
@@ -1993,7 +2388,7 @@ def run(
         "status": "descriptive_profile_generated_pending_review",
         "source_url": "https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data",
         "access_date": access_date,
-        "terms_confirmed_by_owner": True,
+        "terms_confirmed_by_owner": bool(terms_confirmed),
         "output_dir": str(safe_output_dir),
         "input_files": input_files_summary,
         "data_dictionary_crosswalk": crosswalk,
