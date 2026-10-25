@@ -239,9 +239,20 @@
 
 ## 7. 獨立超參數選擇準則與平手決策演算法（Independent Selection & Tie-Breaking）
 
-1. **各方法獨立調校與獨立報告原則（Independent Evaluation, No Grand Winner Selection）**：
-   - 巢狀交叉驗證的核心目標是**如實估計各特徵選擇／正則化方法及其分析軌道的泛化性能**。
-   - **嚴格禁止跨演算法評選單一「大贏家（Grand Winner）」**：每一種方法（Filter, SFS, RFE, LassoCV, ElasticNetCV）在每一個分析軌道（Track A, Track B）均各自獨立藉由內層 3 折 CV 決定其專屬超參數，並在外層 5 折 CV 產生其獨立的泛化指標與 OOF 預測。
+1. **各適用方法－軌道配對獨立調校與獨立報告原則（Independent Evaluation per Applicable Method-Track Pair）**：
+   - 巢狀交叉驗證的核心目標是**如實估計各特徵選擇／正則化方法在其適用分析軌道下的泛化性能**。
+   - **明確支援之方法－軌道配對（Supported Method-Track Pairs，共 7 組）**：
+     - **Track A（Selected Features + OLS Refit）**：評估特徵子集之資訊代表性與降維能力，共支援 5 組方法：
+       1. `(Filter, Track A)`
+       2. `(Forward SFS, Track A)`
+       3. `(RFE, Track A)`
+       4. `(LassoCV, Track A)`
+       5. `(ElasticNetCV, Track A)`
+     - **Track B（End-to-End Native Regularized Model）**：評估正則化演算法原生權重之收縮預測能力，僅適用具備原生連續權重之正則化演算法，共支援 2 組方法：
+       1. `(LassoCV, Track B)`
+       2. `(ElasticNetCV, Track B)`
+     - *排除宣告*：Filter、Forward SFS 與 RFE 本質為子集選擇程序，無原生收縮係數，不具備亦不參與 Track B 評估；所有擬合預算、輸出綱要與實作皆嚴格僅針對上述 7 組合法配對。
+   - **嚴格禁止跨演算法評選單一「大贏家（Grand Winner）」**：上述 7 組合法方法－軌道配對，均各自獨立藉由內層 3 折 CV 決定其專屬超參數，並在外層 5 折 CV 產生其獨立的泛化指標與 OOF 預測。
    - 平手決策僅用於**單一方法在其自身候選超參數集合內部**發生平手時進行確定性仲裁，絕不跨演算法比較或強行排序不同演算法。跨演算法的綜合優劣比較屬於後續綜合研究報告之範疇，外層評估指標不直接自動產生具備無偏保證的最佳方法。若未來需要選定單一落地模型，必須經由專屬的後續決策機制進行，絕不在此處預設演算法階層。
 2. **內層目標函數**：
    - 單一方法於內層 3 折交叉驗證之平均驗證均方根誤差（Mean Validation RMSE）：
