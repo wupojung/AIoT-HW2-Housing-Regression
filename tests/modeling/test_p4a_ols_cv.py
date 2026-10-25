@@ -222,6 +222,54 @@ class FoldLocalPreprocessingTests(unittest.TestCase):
 
         json.dumps(public_summary(result))  # public summary must be serializable
         self.assertNotIn("_fold_assignments", public_summary(result))
+        self.assertNotIn("_oof_predictions", public_summary(result))
+
+    def test_oof_predictions_exactly_once_coverage_and_recomputability(self):
+        rows = synthetic_rows(60)
+        result = run_ols_cv(rows, 5, 42)
+        oof = result.get("_oof_predictions")
+        self.assertIsNotNone(oof)
+        self.assertEqual(len(oof), 60)
+
+        # 1. Exactly-once validation coverage check
+        seen_ids = [rec["Id"] for rec in oof]
+        self.assertEqual(len(seen_ids), len(set(seen_ids)), "Each Id must appear exactly once in OOF predictions")
+        expected_ids = {r["Id"] for r in rows}
+        self.assertEqual(set(seen_ids), expected_ids)
+
+        # 2. Independent fold metric recomputation from OOF records
+        for k, fold_dict in enumerate(result["folds"]):
+            fold_oof = [rec for rec in oof if rec["fold"] == k]
+            self.assertEqual(len(fold_oof), fold_dict["n_validation"])
+
+            y_actual = np.array([rec["actual"] for rec in fold_oof], dtype=np.float64)
+            y_pred = np.array([rec["predicted"] for rec in fold_oof], dtype=np.float64)
+
+            # Recompute RMSE
+            recomputed_rmse = float(np.sqrt(np.mean((y_actual - y_pred) ** 2)))
+            self.assertAlmostEqual(recomputed_rmse, fold_dict["rmse_validation"], places=7)
+
+            # Recompute R2
+            ss_tot = float(np.sum((y_actual - y_actual.mean()) ** 2))
+            recomputed_r2 = float(1.0 - np.sum((y_actual - y_pred) ** 2) / ss_tot)
+            self.assertAlmostEqual(recomputed_r2, fold_dict["r2_validation"], places=7)
+
+        # 3. Independent aggregate metric recomputation
+        fold_rmses = [
+            float(np.sqrt(np.mean((np.array([r["actual"] for r in oof if r["fold"] == k]) - np.array([r["predicted"] for r in oof if r["fold"] == k])) ** 2)))
+            for k in range(5)
+        ]
+        mean_rmse = float(np.mean(fold_rmses))
+        std_rmse = float(np.std(fold_rmses, ddof=1))
+        self.assertAlmostEqual(mean_rmse, result["aggregate"]["rmse_validation"]["mean"], places=7)
+        self.assertAlmostEqual(std_rmse, result["aggregate"]["rmse_validation"]["std"], places=7)
+
+        # 4. Ensure public_summary strips _oof_predictions completely
+        pub = public_summary(result)
+        self.assertNotIn("_oof_predictions", pub)
+        pub_json = json.dumps(pub)
+        self.assertNotIn('"_oof_predictions"', pub_json)
+        self.assertNotIn('"predicted"', pub_json)
 
 
 class SolverDiagnosticsTests(unittest.TestCase):

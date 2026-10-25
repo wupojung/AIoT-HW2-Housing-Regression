@@ -201,6 +201,8 @@ def run_ols_cv(
     """Run deterministic K-fold OLS CV with a fresh preprocessor fitted inside each fold."""
     folds = kfold_assignments(len(dev_rows), n_splits, random_state)
     per_fold: list[dict[str, Any]] = []
+    oof_predictions: list[dict[str, Any]] = []
+
     for k in range(n_splits):
         tr = [dev_rows[i] for i, f in enumerate(folds) if f != k]
         va = [dev_rows[i] for i, f in enumerate(folds) if f == k]
@@ -236,6 +238,15 @@ def run_ols_cv(
         rmse_tr = _rmse(y_tr, yhat_tr)
         r2_tr = _r2(y_tr, yhat_tr)
         t_pred_end = time.perf_counter()
+
+        # Record validation predictions for this fold
+        for idx_in_val, row_id in enumerate(va_res.ids):
+            oof_predictions.append({
+                "Id": row_id,
+                "fold": k,
+                "actual": float(y_va[idx_in_val]),
+                "predicted": float(yhat_va[idx_in_val]),
+            })
 
         model_diag = {k2: v for k2, v in fit.items() if k2 not in ("coef", "design_matrix")}
         model_diag.update(diagnostics)
@@ -299,11 +310,12 @@ def run_ols_cv(
         },
         "folds": per_fold,
         "_fold_assignments": folds,  # local-only provenance; strip before public export
+        "_oof_predictions": oof_predictions,  # local-only validation records for independent recomputation
     }
 
 
 def public_summary(result: Mapping[str, Any]) -> dict[str, Any]:
-    """Strip local-only provenance and full singular spectra for public-safe export."""
+    """Strip local-only provenance, OOF predictions, and full singular spectra for public-safe export."""
     out = json.loads(json.dumps({k: v for k, v in result.items() if not k.startswith("_")}))
     for f in out["folds"]:
         f["diagnostics"].pop("singular_values", None)
