@@ -2,6 +2,7 @@
 
 from .ols_cv import (
     P4A_SCHEMA_VERSION,
+    compute_numerical_diagnostics,
     development_train_indices,
     fit_ols_svd,
     kfold_assignments,
@@ -11,6 +12,7 @@ from .ols_cv import (
 
 __all__ = [
     "P4A_SCHEMA_VERSION",
+    "compute_numerical_diagnostics",
     "development_train_indices",
     "fit_ols_svd",
     "kfold_assignments",

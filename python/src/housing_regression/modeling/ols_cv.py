@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 import numpy as np
+from sklearn.model_selection import KFold
 
 from housing_regression.data_prep import (
     ID_COLUMN,
@@ -58,20 +59,17 @@ def development_train_indices(
 
 
 def kfold_assignments(n_rows: int, n_splits: int = 5, random_state: int = 42) -> list[int]:
-    """Deterministic shuffled K-fold: return fold id (0..k-1) for each development position."""
+    """Deterministic shuffled K-fold: return fold id (0..k-1) for each development position.
+
+    Implements exact ``sklearn.model_selection.KFold(n_splits=n_splits, shuffle=True, random_state=random_state)``.
+    """
     if n_splits < 2 or n_rows < n_splits:
         raise ValueError("Need n_splits >= 2 and n_rows >= n_splits.")
-    rng = random.Random(random_state)
-    order = list(range(n_rows))
-    rng.shuffle(order)
-    base, extra = divmod(n_rows, n_splits)
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
     folds = [0] * n_rows
-    start = 0
-    for k in range(n_splits):
-        size = base + (1 if k < extra else 0)
-        for pos in order[start : start + size]:
-            folds[pos] = k
-        start += size
+    for fold_idx, (_train_idx, val_idx) in enumerate(kf.split(range(n_rows))):
+        for pos in val_idx:
+            folds[pos] = fold_idx
     return folds
 
 
@@ -81,7 +79,11 @@ def fold_assignment_digest(folds: Sequence[int]) -> str:
 
 
 def load_development_rows(
-    train_csv: Path, val_fraction: float = 0.2, random_state: int = 42, expected_total: int | None = 1460
+    train_csv: Path,
+    val_fraction: float = 0.2,
+    random_state: int = 42,
+    expected_total: int | None = 1460,
+    validate_id_uniqueness: bool = True,
 ) -> tuple[list[dict[str, str]], dict[str, Any]]:
     """Stream the labeled CSV and parse only development-train lines.
 
@@ -99,6 +101,7 @@ def load_development_rows(
     dev_idx = development_train_indices(n_total, val_fraction, random_state)
     dev_set = set(dev_idx)
     rows: list[dict[str, str]] = []
+    seen_ids: set[str] = set()
     with open(train_csv, "r", encoding="utf-8", newline="") as f:
         header = next(csv.reader([f.readline()]))
         i = 0
@@ -109,7 +112,15 @@ def load_development_rows(
                 values = next(csv.reader(io.StringIO(line)))
                 if len(values) != len(header):
                     raise ValueError("Malformed CSV line in development membership.")
-                rows.append(dict(zip(header, values)))
+                row_dict = dict(zip(header, values))
+                if validate_id_uniqueness:
+                    row_id = row_dict.get(ID_COLUMN)
+                    if not row_id:
+                        raise ValueError("Missing or empty Id in development row.")
+                    if row_id in seen_ids:
+                        raise ValueError(f"Duplicate Id detected in development membership: {row_id}")
+                    seen_ids.add(row_id)
+                rows.append(row_dict)
             i += 1
     provenance = {
         "labeled_rows_counted": n_total,
@@ -120,32 +131,25 @@ def load_development_rows(
         "development_index_digest": hashlib.sha256(
             ",".join(map(str, dev_idx)).encode("ascii")
         ).hexdigest(),
+        "id_uniqueness_verified": validate_id_uniqueness,
+        "unique_id_count": len(seen_ids) if validate_id_uniqueness else None,
     }
     return rows, provenance
 
 
-def fit_ols_svd(X: np.ndarray, y: np.ndarray, add_intercept: bool = True) -> dict[str, Any]:
-    """Unpenalized least squares via SVD (``numpy.linalg.lstsq``) with rank diagnostics."""
-    X = np.asarray(X, dtype=np.float64)
-    y = np.asarray(y, dtype=np.float64)
-    design = np.column_stack([np.ones(X.shape[0]), X]) if add_intercept else X
+def compute_numerical_diagnostics(design: np.ndarray) -> dict[str, Any]:
+    """Compute SVD-based rank and conditioning diagnostics on design matrix."""
     n, p = design.shape
     s = np.linalg.svd(design, compute_uv=False)
     s_max = float(s[0]) if s.size else 0.0
     tol = float(max(n, p) * np.finfo(np.float64).eps * s_max)
-    coef, _res, rank, _sv = np.linalg.lstsq(design, y, rcond=None)
-    rank = int(rank)
     nonzero = s[s > tol]
+    rank = int(len(nonzero))
     s_min_nonzero = float(nonzero[-1]) if nonzero.size else 0.0
     s_min = float(s[-1]) if s.size else 0.0
     return {
-        "coef": coef,
-        "add_intercept": add_intercept,
-        "n_rows": n,
-        "n_params": p,
         "rank": rank,
         "nullity": p - rank,
-        "solver": "numpy.linalg.lstsq (SVD, minimum-norm)",
         "tolerance": tol,
         "singular_value_max": s_max,
         "singular_value_min": s_min,
@@ -153,6 +157,23 @@ def fit_ols_svd(X: np.ndarray, y: np.ndarray, add_intercept: bool = True) -> dic
         "condition_number_effective": (s_max / s_min_nonzero) if s_min_nonzero > 0 else None,
         "condition_number_full": (s_max / s_min) if s_min > tol else None,
         "singular_values": [float(v) for v in s],
+    }
+
+
+def fit_ols_svd(X: np.ndarray, y: np.ndarray, add_intercept: bool = True) -> dict[str, Any]:
+    """Unpenalized least squares solver via SVD (``numpy.linalg.lstsq``)."""
+    X = np.asarray(X, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    design = np.column_stack([np.ones(X.shape[0]), X]) if add_intercept else X
+    n, p = design.shape
+    coef, _res, rank, _sv = np.linalg.lstsq(design, y, rcond=None)
+    return {
+        "coef": coef,
+        "add_intercept": add_intercept,
+        "n_rows": n,
+        "n_params": p,
+        "solver": "numpy.linalg.lstsq (SVD, minimum-norm)",
+        "design_matrix": design,
     }
 
 
@@ -183,21 +204,42 @@ def run_ols_cv(
     for k in range(n_splits):
         tr = [dev_rows[i] for i, f in enumerate(folds) if f != k]
         va = [dev_rows[i] for i, f in enumerate(folds) if f == k]
+        
+        # 1. Preprocessing stage
         t0 = time.perf_counter()
         pipe = pipeline_factory()
         tr_res = pipe.fit_transform(tr, split_name=f"cv{k}_train")
         va_res = pipe.transform(va, split_name=f"cv{k}_val")
         t1 = time.perf_counter()
+        
         X_tr, X_va = tr_res.to_numpy(), va_res.to_numpy()
         y_tr = np.asarray(tr_res.y, dtype=np.float64)
         y_va = np.asarray(va_res.y, dtype=np.float64)
         if ID_COLUMN in tr_res.feature_names or TARGET_COLUMN in tr_res.feature_names:
             raise AssertionError("Id/SalePrice leaked into X.")
+            
+        # 2. Model fit stage (solver only)
+        t_fit_start = time.perf_counter()
         fit = fit_ols_svd(X_tr, y_tr)
-        t2 = time.perf_counter()
+        t_fit_end = time.perf_counter()
+        
+        # 3. Numerical diagnostics stage
+        t_diag_start = time.perf_counter()
+        diagnostics = compute_numerical_diagnostics(fit["design_matrix"])
+        t_diag_end = time.perf_counter()
+        
+        # 4. Predict and evaluate stage
+        t_pred_start = time.perf_counter()
         yhat_tr, yhat_va = predict(fit, X_tr), predict(fit, X_va)
-        t3 = time.perf_counter()
-        diag = {k2: v for k2, v in fit.items() if k2 not in ("coef",)}
+        rmse_va = _rmse(y_va, yhat_va)
+        r2_va = _r2(y_va, yhat_va)
+        rmse_tr = _rmse(y_tr, yhat_tr)
+        r2_tr = _r2(y_tr, yhat_tr)
+        t_pred_end = time.perf_counter()
+        
+        model_diag = {k2: v for k2, v in fit.items() if k2 not in ("coef", "design_matrix")}
+        model_diag.update(diagnostics)
+        
         per_fold.append({
             "fold": k,
             "n_train": len(tr),
@@ -205,21 +247,36 @@ def run_ols_cv(
             "n_features": tr_res.n_features,
             "feature_names": list(tr_res.feature_names),
             "validation_unseen_categories": len(va_res.unseen_categories),
-            "rmse_validation": _rmse(y_va, yhat_va),
-            "r2_validation": _r2(y_va, yhat_va),
-            "rmse_train": _rmse(y_tr, yhat_tr),
-            "r2_train": _r2(y_tr, yhat_tr),
-            "diagnostics": diag,
+            "rmse_validation": rmse_va,
+            "r2_validation": r2_va,
+            "rmse_train": rmse_tr,
+            "r2_train": r2_tr,
+            "diagnostics": model_diag,
             "elapsed_seconds": {
                 "preprocessing": t1 - t0,
-                "model_fit": t2 - t1,
-                "predict_and_diagnostics": t3 - t2,
+                "model_fit": t_fit_end - t_fit_start,
+                "numerical_diagnostics": t_diag_end - t_diag_start,
+                "predict_and_evaluate": t_pred_end - t_pred_start,
             },
         })
 
     def _agg(key: str) -> dict[str, float]:
         vals = np.array([f[key] for f in per_fold], dtype=np.float64)
         return {"mean": float(vals.mean()), "std": float(vals.std(ddof=1))}
+
+    def _agg_time(stage: str) -> dict[str, float]:
+        vals = np.array([f["elapsed_seconds"][stage] for f in per_fold], dtype=np.float64)
+        return {"mean": float(vals.mean()), "std": float(vals.std(ddof=1))}
+
+    timing_stages = [
+        "preprocessing",
+        "model_fit",
+        "numerical_diagnostics",
+        "predict_and_evaluate",
+    ]
+    aggregate_timing = {stage: _agg_time(stage) for stage in timing_stages}
+    total_times = np.array([sum(f["elapsed_seconds"].values()) for f in per_fold], dtype=np.float64)
+    aggregate_timing["total_per_fold"] = {"mean": float(total_times.mean()), "std": float(total_times.std(ddof=1))}
 
     return {
         "schema_version": P4A_SCHEMA_VERSION,
@@ -237,6 +294,7 @@ def run_ols_cv(
             "r2_validation": _agg("r2_validation"),
             "rmse_train": _agg("rmse_train"),
             "r2_train": _agg("r2_train"),
+            "timing_seconds": aggregate_timing,
             "std_ddof": 1,
         },
         "folds": per_fold,

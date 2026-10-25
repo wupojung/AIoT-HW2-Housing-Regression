@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -26,6 +27,25 @@ from housing_regression.modeling import load_development_rows, run_ols_cv  # noq
 from housing_regression.modeling.ols_cv import public_summary  # noqa: E402
 
 
+def is_path_git_ignored(path: Path) -> bool:
+    """Check if the given path is ignored by git."""
+    try:
+        res = subprocess.run(
+            ["git", "check-ignore", "-q", str(path)],
+            cwd=str(REPO_ROOT),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return res.returncode == 0
+    except Exception:
+        # Fallback check if git is not accessible: check if under local/
+        try:
+            path.resolve().relative_to((REPO_ROOT / "local").resolve())
+            return True
+        except ValueError:
+            return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="P4-A OLS 5-fold CV (development rows only)")
     parser.add_argument("--data-dir", type=Path, default=REPO_ROOT / "local" / "datasets")
@@ -34,18 +54,34 @@ def main() -> int:
     parser.add_argument("--folds", type=int, default=5)
     args = parser.parse_args()
 
+    out_dir = args.output_dir.resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
+
     rows, provenance = load_development_rows(args.data_dir / "train.csv", 0.2, args.seed)
     if len(rows) != 1168:
         raise SystemExit(f"BLOCKED: expected 1168 development rows, got {len(rows)}")
     result = run_ols_cv(rows, n_splits=args.folds, random_state=args.seed)
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
     public = public_summary(result)
     public["provenance"] = provenance
-    local = dict(result)
-    local["provenance"] = provenance
-    (args.output_dir / "p4a_ols_cv_public.json").write_text(json.dumps(public, indent=2), encoding="utf-8")
-    (args.output_dir / "p4a_ols_cv_local.json").write_text(json.dumps(local, indent=2), encoding="utf-8")
+    (out_dir / "p4a_ols_cv_public.json").write_text(json.dumps(public, indent=2), encoding="utf-8")
+
+    # Guard private local artifact against being written outside ignored local/
+    if is_path_git_ignored(out_dir / "p4a_ols_cv_local.json"):
+        local = dict(result)
+        local["provenance"] = provenance
+        (out_dir / "p4a_ols_cv_local.json").write_text(json.dumps(local, indent=2), encoding="utf-8")
+    else:
+        # Enforce writing private details exclusively to verified ignored local directory
+        secure_local_dir = REPO_ROOT / "local" / "research" / "phase4-p4a"
+        secure_local_dir.mkdir(parents=True, exist_ok=True)
+        local = dict(result)
+        local["provenance"] = provenance
+        (secure_local_dir / "p4a_ols_cv_local.json").write_text(json.dumps(local, indent=2), encoding="utf-8")
+        print(
+            f"Notice: --output-dir ({out_dir}) is not git-ignored. "
+            f"Public summary saved to --output-dir; private local artifact routed securely to {secure_local_dir}."
+        )
 
     agg = result["aggregate"]
     print(f"development rows: {len(rows)}; folds: {result['cv']['fold_sizes']}")
