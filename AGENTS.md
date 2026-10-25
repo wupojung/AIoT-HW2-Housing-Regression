@@ -2,6 +2,14 @@
 
 This repository is the NCHU AIoT 2026 HW2 Housing Regression Lab. This file is the standing operational policy for local Codex/AGY agents. Read the current Issue and actual Git state before work. **A specification is not permission to execute.** When instructions conflict, explicit newer Owner decisions take priority; report the conflict rather than guessing.
 
+## Agent reading route (project-local; selective)
+
+- **Always** follow this root `AGENTS.md` and the specifically assigned GitHub Issue. Existing Owner and security gates remain controlling; reading a document is never task or runtime permission.
+- For **ordinary Herdr identity, native messaging, file handoff, and GitHub Support**, read `docs/agents/HERDR.md` **only when the assigned task needs Herdr**.
+- For **team recruitment, team assignment, restart recovery or release**, read `docs/agents/HERDR-TEAMWORK.md` **only when Owner explicitly authorizes Teamwork**, after reading the base Herdr contract. Never auto-recruit from presence of this file.
+- Do not recursively explore optional docs or human guides as part of normal startup. Preserve minimal reading and bounded one-shot coordination.
+- **Current Windows recovery override:** any Linux/WSL path in the historical examples further below is illustrative/stale until checked on the actual machine. Never run a `cd /mnt/d/...` example or bind historical Pane IDs without verifying the present Windows checkout, `git worktree list`, current Herdr CLI and agent identities. Do not mark runtime operational based on this documentation PR.
+
 ## Data and security boundary
 
 - Keep real Kaggle CSVs, downloaded papers, private research, credentials, tokens, caches, local handoffs and generated unreviewed results in ignored `local/` or another verified ignored path. Never commit, paste into Issues/PRs, send to agents as prompt text, or publish raw rows, local paths containing secrets, or personal records.
