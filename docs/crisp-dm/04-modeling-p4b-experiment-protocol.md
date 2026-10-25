@@ -1,11 +1,11 @@
 # CRISP-DM Phase 4 — P4-B-A：特徵選擇與正則化實驗協定（Issue #21 / #22）
 
-- **協定版本**：v1.0 (Formal Frozen Candidate)
+- **協定版本**：v1.0 (Draft Candidate - Under Review)
 - **所屬任務**：Phase 4-B-A 特徵選擇與正則化比較實驗
 - **關聯 Issue**：Issue #21（P4-B 特徵選擇規劃）、Issue #22（P4-B-A 協定凍結）
 - **基準版本 (BASE SHA)**：`ee03a51978a0f615f39b656bee318946dcddd890`（已整併 P4-A 基準模型）
-- **前次審查修訂點 (Amendment BASE)**：`d8ca0deaa6f93260a6e54fe7204ae33bde9de333`
-- **協定狀態**：Formal Frozen Candidate（A1 階段協定凍結最終定稿規範；本階段僅制定規範與設計合約，嚴格禁止執行真實資料實驗、模型擬合、單元測試、基準測試、CI 觸發或 A2+ 實作）
+- **前次審查修訂點 (Amendment BASE)**：`81302acdec18c3513256916e4d2908cdbad42de9`
+- **協定狀態**：Draft Candidate（A1 階段協定凍結審查草案；本協定目前處於審查修改階段，待通過 A1 Review Gate 審定前不代表正式批准；本階段僅制定規範與設計合約，嚴格禁止執行真實資料實驗、模型擬合、單元測試、基準測試、CI 觸發或 A2+ 實作）
 
 ---
 
@@ -16,7 +16,7 @@
    - **292 筆封存保留集（Sealed Holdout Rows）** 於本階段維持密封狀態，串流讀檔時遇到對應行必須略過、不解析，嚴格禁止在 Phase 4 特徵選擇或超參數調校中窺探、計算或評估。
    - **1,459 筆 Kaggle 競賽測試集（Competition Test Rows）** 完全不開啟、不存取。
 2. **歷史 P4-A 基準模型對照（Historical P4-A Baseline Context）**：
-   - 依據專案既有成果文檔 [`docs/crisp-dm/04-modeling-p4a-ols-baseline.md`](file:///C:/project/nchu/AIoT-HW2-Housing-Regression/docs/crisp-dm/04-modeling-p4a-ols-baseline.md)，P4-A 全特徵未懲罰最小範數 SVD OLS 基準模型在 1,168 筆開發集 5 折 CV 上之歷史表現為：
+   - 依據專案既有成果文檔 [`04-modeling-p4a-ols-baseline.md`](04-modeling-p4a-ols-baseline.md)，P4-A 全特徵未懲罰最小範數 SVD OLS 基準模型在 1,168 筆開發集 5 折 CV 上之歷史表現為：
      - **驗證 RMSE 平均（樣本 SD）**：`36,855.78 (7,938.31)`
      - **驗證 R² 平均（樣本 SD）**：`0.763579 (0.079686)`
    - *明確邊界宣告*：上述數值僅作為本實驗之歷史比較對照背景（Historical Context），絕非 P4-B 之新量測數據；P4-A 之係數大小亦不代表特徵重要性。
@@ -27,13 +27,20 @@
      - 外層成員與折分配 SHA-256 摘要值為：`7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463`。
      - **來源佐證（Provenance Verification）**：該摘要已在基準版本 `ee03a519` 之 P4-A 實作（`tests/modeling/test_p4a_ols_cv.py` 與 `docs/crisp-dm/04-modeling-p4a-ols-baseline.md`）中獲得獨立合成回歸測試與程式碼驗證，確認具備完整來源憑據（Verified Provenance）。
      - 本階段僅引用該既定摘要進行外層成員檢驗，絕不重新計算、變更折分配或存取已封存之資料集。
-4. **授權開發資料集標準化指紋摘要規範（Canonical Dataset Fingerprint Specification）**：
-   - 為在不揭露、儲存或洩漏逐列真實資料、私有 ID 的前提下嚴格驗證輸入資料之不變性，規範在 A2 階段由核可之載入器計算開發集標準化摘要（Canonical Dataset Digest）：
-     - **列排序依據**：嚴格依原始訓練 CSV 中 1,168 筆授權開發列之原始出現順序（Source-Row Order）排列。
-     - **欄位選取與排序**：嚴格排除 `Id` 與私有識別欄位；包含 79 個原始候選預測欄位（依名稱 ASCII 字典序排序）及最後目標欄位 `SalePrice`。
-     - **序列化格式**：數值欄位以標準浮點或整數字串表示（無多餘空白）；字串欄位以 UTF-8 規範化編碼；缺失值統一以空字串 `""` 表示；欄位間以逗號 `,` 分隔，列間以換行 `\n` 分隔。
-     - **雜湊演算法**：對該 UTF-8 位元組串流計算 SHA-256 雜湊值。
-     - **儲存與公開隔離**：該指紋摘要僅記錄於受 Git 忽略之私有中繼資料（`p4b_manifest.json`），公開產物僅能輸出布林驗證狀態（如 `dataset_fingerprint_verified: true`）。A1 階段嚴禁計算或存取真實指紋。
+4. **授權開發資料集標準化指紋摘要合約（Canonical Dataset Fingerprint Specification）**：
+   - 為在不洩漏或儲存逐列真實資料、私有識別碼的前題下，消除字元分隔歧義與型別碰撞（Collision-Safe Canonicalization），規範在後續 A2 階段由核可之載入器依以下合約計算標準化摘要（Canonical Dataset Digest）：
+     - **列排序**：嚴格依原始訓練 CSV 中 1,168 筆授權開發列之原始出現順序（Source-Row Order）排列。
+     - **欄位選取與固定順序**：排除 `Id` 與私有欄位；包含 79 個原始候選預測欄位（依欄位名稱 ASCII 字典序排序）及最後目標欄位 `SalePrice`（共 80 欄）。
+     - **防碰撞型別與長度前綴序列化（Typed & Length-Prefixed Serialization）**：
+       - 每列序列化為二進位串流，每個欄位編碼為：`[TypeTag: 1 byte][Length: 4 bytes big-endian unsigned int][Payload: Length bytes]`。
+       - **型別標記（TypeTag）定義**：
+         - `0x00` = `NULL`（缺失值/NaN；Length 為 0，Payload 為空）。
+         - `0x01` = `STRING`（字串值；包括真值為空字串 `""`，Payload 為 UTF-8 正規化位元組，Length 為其位元組長度）。
+         - `0x02` = `INT`（整數值；以標準十進位 ASCII 字串或 64 位元整數 Payload 表示）。
+         - `0x03` = `FLOAT`（浮點數；規範化為 IEEE 754 雙精度 64 位元 big-endian 二進位位元組，或標準格式化十進位字串）。
+       - 藉由明確區分 `0x00` (Null) 與 `0x01` (Empty string)，並採長度前綴而非單純符號分隔，徹底杜絕包含逗號、換行或引號時的字串切割碰撞。
+     - **雜湊演算法**：對全體 1,168 筆序列化位元組串流計算 SHA-256。
+     - **儲存邊界**：該指紋僅記錄於受 Git 忽略之私有中繼資料（`p4b_manifest.json`），公開輸出僅標註校驗狀態（如 `dataset_fingerprint_verified: true`）。A1 階段嚴禁計算或存取真實指紋。
 
 ---
 
@@ -94,7 +101,7 @@
    - 原始資料集具有 79 個候選預測變數（排除 `Id` 與目標變數 `SalePrice`），此 79 個原始欄位僅作為上游來源欄位定義（Source Column Mapping），並非最終模型空間。
    - 在 P4-A 的 5 折外層訓練中，觀察到的折內編碼後特徵數分別為 240, 241, 243, 248, 245。
    - **核心合約**：絕不強制固定編碼後欄位數為 248，亦不得在全體 1,168 筆上預先擬合全局特徵字典（Vocabulary）。所有候選特徵空間皆為該次訓練切分之**折內局部空間（Fold-Local Universe）**。
-2. **Phase 3 前處理 неизвест 類別行為嚴格對齊（Strict Alignment with Phase 3 `handle_unknown='ignore'`）**：
+2. **Phase 3 前處理未知類別行為嚴格對齊（Strict Alignment with Phase 3 `handle_unknown='ignore'`）**：
    - 依據專案既有 Phase 3 管道實作（`python/src/housing_regression/data_prep/pipeline.py:84,404`），類別編碼器採用 `OneHotEncoder(handle_unknown='ignore')`：
      - 當驗證集（Inner Val 或 Outer Val）中出現該折訓練集未見過之新類別水準時，編碼器**自動輸出全 0 指示向量**，絕不產生額外的新欄位，亦不會拋出例外。
      - 折內選出之特徵欄位清單在該次擬合分區內完全自洽，**不存在跨折補 0 或人為剔除新欄位的操作**。
@@ -217,16 +224,18 @@
 1. **內層目標函數**：
    - 內層 3 折交叉驗證之平均驗證均方根誤差（Mean Validation RMSE）：
      $$\text{Score} = \frac{1}{3} \sum_{m=1}^3 \text{RMSE}_m$$
-2. **確定性平手決策階層（Deterministic Tie-Breaking Applied Per-Track）**：
+2. **確定性全序平手決策階層（Deterministic Total-Order Tie-Breaking）**：
    - 浮點數比較容差設為 $\epsilon = 10^{-9}$。
-   - **平手決策僅在各 Track 內部獨立套用，嚴格禁止跨 Track 比較勝出者**：
-     - **Track A 內部平手規則**：
+   - **平手決策嚴格在各 Track 內部獨立套用，全序規則（Total Order）定義如下**：
+     - **Track A 內部確定性全序平手規則**：
        1. 優先選取特徵數較少者（Sparsity priority）。
        2. 若特徵數相同，依候選演算法順序：Filter $\to$ Forward SFS $\to$ RFE $\to$ Lasso $\to$ ElasticNet。
-       3. 若同一演算法內仍平手，選取候選 $K$ 較小者（或 $\alpha$ 較大者）。
-     - **Track B 內部平手規則**：
-       1. 優先選取正則化強度較大者（較大之 $\alpha$）。
-       2. 次選 `l1_ratio` 較大者。
+       3. 若同一演算法內仍平手，選取候選 $K$ 較小者（或 $\alpha$ 較大者；若 ElasticNet 則次選 `l1_ratio` 較大者）。
+     - **Track B 內部確定性全序平手規則**：
+       1. 若多個超參數之內層平均 RMSE 差異在 $\epsilon$ 內，依固定方法順序決策：**LassoCV 優先於 ElasticNetCV**。
+       2. 在同一方法內部若仍平手，優先選取正則化強度較大者（較大之 $\alpha$）。
+       3. 若 ElasticNetCV 且 $\alpha$ 相同，優先選取 `l1_ratio` 較大者（偏好更稀疏之 $L_1$ 懲罰）。
+       4. 若仍平手，依候選網格產生之原初順序取最前者。
 3. **無 1-SE 法則（No 1SE Rule）**：
    - 嚴格以內層驗證平均 RMSE 最小者勝出，不採用啟發式的 1 個標準誤差準則（1SE Rule）。
 4. **外層排行榜選擇樂觀偏差警告（Outer Selection Optimism Warning）**：
@@ -340,15 +349,20 @@ for tr_idx, val_idx in kf.split(X_synthetic):
 - **估計器擬合硬上限（Cumulative Estimator Fit Cap）**：
   $$\text{Cumulative Fit Cap} = 150,000 \text{ 次估計器擬合}$$
 
-### 9.4 時間、記憶體監控與 A4 閘門合約（Resource Controls & A4 Gate Policy）
-- **防禦性監控參數規格**：
-  - 任何 A2/A4 執行設定檔必須顯式具備 `max_wall_seconds`（單折最大秒數）與 `max_peak_memory_bytes`（最大記憶體位元組）監控限制。
-  - **A1 不捏造數值原則**：本協定不預先填寫未經實測之秒數與位元組常數，該具體數值**嚴格保留至 A4 基準測量階段依實測結果凍結**。
-  - **A4 閘門阻絕條件（A4 Gate Stop Condition）**：在 A4 階段正式量測並設定具體上限之前，禁止進行任何正式的大規模特徵選擇實驗；若執行時限制未設定或實測超出 A4 凍結之限制，Runner 必須立即中止（Fail-Closed）。
+### 9.4 雙層資源閘門、A4 啟動校準包絡與中斷合約（Two-Tier Resource Gate & A4 Calibration Envelope）
+- **雙層資源防禦機制（Two-Tier Resource Gate Architecture）**：
+  - 為消除「限制未設定前不能跑 A4，但 A4 又未測量出限制」之循環相依，本協定嚴格確立雙層資源邊界：
+    1. **第 1 層：A4 基準校準安全包絡（A4 Calibration Bootstrap Envelope）**：
+       - A4 基準測試僅允許在專案經 Owner 事先核准之一組**明確、有限、正值、Fail-Closed 之校準防禦包絡**（例如微型基準測試單次呼叫秒數與記憶體上限）下啟動執行。
+       - 在 Owner 審定該組 A4 啟動包絡設定檔前，A4 基準校準**不得啟動**。
+       - A4 之任務即是在此啟動包絡的保護下，完成代表性子集微測量，並據此**量測、凍結並寫入正式執行之數值限制**（`max_wall_seconds` 與 `max_peak_memory_bytes`）。
+    2. **第 2 層：正式執行資源閘門（Formal Execution Limits）**：
+       - A2 完整測試與後續正式特徵選擇實驗，**在 A4 尚未實測並凍結正式數值限制前，嚴格處於 BLOCKED 狀態**。
+       - 若設定檔限制為 null、未設定或正式執行超出該限制，Runner 必須立即中止（Fail-Closed）。
 - **檢查點原子寫入與接續身份校驗合約（Checkpoint Resume Identity Contract）**：
   - 以「外層折 + 方法」為單位執行原子寫入（寫入 `.tmp` 檔並驗證 SHA-256 後替換）。
   - **拒絕接續驗證（Resume Refusal Checks）**：當 Runner 嘗試接續執行時，必須完整校驗以下身份條件，任一條件不符則**拒絕接續（Fail-Closed）並建立全新 Run ID**：
-    1. 開發資料集指紋摘要完全一致。
+    1. 開發資料集標準化指紋摘要完全一致。
     2. Git Code HEAD Commit SHA 完全一致。
     3. 協定版本（`protocol_version: v1.0`）一致。
     4. 依賴套件版本（Python, scikit-learn, numpy, pandas, scipy）完全一致。
@@ -369,14 +383,15 @@ for tr_idx, val_idx in kf.split(X_synthetic):
 | `TEST-P4B-05` | 敏感欄位徹底排除 | 驗證特徵矩陣輸入中嚴格排除 `Id` 與 `SalePrice`，否則拋出 `SchemaError`。 | 輸入檢查測試 |
 | `TEST-P4B-06` | 極端值與常數防禦 | 注入常數欄位（$\sigma=0$）與非有限值（NaN/Inf），驗證 Filter 與模型平手及降序處理。 | 數值穩定性 |
 | `TEST-P4B-07` | 奇異值 SVD OLS 求解 | 在病態矩陣（多重共線性）下驗證最小範數解數值條件數與有效秩計算正確性（`rcond=None`）。 | 數值代數測試 |
-| `TEST-P4B-08` | 確定性平手一致性 | 注入等效評分之合成特徵，驗證字典序升冪與稀疏度優先規則能產生 100% 重現之解。 | 確定性測試 |
+| `TEST-P4B-08` | Track A 平手全序一致性 | 注入等效評分之合成特徵，驗證稀疏度優先、固定演算法順序與字典序規則能產生 100% 重現之解。 | 確定性測試 |
 | `TEST-P4B-09` | 擬合預算硬上限中斷 | 透過計數器模擬超出 150,000 次估計器擬合，驗證立即觸發 `BudgetExceededError` 中止。 | 防禦熔斷測試 |
 | `TEST-P4B-10` | 檢查點原子寫入與校驗 | 注入損毀之 `.tmp` 暫存檔，驗證 SHA-256 校驗失敗並防禦性中斷接續。 | I/O 安全測試 |
 | `TEST-P4B-11` | 公開摘要去識別化 | 驗證 `p4b_public_summary.json` 不含任何逐列 OOF、真實標籤或本機敏感路徑。 | 隱私安全測試 |
 | `TEST-P4B-12` | 候選 K 值範圍合約 | 驗證選擇器嚴格僅能輸出 $K \in \{2, 3, 5, 10, 20\}$ 之特徵集合，傳入非法 $K$ 拋出異常。 | 參數邊界測試 |
 | `TEST-P4B-13` | SFS 訓練集獨立挑選 | 斷言驗證 SFS 貪婪挑選特徵過程僅依賴 Inner Train 殘差，Inner Val 保持未讀取。 | 演算法隔離測試 |
-| `TEST-P4B-14` | 開發資料集指紋穩定性 | 驗證標準化開發資料集序列化演算法之穩定性，注入變更列順序或數值時雜湊必定改變。 | 資料完整性測試 |
+| `TEST-P4B-14` | 指紋防碰撞與重複穩定性 | 驗證型別標記與長度前綴序列化能精確區分 `[Null]` vs `[""]` 及逗號分割碰撞，且重複計算雜湊值 100% 一致。 | 資料完整性測試 |
 | `TEST-P4B-15` | 檢查點身份不符拒絕接續 | 模擬變更套件版本或折分種子，驗證 Runner 必定拒絕接續中斷檔並拋出例外。 | 接續安全測試 |
+| `TEST-P4B-16` | Track B 確定性全序平手 | 注入相同評分之 Lasso 與 ElasticNet 候選，驗證必定由 Lasso 優先，且同法依 $\alpha$ 降序決策。 | 確定性測試 |
 
 ---
 
