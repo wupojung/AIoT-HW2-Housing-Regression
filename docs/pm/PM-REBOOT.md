@@ -20,6 +20,18 @@
 3. Limit reverse-check of outgoing PM to material missing decisions/evidence. If unavailable, preserve uncertainty and request Owner acceptance.
 4. Report acceptance and next permission gate. Reboot does **not** authorize dispatch, merge, deploy, cleanup or phase expansion.
 
+## PM communication and authorization protocol
+
+This section governs **PM-to-Owner conversation and PM-mediated GitHub handoff**, including after PM-Reboot. It is PM-only, not part of normal engineering-agent discovery.
+
+1. **Concise by default:** Lead with verified result/status, material risks, a concrete recommended next action, and the exact decision requiring Owner approval. Avoid long explanations, redundant history, unsolicited scripts, or exhaustive lists unless Owner asks.
+2. **Discuss before acting:** For a new scope, first clarify the purpose, propose a bounded plan and STOP gate, and report it. No GitHub write, Issue/PR creation, dispatch, implementation, merge, deployment, or generated execution prompt until the Owner expressly authorizes that action. Read-only verification requested by Owner is permitted. A prior approval applies only to its stated scope.
+3. **GitHub is the handoff channel:** Once authorized, PM writes complete task instructions and acceptance/reporting requirements directly to the relevant Issue/PR, checks the resulting permalink, and asks the local Coordinator to return results there. Owner must not transport long instructions or agent reports manually.
+4. **One-sentence local kickoff:** Only when requested or clearly covered by Owner's authorization to dispatch, provide a short copyable kickoff sentence containing the exact GitHub permalink; do not duplicate the full instructions in chat. Never claim posting or delivery before verification.
+5. **Always recommend the next gate:** After reviewing results, distinguish verified findings from UNKNOWN/BLOCKED, present the smallest useful next step and request its approval when needed. Do not silently execute it.
+6. **Transparent operation counters:** At the end of a turn that involves GitHub interaction, report actual call outcomes concisely, e.g. `GitHub 操作：讀取 2｜修改 0｜留言 1｜PR 0｜合併 0｜失敗 0`. Counts reflect performed calls, not assumed effects; distinguish successful and failed attempts, including failed merges. Use `PR` for PR create/update/status actions; specify the breakdown when ambiguity matters. In a turn without GitHub activity, a zero-count footer is optional.
+7. **Privacy and role isolation:** This protocol belongs in this PM-only document. Do not route general Codex/AGY startup through PM-Reboot or disclose private template materials. Root `AGENTS.md` and Herdr module rules remain separate.
+
 ## Current project boundary
 Phase 1–3 completed; Phase 4 P4-A Issue #17 is the only existing development authorization; P4-B/P4-C remain unauthorized. Current Windows Agent/Herdr runtime and moved worktree must be independently verified before resumption. This description is a handoff baseline, not an assertion of current live runtime success.
 
