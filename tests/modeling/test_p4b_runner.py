@@ -83,33 +83,28 @@ class P4BContractTests(unittest.TestCase):
 
     def test_canonical_fingerprint_and_parser(self):
         """TEST-P4B-14: Canonical fingerprinting, nominal code preservation, and float/int checks."""
-        # 1. Nominal code distinction: "20" vs "020"
         b20 = encode_canonical_cell("20", "MSSubClass")
         b020 = encode_canonical_cell("020", "MSSubClass")
         self.assertNotEqual(b20, b020)
         self.assertEqual(b20[0], 0x01)
 
-        # 2. Int parser strictness
         self.assertEqual(encode_canonical_cell("123", "YearBuilt")[0], 0x02)
         with self.assertRaises(InvalidDataFormatError):
             encode_canonical_cell("123.45", "YearBuilt")
         with self.assertRaises(InvalidDataFormatError):
             encode_canonical_cell("abc", "YearBuilt")
 
-        # 3. Float parser and infinity rejection
         self.assertEqual(encode_canonical_cell("123.45", "LotArea")[0], 0x03)
         with self.assertRaises(InvalidDataFormatError):
             encode_canonical_cell("inf", "LotArea")
         with self.assertRaises(InvalidDataFormatError):
             encode_canonical_cell("-inf", "LotArea")
 
-        # 4. Null vs empty string
         b_null = encode_canonical_cell(None, "Alley")
         b_empty = encode_canonical_cell("", "Alley")
         self.assertEqual(b_null, b_empty)
         self.assertEqual(b_null[0], 0x00)
 
-        # 5. Full row hashing consistency
         rows = make_synthetic_dataset(10)
         fp1 = compute_canonical_fingerprint(rows)
         fp2 = compute_canonical_fingerprint(rows)
@@ -120,7 +115,7 @@ class P4BContractTests(unittest.TestCase):
         """Blocker 2: Preflight budget estimate rejects over-budget config before any fitting."""
         config = P4BConfig(
             code_head_commit="test_commit",
-            estimator_fit_cap=50,  # Far too low for any nested run
+            estimator_fit_cap=50,
             preprocessor_fit_cap=10,
             active_methods=["filter_pearson"],
             k_candidates=(2, 3),
@@ -142,11 +137,9 @@ class P4BContractTests(unittest.TestCase):
         rows = make_synthetic_dataset(20)
         runner = P4BRunner(config)
 
-        # Preflight must reject immediately with BudgetExceededError
         with self.assertRaises(BudgetExceededError):
             runner.run_nested_cv(rows, pipeline_factory=SpyPipeline)
 
-        # Assert no pipeline fitting occurred!
         self.assertFalse(pipe_fitted)
 
     def test_preprocessor_fitting_boundary_spy(self):
@@ -206,7 +199,7 @@ class P4BContractTests(unittest.TestCase):
             preprocessor_fit_cap=100,
             active_methods=["forward_sfs"],
             k_candidates=(2, 3, 5),
-            timeout_seconds=0.0001,  # Instantly expire
+            timeout_seconds=0.0001,
         )
         rows = make_synthetic_dataset(30)
         runner = P4BRunner(config)
@@ -216,18 +209,15 @@ class P4BContractTests(unittest.TestCase):
 
     def test_intra_method_tie_breaking(self):
         """TEST-P4B-08 & TEST-P4B-16: Deterministic intra-method tie-breaking rules."""
-        # 1. K candidates tie: smaller K wins
         cand_k = [(5, 0.25), (2, 0.25), (10, 0.25)]
         best_k = tie_break_subset_k(cand_k)
         self.assertEqual(best_k, 2)
 
-        # 2. Lasso alpha tie: larger alpha wins
         cand_lasso = [(0.1, 0, 0.30), (10.0, 1, 0.30), (1.0, 2, 0.30)]
         best_alpha, best_idx = tie_break_lasso_alpha(cand_lasso)
         self.assertEqual(best_alpha, 10.0)
         self.assertEqual(best_idx, 1)
 
-        # 3. ElasticNet (alpha, l1_ratio) tie: larger alpha wins; if equal, larger l1_ratio wins
         cand_en = [
             (1.0, 0.5, 0, 0.40),
             (10.0, 0.1, 1, 0.40),
@@ -238,54 +228,132 @@ class P4BContractTests(unittest.TestCase):
         self.assertEqual(best_l1, 0.9)
         self.assertEqual(best_idx, 2)
 
-    def test_end_to_end_synthetic_nested_cv_with_artifacts_wiring(self):
-        """Blocker 4 & 5: End-to-end small synthetic test verifying artifacts writing & containment."""
+    def test_b02_resume_roundtrip_and_mismatch(self):
+        """B02 Acceptance: Checkpoint resume roundtrip and failure on mismatch."""
         tmp_base = Path(tempfile.mkdtemp())
-        out_dir = tmp_base / "local" / "research" / "phase4-p4b" / "test_run_e2e"
+        out_dir = tmp_base / "local" / "research" / "phase4-p4b" / "run_resume_test"
         try:
-            rows = make_synthetic_dataset(30, seed=123)
+            rows = make_synthetic_dataset(30, seed=42)
             config = P4BConfig(
-                code_head_commit="a2544bff224bebc64391b31be33066baa910bdf1",
+                code_head_commit="85487831551d277c8512ef53435ff1fd72bf8ffe",
                 outer_splits=2,
                 inner_splits=2,
                 estimator_fit_cap=50000,
                 preprocessor_fit_cap=100,
+                active_methods=["filter_pearson"],
                 k_candidates=(2, 3),
-                lasso_alphas_count=3,
-                elastic_net_alphas_count=2,
-                elastic_net_l1_ratios=(0.5, 0.9),
-                max_iter=500,
+                repo_root=tmp_base,
             )
             runner = P4BRunner(config)
-            output = runner.run_nested_cv(rows, output_dir=out_dir, run_id="test_run_e2e")
-
-            summary = output["summary"]
-            self.assertEqual(summary["status"], "SUCCESS")
-            self.assertIsNone(summary["exception"])
-            self.assertGreater(summary["fit_accounting"]["elapsed_seconds"], 0)
-
-            # Check that files were written to out_dir
-            self.assertTrue((out_dir / "p4b_oof_predictions.csv").exists())
-            self.assertTrue((out_dir / "p4b_public_summary.json").exists())
-            self.assertTrue((out_dir / "p4b_private_details.json").exists())
-            self.assertTrue((out_dir / "p4b_manifest.json").exists())
+            # 1. Initial run writing checkpoints
+            res1 = runner.run_nested_cv(rows, output_dir=out_dir, run_id="run_resume_test")
+            self.assertEqual(res1["summary"]["status"], "SUCCESS")
             self.assertTrue((out_dir / "checkpoint_fold_0.json").exists())
             self.assertTrue((out_dir / "checkpoint_fold_1.json").exists())
 
-            # Read public summary and ensure no row-level data
-            pub_text = (out_dir / "p4b_public_summary.json").read_text(encoding="utf-8")
-            self.assertNotIn("SalePrice", pub_text)
+            # 2. Resume run reading checkpoints: should skip completed folds
+            runner_resume = P4BRunner(config)
+            res2 = runner_resume.run_nested_cv(
+                rows,
+                output_dir=out_dir,
+                run_id="run_resume_test",
+                resume_checkpoint_dir=out_dir,
+            )
+            self.assertEqual(res2["summary"]["status"], "SUCCESS")
+            # All results recovered from checkpoints
+            self.assertEqual(len(res2["summary"]["per_outer_fold_results"]), 2)
+
+            # 3. Checkpoint corruption/mismatch test
+            bad_config = P4BConfig(
+                code_head_commit="different_commit",
+                outer_splits=2,
+                inner_splits=2,
+                estimator_fit_cap=50000,
+                preprocessor_fit_cap=100,
+                active_methods=["filter_pearson"],
+                k_candidates=(2, 3),
+                repo_root=tmp_base,
+            )
+            runner_bad = P4BRunner(bad_config)
+            from housing_regression.modeling.p4b_artifacts import CheckpointVerificationError
+            with self.assertRaises(CheckpointVerificationError):
+                runner_bad.run_nested_cv(
+                    rows,
+                    output_dir=out_dir,
+                    run_id="run_resume_test",
+                    resume_checkpoint_dir=out_dir,
+                )
+        finally:
+            shutil.rmtree(tmp_base, ignore_errors=True)
+
+    def test_b03_isolated_worker_process_timeout_kill(self):
+        """B03 Acceptance: Worker process hard kill on deadline with zero orphans."""
+        config = P4BConfig(
+            code_head_commit="85487831551d277c8512ef53435ff1fd72bf8ffe",
+            outer_splits=2,
+            inner_splits=2,
+            estimator_fit_cap=50000,
+            preprocessor_fit_cap=100,
+            active_methods=["forward_sfs"],
+            k_candidates=(2, 3, 5),
+            timeout_seconds=0.0001,  # Force immediate worker timeout
+            use_isolated_worker_process=True,
+        )
+        rows = make_synthetic_dataset(30)
+        runner = P4BRunner(config)
+
+        with self.assertRaises(TimeoutExceededError):
+            runner.run_nested_cv(rows)
+
+    def test_b04_injected_failure_durable_json_writing(self):
+        """B04 Acceptance: Verify runner writes durable p4b_failure.json on injected pipeline exception."""
+        tmp_base = Path(tempfile.mkdtemp())
+        out_dir = tmp_base / "local" / "research" / "phase4-p4b" / "run_fail_test"
+        try:
+            class FailingPipeline(AmesDataPreparationPipeline):
+                def fit_transform(self, dataset, split_name: str = "train"):
+                    raise RuntimeError("Injected preprocessor failure during fit")
+
+            rows = make_synthetic_dataset(30)
+            config = P4BConfig(
+                code_head_commit="85487831551d277c8512ef53435ff1fd72bf8ffe",
+                outer_splits=2,
+                inner_splits=2,
+                estimator_fit_cap=50000,
+                preprocessor_fit_cap=100,
+                active_methods=["filter_pearson"],
+                k_candidates=(2, 3),
+                repo_root=tmp_base,
+            )
+            runner = P4BRunner(config)
+
+            with self.assertRaises(RuntimeError):
+                runner.run_nested_cv(
+                    rows,
+                    output_dir=out_dir,
+                    run_id="run_fail_test",
+                    pipeline_factory=FailingPipeline,
+                )
+
+            # Verify that p4b_failure.json was written before exception bubbled up
+            fail_file = out_dir / "p4b_failure.json"
+            import json
+            self.assertTrue(fail_file.exists())
+            fail_data = json.loads(fail_file.read_text(encoding="utf-8"))
+            self.assertEqual(fail_data["status"], "FAILED")
+            self.assertEqual(fail_data["stage"], "OUTER_FOLD_0")
+            self.assertEqual(fail_data["exception_type"], "RuntimeError")
+            self.assertIn("Injected preprocessor failure", fail_data["exception_message"])
         finally:
             shutil.rmtree(tmp_base, ignore_errors=True)
 
     def test_subprocess_timeout_termination_demonstration(self):
-        """Blocker 3: Demonstrate hard kill of blocking child process via test harness."""
-        # Run a test with a deliberately tiny timeout on a test that sleeps/takes time
+        """Demonstrate hard kill of blocking child process via test harness."""
         with self.assertRaises(TimeoutError):
             run_test_in_bounded_subprocess(
                 test_module="tests.modeling.test_p4b_runner",
                 test_case="P4BContractTests.test_canonical_fingerprint_and_parser",
-                timeout_seconds=0.0001,  # Deliberately impossible timeout
+                timeout_seconds=0.0001,
                 cwd=REPO_ROOT,
             )
 

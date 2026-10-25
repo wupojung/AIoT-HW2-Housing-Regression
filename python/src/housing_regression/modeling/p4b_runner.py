@@ -4,19 +4,23 @@ Data isolation & execution contract:
 - Nested 5-fold outer / 3-fold inner cross-validation.
 - Fold-local AmesDataPreparationPipeline fitted exclusively on current training partitions.
 - Conservative preflight fit budget calculation before any fitting begins.
-- Strict timeout deadline enforcement between work units.
+- Strict timeout deadline enforcement and killable worker process boundary on timeout.
 - Single worker / single-thread execution via threadpoolctl.
 - Containment enforcement: private research outputs strictly under local/research/phase4-p4b/<run-id>.
+- Bounded checkpoint resume: reads and validates state before executing remaining folds.
+- Durable atomic failure reporting on injected or unexpected errors.
 - Zero Git or shell subprocess commands in runtime.
 """
 
 from __future__ import annotations
 
 import csv
+import datetime
 import hashlib
 import io
 import json
 import math
+import multiprocessing as mp
 import os
 import re
 import struct
@@ -178,6 +182,8 @@ class P4BConfig:
     tol: float = 1e-4
     single_thread: bool = True
     timeout_seconds: Optional[float] = None
+    use_isolated_worker_process: bool = False
+    repo_root: Optional[Path] = None
     active_methods: Optional[List[str]] = None  # None means all 5 methods
     active_pairs: Optional[List[Tuple[str, str]]] = None  # None means all 7 pairs
 
@@ -204,7 +210,6 @@ def estimate_preflight_budget(config: P4BConfig) -> Tuple[int, int]:
     max_k = max(config.k_candidates) if config.k_candidates else 20
     min_k = min(config.k_candidates) if config.k_candidates else 2
 
-    # Preprocessor fits: (inner_splits + 1 outer) per outer fold
     preprocessor_fits = M * (m + 1)
 
     active_methods = config.active_methods or [
@@ -218,36 +223,25 @@ def estimate_preflight_budget(config: P4BConfig) -> Tuple[int, int]:
     total_estimator_fits = 0
 
     if "filter_pearson" in active_methods:
-        # Inner: m * k_count, Outer: 1
         filter_per_outer = m * k_count + 1
         total_estimator_fits += M * filter_per_outer
 
     if "forward_sfs" in active_methods:
-        # SFS forward steps: for step 0..max_k-1, evaluates remaining features <= d
-        # Sum_{i=0..max_k-1} (d - i)
         sfs_steps_fits = sum(d - i for i in range(max_k))
-        # Inner: m * (sfs_steps_fits + k_count)
-        # Outer: sfs_steps_fits + 1 (final OLS)
         sfs_per_outer = m * (sfs_steps_fits + k_count) + sfs_steps_fits + 1
         total_estimator_fits += M * sfs_per_outer
 
     if "rfe_ridge" in active_methods:
-        # RFE steps from d down to min_k: (d - min_k + 1) Ridge fits
         rfe_elim_fits = d - min_k + 1
-        # Inner: m * (rfe_elim_fits + k_count OLS)
-        # Outer: rfe_elim_fits + 1 (final OLS)
         rfe_per_outer = m * (rfe_elim_fits + k_count) + rfe_elim_fits + 1
         total_estimator_fits += M * rfe_per_outer
 
     if "lasso_cv" in active_methods:
-        # Inner: m * alphas (Lasso) + m * alphas (OLS refit)
-        # Outer: 1 Lasso + 1 OLS + 1 native Lasso
         alphas = config.lasso_alphas_count
         lasso_per_outer = m * alphas * 2 + 3
         total_estimator_fits += M * lasso_per_outer
 
     if "elastic_net_cv" in active_methods:
-        # Grid: alphas * l1_ratios
         en_grid_size = config.elastic_net_alphas_count * len(config.elastic_net_l1_ratios)
         en_per_outer = m * en_grid_size * 2 + 3
         total_estimator_fits += M * en_per_outer
@@ -479,6 +473,22 @@ def tie_break_elastic_net(
     tied = [(alpha, l1, idx) for alpha, l1, idx, score in candidates_scores if score - min_score <= eps]
     tied.sort(key=lambda item: (-item[0], -item[1], item[2]))
     return tied[0]
+
+
+# Top-level worker target for isolated multiprocessing (Windows spawn compatible)
+def _mp_worker_target(
+    queue: Any,
+    config: P4BConfig,
+    outer_fold_idx: int,
+    outer_train_rows: List[Dict[str, str]],
+    outer_val_rows: List[Dict[str, str]],
+) -> None:
+    try:
+        runner = P4BRunner(config)
+        res = runner.execute_outer_fold(outer_fold_idx, outer_train_rows, outer_val_rows)
+        queue.put(("SUCCESS", res, runner.accounting.estimator_fits, runner.accounting.preprocessor_fits))
+    except Exception as exc:
+        queue.put(("EXCEPTION", type(exc).__name__, str(exc)))
 
 
 class P4BRunner:
@@ -1097,6 +1107,7 @@ class P4BRunner:
         dev_rows: Sequence[Mapping[str, str]],
         output_dir: Optional[Path] = None,
         run_id: Optional[str] = None,
+        resume_checkpoint_dir: Optional[Path] = None,
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
     ) -> Dict[str, Any]:
         """Execute full nested cross-validation across all outer folds with preflight checks and outputs."""
@@ -1122,15 +1133,43 @@ class P4BRunner:
             self.deadline = None
 
         # 4. Verify output containment if output_dir is provided
+        from housing_regression.modeling.p4b_artifacts import (
+            assert_safe_private_containment,
+            atomic_write_csv,
+            atomic_write_json,
+            create_manifest,
+            create_public_summary,
+            verify_checkpoint_for_resume,
+            write_durable_failure_json,
+        )
+
+        canonical_fp = compute_canonical_fingerprint(dev_rows)
+
         if output_dir is not None:
-            from housing_regression.modeling.p4b_artifacts import (
-                assert_safe_private_containment,
-                atomic_write_csv,
-                atomic_write_json,
-                create_manifest,
-                create_public_summary,
-            )
-            assert_safe_private_containment(Path(output_dir))
+            output_dir = assert_safe_private_containment(Path(output_dir), repo_root=self.config.repo_root, run_id=run_id)
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+        # 5. Handle resume checkpoint reading if requested
+        completed_folds: Dict[int, Dict[str, Any]] = {}
+        if resume_checkpoint_dir is not None:
+            resume_dir = Path(resume_checkpoint_dir)
+            import sklearn
+            import pandas as pd
+            import scipy
+            env_vers = {
+                "python": "3.12",
+                "sklearn": sklearn.__version__,
+                "numpy": np.__version__,
+                "pandas": pd.__version__,
+                "scipy": scipy.__version__,
+            }
+            # Search for checkpoint_fold_*.json
+            for chk_file in sorted(resume_dir.glob("checkpoint_fold_*.json")):
+                with open(chk_file, "r", encoding="utf-8") as f:
+                    chk_data = json.load(f)
+                verify_checkpoint_for_resume(chk_data, canonical_fp, self.config, env_vers)
+                k = chk_data["completed_outer_fold"]
+                completed_folds[k] = chk_data
 
         def _execute_loop() -> Dict[str, Any]:
             n_rows = len(dev_rows)
@@ -1140,31 +1179,88 @@ class P4BRunner:
             all_oof_records: List[Dict[str, Any]] = []
             run_status = "SUCCESS"
             exception_info: Optional[str] = None
+            current_stage = "STARTUP"
 
             try:
                 for k in range(self.config.outer_splits):
+                    current_stage = f"OUTER_FOLD_{k}"
                     self._check_deadline()
+
+                    # Check if already completed from resume checkpoint
+                    if k in completed_folds:
+                        chk_data = completed_folds[k]
+                        all_fold_results.extend(chk_data.get("results", []))
+                        all_oof_records.extend(chk_data.get("oof_records", []))
+                        continue
+
                     tr_rows = [dict(dev_rows[i]) for i, f in enumerate(outer_folds) if f != k]
                     va_rows = [dict(dev_rows[i]) for i, f in enumerate(outer_folds) if f == k]
 
-                    fold_output = self.execute_outer_fold(
-                        outer_fold_idx=k,
-                        outer_train_rows=tr_rows,
-                        outer_val_rows=va_rows,
-                        pipeline_factory=pipeline_factory,
-                    )
+                    if self.config.use_isolated_worker_process and self.config.timeout_seconds is not None:
+                        # B03: Execute fold inside independently killable worker process
+                        ctx = mp.get_context("spawn")
+                        queue = ctx.Queue()
+                        proc = ctx.Process(
+                            target=_mp_worker_target,
+                            args=(queue, self.config, k, tr_rows, va_rows),
+                        )
+                        proc.start()
+                        remaining_timeout = max(0.01, self.deadline - time.perf_counter()) if self.deadline else None
+                        proc.join(timeout=remaining_timeout)
+
+                        if proc.is_alive():
+                            # Kill child process on timeout
+                            proc.terminate()
+                            proc.join(timeout=1.0)
+                            if proc.is_alive():
+                                proc.kill()
+                                proc.join()
+                            raise TimeoutExceededError(
+                                f"Worker process for outer fold {k} exceeded timeout and was terminated."
+                            )
+
+                        if queue.empty():
+                            raise RuntimeError(f"Worker process for outer fold {k} died without returning output.")
+
+                        msg = queue.get()
+                        if msg[0] == "EXCEPTION":
+                            raise RuntimeError(f"Worker process error ({msg[1]}): {msg[2]}")
+                        fold_output = msg[1]
+                        # Sync fit accounting counts from worker
+                        self.accounting.record_estimator_fit(msg[2])
+                        self.accounting.record_preprocessor_fit(msg[3])
+                    else:
+                        fold_output = self.execute_outer_fold(
+                            outer_fold_idx=k,
+                            outer_train_rows=tr_rows,
+                            outer_val_rows=va_rows,
+                            pipeline_factory=pipeline_factory,
+                        )
+
                     all_fold_results.extend(fold_output["results"])
                     all_oof_records.extend(fold_output["oof_records"])
 
                     # Intermediate fold checkpoint if output_dir is specified
                     if output_dir is not None:
+                        import sklearn
+                        import pandas as pd
+                        import scipy
                         fold_chk = {
                             "run_id": run_id,
                             "completed_outer_fold": k,
                             "code_head_commit": self.config.code_head_commit,
-                            "dataset_fingerprint": compute_canonical_fingerprint(dev_rows),
+                            "dataset_fingerprint": canonical_fp,
+                            "results": fold_output["results"],
+                            "oof_records": fold_output["oof_records"],
                             "metadata": {
                                 "protocol_version": self.config.protocol_version,
+                                "environment": {
+                                    "python_version": "3.12",
+                                    "sklearn_version": sklearn.__version__,
+                                    "numpy_version": np.__version__,
+                                    "pandas_version": pd.__version__,
+                                    "scipy_version": scipy.__version__,
+                                },
                                 "data_boundary": {
                                     "outer_kfold": {"random_state": self.config.outer_seed},
                                     "inner_kfold": {"random_state": self.config.inner_seed},
@@ -1177,6 +1273,26 @@ class P4BRunner:
             except Exception as exc:
                 run_status = "FAILED"
                 exception_info = f"{type(exc).__name__}: {str(exc)}"
+                if output_dir is not None:
+                    # B04: Write atomic sanitized failure JSON before re-raising
+                    write_durable_failure_json(
+                        target_dir=output_dir,
+                        run_id=run_id or "p4b_run",
+                        stage=current_stage,
+                        code_head_commit=self.config.code_head_commit,
+                        exception=exc,
+                        accounting_summary={
+                            "estimator_fits": self.accounting.estimator_fits,
+                            "preprocessor_fits": self.accounting.preprocessor_fits,
+                            "elapsed_seconds": time.perf_counter() - start_time,
+                        },
+                        config_summary={
+                            "protocol_version": self.config.protocol_version,
+                            "d_ceiling": self.config.d_ceiling,
+                            "outer_splits": self.config.outer_splits,
+                            "inner_splits": self.config.inner_splits,
+                        },
+                    )
                 raise exc
 
             finally:
@@ -1232,7 +1348,6 @@ class P4BRunner:
             # Wire outputs if output_dir provided
             if output_dir is not None:
                 out_path = Path(output_dir)
-                out_path.mkdir(parents=True, exist_ok=True)
 
                 # 1. Private OOF CSV
                 oof_path = out_path / "p4b_oof_predictions.csv"
@@ -1262,7 +1377,7 @@ class P4BRunner:
                 manifest_data = create_manifest(
                     run_id=run_id or "p4b_run",
                     code_head_commit=self.config.code_head_commit,
-                    canonical_dataset_sha256=compute_canonical_fingerprint(dev_rows),
+                    canonical_dataset_sha256=canonical_fp,
                     file_inventory=file_inv,
                     development_rows=len(dev_rows),
                 )

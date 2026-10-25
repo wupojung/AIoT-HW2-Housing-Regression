@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -26,15 +25,15 @@ from housing_regression.modeling.p4b_artifacts import (
     create_manifest,
     create_public_summary,
     verify_checkpoint_for_resume,
+    write_durable_failure_json,
 )
 from housing_regression.modeling.p4b_runner import P4BConfig
 
 
 class P4BArtifactsTests(unittest.TestCase):
-    """Synthetic unit tests for artifact writing and safety boundaries."""
+    """Synthetic unit tests for artifact writing, B01 containment, and B04 durable failure."""
 
     def setUp(self):
-        # Create a temp directory structured to mimic repo containment
         self.tmp_base = Path(tempfile.mkdtemp())
         self.safe_dir = self.tmp_base / "local" / "research" / "phase4-p4b" / "test_run"
         self.safe_dir.mkdir(parents=True, exist_ok=True)
@@ -45,30 +44,62 @@ class P4BArtifactsTests(unittest.TestCase):
     def test_no_git_subprocess_invocation(self):
         """Blocker 1: Verify modeling artifact code NEVER invokes subprocess/git."""
         with patch("subprocess.run") as mock_subproc:
-            # Containment check
-            assert_safe_private_containment(self.safe_dir)
-            # Atomic writes
+            assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="test_run")
             json_file = self.safe_dir / "test.json"
             atomic_write_json({"a": 1}, json_file)
             csv_file = self.safe_dir / "test.csv"
             atomic_write_csv([{"col": "val"}], ["col"], csv_file)
-
-            # Assert subprocess was never called
             mock_subproc.assert_not_called()
 
-    def test_private_containment_enforcement(self):
-        """Blocker 1: Fail closed if target directory is not under local/research/phase4-p4b."""
-        # Safe directory passes
-        assert_safe_private_containment(self.safe_dir)
+    def test_b01_containment_negative_cases(self):
+        """B01 Acceptance: Reject symlink escapes, parent traversal (..), sibling paths, and noncanonical run IDs."""
+        # 1. Valid path passes
+        assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="test_run")
 
-        # Unsafe directory fails closed
-        unsafe_dir = self.tmp_base / "public" / "artifacts"
+        # 2. Noncanonical run_id
         with self.assertRaises(PathContainmentError):
-            assert_safe_private_containment(unsafe_dir)
+            assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="../test_run")
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="bad/slash")
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="bad space")
 
-        docs_dir = self.tmp_base / "docs" / "crisp-dm"
+        # 3. Path traversal escape (..)
+        bad_traversal = self.safe_dir / ".." / "other_dir"
         with self.assertRaises(PathContainmentError):
-            assert_safe_private_containment(docs_dir)
+            assert_safe_private_containment(bad_traversal, repo_root=self.tmp_base, run_id="test_run")
+
+        # 4. Sibling fake path outside local/research/phase4-p4b
+        fake_sibling = self.tmp_base / "local" / "research" / "phase4-p4a" / "test_run"
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(fake_sibling, repo_root=self.tmp_base, run_id="test_run")
+
+        fake_public = self.tmp_base / "docs" / "crisp-dm" / "test_run"
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(fake_public, repo_root=self.tmp_base, run_id="test_run")
+
+    def test_b04_durable_failure_json_writing(self):
+        """B04 Acceptance: On injected failure, write atomic sanitized failure JSON with redacted data."""
+        fail_file = write_durable_failure_json(
+            target_dir=self.safe_dir,
+            run_id="test_run",
+            stage="OUTER_FOLD_1",
+            code_head_commit="85487831551d277c8512ef53435ff1fd72bf8ffe",
+            exception=ValueError("Synthetic injected failure"),
+            accounting_summary={"estimator_fits": 12, "preprocessor_fits": 2},
+            config_summary={"protocol_version": "v1.0", "d_ceiling": 300},
+        )
+        self.assertTrue(fail_file.exists())
+        data = json.loads(fail_file.read_text(encoding="utf-8"))
+        self.assertEqual(data["status"], "FAILED")
+        self.assertEqual(data["stage"], "OUTER_FOLD_1")
+        self.assertEqual(data["exception_type"], "ValueError")
+        self.assertIn("Synthetic injected failure", data["exception_message"])
+        self.assertEqual(data["fit_accounting"]["estimator_fits"], 12)
+        # Verify no raw paths or target data are in failure JSON
+        serialized = json.dumps(data)
+        self.assertNotIn("SalePrice", serialized)
+        self.assertNotIn("C:\\", serialized)
 
     def test_atomic_write_json_and_csv(self):
         """Verify atomic file writes via temp file and SHA-256 calculation."""

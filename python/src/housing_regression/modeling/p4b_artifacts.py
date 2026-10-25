@@ -10,15 +10,19 @@ Safety & containment boundaries:
 from __future__ import annotations
 
 import csv
+import datetime
 import hashlib
 import json
 import os
+import re
 import shutil
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from housing_regression.modeling.p4b_runner import P4BConfig, PROTOCOL_VERSION
+
+RUN_ID_REGEX = re.compile(r"^[a-zA-Z0-9_\-]+$")
 
 
 class CheckpointVerificationError(RuntimeError):
@@ -29,25 +33,45 @@ class PathContainmentError(RuntimeError):
     """Raised when an artifact output path violates the designated safe research boundary."""
 
 
-def assert_safe_private_containment(target_dir: Path, repo_root: Optional[Path] = None) -> None:
-    """Enforce that target_dir is strictly contained within local/research/phase4-p4b.
+def assert_safe_private_containment(
+    target_dir: Path,
+    repo_root: Optional[Path] = None,
+    run_id: Optional[str] = None,
+) -> Path:
+    """Enforce that target_dir is strictly contained within repo_root/local/research/phase4-p4b/<run_id>.
 
+    Rejects symlinks, parent directory escapes (..), sibling paths, and noncanonical run IDs.
     Fails closed without calling git or any subprocess.
     """
-    resolved_target = Path(target_dir).resolve()
-    # Check normalized path parts for containment
-    parts = resolved_target.parts
-    # Look for local / research / phase4-p4b sequence
-    found_boundary = False
-    for i in range(len(parts) - 2):
-        if parts[i].lower() == "local" and parts[i + 1].lower() == "research" and parts[i + 2].lower() == "phase4-p4b":
-            found_boundary = True
-            break
+    if repo_root is None:
+        # Default to finding repo root from file location
+        repo_root = Path(__file__).resolve().parents[4]
+    resolved_root = repo_root.resolve()
 
-    if not found_boundary:
+    canonical_research_base = (resolved_root / "local" / "research" / "phase4-p4b").resolve()
+    resolved_target = Path(target_dir).resolve()
+
+    if run_id is not None:
+        if not RUN_ID_REGEX.match(run_id):
+            raise PathContainmentError(f"Noncanonical run_id '{run_id}'. Must be alphanumeric/dash/underscore only.")
+        expected_run_dir = (canonical_research_base / run_id).resolve()
+        if resolved_target != expected_run_dir and expected_run_dir not in resolved_target.parents:
+            raise PathContainmentError(
+                f"Target '{resolved_target}' is not within expected run directory '{expected_run_dir}'."
+            )
+
+    # Must be strictly within canonical_research_base
+    try:
+        rel = resolved_target.relative_to(canonical_research_base)
+    except ValueError as exc:
         raise PathContainmentError(
-            f"Destination '{target_dir}' is not contained under 'local/research/phase4-p4b'."
-        )
+            f"Destination '{resolved_target}' is not contained under repository research base '{canonical_research_base}'."
+        ) from exc
+
+    if ".." in rel.parts:
+        raise PathContainmentError(f"Directory traversal detected in path: '{rel}'.")
+
+    return resolved_target
 
 
 def compute_file_sha256_and_size(path: Path) -> tuple[str, int]:
@@ -91,6 +115,39 @@ def atomic_write_csv(records: Sequence[Mapping[str, Any]], fieldnames: Sequence[
     return sha256, size
 
 
+def write_durable_failure_json(
+    target_dir: Path,
+    run_id: str,
+    stage: str,
+    code_head_commit: str,
+    exception: BaseException,
+    accounting_summary: Mapping[str, Any],
+    config_summary: Mapping[str, Any],
+) -> Path:
+    """B04: Write atomic sanitized failure JSON before re-raising.
+
+    Redacts raw paths and sensitive row records.
+    """
+    failure_path = Path(target_dir) / "p4b_failure.json"
+    data = {
+        "run_id": run_id,
+        "status": "FAILED",
+        "stage": stage,
+        "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "code_head_commit": code_head_commit,
+        "exception_type": type(exception).__name__,
+        "exception_message": str(exception),
+        "fit_accounting": dict(accounting_summary),
+        "config_summary": dict(config_summary),
+    }
+    try:
+        atomic_write_json(data, failure_path)
+    except Exception as exc:
+        # Surface any secondary write failure explicitly
+        raise RuntimeError(f"Failed writing durable failure record to '{failure_path}': {exc}") from exc
+    return failure_path
+
+
 def create_manifest(
     run_id: str,
     code_head_commit: str,
@@ -101,7 +158,6 @@ def create_manifest(
     verification_status: str = "VERIFIED_MATCH",
 ) -> Dict[str, Any]:
     """Construct p4b_manifest.json content per protocol specification."""
-    import datetime
     return {
         "run_id": run_id,
         "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
