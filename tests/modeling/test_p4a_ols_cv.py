@@ -1,0 +1,390 @@
+"""Synthetic tests for Issue #17 P4-A OLS cross-validation (no real CSVs)."""
+
+from __future__ import annotations
+
+import csv
+import json
+import random
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+import numpy as np
+from sklearn.model_selection import KFold
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SRC_DIR = REPO_ROOT / "python" / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+from housing_regression.data_prep import AmesDataPreparationPipeline, split_labeled_dataset  # noqa: E402
+from housing_regression.modeling import (  # noqa: E402
+    compute_numerical_diagnostics,
+    development_train_indices,
+    fit_ols_svd,
+    kfold_assignments,
+    load_development_rows,
+    run_ols_cv,
+)
+from housing_regression.modeling.ols_cv import fold_assignment_digest, public_summary  # noqa: E402
+from tools.modeling.run_p4a_ols_cv import is_path_git_ignored  # noqa: E402
+
+NEIGHBORHOODS = ["CollgCr", "Veenker", "Crawfor", "NoRidge", "Mitchel"]
+
+
+def synthetic_rows(n: int, seed: int = 0) -> list[dict[str, str]]:
+    rng = random.Random(seed)
+    rows = []
+    for i in range(n):
+        area = rng.randint(4000, 15000)
+        qual = rng.randint(1, 10)
+        nb = NEIGHBORHOODS[i % len(NEIGHBORHOODS)]
+        price = 20000 + 8 * area + 15000 * qual + 10000 * NEIGHBORHOODS.index(nb) + rng.gauss(0, 5000)
+        rows.append({
+            "Id": str(i + 1),
+            "LotArea": str(area) if i % 7 else "NA",
+            "OverallQual": str(qual),
+            "Neighborhood": nb,
+            "SalePrice": f"{price:.0f}",
+        })
+    return rows
+
+
+def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+
+class SplitProvenanceTests(unittest.TestCase):
+    def test_development_indices_match_phase3_splitter(self):
+        rows = [{"Id": str(i)} for i in range(1460)]
+        train_rows, _ = split_labeled_dataset(rows, val_fraction=0.2, random_state=42)
+        expected = [int(r["Id"]) for r in train_rows]
+        self.assertEqual(development_train_indices(1460, 0.2, 42), expected)
+        self.assertEqual(len(expected), 1168)
+
+    def test_kfold_canonical_sklearn_regression_and_digest(self):
+        """Verify kfold_assignments strictly matches sklearn.model_selection.KFold(shuffle=True, random_state=42)."""
+        n_rows = 1168
+        n_splits = 5
+        seed = 42
+        assignments = kfold_assignments(n_rows, n_splits, seed)
+
+        # Canonical sklearn reference
+        kf = KFold(n_splits=n_splits, shuffle=True, random_state=seed)
+        expected_assignments = [0] * n_rows
+        for k, (_tr, va) in enumerate(kf.split(range(n_rows))):
+            for idx in va:
+                expected_assignments[idx] = k
+
+        self.assertEqual(assignments, expected_assignments)
+
+        # Digest check against known reference
+        digest = fold_assignment_digest(assignments)
+        self.assertTrue(digest.startswith("7c9f1d00"), f"Expected 7c9f1d00... digest, got {digest}")
+        self.assertEqual(digest, "7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463")
+
+    def test_kfold_deterministic_and_balanced(self):
+        a = kfold_assignments(1168, 5, 42)
+        self.assertEqual(a, kfold_assignments(1168, 5, 42))
+        self.assertNotEqual(a, kfold_assignments(1168, 5, 7))
+        sizes = [a.count(k) for k in range(5)]
+        self.assertEqual(sum(sizes), 1168)
+        self.assertLessEqual(max(sizes) - min(sizes), 1)
+        self.assertNotEqual(a[:20], sorted(a[:20]), "assignment should be shuffled")
+
+
+class IsolationTests(unittest.TestCase):
+    def test_loader_parses_only_development_lines(self):
+        rows = synthetic_rows(1460)
+        # Poison every holdout line: if tokenized and used, it would be visible.
+        dev = set(development_train_indices(1460))
+        for i, r in enumerate(rows):
+            if i not in dev:
+                r["SalePrice"] = "HOLDOUT_SENTINEL"
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "train.csv"
+            write_csv(p, rows)
+            real_reader = csv.reader
+            calls = {"n": 0}
+
+            def counting_reader(*a, **k):
+                calls["n"] += 1
+                return real_reader(*a, **k)
+
+            with mock.patch("housing_regression.modeling.ols_cv.csv.reader", counting_reader):
+                dev_rows, prov = load_development_rows(p)
+        self.assertEqual(len(dev_rows), 1168)
+        self.assertEqual(calls["n"], 1 + 1168, "only header + development lines may be tokenized")
+        self.assertTrue(all(r["SalePrice"] != "HOLDOUT_SENTINEL" for r in dev_rows))
+        self.assertEqual([int(r["Id"]) - 1 for r in dev_rows], sorted(dev))
+        self.assertEqual(prov["development_rows"], 1168)
+        self.assertTrue(prov["id_uniqueness_verified"])
+        self.assertEqual(prov["unique_id_count"], 1168)
+
+    def test_loader_validates_id_uniqueness_synthetic(self):
+        rows = synthetic_rows(1460)
+        # Introduce a duplicate ID among development rows
+        dev_indices = development_train_indices(1460)
+        rows[dev_indices[1]]["Id"] = rows[dev_indices[0]]["Id"]
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "train.csv"
+            write_csv(p, rows)
+            with self.assertRaises(ValueError) as ctx:
+                load_development_rows(p)
+            self.assertIn("Duplicate Id detected", str(ctx.exception))
+
+    def test_loader_refuses_test_file_and_wrong_counts(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "test.csv"
+            write_csv(p, synthetic_rows(10))
+            with self.assertRaises(ValueError):
+                load_development_rows(p)
+            q = Path(d) / "train.csv"
+            write_csv(q, synthetic_rows(100))
+            with self.assertRaises(ValueError):
+                load_development_rows(q)
+
+    def test_runner_source_never_references_test_csv_or_holdout_runner(self):
+        src = (REPO_ROOT / "tools" / "modeling" / "run_p4a_ols_cv.py").read_text(encoding="utf-8")
+        mod = (SRC_DIR / "housing_regression" / "modeling" / "ols_cv.py").read_text(encoding="utf-8")
+        for text in (src, mod):
+            self.assertNotIn('"test.csv"', text.replace('== "test.csv"', ""))
+            self.assertNotIn("run_data_prep", text)
+            self.assertNotIn("split_labeled_dataset(", text, "must not materialize holdout rows")
+
+    def test_safe_output_dir_git_ignore_boundary(self):
+        self.assertTrue(is_path_git_ignored(REPO_ROOT / "local" / "research" / "test.json"))
+        self.assertFalse(is_path_git_ignored(REPO_ROOT / "docs" / "test.json"))
+
+    def test_output_policy_separation_and_sanitization(self):
+        """Synthetic test: verify public JSON contains no private row markers and private artifact stays in ignored path."""
+        import tools.modeling.run_p4a_ols_cv as runner_mod
+
+        rows = synthetic_rows(1460)
+        # Add a unique synthetic row marker to development row 0
+        dev_indices = development_train_indices(1460)
+        secret_marker = "SYNTHETIC_PRIVATE_ID_MARKER_XYZ987"
+        rows[dev_indices[0]]["Id"] = secret_marker
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            train_path = tmp_path / "train.csv"
+            write_csv(train_path, rows)
+
+            pub_dir = tmp_path / "arbitrary_public_out"
+            fake_private_dir = tmp_path / "local" / "research" / "phase4-p4a"
+            fake_private_file = fake_private_dir / "p4a_ols_cv_local.json"
+
+            with mock.patch.object(runner_mod, "FIXED_PRIVATE_DIR", fake_private_dir), \
+                 mock.patch.object(runner_mod, "FIXED_PRIVATE_ARTIFACT_PATH", fake_private_file), \
+                 mock.patch.object(runner_mod, "is_path_git_ignored", return_value=True):
+
+                test_args = [
+                    "run_p4a_ols_cv.py",
+                    "--data-dir", str(tmp_path),
+                    "--output-dir", str(pub_dir),
+                    "--folds", "5",
+                ]
+                with mock.patch.object(sys, "argv", test_args):
+                    ret = runner_mod.main()
+                    self.assertEqual(ret, 0)
+
+            # Public file exists in pub_dir
+            pub_file = pub_dir / "p4a_ols_cv_public.json"
+            self.assertTrue(pub_file.is_file())
+            # Private file does NOT exist in pub_dir
+            self.assertFalse((pub_dir / "p4a_ols_cv_local.json").exists())
+            # Private file exists in fake_private_dir
+            self.assertTrue(fake_private_file.is_file())
+
+            # Check public JSON content: sanitized, no secret marker, no OOF, no fold assignments
+            pub_text = pub_file.read_text(encoding="utf-8")
+            self.assertNotIn(secret_marker, pub_text)
+            self.assertNotIn("_oof_predictions", pub_text)
+            self.assertNotIn("_fold_assignments", pub_text)
+            self.assertNotIn('"predicted"', pub_text)
+
+            # Check private JSON content: secret marker is present in _oof_predictions
+            priv_text = fake_private_file.read_text(encoding="utf-8")
+            self.assertIn(secret_marker, priv_text)
+            self.assertIn("_oof_predictions", priv_text)
+            self.assertIn("_fold_assignments", priv_text)
+
+    def test_output_policy_fails_closed_when_private_destination_not_ignored(self):
+        """Fail-closed test: unsafe private destination must fail before any public directory/file is created."""
+        import tools.modeling.run_p4a_ols_cv as runner_mod
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            pub_dir = tmp_path / "public_should_not_be_created"
+            fake_private_file = tmp_path / "unsafe_private" / "p4a_ols_cv_local.json"
+
+            with mock.patch.object(runner_mod, "FIXED_PRIVATE_ARTIFACT_PATH", fake_private_file), \
+                 mock.patch.object(runner_mod, "is_path_git_ignored", return_value=False):
+
+                test_args = [
+                    "run_p4a_ols_cv.py",
+                    "--data-dir", str(tmp_path),
+                    "--output-dir", str(pub_dir),
+                ]
+                with mock.patch.object(sys, "argv", test_args):
+                    with self.assertRaises(SystemExit) as ctx:
+                        runner_mod.main()
+                    self.assertIn("BLOCKED", str(ctx.exception))
+
+            # Public directory must not have been created
+            self.assertFalse(pub_dir.exists())
+            self.assertFalse(fake_private_file.exists())
+
+
+class FoldLocalPreprocessingTests(unittest.TestCase):
+    def test_fresh_pipeline_fit_on_training_fold_only(self):
+        rows = synthetic_rows(60)
+        # Make a category exist only in a single row so some folds never see it in training.
+        rows[3]["Neighborhood"] = "Blueste"
+        fitted_ids: list[set[str]] = []
+        transformed_ids: list[set[str]] = []
+        instances: list[AmesDataPreparationPipeline] = []
+
+        class Spy(AmesDataPreparationPipeline):
+            def fit(self, r):
+                fitted_ids.append({x["Id"] for x in r})
+                instances.append(self)
+                return super().fit(r)
+
+            def transform(self, r, split_name="unspecified"):
+                if "val" in split_name:
+                    transformed_ids.append({x["Id"] for x in r})
+                return super().transform(r, split_name)
+
+        result = run_ols_cv(rows, 5, 42, pipeline_factory=Spy)
+        self.assertEqual(len(instances), 5)
+        self.assertEqual(len({id(i) for i in instances}), 5, "fresh preprocessor per fold")
+        for tr, va in zip(fitted_ids, transformed_ids):
+            self.assertFalse(tr & va, "validation rows must not be used in fit")
+            self.assertEqual(len(tr | va), 60)
+        # Learned statistics/categories differ by fold; the rare level is absent in exactly one fold.
+        has_rare = ["Neighborhood_Blueste" in f["feature_names"] for f in result["folds"]]
+        self.assertEqual(has_rare.count(False), 1)
+        medians = {i.numeric_impute_values["LotArea"] for i in instances}
+        self.assertGreater(len(medians), 1)
+        counts = {f["n_features"] for f in result["folds"]}
+        self.assertEqual(len(counts), 2, "feature count must not be forced constant")
+
+    def test_xy_separation_all_columns_used_and_timing_summaries(self):
+        rows = synthetic_rows(60)
+        result = run_ols_cv(rows, 5, 42)
+        for f in result["folds"]:
+            self.assertNotIn("Id", f["feature_names"])
+            self.assertNotIn("SalePrice", f["feature_names"])
+            self.assertEqual(f["diagnostics"]["n_params"], f["n_features"] + 1)
+            # Verify separate named timing keys per fold
+            el = f["elapsed_seconds"]
+            self.assertIn("preprocessing", el)
+            self.assertIn("model_fit", el)
+            self.assertIn("numerical_diagnostics", el)
+            self.assertIn("predict_and_evaluate", el)
+            for k in el:
+                self.assertGreaterEqual(el[k], 0.0)
+
+        # Verify aggregate timing summaries
+        agg_t = result["aggregate"]["timing_seconds"]
+        for stage in ["preprocessing", "model_fit", "numerical_diagnostics", "predict_and_evaluate", "total_per_fold"]:
+            self.assertIn(stage, agg_t)
+            self.assertIn("mean", agg_t[stage])
+            self.assertIn("std", agg_t[stage])
+            self.assertGreaterEqual(agg_t[stage]["mean"], 0.0)
+
+        json.dumps(public_summary(result))  # public summary must be serializable
+        self.assertNotIn("_fold_assignments", public_summary(result))
+        self.assertNotIn("_oof_predictions", public_summary(result))
+
+    def test_oof_predictions_exactly_once_coverage_and_recomputability(self):
+        rows = synthetic_rows(60)
+        result = run_ols_cv(rows, 5, 42)
+        oof = result.get("_oof_predictions")
+        self.assertIsNotNone(oof)
+        self.assertEqual(len(oof), 60)
+
+        # 1. Exactly-once validation coverage check
+        seen_ids = [rec["Id"] for rec in oof]
+        self.assertEqual(len(seen_ids), len(set(seen_ids)), "Each Id must appear exactly once in OOF predictions")
+        expected_ids = {r["Id"] for r in rows}
+        self.assertEqual(set(seen_ids), expected_ids)
+
+        # 2. Independent fold metric recomputation from OOF records
+        for k, fold_dict in enumerate(result["folds"]):
+            fold_oof = [rec for rec in oof if rec["fold"] == k]
+            self.assertEqual(len(fold_oof), fold_dict["n_validation"])
+
+            y_actual = np.array([rec["actual"] for rec in fold_oof], dtype=np.float64)
+            y_pred = np.array([rec["predicted"] for rec in fold_oof], dtype=np.float64)
+
+            # Recompute RMSE
+            recomputed_rmse = float(np.sqrt(np.mean((y_actual - y_pred) ** 2)))
+            self.assertAlmostEqual(recomputed_rmse, fold_dict["rmse_validation"], places=7)
+
+            # Recompute R2
+            ss_tot = float(np.sum((y_actual - y_actual.mean()) ** 2))
+            recomputed_r2 = float(1.0 - np.sum((y_actual - y_pred) ** 2) / ss_tot)
+            self.assertAlmostEqual(recomputed_r2, fold_dict["r2_validation"], places=7)
+
+        # 3. Independent aggregate metric recomputation
+        fold_rmses = [
+            float(np.sqrt(np.mean((np.array([r["actual"] for r in oof if r["fold"] == k]) - np.array([r["predicted"] for r in oof if r["fold"] == k])) ** 2)))
+            for k in range(5)
+        ]
+        mean_rmse = float(np.mean(fold_rmses))
+        std_rmse = float(np.std(fold_rmses, ddof=1))
+        self.assertAlmostEqual(mean_rmse, result["aggregate"]["rmse_validation"]["mean"], places=7)
+        self.assertAlmostEqual(std_rmse, result["aggregate"]["rmse_validation"]["std"], places=7)
+
+        # 4. Ensure public_summary strips _oof_predictions completely
+        pub = public_summary(result)
+        self.assertNotIn("_oof_predictions", pub)
+        pub_json = json.dumps(pub)
+        self.assertNotIn('"_oof_predictions"', pub_json)
+        self.assertNotIn('"predicted"', pub_json)
+
+
+class SolverDiagnosticsTests(unittest.TestCase):
+    def test_rank_deficient_full_one_hot_with_intercept(self):
+        rng = np.random.default_rng(0)
+        n = 50
+        cat = rng.integers(0, 3, n)
+        onehot = np.eye(3)[cat]
+        x = rng.normal(size=n)
+        X = np.column_stack([x, onehot])
+        y = 3 + 2 * x + onehot @ np.array([1.0, -1.0, 0.5]) + rng.normal(scale=0.01, size=n)
+        fit = fit_ols_svd(X, y)
+        diag = compute_numerical_diagnostics(fit["design_matrix"])
+        self.assertEqual(fit["n_params"], 5)
+        self.assertEqual(diag["rank"], 4)
+        self.assertEqual(diag["nullity"], 1)
+        self.assertIsNone(diag["condition_number_full"])
+        self.assertTrue(np.isfinite(diag["condition_number_effective"]))
+        self.assertGreater(diag["tolerance"], 0)
+        # Predictions match a reference full-rank parametrization despite non-unique coefficients.
+        ref = np.linalg.lstsq(np.column_stack([np.ones(n), x, onehot[:, 1:]]), y, rcond=None)[0]
+        yhat = np.column_stack([np.ones(n), X]) @ fit["coef"]
+        yref = np.column_stack([np.ones(n), x, onehot[:, 1:]]) @ ref
+        np.testing.assert_allclose(yhat, yref, atol=1e-8)
+
+    def test_full_rank_recovers_coefficients(self):
+        rng = np.random.default_rng(1)
+        X = rng.normal(size=(40, 3))
+        y = 1.5 + X @ np.array([2.0, -1.0, 0.5])
+        fit = fit_ols_svd(X, y)
+        diag = compute_numerical_diagnostics(fit["design_matrix"])
+        self.assertEqual(diag["nullity"], 0)
+        np.testing.assert_allclose(fit["coef"], [1.5, 2.0, -1.0, 0.5], atol=1e-10)
+        self.assertIsNotNone(diag["condition_number_full"])
+
+
+if __name__ == "__main__":
+    unittest.main()
