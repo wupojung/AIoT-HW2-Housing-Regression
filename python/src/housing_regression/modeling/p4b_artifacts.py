@@ -33,6 +33,43 @@ class PathContainmentError(RuntimeError):
     """Raised when an artifact output path violates the designated safe research boundary."""
 
 
+FILE_ATTRIBUTE_REPARSE_POINT = 0x0400
+INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
+
+
+def is_reparse_point_or_link(path: Path) -> bool:
+    """Check if an existing path component is a symlink, junction, or reparse point without calling subprocess."""
+    # If path does not exist, it cannot be a reparse point or link
+    try:
+        if not path.exists() and not path.is_symlink():
+            return False
+    except OSError:
+        pass
+
+    # 1. Standard python symlink check
+    try:
+        if path.is_symlink():
+            return True
+    except OSError:
+        pass
+
+    # 2. On Windows, check GetFileAttributesW for FILE_ATTRIBUTE_REPARSE_POINT
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+        try:
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel32.GetFileAttributesW.restype = wintypes.DWORD
+            kernel32.GetFileAttributesW.argtypes = [wintypes.LPCWSTR]
+            attrs = kernel32.GetFileAttributesW(str(path))
+            if attrs != INVALID_FILE_ATTRIBUTES and bool(attrs & FILE_ATTRIBUTE_REPARSE_POINT):
+                return True
+        except Exception:
+            pass
+
+    return False
+
+
 def assert_safe_private_containment(
     target_dir: Path,
     repo_root: Optional[Path] = None,
@@ -40,7 +77,8 @@ def assert_safe_private_containment(
 ) -> Path:
     """Enforce that target_dir is strictly contained within repo_root/local/research/phase4-p4b/<run_id>.
 
-    Rejects symlinks, parent directory escapes (..), sibling paths, and missing or noncanonical run IDs.
+    Rejects symlinks, directory junctions, reparse points, parent directory escapes (..),
+    sibling paths, lookalikes, and missing or noncanonical run IDs.
     Fails closed without calling git or any subprocess.
     """
     if run_id is None or not run_id.strip():
@@ -52,12 +90,13 @@ def assert_safe_private_containment(
     if repo_root is None:
         repo_root = Path(__file__).resolve().parents[4]
 
-    # Check if target_dir or any of its parents are symlinks
     raw_target = Path(target_dir)
+
+    # Reject if target_dir or any parent up to filesystem root is a symlink, junction, or reparse point
     curr = raw_target
     while True:
-        if curr.is_symlink():
-            raise PathContainmentError(f"Symlinks are prohibited in containment path: '{curr}'.")
+        if is_reparse_point_or_link(curr):
+            raise PathContainmentError(f"Reparse points, junctions, or symlinks are prohibited in containment path: '{curr}'.")
         if curr.parent == curr:
             break
         curr = curr.parent
@@ -127,10 +166,17 @@ def atomic_write_csv(records: Sequence[Mapping[str, Any]], fieldnames: Sequence[
 
 
 def sanitize_error_message(msg: str) -> str:
-    """Sanitize exception message to ensure no local paths or row data are exposed."""
-    # Redact Windows / Unix filepaths
-    sanitized = re.sub(r"[a-zA-Z]:\\[^\s,;\"']+", "<REDACTED_PATH>", msg)
-    sanitized = re.sub(r"/[a-zA-Z0-9_\-\./]+", "<REDACTED_PATH>", sanitized)
+    """Sanitize exception message to ensure no local paths, sentinels, or row data are exposed."""
+    # Redact UNC paths \\server\share\...
+    sanitized = re.sub(r"\\\\[a-zA-Z0-9_\.\-]+(?:\\[a-zA-Z0-9_\.\- ]+)+", "<REDACTED_UNC_PATH>", msg)
+    # Redact Windows paths with drive letter C:\... (stopping at word boundary or punctuation)
+    sanitized = re.sub(r"[a-zA-Z]:\\(?:[a-zA-Z0-9_\.\- ]+\\)*[a-zA-Z0-9_\.\-]+", "<REDACTED_PATH>", sanitized)
+    # Redact Unix/POSIX filepaths
+    sanitized = re.sub(r"/(?:[a-zA-Z0-9_\-\.]+/)+[a-zA-Z0-9_\-\.]*", "<REDACTED_PATH>", sanitized)
+    # Redact credentials/tokens/sentinels
+    sanitized = re.sub(r"(?:token|secret|password|credential|api_key)\s*[:=]\s*[^\s,;\"']+", "<REDACTED_CREDENTIAL>", sanitized, flags=re.IGNORECASE)
+    # Redact row IDs
+    sanitized = re.sub(r"\bId\s*[:=]\s*[0-9]+", "<REDACTED_ID>", sanitized)
     # Redact common row target tokens
     sanitized = re.sub(r"SalePrice\s*[:=]\s*[0-9\.]+", "<REDACTED_TARGET>", sanitized)
     # Truncate to bounded length
@@ -268,6 +314,8 @@ def verify_checkpoint_for_resume(
     expected_fingerprint: str,
     config: P4BConfig,
     env_versions: Mapping[str, str],
+    expected_run_id: Optional[str] = None,
+    expected_fold_idx: Optional[int] = None,
 ) -> None:
     """Verify all resume identity conditions, run config, and payload integrity.
 
@@ -277,6 +325,13 @@ def verify_checkpoint_for_resume(
     env = meta.get("environment", {})
     db = meta.get("data_boundary", {})
     cfg = checkpoint_data.get("run_config", {})
+
+    # 0. Run ID check
+    actual_run_id = checkpoint_data.get("run_id")
+    if expected_run_id is not None and actual_run_id != expected_run_id:
+        raise CheckpointVerificationError(
+            f"Run ID mismatch: expected {expected_run_id}, got {actual_run_id}."
+        )
 
     # 1. Dataset fingerprint
     actual_fp = checkpoint_data.get("dataset_fingerprint") or meta.get("dataset_fingerprint")
@@ -329,10 +384,15 @@ def verify_checkpoint_for_resume(
         ):
             raise CheckpointVerificationError("Run-defining config parameters mismatch in checkpoint.")
 
-    # 7. Fold index validity and payload non-emptiness
+    # 7. Fold index validity and filename/fold matching
     fold_idx = checkpoint_data.get("completed_outer_fold")
     if fold_idx is None or not (0 <= fold_idx < config.outer_splits):
         raise CheckpointVerificationError(f"Invalid fold index {fold_idx} for splits {config.outer_splits}.")
+
+    if expected_fold_idx is not None and fold_idx != expected_fold_idx:
+        raise CheckpointVerificationError(
+            f"Fold index mismatch: expected {expected_fold_idx} from filename, got {fold_idx} in checkpoint."
+        )
 
     results = checkpoint_data.get("results")
     oof_records = checkpoint_data.get("oof_records")
@@ -341,9 +401,11 @@ def verify_checkpoint_for_resume(
 
     # 8. Checkpoint payload digest verification
     expected_digest = checkpoint_data.get("payload_digest")
-    if expected_digest is not None:
-        actual_digest = compute_checkpoint_payload_digest(results, oof_records)
-        if actual_digest != expected_digest:
-            raise CheckpointVerificationError(
-                f"Checkpoint payload digest mismatch: expected {expected_digest}, computed {actual_digest}."
-            )
+    if expected_digest is None:
+        raise CheckpointVerificationError("Missing required payload_digest in checkpoint.")
+
+    actual_digest = compute_checkpoint_payload_digest(results, oof_records)
+    if actual_digest != expected_digest:
+        raise CheckpointVerificationError(
+            f"Checkpoint payload digest mismatch: expected {expected_digest}, computed {actual_digest}."
+        )

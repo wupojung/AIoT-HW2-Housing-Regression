@@ -181,7 +181,7 @@ class P4BConfig:
     max_iter: int = 5000
     tol: float = 1e-4
     single_thread: bool = True
-    timeout_seconds: Optional[float] = None
+    timeout_seconds: Optional[float] = 300.0
     use_isolated_worker_process: bool = True
     repo_root: Optional[Path] = None
     active_methods: Optional[List[str]] = None  # None means all 5 methods
@@ -483,26 +483,72 @@ def _mp_worker_target(
     outer_train_rows: List[Dict[str, str]],
     outer_val_rows: List[Dict[str, str]],
     stall_before_fit: bool = False,
+    ready_queue: Optional[Any] = None,
+    spawn_descendant: bool = False,
+    pipeline_factory: Optional[Callable[[], AmesDataPreparationPipeline]] = None,
 ) -> None:
     try:
         # B03: enforce single-thread limits strictly inside child worker
         thread_limit = 1 if config.single_thread else None
         if thread_limit is not None:
             with threadpoolctl.threadpool_limits(limits=thread_limit):
+                descendant_pid = None
+                if spawn_descendant:
+                    # Spawn a child worker process to verify process tree containment and termination
+                    sub_ctx = mp.get_context("spawn")
+                    sub_proc = sub_ctx.Process(target=_descendant_worker_target)
+                    sub_proc.start()
+                    descendant_pid = sub_proc.pid
+
                 if stall_before_fit:
-                    # Deliberately stall for timeout testing
+                    # B03: signal readiness ONLY AFTER entering intentional bounded stall
+                    if ready_queue is not None:
+                        # Report worker pid, descendant pid, and threadpoolctl num_threads
+                        import numpy as _np
+                        # Touch numpy to ensure OpenBLAS threadpool is initialized
+                        _ = _np.zeros((10, 10)) @ _np.zeros((10, 10))
+                        tp_info = threadpoolctl.threadpool_info()
+                        reported_threads = tp_info[0]["num_threads"] if tp_info else 1
+                        ready_queue.put({
+                            "status": "READY",
+                            "worker_pid": os.getpid(),
+                            "descendant_pid": descendant_pid,
+                            "thread_limit": reported_threads,
+                        })
                     time.sleep(30.0)
+
                 runner = P4BRunner(config)
-                res = runner.execute_outer_fold(outer_fold_idx, outer_train_rows, outer_val_rows)
+                kwargs = {}
+                if pipeline_factory is not None:
+                    kwargs["pipeline_factory"] = pipeline_factory
+                res = runner.execute_outer_fold(outer_fold_idx, outer_train_rows, outer_val_rows, **kwargs)
                 queue.put(("SUCCESS", res, runner.accounting.estimator_fits, runner.accounting.preprocessor_fits))
         else:
             if stall_before_fit:
+                if ready_queue is not None:
+                    ready_queue.put({
+                        "status": "READY",
+                        "worker_pid": os.getpid(),
+                        "descendant_pid": None,
+                        "thread_limit": -1,
+                    })
                 time.sleep(30.0)
             runner = P4BRunner(config)
-            res = runner.execute_outer_fold(outer_fold_idx, outer_train_rows, outer_val_rows)
+            kwargs = {}
+            if pipeline_factory is not None:
+                kwargs["pipeline_factory"] = pipeline_factory
+            res = runner.execute_outer_fold(outer_fold_idx, outer_train_rows, outer_val_rows, **kwargs)
             queue.put(("SUCCESS", res, runner.accounting.estimator_fits, runner.accounting.preprocessor_fits))
     except Exception as exc:
         queue.put(("EXCEPTION", type(exc).__name__, str(exc)))
+
+
+def _descendant_worker_target() -> None:
+    """Descendant worker target to verify process tree termination under Job Object."""
+    try:
+        time.sleep(30.0)
+    except Exception:
+        pass
 
 
 class P4BRunner:
@@ -533,6 +579,9 @@ class P4BRunner:
 
         self.deadline: Optional[float] = None
         self.stall_mock_worker: bool = False
+        self.ready_queue: Optional[Any] = None
+        self.last_ready_msg: Optional[Dict[str, Any]] = None
+        self.spawn_descendant: bool = False
 
     def _check_deadline(self) -> None:
         """Enforce wall-clock timeout between units of work."""
@@ -1126,12 +1175,15 @@ class P4BRunner:
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
     ) -> Dict[str, Any]:
         """Execute full nested cross-validation across all outer folds with preflight checks and outputs."""
-        # 0. Enforce B03 Fail-Closed: timeout must be positive and isolated worker enabled
-        if self.config.timeout_seconds is not None:
-            if self.config.timeout_seconds <= 0:
-                raise ValueError("timeout_seconds must be positive if specified.")
-            if not self.config.use_isolated_worker_process:
-                raise RuntimeError("FAIL_CLOSED: Timed execution requires use_isolated_worker_process=True.")
+        # 0. Enforce B03 Fail-Closed: timeout must be positive, single_thread=True, and isolated worker enabled
+        if self.config.timeout_seconds is None:
+            raise ValueError("FAIL_CLOSED: timeout_seconds must be explicitly provided (cannot be None).")
+        if not math.isfinite(self.config.timeout_seconds) or self.config.timeout_seconds <= 0:
+            raise ValueError(f"FAIL_CLOSED: timeout_seconds must be a positive finite float, got {self.config.timeout_seconds}.")
+        if not self.config.use_isolated_worker_process:
+            raise RuntimeError("FAIL_CLOSED: Timed execution requires use_isolated_worker_process=True.")
+        if not self.config.single_thread:
+            raise RuntimeError("FAIL_CLOSED: single_thread must be True.")
 
         # 1. Conservative Preflight Budget Check
         est_req, prep_req = estimate_preflight_budget(self.config)
@@ -1190,9 +1242,19 @@ class P4BRunner:
             if not chk_files:
                 raise CheckpointVerificationError(f"No checkpoint files found in resume directory '{resume_dir}'.")
             for chk_file in chk_files:
+                # Extract expected fold idx from filename
+                fold_match = re.search(r"checkpoint_fold_(\d+)\.json$", chk_file.name)
+                expected_fold_idx = int(fold_match.group(1)) if fold_match else None
                 with open(chk_file, "r", encoding="utf-8") as f:
                     chk_data = json.load(f)
-                verify_checkpoint_for_resume(chk_data, canonical_fp, self.config, env_vers)
+                verify_checkpoint_for_resume(
+                    chk_data,
+                    expected_fingerprint=canonical_fp,
+                    config=self.config,
+                    env_versions=env_vers,
+                    expected_run_id=run_id,
+                    expected_fold_idx=expected_fold_idx,
+                )
                 k = chk_data["completed_outer_fold"]
                 completed_folds[k] = chk_data
 
@@ -1226,33 +1288,81 @@ class P4BRunner:
                         queue = ctx.Queue()
                         proc = ctx.Process(
                             target=_mp_worker_target,
-                            args=(queue, self.config, k, tr_rows, va_rows, self.stall_mock_worker),
+                            args=(
+                                queue,
+                                self.config,
+                                k,
+                                tr_rows,
+                                va_rows,
+                                self.stall_mock_worker,
+                                self.ready_queue,
+                                self.spawn_descendant,
+                                pipeline_factory if pipeline_factory is not AmesDataPreparationPipeline else None,
+                            ),
                         )
                         proc.start()
-                        remaining_timeout = max(0.01, self.deadline - time.perf_counter()) if self.deadline else None
-                        proc.join(timeout=remaining_timeout)
 
-                        if proc.is_alive():
-                            child_pid = proc.pid
-                            proc.terminate()
-                            proc.join(timeout=1.0)
+                        # Windows: Enclose worker process in kill-on-close Job Object
+                        worker_job = None
+                        if os.name == "nt":
+                            try:
+                                from tests.modeling.test_harness import (
+                                    assign_process_to_job,
+                                    close_job_object,
+                                    create_kill_on_close_job_object,
+                                )
+                                worker_job = create_kill_on_close_job_object()
+                                import ctypes
+                                h_proc = ctypes.windll.kernel32.OpenProcess(0x1F0FFF, False, proc.pid)
+                                if h_proc:
+                                    try:
+                                        assign_process_to_job(worker_job, h_proc)
+                                    finally:
+                                        ctypes.windll.kernel32.CloseHandle(h_proc)
+                            except Exception:
+                                pass
+
+                        try:
+                            # If ready_queue is set, wait for worker readiness signal before counting down timeout
+                            if self.ready_queue is not None:
+                                try:
+                                    # Wait up to 5s for worker to start, cap threads, and signal readiness
+                                    ready_msg = self.ready_queue.get(timeout=5.0)
+                                    # Forward or re-put back to ready_queue for caller assertion
+                                    self.last_ready_msg = ready_msg
+                                except Exception:
+                                    pass
+
+                            remaining_timeout = max(0.01, self.deadline - time.perf_counter()) if self.deadline else None
+                            proc.join(timeout=remaining_timeout)
+
                             if proc.is_alive():
-                                proc.kill()
-                                proc.join()
-                            assert not proc.is_alive(), f"Orphan process detected! PID {child_pid}"
-                            raise TimeoutExceededError(
-                                f"Worker process for outer fold {k} (PID {child_pid}) exceeded timeout and was terminated."
-                            )
+                                child_pid = proc.pid
+                                if worker_job:
+                                    close_job_object(worker_job)
+                                    worker_job = None
+                                proc.terminate()
+                                proc.join(timeout=1.0)
+                                if proc.is_alive():
+                                    proc.kill()
+                                    proc.join()
+                                assert not proc.is_alive(), f"Orphan process detected! PID {child_pid}"
+                                raise TimeoutExceededError(
+                                    f"Worker process for outer fold {k} (PID {child_pid}) exceeded timeout and was terminated."
+                                )
 
-                        if queue.empty():
-                            raise RuntimeError(f"Worker process for outer fold {k} died without returning output.")
+                            if queue.empty():
+                                raise RuntimeError(f"Worker process for outer fold {k} died without returning output.")
 
-                        msg = queue.get()
-                        if msg[0] == "EXCEPTION":
-                            raise RuntimeError(f"Worker process error ({msg[1]}): {msg[2]}")
-                        fold_output = msg[1]
-                        self.accounting.record_estimator_fit(msg[2])
-                        self.accounting.record_preprocessor_fit(msg[3])
+                            msg = queue.get()
+                            if msg[0] == "EXCEPTION":
+                                raise RuntimeError(f"Worker process error ({msg[1]}): {msg[2]}")
+                            fold_output = msg[1]
+                            self.accounting.record_estimator_fit(msg[2])
+                            self.accounting.record_preprocessor_fit(msg[3])
+                        finally:
+                            if worker_job:
+                                close_job_object(worker_job)
                     else:
                         fold_output = self.execute_outer_fold(
                             outer_fold_idx=k,

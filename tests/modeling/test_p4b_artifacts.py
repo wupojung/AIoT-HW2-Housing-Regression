@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -52,12 +53,21 @@ class P4BArtifactsTests(unittest.TestCase):
             atomic_write_csv([{"col": "val"}], ["col"], csv_file)
             mock_subproc.assert_not_called()
 
-    def test_b01_containment_negative_cases(self):
-        """B01 Acceptance: Reject missing run_id, symlink escapes, parent traversal (..), and sibling paths."""
-        # 1. Valid path passes
-        assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="test_run")
+    def test_b01_positive_exact_trusted_run_root(self):
+        """B01 Acceptance (Positive): create/write only at exact trusted repo local/research/phase4-p4b/<run-id> and verify output is contained."""
+        run_id = "test_run_b01_pos"
+        run_dir = self.tmp_base / "local" / "research" / "phase4-p4b" / run_id
+        contained_dir = assert_safe_private_containment(run_dir, repo_root=self.tmp_base, run_id=run_id)
+        contained_dir.mkdir(parents=True, exist_ok=True)
+        self.assertEqual(contained_dir, run_dir.resolve())
+        test_file = contained_dir / "artifact.json"
+        sha, size = atomic_write_json({"status": "OK"}, test_file)
+        self.assertTrue(test_file.exists())
+        self.assertEqual(test_file.parent, run_dir.resolve())
 
-        # 2. Missing run_id (QA finding: run_id must be required and nonempty)
+    def test_b01_negative_lookalike_traversal_and_ids(self):
+        """B01 Acceptance (Negative): reject forged root/lookalike repo, .., sibling, empty/invalid run IDs with typed containment error before external mkdir/write."""
+        # 1. Missing run_id
         with self.assertRaises(PathContainmentError):
             assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id=None)
         with self.assertRaises(PathContainmentError):
@@ -65,35 +75,69 @@ class P4BArtifactsTests(unittest.TestCase):
         with self.assertRaises(PathContainmentError):
             assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="   ")
 
-        # 3. Noncanonical run_id
+        # 2. Noncanonical run_id
         with self.assertRaises(PathContainmentError):
             assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="../test_run")
         with self.assertRaises(PathContainmentError):
             assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="bad/slash")
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="bad;cmd")
 
-        # 4. Path traversal escape (..)
-        bad_traversal = self.safe_dir / ".." / "other_dir"
+        # 3. Path traversal escape (..)
+        bad_traversal = self.safe_dir / ".." / "escaped_dir"
         with self.assertRaises(PathContainmentError):
             assert_safe_private_containment(bad_traversal, repo_root=self.tmp_base, run_id="test_run")
+        self.assertFalse(bad_traversal.exists())
 
-        # 5. Sibling fake path outside local/research/phase4-p4b
+        # 4. Sibling / lookalike fake path outside local/research/phase4-p4b
         fake_sibling = self.tmp_base / "local" / "research" / "phase4-p4a" / "test_run"
         with self.assertRaises(PathContainmentError):
             assert_safe_private_containment(fake_sibling, repo_root=self.tmp_base, run_id="test_run")
+        self.assertFalse(fake_sibling.exists())
 
-        # 6. Symlink rejection
-        symlink_dir = self.tmp_base / "symlink_dir"
-        try:
-            symlink_dir.symlink_to(self.safe_dir, target_is_directory=True)
+        lookalike_root = self.tmp_base / "lookalike_repo" / "local" / "research" / "phase4-p4b" / "test_run"
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(lookalike_root, repo_root=self.tmp_base, run_id="test_run")
+        self.assertFalse(lookalike_root.exists())
+
+    def test_b01_negative_symlink_junction_reparse_root(self):
+        """B01 Acceptance (Negative): create an actual link/reparse component that redirects outside the repo; require typed containment error and assert no outside file/dir was created."""
+        outside_dir = self.tmp_base / "outside_research_zone"
+        outside_dir.mkdir(parents=True, exist_ok=True)
+
+        junction_path = self.tmp_base / "local" / "research" / "phase4-p4b" / "junction_escape"
+        junction_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if os.name == "nt":
+            import subprocess
+            res = subprocess.run(
+                ["cmd", "/c", "mklink", "/J", str(junction_path), str(outside_dir)],
+                capture_output=True,
+                text=True,
+            )
+            if res.returncode != 0:
+                self.skipTest(f"Failed to create junction fixture on Windows: {res.stderr}")
+
+            # Verify typed containment error on junction
             with self.assertRaises(PathContainmentError):
-                assert_safe_private_containment(symlink_dir, repo_root=self.tmp_base, run_id="test_run")
-        except (OSError, NotImplementedError):
-            pass  # Windows unprivileged symlink fallback
+                assert_safe_private_containment(junction_path, repo_root=self.tmp_base, run_id="junction_escape")
 
-    def test_b04_durable_failure_json_and_sanitization(self):
-        """B04 Acceptance: On injected failure, write atomic sanitized failure JSON; redact paths and row data."""
+            # Verify no files created in outside_dir
+            self.assertEqual(len(list(outside_dir.iterdir())), 0)
+        else:
+            try:
+                junction_path.symlink_to(outside_dir, target_is_directory=True)
+                with self.assertRaises(PathContainmentError):
+                    assert_safe_private_containment(junction_path, repo_root=self.tmp_base, run_id="junction_escape")
+                self.assertEqual(len(list(outside_dir.iterdir())), 0)
+            except OSError:
+                self.skipTest("Symlink fixture creation unsupported on this platform.")
+
+    def test_b04_positive_atomic_sanitized_failure_record(self):
+        """B04 Acceptance (Positive): inject preflight/path/fit errors containing Windows paths with spaces, UNC, POSIX paths, row Id, target price, credential/token sentinels; require atomic complete JSON using allowlisted failure code/category, counters/stage/config/code identity, and no raw sentinel in file, exception or logs."""
         injected_exc = ValueError(
-            r"Failed processing row Id=123 SalePrice: 208500 at file C:\project\nchu\private_data.csv"
+            r"Error at C:\Program Files\App with spaces\data.csv and \\server\share\secret.txt and /var/log/secret.log "
+            r"processing row Id=987 SalePrice: 450000 with token: secret_api_token_123456"
         )
         fail_file = write_durable_failure_json(
             target_dir=self.safe_dir,
@@ -105,21 +149,35 @@ class P4BArtifactsTests(unittest.TestCase):
             config_summary={"protocol_version": "v1.0", "d_ceiling": 300},
         )
         self.assertTrue(fail_file.exists())
-        data = json.loads(fail_file.read_text(encoding="utf-8"))
+        self.assertFalse(fail_file.with_suffix(".tmp").exists())
+        text = fail_file.read_text(encoding="utf-8")
+        data = json.loads(text)
+
+        # Allowlisted fields and categories
         self.assertEqual(data["status"], "FAILED")
         self.assertEqual(data["stage"], "OUTER_FOLD_1")
         self.assertEqual(data["exception_type"], "ValueError")
+        self.assertEqual(data["code_head_commit"], "85487831551d277c8512ef53435ff1fd72bf8ffe")
+        self.assertIn("timestamp_utc", data)
 
-        # Assert path and target price redaction
-        serialized = json.dumps(data)
-        self.assertNotIn(r"C:\project\nchu", serialized)
-        self.assertNotIn("208500", serialized)
-        self.assertIn("<REDACTED_PATH>", serialized)
-        self.assertIn("<REDACTED_TARGET>", serialized)
+        # Confirm sentinels redacted
+        self.assertNotIn(r"C:\Program Files", text)
+        self.assertNotIn(r"\\server\share", text)
+        self.assertNotIn("/var/log/secret.log", text)
+        self.assertNotIn("450000", text)
+        self.assertNotIn("secret_api_token_123456", text)
+        self.assertNotIn("Id=987", text)
 
-    def test_b04_secondary_write_failure_handling(self):
-        """B04 Acceptance: Surface unavailable-output handling failure with sanitized explicit status."""
-        with patch("housing_regression.modeling.p4b_artifacts.atomic_write_json", side_effect=PermissionError("Simulated write error")):
+        self.assertIn("<REDACTED_PATH>", text)
+        self.assertIn("<REDACTED_UNC_PATH>", text)
+        self.assertIn("<REDACTED_TARGET>", text)
+        self.assertIn("<REDACTED_CREDENTIAL>", text)
+        self.assertIn("<REDACTED_ID>", text)
+
+    def test_b04_negative_unavailable_paths_no_external_write(self):
+        """B04 Acceptance (Negative): absent output, invalid/untrusted output, and injected failure-record persistence error must return/raise structured sanitized fallback; assert no external directories/files were created and no path/error text leaked."""
+        # 1. Injected persistence failure raises structured sanitized fallback
+        with patch("housing_regression.modeling.p4b_artifacts.atomic_write_json", side_effect=PermissionError(r"Cannot write to C:\secrets\dump.json")):
             with self.assertRaises(RuntimeError) as ctx:
                 write_durable_failure_json(
                     target_dir=self.safe_dir,
@@ -130,7 +188,14 @@ class P4BArtifactsTests(unittest.TestCase):
                     accounting_summary={},
                     config_summary={},
                 )
-            self.assertEqual(str(ctx.exception), "DURABLE_FAILURE_WRITE_FAILED: PermissionError")
+            # Check structured fallback error and no path leakage
+            err_msg = str(ctx.exception)
+            self.assertEqual(err_msg, "DURABLE_FAILURE_WRITE_FAILED: PermissionError")
+            self.assertNotIn(r"C:\secrets", err_msg)
+
+        # 2. Assert no external directory was created
+        outside_path = self.tmp_base / "outside_dir"
+        self.assertFalse(outside_path.exists())
 
     def test_atomic_write_json_and_csv(self):
         """Verify atomic file writes via temp file and SHA-256 calculation."""
@@ -185,12 +250,16 @@ class P4BArtifactsTests(unittest.TestCase):
             "pandas": "3.1.0",
             "scipy": "1.18.1",
         }
+        from housing_regression.modeling.p4b_artifacts import compute_checkpoint_payload_digest
+        res_list = [{"fold": 0, "metric": 0.5}]
+        oof_list = [{"Id": "1", "pred": 100.0}]
         good_checkpoint = {
             "completed_outer_fold": 0,
             "dataset_fingerprint": "expected_fp_123",
             "code_head_commit": "fb4ce7ab32af6c04ad49643e8a1917a591ad6379",
-            "results": [{"fold": 0, "metric": 0.5}],
-            "oof_records": [{"Id": "1", "pred": 100.0}],
+            "payload_digest": compute_checkpoint_payload_digest(res_list, oof_list),
+            "results": res_list,
+            "oof_records": oof_list,
             "run_config": {
                 "d_ceiling": 300,
                 "k_candidates": [2, 3, 5, 10, 20],
