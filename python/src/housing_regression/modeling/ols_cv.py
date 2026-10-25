@@ -204,30 +204,30 @@ def run_ols_cv(
     for k in range(n_splits):
         tr = [dev_rows[i] for i, f in enumerate(folds) if f != k]
         va = [dev_rows[i] for i, f in enumerate(folds) if f == k]
-        
+
         # 1. Preprocessing stage
         t0 = time.perf_counter()
         pipe = pipeline_factory()
         tr_res = pipe.fit_transform(tr, split_name=f"cv{k}_train")
         va_res = pipe.transform(va, split_name=f"cv{k}_val")
         t1 = time.perf_counter()
-        
+
         X_tr, X_va = tr_res.to_numpy(), va_res.to_numpy()
         y_tr = np.asarray(tr_res.y, dtype=np.float64)
         y_va = np.asarray(va_res.y, dtype=np.float64)
         if ID_COLUMN in tr_res.feature_names or TARGET_COLUMN in tr_res.feature_names:
             raise AssertionError("Id/SalePrice leaked into X.")
-            
+
         # 2. Model fit stage (solver only)
         t_fit_start = time.perf_counter()
         fit = fit_ols_svd(X_tr, y_tr)
         t_fit_end = time.perf_counter()
-        
+
         # 3. Numerical diagnostics stage
         t_diag_start = time.perf_counter()
         diagnostics = compute_numerical_diagnostics(fit["design_matrix"])
         t_diag_end = time.perf_counter()
-        
+
         # 4. Predict and evaluate stage
         t_pred_start = time.perf_counter()
         yhat_tr, yhat_va = predict(fit, X_tr), predict(fit, X_va)
@@ -236,10 +236,10 @@ def run_ols_cv(
         rmse_tr = _rmse(y_tr, yhat_tr)
         r2_tr = _r2(y_tr, yhat_tr)
         t_pred_end = time.perf_counter()
-        
+
         model_diag = {k2: v for k2, v in fit.items() if k2 not in ("coef", "design_matrix")}
         model_diag.update(diagnostics)
-        
+
         per_fold.append({
             "fold": k,
             "n_train": len(tr),

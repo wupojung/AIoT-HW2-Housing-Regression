@@ -73,16 +73,16 @@ class SplitProvenanceTests(unittest.TestCase):
         n_splits = 5
         seed = 42
         assignments = kfold_assignments(n_rows, n_splits, seed)
-        
+
         # Canonical sklearn reference
         kf = KFold(n_splits=n_splits, shuffle=True, random_state=seed)
         expected_assignments = [0] * n_rows
         for k, (_tr, va) in enumerate(kf.split(range(n_rows))):
             for idx in va:
                 expected_assignments[idx] = k
-                
+
         self.assertEqual(assignments, expected_assignments)
-        
+
         # Digest check against known reference
         digest = fold_assignment_digest(assignments)
         self.assertTrue(digest.startswith("7c9f1d00"), f"Expected 7c9f1d00... digest, got {digest}")
