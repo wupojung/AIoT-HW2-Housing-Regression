@@ -1,31 +1,39 @@
 # CRISP-DM Phase 4 — P4-B-A：特徵選擇與正則化實驗協定（Issue #21 / #22）
 
-- **協定版本**：v1.0 (Draft Candidate - Formal Freeze)
+- **協定版本**：v1.0 (Formal Frozen Candidate)
 - **所屬任務**：Phase 4-B-A 特徵選擇與正則化比較實驗
 - **關聯 Issue**：Issue #21（P4-B 特徵選擇規劃）、Issue #22（P4-B-A 協定凍結）
 - **基準版本 (BASE SHA)**：`ee03a51978a0f615f39b656bee318946dcddd890`（已整併 P4-A 基準模型）
-- **前次審查修訂點 (Amendment BASE)**：`15c03f6d6318ade6ad5a9a23f670929b4aba0d47`
-- **協定狀態**：Draft Candidate（A1 階段協定凍結草案最終定稿；本階段僅制定規範與設計合約，嚴格禁止執行真實資料實驗、模型擬合、單元測試、基準測試、CI 觸發或 A2+ 實作）
+- **前次審查修訂點 (Amendment BASE)**：`d8ca0deaa6f93260a6e54fe7204ae33bde9de333`
+- **協定狀態**：Formal Frozen Candidate（A1 階段協定凍結最終定稿規範；本階段僅制定規範與設計合約，嚴格禁止執行真實資料實驗、模型擬合、單元測試、基準測試、CI 觸發或 A2+ 實作）
 
 ---
 
-## 1. 範圍與資料隔離邊界（Data Boundary & Partitioning）
+## 1. 範圍、歷史對照與資料隔離邊界（Scope, Baseline & Data Boundaries）
 
 1. **開發資料列數嚴格限制**：
    - 僅使用 Phase 3 外層 80/20 切分（固定 `seed=42`）劃分出之 **1,168 筆開發訓練列（Development Train Rows）**。
    - **292 筆封存保留集（Sealed Holdout Rows）** 於本階段維持密封狀態，串流讀檔時遇到對應行必須略過、不解析，嚴格禁止在 Phase 4 特徵選擇或超參數調校中窺探、計算或評估。
    - **1,459 筆 Kaggle 競賽測試集（Competition Test Rows）** 完全不開啟、不存取。
-2. **外層交叉驗證（Outer CV）規範**：
+2. **歷史 P4-A 基準模型對照（Historical P4-A Baseline Context）**：
+   - 依據專案既有成果文檔 [`docs/crisp-dm/04-modeling-p4a-ols-baseline.md`](file:///C:/project/nchu/AIoT-HW2-Housing-Regression/docs/crisp-dm/04-modeling-p4a-ols-baseline.md)，P4-A 全特徵未懲罰最小範數 SVD OLS 基準模型在 1,168 筆開發集 5 折 CV 上之歷史表現為：
+     - **驗證 RMSE 平均（樣本 SD）**：`36,855.78 (7,938.31)`
+     - **驗證 R² 平均（樣本 SD）**：`0.763579 (0.079686)`
+   - *明確邊界宣告*：上述數值僅作為本實驗之歷史比較對照背景（Historical Context），絕非 P4-B 之新量測數據；P4-A 之係數大小亦不代表特徵重要性。
+3. **外層交叉驗證（Outer CV）規範**：
    - 採用標準 `sklearn.model_selection.KFold(n_splits=5, shuffle=True, random_state=42)`。
    - 折大小嚴格為 234 / 234 / 234 / 233 / 233 筆。
    - **外層折分配摘要來源與驗證性**：
      - 外層成員與折分配 SHA-256 摘要值為：`7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463`。
      - **來源佐證（Provenance Verification）**：該摘要已在基準版本 `ee03a519` 之 P4-A 實作（`tests/modeling/test_p4a_ols_cv.py` 與 `docs/crisp-dm/04-modeling-p4a-ols-baseline.md`）中獲得獨立合成回歸測試與程式碼驗證，確認具備完整來源憑據（Verified Provenance）。
      - 本階段僅引用該既定摘要進行外層成員檢驗，絕不重新計算、變更折分配或存取已封存之資料集。
-3. **授權開發資料集指紋摘要規範（Dataset Fingerprint Specification）**：
-   - 為在不揭露或儲存逐列真實資料、私有識別碼的前題下驗證輸入一致性，規範在後續 A2 階段使用核可之開發集載入器計算開發集標準化摘要（Canonical Dataset Digest）：
-     - 規則：依授權之 1,168 筆開發列排序，以固定欄位順序將特徵值以 UTF-8 規範化序列化計算 SHA-256。
-     - 儲存邊界：該資料集指紋摘要僅記錄於私有被忽略之本地中繼資料（`p4b_manifest.json`），公開輸出僅標註校驗狀態（如 `dataset_fingerprint_verified: true`），絕不外洩列內容或非公開雜湊值。A1 階段嚴禁計算或存取真實資料指紋。
+4. **授權開發資料集標準化指紋摘要規範（Canonical Dataset Fingerprint Specification）**：
+   - 為在不揭露、儲存或洩漏逐列真實資料、私有 ID 的前提下嚴格驗證輸入資料之不變性，規範在 A2 階段由核可之載入器計算開發集標準化摘要（Canonical Dataset Digest）：
+     - **列排序依據**：嚴格依原始訓練 CSV 中 1,168 筆授權開發列之原始出現順序（Source-Row Order）排列。
+     - **欄位選取與排序**：嚴格排除 `Id` 與私有識別欄位；包含 79 個原始候選預測欄位（依名稱 ASCII 字典序排序）及最後目標欄位 `SalePrice`。
+     - **序列化格式**：數值欄位以標準浮點或整數字串表示（無多餘空白）；字串欄位以 UTF-8 規範化編碼；缺失值統一以空字串 `""` 表示；欄位間以逗號 `,` 分隔，列間以換行 `\n` 分隔。
+     - **雜湊演算法**：對該 UTF-8 位元組串流計算 SHA-256 雜湊值。
+     - **儲存與公開隔離**：該指紋摘要僅記錄於受 Git 忽略之私有中繼資料（`p4b_manifest.json`），公開產物僅能輸出布林驗證狀態（如 `dataset_fingerprint_verified: true`）。A1 階段嚴禁計算或存取真實指紋。
 
 ---
 
@@ -45,19 +53,24 @@
 │   │   ├── 每一折 (Inner Train, Inner Val)：
 │   │   │   ├── 從原始資料列在 Inner Train 獨立執行 fit AmesDataPreparationPipeline
 │   │   │   ├── transform Inner Train 與 Inner Val
-│   │   │   ├── 【重要防洩漏合約】特徵選擇演算法（Filter, SFS, RFE）僅在 Inner Train 上
-│   │   │   │   依 Inner Train 內部準則擬合產生固定特徵路徑，Inner Val 保持未接觸；
+│   │   │   ├── 【重要防洩漏合約】特徵選擇程序（Filter, SFS, RFE, Lasso, ElasticNet）
+│   │   │   │   僅在 Inner Train 上依訓練集內部準則擬合並決定候選特徵路徑；
+│   │   │   │   Inner Val 保持未受接觸，僅用於單次預測評分；
 │   │   │   ├── 對各候選 K 或正則化超參數 alpha，以選定特徵在 Inner Train 擬合模型
 │   │   │   └── 對 Inner Val 評估單次預測 RMSE，計算跨 3 個 Inner Val 的平均驗證 RMSE
 │   │   │
-│   │   └── 依內層平均驗證 RMSE 選出最佳超參數（最佳特徵數 K* 或正則化參數 alpha*）
+│   │   └── 依內層平均驗證 RMSE 選出各軌道最佳超參數（最佳 K* 或正則化參數 alpha*）
 │   │
 │   └── [外層重新擬合與評估 Outer Refit & Evaluation]
 │       ├── 在 Outer Train 全體（~934 rows）重新從原始列 fit 一個全新的外層前處理器
 │       ├── 以決策之 K* 或 alpha*，在 Outer Train 上完全重新執行特徵選擇程序以取得特徵子集
-│       ├── 重新在 Outer Train 擬合模型（Track A 擬合 SVD OLS；Track B 擬合原生正則化模型）
-│       ├── 對 Outer Val（~234 rows）執行單次 Transform 與單次預測
-│       └── 記錄該折 Outer OOF 預測結果與泛化指標（Outer Val 在預測前絕不接觸）
+│       ├── 重新在 Outer Train 擬合模型：
+│       │   ├── Track A 重新擬合 SVD OLS
+│       │   └── Track B 重新擬合原生正則化模型
+│       ├── 對 Outer Val（~234 rows）執行單次 Transform 與【各自單次】模型預測：
+│       │   ├── Track A 產生單次 Outer OOF 預測與泛化指標
+│       │   └── Track B 產生單次 Outer OOF 預測與泛化指標
+│       └── Outer Val 在兩軌道最終預測前絕不接觸，且預測結果絕不回饋至調校決策
 ```
 
 ### 具體隔離合約
@@ -68,24 +81,29 @@
    - **禁止合併內層特徵集合**：內層 3 折之特徵選擇僅用於評估與決策最佳**超參數**（最佳特徵數 $K^*$ 或最佳正則化強度 $\alpha^*$），3 個內層折各自選出的特徵子集可能不同，**絕不進行特徵名稱聯集（Union）或將內層子集作為最終特徵集**。
    - **外層重選流程**：
      - 在 Outer Train（~934 筆）全體從原始資料重新 `fit` 一個全新的外層前處理器。
-     - 以決策出的 $K^*$ 或 $\alpha^*$，在該 Outer Train 的特徵矩陣上**重新完整執行特徵選擇程序**（Filter 重新排序挑選前 $K^*$ 欄、SFS 重新向前挑選前 $K^*$ 欄、RFE 重新剃除至 $K^*$ 欄、Lasso/ElasticNet 以 $\alpha^*$ 擬合並提取非零係數欄位）。
-     - 藉此取得該 Outer Fold 專屬的外層選定特徵名稱集合 $S^*_{\text{outer}}$。
-     - 以 $S^*_{\text{outer}}$ 在 Outer Train 擬合最終模型，對 Outer Val 進行單次預測產出 Outer OOF。Outer Val 在此之前保持未接觸。
+     - 以決策出的 $K^*$ 或 $\alpha^*$，在該 Outer Train 的特徵矩陣上**重新完整執行特徵選擇程序**。
+     - 取得該 Outer Fold 專屬的外層選定特徵名稱集合。
+     - Track A 擬合 SVD OLS，Track B 擬合原生模型，分別對 Outer Val 進行一次性預測產出 Outer OOF。兩軌道彼此完全獨立。
 
 ---
 
-## 3. 折內動態候選特徵空間與維度邊界合約（Fold-Local Feature Identity & Dimension Ceiling）
+## 3. 折內動態候選特徵空間與 Phase 3 前處理行為對齊合約（Fold-Local Schema & Phase 3 Alignment）
 
 1. **折內動態欄位空間**：
    - Phase 3 前處理管道（`AmesDataPreparationPipeline`）中的類別 One-Hot 編碼水準由各折訓練集動態學習。
    - 原始資料集具有 79 個候選預測變數（排除 `Id` 與目標變數 `SalePrice`），此 79 個原始欄位僅作為上游來源欄位定義（Source Column Mapping），並非最終模型空間。
    - 在 P4-A 的 5 折外層訓練中，觀察到的折內編碼後特徵數分別為 240, 241, 243, 248, 245。
    - **核心合約**：絕不強制固定編碼後欄位數為 248，亦不得在全體 1,168 筆上預先擬合全局特徵字典（Vocabulary）。所有候選特徵空間皆為該次訓練切分之**折內局部空間（Fold-Local Universe）**。
-2. **折內編碼維度硬上限合約（Enforced Dimension Ceiling & Fail-Closed Policy）**：
+2. **Phase 3 前處理 неизвест 類別行為嚴格對齊（Strict Alignment with Phase 3 `handle_unknown='ignore'`）**：
+   - 依據專案既有 Phase 3 管道實作（`python/src/housing_regression/data_prep/pipeline.py:84,404`），類別編碼器採用 `OneHotEncoder(handle_unknown='ignore')`：
+     - 當驗證集（Inner Val 或 Outer Val）中出現該折訓練集未見過之新類別水準時，編碼器**自動輸出全 0 指示向量**，絕不產生額外的新欄位，亦不會拋出例外。
+     - 折內選出之特徵欄位清單在該次擬合分區內完全自洽，**不存在跨折補 0 或人為剔除新欄位的操作**。
+     - 跨折特徵穩定性分析時，以字串欄位名稱為統計依據，特徵選擇頻率的分母明確定義為外層折數 5（例如某欄位在外層 5 折中被選中 4 次，則頻率為 4/5 = 80%）。
+3. **折內編碼維度硬上限合約（Enforced Dimension Ceiling & Fail-Closed Policy）**：
    - 為防止極端異常或編碼爆炸，本協定嚴格設定折內編碼特徵維度硬上限：
      $$D_{\text{ceiling}} = 300 \text{ 欄}$$
-   - **防禦中斷機制（Fail-Closed Policy）**：在任何訓練分區（Inner Train 或 Outer Train）執行完前處理後，若產生的特徵維度 $D_{\text{obs}} > D_{\text{ceiling}}$，**必須立即中止運行並拋出 `DimensionCeilingExceededError`**。嚴格禁止在背後靜默截斷或刪除特徵欄位，確保資料管道之一致性。
-3. **候選子集大小規範**：
+   - **防禦中斷機制（Fail-Closed Policy）**：在任何訓練分區執行完前處理後，若產生的特徵維度 $D_{\text{obs}} > D_{\text{ceiling}}$，**必須立即中止運行並拋出 `DimensionCeilingExceededError`**。嚴格禁止在背後靜默截斷或刪除特徵欄位。
+4. **候選子集大小規範**：
    - 對於 Filter、Forward SFS 與 RFE，候選特徵數 $K$ 嚴格限定為集合：
      $$K \in \{2, 3, 5, 10, 20\}$$
    - 嚴格禁止評估未列入本合約之其他 $K$ 值。
@@ -269,62 +287,72 @@ for tr_idx, val_idx in kf.split(X_synthetic):
 
 ---
 
-## 9. 擬合預算、分析性上限與防禦中斷機制（Fit Accounting & Analytical Upper Bounds）
+## 9. 擬合預算、資源控制與防禦中斷機制（Fit Accounting, Resource Controls & Abort Policy）
 
-### 9.1 擬合單位定義（Counted Unit Definition）
-- **1 個「估計器擬合單位（Estimator Fit Unit）」**：定義為一個迴歸估計器（SVD OLS、Ridge、Lasso、ElasticNet）在指定樣本子集與特徵子集上完成一次完整的參數擬合計算。
-- 前處理管道（`AmesDataPreparationPipeline`）之擬合獨立統計為 **Preprocess Fit**，不混入估計器擬合單位。
+### 9.1 擬合單位獨立會計定義（Dual Fit Unit Accounting）
+- **估計器擬合單位（Estimator Fit Unit）**：定義為一個迴歸估計器（SVD OLS、Ridge、Lasso、ElasticNet）在指定樣本與特徵子集上完成一次參數計算。
+- **前處理擬合單位（Preprocessor Fit Unit）**：定義為 `AmesDataPreparationPipeline.fit()` 在特定訓練分區上完成一次特徵工程轉換學習。
+- **隔離與複用規則**：在同一訓練分區內部，已擬合完成的前處理特徵矩陣允許在該分區內的不同超參數候選模型間複用；**嚴格禁止跨不同訓練分區（跨 Inner Train、跨 Outer Train）複用前處理器**。
 
-### 9.2 各方法解析擬合上限精確計算（以硬維度上限 $D_{\text{ceiling}} = 300$ 計算）
-設外層折數 $M=5$，內層折數 $m=3$，最大編碼欄數上限 $D_{\text{ceiling}} = 300$，$K \in \{2, 3, 5, 10, 20\}$（$|K|=5$）：
+### 9.2 前處理擬合精確次數與硬上限
+設外層折數 $M=5$，內層折數 $m=3$：
+- 內層 3 折：每折於 Inner Train 執行 1 次 pipeline 擬合，共 $3$ 次。
+- 外層重新擬合：於 Outer Train 全體執行 1 次 pipeline 擬合，共 $1$ 次。
+- **單一外層折合計**：$3 + 1 = 4$ 次前處理擬合。
+- **5 折外層總前處理擬合數**：$5 \times 4 = 20$ 次擬合（若各方法獨立隔離實例化則最多 $5 \text{ 方法} \times 20 = 100$ 次）。
+- **前處理擬合硬上限（Preprocessor Fit Cap）**：設為 **$200$ 次擬合**，超過立即中斷。
+
+### 9.3 估計器解析擬合上限精確計算（以硬維度上限 $D_{\text{ceiling}} = 300$ 計算）
+設外層折數 $M=5$，內層折數 $m=3$，$D_{\text{ceiling}} = 300$，$K \in \{2, 3, 5, 10, 20\}$（$|K|=5$）：
 
 1. **Filter (Pearson |r|)**：
-   - 特徵評分計算相關係數（非估計器擬合）。
-   - 內層候選 $K$ 評估（Inner Train 擬合 OLS）：$M \times m \times |K| = 5 \times 3 \times 5 = 75$ 次。
-   - 外層重新評估與擬合：$M \times 1$ 次 (Outer Train OLS Refit) $= 5$ 次。
+   - 內層候選 $K$ 評估（Inner Train 擬合 OLS）：$5 \times 3 \times 5 = 75$ 次。
+   - 外層重新評估與擬合：$5 \times 1 = 5$ 次。
    - **Filter 估計器擬合數**：$75 + 5 = 80$ 次。
 2. **Forward SFS（訓練集貪婪挑選流）**：
-   - 在每個訓練分區上，向前挑選 20 步，精確擬合次數：
-     $$\text{Fits per training path} = \sum_{k=1}^{20} (300 - k + 1) = \sum_{k=1}^{20} (301 - k) = 20 \times 301 - \frac{20 \times 21}{2} = 6,020 - 210 = 5,810 \text{ 次}$$
-   - 內層 3 折特徵挑選擬合數：$3 \times 5,810 = 17,430$ 次。
-   - 內層候選 $K$ 驗證預測：前述路徑已擬合過對應 $K$ 之模型，無需額外重複擬合。
-   - 外層重新在 Outer Train 執行向前挑選至 $K_{\max}=20$：$5,810$ 次。
-   - 外層最終以 $K^*$ 擬合 Track A 最終模型：前述外層挑選路徑已包含該 $K^*$ 之模型權重（若採重新擬合則記 1 次）。
+   - 每次訓練路徑向前挑選 20 步精確擬合次數：$\sum_{k=1}^{20} (301 - k) = 5,810$ 次。
+   - 內層 3 折挑選：$3 \times 5,810 = 17,430$ 次。
+   - 外層重新在 Outer Train 挑選至 $K_{\max}=20$：$5,810$ 次。
+   - 外層最終 OLS 擬合：$1$ 次。
    - **單一外層折合計**：$17,430 + 5,810 + 1 = 23,241$ 次。
    - **SFS 總擬合數上限（5 折外層）**：$5 \times 23,241 = 116,205$ 次。
 3. **RFE (Ridge, step=1)**：
-   - 從維度 300 步步剔除至 $K_{\min}=2$（包含評估維度 2 之最後模型），共需擬合：
-     $$\text{Ridge fits per path} = 300 - 2 + 1 = 299 \text{ 次 Ridge 擬合}$$
-   - 內層 3 折 Ridge 消除擬合數：$3 \times 299 = 897$ 次。
-   - 內層各候選 $K$ 之 Track A SVD OLS 評估：$3 \times |K| = 3 \times 5 = 15$ 次。
+   - 從維度 300 步步剔除至 $K_{\min}=2$：$300 - 2 + 1 = 299$ 次 Ridge 擬合。
+   - 內層 3 折消除擬合數：$3 \times 299 = 897$ 次。
+   - 內層各候選 $K$ 之 Track A SVD OLS 評估：$3 \times 5 = 15$ 次。
    - 外層重新在 Outer Train 執行 Ridge 消除：$299$ 次 Ridge 擬合。
    - 外層以 $K^*$ 執行 Track A 最終 OLS 擬合：$1$ 次。
    - **單一外層折合計**：$897 + 15 + 299 + 1 = 1,212$ 次。
    - **RFE 總擬合數上限（5 折外層）**：$5 \times 1,212 = 6,060$ 次。
 4. **LassoCV (50 alphas, 雙軌獨立評估)**：
    - 內層 3 折：$3 \times 50 = 150$ 次 Lasso 擬合 (Track B) + $3 \times 50 = 150$ 次 SVD OLS 擬合 (Track A)。
-   - 外層重新擬合：以 $\alpha^*_A$ 在 Outer Train 擬合 1 次 Lasso 提取特徵 + 1 次 SVD OLS 最終擬合；以 $\alpha^*_B$ 在 Outer Train 擬合 1 次原生 Lasso。共 3 次。
+   - 外層重新擬合：共 3 次。
    - **單一外層折合計**：$150 + 150 + 3 = 303$ 次。
    - **LassoCV 總擬合數上限（5 折外層）**：$5 \times 303 = 1,515$ 次。
 5. **ElasticNetCV (6 l1_ratios $\times$ 30 alphas = 180 組合, 雙軌獨立評估)**：
    - 內層 3 折：$3 \times 180 = 540$ 次 ElasticNet 擬合 (Track B) + $3 \times 540 = 540$ 次 SVD OLS 擬合 (Track A)。
-   - 外層重新擬合：以組合最佳值在外層擬合，共 3 次。
+   - 外層重新擬合：共 3 次。
    - **單一外層折合計**：$540 + 540 + 3 = 1,083$ 次。
    - **ElasticNetCV 總擬合數上限（5 折外層）**：$5 \times 1,083 = 5,415$ 次。
 
-### 9.3 累計硬上限與防禦中斷機制（Cumulative Hard Cap & Abort Triggers）
-- **總理論分析上限精確求和**：
-  $$\text{Total Fits} = 80 + 116,205 + 6,060 + 1,515 + 5,415 = 129,275 \text{ 次估計器擬合}$$
-- **A1 協定預先設定硬擬合上限（Provisional Hard Fit Cap）**：
+- **總理論分析估計器擬合次數**：
+  $$\text{Total Estimator Fits} = 80 + 116,205 + 6,060 + 1,515 + 5,415 = 129,275 \text{ 次}$$
+- **估計器擬合硬上限（Cumulative Estimator Fit Cap）**：
   $$\text{Cumulative Fit Cap} = 150,000 \text{ 次估計器擬合}$$
-  （證明：分析總量 129,275 次嚴格落在 150,000 次上限內，具備安全邊際，且保證不裁剪 $K$ 值或縮減折數）。
-- **異常中斷觸發（Abort Trigger）**：
-  - 若累計估計器擬合次數達到 150,000 次，Runner 必須立即中止（Fail-Closed），拋出 `BudgetExceededError`。
-  - 若折內特徵數超過 $D_{\text{ceiling}}=300$，立即拋出 `DimensionCeilingExceededError` 中止。
-- **檢查點機制（Checkpoint & Atomic Write）**：
-  - 以「外層折（Outer Fold）+ 方法」為單位寫入暫存檔案至私有路徑。檔案寫入必須採原子寫入（先寫入 `.tmp` 檔再執行替換），並附帶 SHA-256 驗證。
-- **資源測量宣告**：
-  - **嚴格禁止在本協定捏造具體執行秒數或記憶體耗用數據**。實際牆上時間與記憶體峰值由後續 **A4 基準測量階段** 實證測量。
+
+### 9.4 時間、記憶體監控與 A4 閘門合約（Resource Controls & A4 Gate Policy）
+- **防禦性監控參數規格**：
+  - 任何 A2/A4 執行設定檔必須顯式具備 `max_wall_seconds`（單折最大秒數）與 `max_peak_memory_bytes`（最大記憶體位元組）監控限制。
+  - **A1 不捏造數值原則**：本協定不預先填寫未經實測之秒數與位元組常數，該具體數值**嚴格保留至 A4 基準測量階段依實測結果凍結**。
+  - **A4 閘門阻絕條件（A4 Gate Stop Condition）**：在 A4 階段正式量測並設定具體上限之前，禁止進行任何正式的大規模特徵選擇實驗；若執行時限制未設定或實測超出 A4 凍結之限制，Runner 必須立即中止（Fail-Closed）。
+- **檢查點原子寫入與接續身份校驗合約（Checkpoint Resume Identity Contract）**：
+  - 以「外層折 + 方法」為單位執行原子寫入（寫入 `.tmp` 檔並驗證 SHA-256 後替換）。
+  - **拒絕接續驗證（Resume Refusal Checks）**：當 Runner 嘗試接續執行時，必須完整校驗以下身份條件，任一條件不符則**拒絕接續（Fail-Closed）並建立全新 Run ID**：
+    1. 開發資料集指紋摘要完全一致。
+    2. Git Code HEAD Commit SHA 完全一致。
+    3. 協定版本（`protocol_version: v1.0`）一致。
+    4. 依賴套件版本（Python, scikit-learn, numpy, pandas, scipy）完全一致。
+    5. 演算法超參數網格與外層/內層 KFold 分割種子完全一致。
 
 ---
 
@@ -336,15 +364,19 @@ for tr_idx, val_idx in kf.split(X_synthetic):
 |---|---|---|---|
 | `TEST-P4B-01` | 外層折分一致性 | 驗證 5 折劃分之索引摘要完全符合既定 SHA-256 (`7c9f1d00...`)。 | 離線合成索引 |
 | `TEST-P4B-02` | 前處理擬合邊界 Spy | 以 Mock/Spy 攔截器驗證 Preprocessor 絕未在 Inner Val 或 Outer Val 上呼叫 `fit()`。 | 合成虛擬資料 |
-| `TEST-P4B-03` | 動態欄位結構相容性 | 注入具有折間相異類別水準之合成資料，驗證未出現之欄位補 0 與新欄位剔除機制。 | 合成異常欄位 |
+| `TEST-P4B-03` | Phase 3未知水準相容性 | 驗證驗證折中未見過之類別水準在 `handle_unknown='ignore'` 下正常產出全 0 向量，無新欄位產生。 | 合成異常類別 |
 | `TEST-P4B-04` | 欄位維度超限防禦 | 合成生成超過 300 欄之矩陣，驗證系統必定拋出 `DimensionCeilingExceededError`。 | 邊界壓力測試 |
 | `TEST-P4B-05` | 敏感欄位徹底排除 | 驗證特徵矩陣輸入中嚴格排除 `Id` 與 `SalePrice`，否則拋出 `SchemaError`。 | 輸入檢查測試 |
 | `TEST-P4B-06` | 極端值與常數防禦 | 注入常數欄位（$\sigma=0$）與非有限值（NaN/Inf），驗證 Filter 與模型平手及降序處理。 | 數值穩定性 |
-| `TEST-P4B-07` | 奇異值 SVD OLS 求解 | 在病態矩陣（多重共線性）下驗證最小範數解數值條件數與有效秩計算正確性。 | 數值代數測試 |
+| `TEST-P4B-07` | 奇異值 SVD OLS 求解 | 在病態矩陣（多重共線性）下驗證最小範數解數值條件數與有效秩計算正確性（`rcond=None`）。 | 數值代數測試 |
 | `TEST-P4B-08` | 確定性平手一致性 | 注入等效評分之合成特徵，驗證字典序升冪與稀疏度優先規則能產生 100% 重現之解。 | 確定性測試 |
-| `TEST-P4B-09` | 擬合預算硬上限中斷 | 透過計數器模擬超出 150,000 次擬合，驗證立即觸發 `BudgetExceededError` 中止。 | 防禦熔斷測試 |
+| `TEST-P4B-09` | 擬合預算硬上限中斷 | 透過計數器模擬超出 150,000 次估計器擬合，驗證立即觸發 `BudgetExceededError` 中止。 | 防禦熔斷測試 |
 | `TEST-P4B-10` | 檢查點原子寫入與校驗 | 注入損毀之 `.tmp` 暫存檔，驗證 SHA-256 校驗失敗並防禦性中斷接續。 | I/O 安全測試 |
 | `TEST-P4B-11` | 公開摘要去識別化 | 驗證 `p4b_public_summary.json` 不含任何逐列 OOF、真實標籤或本機敏感路徑。 | 隱私安全測試 |
+| `TEST-P4B-12` | 候選 K 值範圍合約 | 驗證選擇器嚴格僅能輸出 $K \in \{2, 3, 5, 10, 20\}$ 之特徵集合，傳入非法 $K$ 拋出異常。 | 參數邊界測試 |
+| `TEST-P4B-13` | SFS 訓練集獨立挑選 | 斷言驗證 SFS 貪婪挑選特徵過程僅依賴 Inner Train 殘差，Inner Val 保持未讀取。 | 演算法隔離測試 |
+| `TEST-P4B-14` | 開發資料集指紋穩定性 | 驗證標準化開發資料集序列化演算法之穩定性，注入變更列順序或數值時雜湊必定改變。 | 資料完整性測試 |
+| `TEST-P4B-15` | 檢查點身份不符拒絕接續 | 模擬變更套件版本或折分種子，驗證 Runner 必定拒絕接續中斷檔並拋出例外。 | 接續安全測試 |
 
 ---
 
@@ -402,6 +434,12 @@ for tr_idx, val_idx in kf.split(X_synthetic):
     "protocol_version": "v1.0",
     "issue_reference": "Issue #21 / Issue #22",
     "base_commit": "ee03a51978a0f615f39b656bee318946dcddd890",
+    "historical_p4a_reference": {
+      "outer_mean_rmse": 36855.78,
+      "outer_std_rmse": 7938.31,
+      "outer_mean_r2": 0.763579,
+      "context_note": "Historical baseline from docs/crisp-dm/04-modeling-p4a-ols-baseline.md"
+    },
     "run_id": null,
     "environment": {
       "python_version": "3.12",
@@ -415,6 +453,7 @@ for tr_idx, val_idx in kf.split(X_synthetic):
       "outer_kfold": {"n_splits": 5, "shuffle": true, "random_state": 42},
       "inner_kfold": {"n_splits": 3, "shuffle": true, "random_state": 1042},
       "outer_fold_digest": "7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463",
+      "dataset_fingerprint_verified": true,
       "digest_provenance": "verified_in_p4a"
     }
   },
@@ -441,7 +480,7 @@ for tr_idx, val_idx in kf.split(X_synthetic):
         "effective_condition_number": null
       },
       "fit_accounting": {
-        "fold_fits": null,
+        "fold_estimator_fits": null,
         "fold_preprocessor_fits": null
       },
       "convergence_status": null
@@ -454,7 +493,8 @@ for tr_idx, val_idx in kf.split(X_synthetic):
       "mean_outer_rmse": null,
       "std_outer_rmse": null,
       "mean_outer_r2": null,
-      "total_fits": null,
+      "total_estimator_fits": null,
+      "total_preprocessor_fits": null,
       "fit_cap_status": "within_budget"
     }
   ]
