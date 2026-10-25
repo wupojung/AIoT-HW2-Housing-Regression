@@ -4,7 +4,7 @@
 - **所屬任務**：Phase 4-B-A 特徵選擇與正則化比較實驗
 - **關聯 Issue**：Issue #21（P4-B 特徵選擇規劃）、Issue #22（P4-B-A 協定凍結）
 - **基準版本 (BASE SHA)**：`ee03a51978a0f615f39b656bee318946dcddd890`（已整併 P4-A 基準模型）
-- **前次審查修訂點 (Amendment BASE)**：`81302acdec18c3513256916e4d2908cdbad42de9`
+- **前次審查修訂點 (Amendment BASE)**：`af6156b729bf7a57ec5213d73dfc375475dabe06`
 - **協定狀態**：Draft Candidate（A1 階段協定凍結審查草案；本協定目前處於審查修改階段，待通過 A1 Review Gate 審定前不代表正式批准；本階段僅制定規範與設計合約，嚴格禁止執行真實資料實驗、模型擬合、單元測試、基準測試、CI 觸發或 A2+ 實作）
 
 ---
@@ -27,19 +27,27 @@
      - 外層成員與折分配 SHA-256 摘要值為：`7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463`。
      - **來源佐證（Provenance Verification）**：該摘要已在基準版本 `ee03a519` 之 P4-A 實作（`tests/modeling/test_p4a_ols_cv.py` 與 `docs/crisp-dm/04-modeling-p4a-ols-baseline.md`）中獲得獨立合成回歸測試與程式碼驗證，確認具備完整來源憑據（Verified Provenance）。
      - 本階段僅引用該既定摘要進行外層成員檢驗，絕不重新計算、變更折分配或存取已封存之資料集。
-4. **授權開發資料集標準化指紋摘要合約（Canonical Dataset Fingerprint Specification）**：
-   - 為在不洩漏或儲存逐列真實資料、私有識別碼的前題下，消除字元分隔歧義與型別碰撞（Collision-Safe Canonicalization），規範在後續 A2 階段由核可之載入器依以下合約計算標準化摘要（Canonical Dataset Digest）：
+4. **授權開發資料集唯一標準化型別序列化指紋合約（Unique Canonical Typed Fingerprint Specification）**：
+   - 為在不洩漏或儲存逐列真實資料、私有識別碼的前提下徹底消除多重序列化歧義與碰撞，規範在後續 A2 階段由核可之載入器依以下**無歧義唯一表示法（Single Canonical Representation per Type）**計算標準化摘要（Canonical Dataset Digest）：
      - **列排序**：嚴格依原始訓練 CSV 中 1,168 筆授權開發列之原始出現順序（Source-Row Order）排列。
-     - **欄位選取與固定順序**：排除 `Id` 與私有欄位；包含 79 個原始候選預測欄位（依欄位名稱 ASCII 字典序排序）及最後目標欄位 `SalePrice`（共 80 欄）。
-     - **防碰撞型別與長度前綴序列化（Typed & Length-Prefixed Serialization）**：
-       - 每列序列化為二進位串流，每個欄位編碼為：`[TypeTag: 1 byte][Length: 4 bytes big-endian unsigned int][Payload: Length bytes]`。
-       - **型別標記（TypeTag）定義**：
-         - `0x00` = `NULL`（缺失值/NaN；Length 為 0，Payload 為空）。
-         - `0x01` = `STRING`（字串值；包括真值為空字串 `""`，Payload 為 UTF-8 正規化位元組，Length 為其位元組長度）。
-         - `0x02` = `INT`（整數值；以標準十進位 ASCII 字串或 64 位元整數 Payload 表示）。
-         - `0x03` = `FLOAT`（浮點數；規範化為 IEEE 754 雙精度 64 位元 big-endian 二進位位元組，或標準格式化十進位字串）。
-       - 藉由明確區分 `0x00` (Null) 與 `0x01` (Empty string)，並採長度前綴而非單純符號分隔，徹底杜絕包含逗號、換行或引號時的字串切割碰撞。
-     - **雜湊演算法**：對全體 1,168 筆序列化位元組串流計算 SHA-256。
+     - **欄位選取與固定順序**：排除 `Id` 與私有欄位；包含 79 個原始候選預測欄位（依欄位名稱 ASCII 字典序升冪排序）及最後目標欄位 `SalePrice`（共 80 欄）。
+     - **原始欄位型別正規化（Source Dtype Normalization）**：在序列化前，欄位依 Phase 3 定義強制轉換為標準 Python/NumPy 原生型別（缺失一律識別為 Null；非缺失字串轉為 Python `str`；整數轉為 64 位元有號整數；浮點數轉為 IEEE-754 64 位元雙精度浮點數）。
+     - **每欄二進位封包格式**：`[TypeTag: 1 byte][Length: 4 bytes big-endian unsigned int][Payload: Length bytes]`。
+     - **各型別唯一表示合約（Single Canonical Encoding per TypeTag）**：
+       - **`0x00` = `NULL`（缺失值/NaN）**：
+         - `Length` 嚴格為 `0`，`Payload` 嚴格為空（0 bytes）。
+       - **`0x01` = `STRING`（字串值，包括真值為空字串 `""`）**：
+         - 字串必須先經過 **Unicode NFC 規範化（Unicode Normalization Form C）**，再轉為 UTF-8 位元組序列。
+         - `Length` 為 UTF-8 位元組數；`Payload` 為該 NFC UTF-8 位元組。
+         - *真值空字串表示*：`TypeTag=0x01`，`Length=0`，`Payload` 為空（與 `TypeTag=0x00` 嚴格依第 1 個 byte 區分，永不碰撞）。
+       - **`0x02` = `INT`（整數值）**：
+         - 唯一編碼：**64 位元有號大端序二進位整數（8 bytes Signed Big-Endian Integer, `>q`）**。
+         - `Length` 嚴格固定為 `8`，`Payload` 嚴格為該 8 個二進位位元組。杜絕十進位字串的符號或前導零歧義。
+       - **`0x03` = `FLOAT`（浮點數）**：
+         - 唯一編碼：**IEEE-754 雙精度 64 位元大端序二進位浮點數（8 bytes IEEE-754 Double Big-Endian, `>d`）**。
+         - `Length` 嚴格固定為 `8`，`Payload` 嚴格為該 8 個二進位位元組。
+         - *符號零與極端值政策*：負零 `-0.0` 強制標準化為正零 `+0.0`（位元組 `0x0000000000000000`）；若輸入為 NaN 則一律在前置步驟正規化為 `NULL`（`TypeTag=0x00`）。
+     - **雜湊演算法**：對全體 1,168 筆按列累加之二進位串流計算 SHA-256。
      - **儲存邊界**：該指紋僅記錄於受 Git 忽略之私有中繼資料（`p4b_manifest.json`），公開輸出僅標註校驗狀態（如 `dataset_fingerprint_verified: true`）。A1 階段嚴禁計算或存取真實指紋。
 
 ---
@@ -219,26 +227,35 @@
 
 ---
 
-## 7. 內層選取準則、平手決策與樂觀偏差（Selection Criteria & Optimism）
+## 7. 內層選取準則、確定性全序平手決策演算法（Selection Criteria & Deterministic Total-Order Tie-Breaking）
 
 1. **內層目標函數**：
    - 內層 3 折交叉驗證之平均驗證均方根誤差（Mean Validation RMSE）：
      $$\text{Score} = \frac{1}{3} \sum_{m=1}^3 \text{RMSE}_m$$
-2. **確定性全序平手決策階層（Deterministic Total-Order Tie-Breaking）**：
-   - 浮點數比較容差設為 $\epsilon = 10^{-9}$。
-   - **平手決策嚴格在各 Track 內部獨立套用，全序規則（Total Order）定義如下**：
-     - **Track A 內部確定性全序平手規則**：
-       1. 優先選取特徵數較少者（Sparsity priority）。
-       2. 若特徵數相同，依候選演算法順序：Filter $\to$ Forward SFS $\to$ RFE $\to$ Lasso $\to$ ElasticNet。
-       3. 若同一演算法內仍平手，選取候選 $K$ 較小者（或 $\alpha$ 較大者；若 ElasticNet 則次選 `l1_ratio` 較大者）。
-     - **Track B 內部確定性全序平手規則**：
-       1. 若多個超參數之內層平均 RMSE 差異在 $\epsilon$ 內，依固定方法順序決策：**LassoCV 優先於 ElasticNetCV**。
-       2. 在同一方法內部若仍平手，優先選取正則化強度較大者（較大之 $\alpha$）。
-       3. 若 ElasticNetCV 且 $\alpha$ 相同，優先選取 `l1_ratio` 較大者（偏好更稀疏之 $L_1$ 懲罰）。
-       4. 若仍平手，依候選網格產生之原初順序取最前者。
-3. **無 1-SE 法則（No 1SE Rule）**：
-   - 嚴格以內層驗證平均 RMSE 最小者勝出，不採用啟發式的 1 個標準誤差準則（1SE Rule）。
-4. **外層排行榜選擇樂觀偏差警告（Outer Selection Optimism Warning）**：
+2. **確定性平手集合形成演算法（Deterministic Epsilon Tie-Set Formation Algorithm）**：
+   - 浮點數容差嚴格固定為 $\epsilon = 10^{-9}$。
+   - 為徹底解決「成對 $\epsilon$ 比較非遞移性（Non-transitivity）」導致的順序相依問題，本協定嚴格採用**全域最小值集合形成法（Global Minimum Tie-Set Formation）**：
+     1. **異常排除**：非有限值（NaN 或 Inf）之候選設定直接剔除，不進入評選。
+     2. **全域最優錨點確定**：在所有合法候選中，找出數值嚴格最小之內層平均 RMSE：
+        $$\text{Score}_{\min} = \min_{c \in \mathcal{C}} \text{Score}(c)$$
+     3. **平手集合判定（Tie-Set Formation）**：所有滿足以下條件之候選組成平手候選集合 $\mathcal{T}$：
+        $$\mathcal{T} = \{ c \in \mathcal{C} \mid \text{Score}(c) - \text{Score}_{\min} \le \epsilon \}$$
+        （邊界嚴格包含 $\le \epsilon$；此集合之形成完全獨立於候選者的尋訪或迭代順序）。
+     4. **集合內全序決策（Total Order within Tie-Set）**：僅在集合 $\mathcal{T}$ 內部依以下規則選出唯一勝出者：
+3. **各軌道平手集合內全序階層（Total-Order Hierarchy Applied Within Tie-Set）**：
+   - **Track A 內部全序階層**：
+     1. **稀疏性優先（Sparsity Priority）**：特徵數較少者優先（$K$ 較小者優先）。
+     2. **固定演算法優先序**：若特徵數相同，依演算法固定順序：Filter $\to$ Forward SFS $\to$ RFE $\to$ Lasso $\to$ ElasticNet。
+     3. **內部超參數順序**：若同一演算法內特徵數相同，取正則化強度較大者（較大之 $\alpha$；若 ElasticNet 則次選 `l1_ratio` 較大者）。
+     4. **原初網格序**：若仍平手，取定義網格中索引較小者。
+   - **Track B 內部全序階層**：
+     1. **固定方法優先序**：**LassoCV 優先於 ElasticNetCV**。
+     2. **正則化強度優先**：同一方法內部，優先選取較大之 $\alpha$。
+     3. **$L_1$ 懲罰偏好**：若 ElasticNetCV 且 $\alpha$ 相同，優先選取較大之 `l1_ratio`。
+     4. **原初網格序**：若仍平手，依定義網格產生之原初順序取最前者。
+4. **無 1-SE 法則（No 1SE Rule）**：
+   - 嚴格以上述平手集合演算法決策，不採用主觀的 1 個標準誤差準則（1SE Rule）。
+5. **外層排行榜選擇樂觀偏差警告（Outer Selection Optimism Warning）**：
    - 5 折外層 CV 排行榜之最優分數仍存在選擇樂觀偏差。Phase 5 封存保留集（292 筆 Holdout）必須持續維持密封狀態，作為獨立驗證屏障。
 
 ---
@@ -383,15 +400,16 @@ for tr_idx, val_idx in kf.split(X_synthetic):
 | `TEST-P4B-05` | 敏感欄位徹底排除 | 驗證特徵矩陣輸入中嚴格排除 `Id` 與 `SalePrice`，否則拋出 `SchemaError`。 | 輸入檢查測試 |
 | `TEST-P4B-06` | 極端值與常數防禦 | 注入常數欄位（$\sigma=0$）與非有限值（NaN/Inf），驗證 Filter 與模型平手及降序處理。 | 數值穩定性 |
 | `TEST-P4B-07` | 奇異值 SVD OLS 求解 | 在病態矩陣（多重共線性）下驗證最小範數解數值條件數與有效秩計算正確性（`rcond=None`）。 | 數值代數測試 |
-| `TEST-P4B-08` | Track A 平手全序一致性 | 注入等效評分之合成特徵，驗證稀疏度優先、固定演算法順序與字典序規則能產生 100% 重現之解。 | 確定性測試 |
+| `TEST-P4B-08` | Track A 平手全序一致性 | 驗證全域最小值集合形成法在稀疏度優先、固定演算法順序與字典序規則下能產生 100% 重現之解。 | 確定性測試 |
 | `TEST-P4B-09` | 擬合預算硬上限中斷 | 透過計數器模擬超出 150,000 次估計器擬合，驗證立即觸發 `BudgetExceededError` 中止。 | 防禦熔斷測試 |
 | `TEST-P4B-10` | 檢查點原子寫入與校驗 | 注入損毀之 `.tmp` 暫存檔，驗證 SHA-256 校驗失敗並防禦性中斷接續。 | I/O 安全測試 |
 | `TEST-P4B-11` | 公開摘要去識別化 | 驗證 `p4b_public_summary.json` 不含任何逐列 OOF、真實標籤或本機敏感路徑。 | 隱私安全測試 |
 | `TEST-P4B-12` | 候選 K 值範圍合約 | 驗證選擇器嚴格僅能輸出 $K \in \{2, 3, 5, 10, 20\}$ 之特徵集合，傳入非法 $K$ 拋出異常。 | 參數邊界測試 |
 | `TEST-P4B-13` | SFS 訓練集獨立挑選 | 斷言驗證 SFS 貪婪挑選特徵過程僅依賴 Inner Train 殘差，Inner Val 保持未讀取。 | 演算法隔離測試 |
-| `TEST-P4B-14` | 指紋防碰撞與重複穩定性 | 驗證型別標記與長度前綴序列化能精確區分 `[Null]` vs `[""]` 及逗號分割碰撞，且重複計算雜湊值 100% 一致。 | 資料完整性測試 |
+| `TEST-P4B-14` | 指紋防碰撞與唯一性 | 驗證二進位型別標記（`>q`, `>d`, NFC UTF-8）能精確消除字串逗號、Null vs `""`、`-0.0` 與浮點表示歧義，重複雜湊 100% 一致。 | 資料完整性測試 |
 | `TEST-P4B-15` | 檢查點身份不符拒絕接續 | 模擬變更套件版本或折分種子，驗證 Runner 必定拒絕接續中斷檔並拋出例外。 | 接續安全測試 |
-| `TEST-P4B-16` | Track B 確定性全序平手 | 注入相同評分之 Lasso 與 ElasticNet 候選，驗證必定由 Lasso 優先，且同法依 $\alpha$ 降序決策。 | 確定性測試 |
+| `TEST-P4B-16` | Track B 確定性全序平手 | 注入相同評分之 Lasso 與 ElasticNet 候選，驗證全域平手集合形成法必定由 Lasso 優先。 | 確定性測試 |
+| `TEST-P4B-17` | 連鎖近似分數平手無關性 | 構造分數呈微小步進（例如 $s_1=0.1000000000$, $s_2=0.1000000005$, $s_3=0.1000000012$）之候選串列，驗證全域最小值集合法勝出者與評估迭代順序完全無關。 | 邊界穩定性測試 |
 
 ---
 
