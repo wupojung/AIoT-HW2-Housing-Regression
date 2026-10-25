@@ -22,10 +22,13 @@ import json
 import math
 import multiprocessing as mp
 import os
+import platform
+import queue as queue_module
 import re
 import struct
 import time
 import unicodedata
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple
@@ -34,7 +37,14 @@ import numpy as np
 from sklearn.linear_model import ElasticNet, Lasso, Ridge
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
+from sklearn.exceptions import ConvergenceWarning
 import threadpoolctl
+from housing_regression.modeling.p4b_job import (
+    assign_process_to_job,
+    close_job_object,
+    create_kill_on_close_job_object,
+    terminate_job_object,
+)
 
 from housing_regression.data_prep import (
     ALL_PREDICTOR_COLUMNS,
@@ -48,7 +58,9 @@ from housing_regression.data_prep import (
 from housing_regression.modeling.ols_cv import (
     compute_numerical_diagnostics,
     fit_ols_svd,
+    fold_assignment_digest,
     kfold_assignments,
+    load_development_rows,
     predict as predict_ols,
 )
 
@@ -56,6 +68,11 @@ PROTOCOL_VERSION: str = "v1.0"
 DEFAULT_D_CEILING: int = 300
 DEFAULT_ESTIMATOR_FIT_CAP: int = 150000
 DEFAULT_PREPROCESSOR_FIT_CAP: int = 200
+WORKER_STARTUP_TIMEOUT_SECONDS: float = 10.0
+DEFAULT_WORKER_MEMORY_LIMIT_BYTES: int = 2 * 1024 * 1024 * 1024
+EXPECTED_DEVELOPMENT_ROWS: int = 1168
+EXPECTED_DEVELOPMENT_INDEX_DIGEST: str = "3981ebb16dde1b26400a431ef7c5d318b970f7ede50f42390d8221300eb299f4"
+EXPECTED_OUTER_FOLD_DIGEST: str = "7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463"
 
 # 80-column canonical schema definitions
 SCHEMA_STRING_COLUMNS: Set[str] = set(NOMINAL_COLUMNS + ORDINAL_COLUMNS)
@@ -115,6 +132,117 @@ SUPPORTED_PAIRS: Tuple[Tuple[str, str], ...] = (
     ("elastic_net_cv", "Track A"),
     ("elastic_net_cv", "Track B"),
 )
+
+
+def expected_method_pairs(config: "P4BConfig") -> List[Tuple[str, str]]:
+    if config.active_pairs is not None:
+        return sorted(tuple(pair) for pair in config.active_pairs)
+    methods = set(config.active_methods or ("filter_pearson", "forward_sfs", "rfe_ridge", "lasso_cv", "elastic_net_cv"))
+    return sorted(pair for pair in SUPPORTED_PAIRS if pair[0] in methods)
+
+
+def active_methods_for_config(config: "P4BConfig") -> Set[str]:
+    if config.active_pairs is not None:
+        return {method for method, _track in expected_method_pairs(config)}
+    return set(config.active_methods or ("filter_pearson", "forward_sfs", "rfe_ridge", "lasso_cv", "elastic_net_cv"))
+
+
+def compute_fold_plan_digest(n_rows: int, config: "P4BConfig") -> str:
+    """Digest exact outer and nested inner row-index assignments for this run."""
+    outer = kfold_assignments(n_rows, config.outer_splits, config.outer_seed)
+    plan = {"outer": outer, "inner": {}}
+    for fold_idx in range(config.outer_splits):
+        train_indices = [index for index, assigned in enumerate(outer) if assigned != fold_idx]
+        inner_assignment = kfold_assignments(len(train_indices), config.inner_splits, config.inner_seed)
+        plan["inner"][str(fold_idx)] = [
+            {
+                "train": [train_indices[i] for i, assigned in enumerate(inner_assignment) if assigned != inner_idx],
+                "validation": [train_indices[i] for i, assigned in enumerate(inner_assignment) if assigned == inner_idx],
+            }
+            for inner_idx in range(config.inner_splits)
+        ]
+    return hashlib.sha256(json.dumps(plan, separators=(",", ":"), sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def verify_development_provenance(
+    rows: Sequence[Mapping[str, str]],
+    provenance: Optional[Mapping[str, Any]],
+    config: "P4BConfig",
+) -> Dict[str, Any]:
+    """Fail closed unless production rows carry the frozen Phase-3 split provenance."""
+    row_ids = [row.get(ID_COLUMN) for row in rows]
+    row_id_digest = hashlib.sha256(
+        json.dumps(row_ids, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    if config.synthetic_test_mode:
+        actual_fold_digest = (
+            fold_assignment_digest(kfold_assignments(len(rows), config.outer_splits, config.outer_seed))
+            if len(rows) >= config.outer_splits
+            else None
+        )
+        return {
+            "verified": False,
+            "verification_status": "SYNTHETIC_UNVERIFIED",
+            "development_rows": len(rows),
+            "development_index_digest": None,
+            "row_id_membership_digest": row_id_digest,
+            "outer_fold_digest": actual_fold_digest,
+        }
+
+    if len(rows) != EXPECTED_DEVELOPMENT_ROWS:
+        raise ValueError("Production input row count does not match frozen development membership.")
+    if config.inner_splits != 3 or config.inner_seed != 1042:
+        raise ValueError("Production inner-fold provenance must match the frozen P4-B protocol.")
+    folds = kfold_assignments(len(rows), config.outer_splits, config.outer_seed)
+    actual_fold_digest = fold_assignment_digest(folds)
+    if config.outer_splits != 5 or config.outer_seed != 42 or actual_fold_digest != EXPECTED_OUTER_FOLD_DIGEST:
+        raise ValueError("Production outer-fold provenance does not match the frozen P4-A assignment.")
+    if not isinstance(provenance, Mapping):
+        raise ValueError("Production input must come from the Phase-3 development loader.")
+    required_provenance = {
+        "labeled_rows_counted": 1460,
+        "development_rows": EXPECTED_DEVELOPMENT_ROWS,
+        "split_seed": 42,
+        "val_fraction": 0.2,
+        "development_index_digest": EXPECTED_DEVELOPMENT_INDEX_DIGEST,
+        "source_basename": "train.csv",
+        "id_uniqueness_verified": True,
+        "unique_id_count": EXPECTED_DEVELOPMENT_ROWS,
+        "row_id_membership_digest": row_id_digest,
+        "dataset_fingerprint": compute_canonical_fingerprint(rows),
+    }
+    if any(provenance.get(key) != value for key, value in required_provenance.items()):
+        raise ValueError("Phase-3 loader provenance does not match frozen development membership.")
+    ids = [row.get(ID_COLUMN) for row in rows]
+    if any(not isinstance(row_id, str) or not row_id for row_id in ids) or len(set(ids)) != EXPECTED_DEVELOPMENT_ROWS:
+        raise ValueError("Production development input must contain unique nonempty row IDs.")
+    return {
+        "verified": True,
+        "verification_status": "VERIFIED_MATCH",
+        "development_rows": len(rows),
+        "development_index_digest": EXPECTED_DEVELOPMENT_INDEX_DIGEST,
+        "row_id_membership_digest": row_id_digest,
+        "dataset_fingerprint": compute_canonical_fingerprint(rows),
+        "outer_fold_digest": actual_fold_digest,
+    }
+
+
+def fit_and_capture_convergence(estimator: Any, X: np.ndarray, y: np.ndarray) -> Dict[str, Any]:
+    """Fit an iterative sklearn estimator and report observed convergence warnings/iterations."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", ConvergenceWarning)
+        estimator.fit(X, y)
+    warning_count = sum(1 for item in caught if issubclass(item.category, ConvergenceWarning))
+    n_iter = getattr(estimator, "n_iter_", None)
+    if isinstance(n_iter, np.ndarray):
+        n_iter = n_iter.tolist()
+    elif isinstance(n_iter, np.generic):
+        n_iter = n_iter.item()
+    return {
+        "convergence_status": "CONVERGENCE_WARNING" if warning_count else "CONVERGED",
+        "convergence_warning_count": warning_count,
+        "n_iter": n_iter,
+    }
 
 
 class DimensionCeilingExceededError(RuntimeError):
@@ -186,6 +314,8 @@ class P4BConfig:
     repo_root: Optional[Path] = None
     active_methods: Optional[List[str]] = None  # None means all 5 methods
     active_pairs: Optional[List[Tuple[str, str]]] = None  # None means all 7 pairs
+    max_worker_memory_bytes: int = DEFAULT_WORKER_MEMORY_LIMIT_BYTES
+    synthetic_test_mode: bool = False
 
     def validate_positive(self) -> None:
         if self.outer_splits < 2:
@@ -198,6 +328,22 @@ class P4BConfig:
             raise ValueError(f"estimator_fit_cap must be positive, got {self.estimator_fit_cap}")
         if self.preprocessor_fit_cap <= 0:
             raise ValueError(f"preprocessor_fit_cap must be positive, got {self.preprocessor_fit_cap}")
+        if isinstance(self.max_worker_memory_bytes, bool) or not isinstance(self.max_worker_memory_bytes, int) or self.max_worker_memory_bytes <= 0:
+            raise ValueError("max_worker_memory_bytes must be a positive integer.")
+        valid_methods = {method for method, _track in SUPPORTED_PAIRS}
+        if self.active_methods is not None and (not self.active_methods or not set(self.active_methods) <= valid_methods):
+            raise ValueError("active_methods must contain only supported methods.")
+        if self.active_pairs is not None:
+            pair_tuples = [tuple(pair) for pair in self.active_pairs]
+            if not pair_tuples or len(set(pair_tuples)) != len(pair_tuples) or not set(pair_tuples) <= set(SUPPORTED_PAIRS):
+                raise ValueError("active_pairs must contain unique supported method-track pairs.")
+            pair_methods = {method for method, _track in pair_tuples}
+            if self.active_methods is not None and pair_methods != set(self.active_methods):
+                raise ValueError("active_methods must exactly match the methods selected by active_pairs.")
+            for method in ("lasso_cv", "elastic_net_cv"):
+                selected_tracks = {track for pair_method, track in pair_tuples if pair_method == method}
+                if selected_tracks and selected_tracks != {"Track A", "Track B"}:
+                    raise ValueError("active_pairs must include both tracks for each regularized method.")
 
 
 def estimate_preflight_budget(config: P4BConfig) -> Tuple[int, int]:
@@ -212,13 +358,7 @@ def estimate_preflight_budget(config: P4BConfig) -> Tuple[int, int]:
 
     preprocessor_fits = M * (m + 1)
 
-    active_methods = config.active_methods or [
-        "filter_pearson",
-        "forward_sfs",
-        "rfe_ridge",
-        "lasso_cv",
-        "elastic_net_cv",
-    ]
+    active_methods = active_methods_for_config(config)
 
     total_estimator_fits = 0
 
@@ -486,53 +626,64 @@ def _mp_worker_target(
     ready_queue: Optional[Any] = None,
     spawn_descendant: bool = False,
     pipeline_factory: Optional[Callable[[], AmesDataPreparationPipeline]] = None,
+    start_event: Optional[Any] = None,
+    timing_ns: Optional[Any] = None,
 ) -> None:
     try:
+        if timing_ns is not None:
+            timing_ns[0] = time.perf_counter_ns()  # Worker target entry.
+        if config.single_thread is not True:
+            raise RuntimeError("Worker isolation requires single_thread=True.")
+        # B03: Wait for start_event gate released only after parent assigns Job Object
+        if start_event is not None:
+            start_event.wait()
+        if timing_ns is not None:
+            timing_ns[1] = time.perf_counter_ns()  # Job-assigned start gate released.
+
         # B03: enforce single-thread limits strictly inside child worker
-        thread_limit = 1 if config.single_thread else None
-        if thread_limit is not None:
-            with threadpoolctl.threadpool_limits(limits=thread_limit):
-                descendant_pid = None
-                if spawn_descendant:
-                    # Spawn a child worker process to verify process tree containment and termination
-                    sub_ctx = mp.get_context("spawn")
-                    sub_proc = sub_ctx.Process(target=_descendant_worker_target)
-                    sub_proc.start()
-                    descendant_pid = sub_proc.pid
+        thread_limit = 1
+        with threadpoolctl.threadpool_limits(limits=thread_limit):
+            descendant_pid = None
+            if spawn_descendant:
+                # Spawn a child worker process to verify process tree containment and termination
+                sub_ctx = mp.get_context("spawn")
+                sub_proc = sub_ctx.Process(target=_descendant_worker_target)
+                sub_proc.start()
+                descendant_pid = sub_proc.pid
+                if timing_ns is not None and descendant_pid is not None:
+                    timing_ns[4] = descendant_pid
 
-                if stall_before_fit:
-                    # B03: signal readiness ONLY AFTER entering intentional bounded stall
-                    if ready_queue is not None:
-                        # Report worker pid, descendant pid, and threadpoolctl num_threads
-                        import numpy as _np
-                        # Touch numpy to ensure OpenBLAS threadpool is initialized
-                        _ = _np.zeros((10, 10)) @ _np.zeros((10, 10))
-                        tp_info = threadpoolctl.threadpool_info()
-                        reported_threads = tp_info[0]["num_threads"] if tp_info else 1
-                        ready_queue.put({
-                            "status": "READY",
-                            "worker_pid": os.getpid(),
-                            "descendant_pid": descendant_pid,
-                            "thread_limit": reported_threads,
-                        })
-                    time.sleep(30.0)
-
-                runner = P4BRunner(config)
-                kwargs = {}
-                if pipeline_factory is not None:
-                    kwargs["pipeline_factory"] = pipeline_factory
-                res = runner.execute_outer_fold(outer_fold_idx, outer_train_rows, outer_val_rows, **kwargs)
-                queue.put(("SUCCESS", res, runner.accounting.estimator_fits, runner.accounting.preprocessor_fits))
-        else:
+            tp_info = threadpoolctl.threadpool_info()
             if stall_before_fit:
+                # Confirm the worker has entered the stall before reporting readiness.
                 if ready_queue is not None:
+                    import numpy as _np
+                    _ = _np.zeros((10, 10)) @ _np.zeros((10, 10))
+                    stall_entered_ns = time.perf_counter_ns()
+                    if timing_ns is not None:
+                        timing_ns[2] = stall_entered_ns
+                    time.sleep(0.05)
+                    ready_sent_ns = time.perf_counter_ns()
+                    if timing_ns is not None:
+                        timing_ns[3] = ready_sent_ns
                     ready_queue.put({
                         "status": "READY",
                         "worker_pid": os.getpid(),
-                        "descendant_pid": None,
-                        "thread_limit": -1,
+                        "descendant_pid": descendant_pid,
+                        "thread_limits": [pool["num_threads"] for pool in tp_info],
+                        "stall_entered_ns": stall_entered_ns,
+                        "ready_sent_ns": ready_sent_ns,
                     })
                 time.sleep(30.0)
+            elif ready_queue is not None:
+                ready_queue.put({
+                    "status": "READY",
+                    "worker_pid": os.getpid(),
+                    "descendant_pid": descendant_pid,
+                    "thread_limits": [pool["num_threads"] for pool in tp_info],
+                    "ready_sent_ns": time.perf_counter_ns(),
+                })
+
             runner = P4BRunner(config)
             kwargs = {}
             if pipeline_factory is not None:
@@ -581,6 +732,7 @@ class P4BRunner:
         self.stall_mock_worker: bool = False
         self.ready_queue: Optional[Any] = None
         self.last_ready_msg: Optional[Dict[str, Any]] = None
+        self.last_worker_timing: Dict[str, Any] = {}
         self.spawn_descendant: bool = False
 
     def _check_deadline(self) -> None:
@@ -680,13 +832,7 @@ class P4BRunner:
         fold_results: List[Dict[str, Any]] = []
         oof_records: List[Dict[str, Any]] = []
 
-        active_methods = self.config.active_methods or [
-            "filter_pearson",
-            "forward_sfs",
-            "rfe_ridge",
-            "lasso_cv",
-            "elastic_net_cv",
-        ]
+        active_methods = active_methods_for_config(self.config)
 
         # --- A. Filter Pearson (Track A) ---
         if "filter_pearson" in active_methods:
@@ -903,13 +1049,14 @@ class P4BRunner:
             self._check_deadline()
             alpha_track_a_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.lasso_alphas))}
             alpha_track_b_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.lasso_alphas))}
+            alpha_fit_convergence: Dict[int, List[Dict[str, Any]]] = {i: [] for i in range(len(self.lasso_alphas))}
 
             for part in inner_partitions:
                 for idx, alpha in enumerate(self.lasso_alphas):
                     self._check_deadline()
                     self.accounting.record_estimator_fit(1)
                     lasso = Lasso(alpha=alpha, max_iter=self.config.max_iter, tol=self.config.tol)
-                    lasso.fit(part["X_tr"], part["y_tr"])
+                    alpha_fit_convergence[idx].append(fit_and_capture_convergence(lasso, part["X_tr"], part["y_tr"]))
 
                     yhat_b = lasso.predict(part["X_va"])
                     rmse_b = math.sqrt(float(np.mean((part["y_va"] - yhat_b) ** 2)))
@@ -940,7 +1087,7 @@ class P4BRunner:
             self._check_deadline()
             self.accounting.record_estimator_fit(1)
             lasso_out_a = Lasso(alpha=best_alpha_a, max_iter=self.config.max_iter, tol=self.config.tol)
-            lasso_out_a.fit(X_out_tr, y_out_tr)
+            lasso_outer_a_convergence = fit_and_capture_convergence(lasso_out_a, X_out_tr, y_out_tr)
             non_zero_a = np.where(np.abs(lasso_out_a.coef_) > 1e-9)[0]
             out_sel_names_a = [out_tr_res.feature_names[i] for i in non_zero_a]
 
@@ -976,7 +1123,15 @@ class P4BRunner:
                     "fold_estimator_fits": None,
                     "fold_preprocessor_fits": self.config.inner_splits + 1,
                 },
-                "convergence_status": "CONVERGED",
+                "convergence_status": (
+                    "CONVERGENCE_WARNING"
+                    if lasso_outer_a_convergence["convergence_warning_count"]
+                    or any(item["convergence_warning_count"] for item in alpha_fit_convergence[best_idx_a])
+                    else "CONVERGED"
+                ),
+                "convergence_warning_count": lasso_outer_a_convergence["convergence_warning_count"]
+                + sum(item["convergence_warning_count"] for item in alpha_fit_convergence[best_idx_a]),
+                "outer_refit_n_iter": lasso_outer_a_convergence["n_iter"],
             })
             for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va_a):
                 oof_records.append({
@@ -992,7 +1147,7 @@ class P4BRunner:
             self._check_deadline()
             self.accounting.record_estimator_fit(1)
             lasso_out_b = Lasso(alpha=best_alpha_b, max_iter=self.config.max_iter, tol=self.config.tol)
-            lasso_out_b.fit(X_out_tr, y_out_tr)
+            lasso_outer_b_convergence = fit_and_capture_convergence(lasso_out_b, X_out_tr, y_out_tr)
             yhat_va_b = lasso_out_b.predict(X_out_va)
             rmse_va_b = math.sqrt(float(np.mean((y_out_va - yhat_va_b) ** 2)))
             r2_va_b = float(1.0 - np.sum((y_out_va - yhat_va_b) ** 2) / ss_tot) if ss_tot > 0 else float("nan")
@@ -1017,7 +1172,15 @@ class P4BRunner:
                     "fold_estimator_fits": None,
                     "fold_preprocessor_fits": self.config.inner_splits + 1,
                 },
-                "convergence_status": "CONVERGED",
+                "convergence_status": (
+                    "CONVERGENCE_WARNING"
+                    if lasso_outer_b_convergence["convergence_warning_count"]
+                    or any(item["convergence_warning_count"] for item in alpha_fit_convergence[best_idx_b])
+                    else "CONVERGED"
+                ),
+                "convergence_warning_count": lasso_outer_b_convergence["convergence_warning_count"]
+                + sum(item["convergence_warning_count"] for item in alpha_fit_convergence[best_idx_b]),
+                "outer_refit_n_iter": lasso_outer_b_convergence["n_iter"],
             })
             for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va_b):
                 oof_records.append({
@@ -1034,13 +1197,14 @@ class P4BRunner:
             self._check_deadline()
             en_track_a_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.en_grid))}
             en_track_b_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.en_grid))}
+            en_fit_convergence: Dict[int, List[Dict[str, Any]]] = {i: [] for i in range(len(self.en_grid))}
 
             for part in inner_partitions:
                 for alpha, l1_ratio, idx in self.en_grid:
                     self._check_deadline()
                     self.accounting.record_estimator_fit(1)
                     en = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=self.config.max_iter, tol=self.config.tol)
-                    en.fit(part["X_tr"], part["y_tr"])
+                    en_fit_convergence[idx].append(fit_and_capture_convergence(en, part["X_tr"], part["y_tr"]))
 
                     yhat_b = en.predict(part["X_va"])
                     rmse_b = math.sqrt(float(np.mean((part["y_va"] - yhat_b) ** 2)))
@@ -1071,7 +1235,7 @@ class P4BRunner:
             self._check_deadline()
             self.accounting.record_estimator_fit(1)
             en_out_a = ElasticNet(alpha=best_alpha_a, l1_ratio=best_l1_a, max_iter=self.config.max_iter, tol=self.config.tol)
-            en_out_a.fit(X_out_tr, y_out_tr)
+            en_outer_a_convergence = fit_and_capture_convergence(en_out_a, X_out_tr, y_out_tr)
             non_zero_a = np.where(np.abs(en_out_a.coef_) > 1e-9)[0]
             out_sel_names_a = [out_tr_res.feature_names[i] for i in non_zero_a]
 
@@ -1107,7 +1271,15 @@ class P4BRunner:
                     "fold_estimator_fits": None,
                     "fold_preprocessor_fits": self.config.inner_splits + 1,
                 },
-                "convergence_status": "CONVERGED",
+                "convergence_status": (
+                    "CONVERGENCE_WARNING"
+                    if en_outer_a_convergence["convergence_warning_count"]
+                    or any(item["convergence_warning_count"] for item in en_fit_convergence[best_idx_a])
+                    else "CONVERGED"
+                ),
+                "convergence_warning_count": en_outer_a_convergence["convergence_warning_count"]
+                + sum(item["convergence_warning_count"] for item in en_fit_convergence[best_idx_a]),
+                "outer_refit_n_iter": en_outer_a_convergence["n_iter"],
             })
             for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va_a):
                 oof_records.append({
@@ -1123,7 +1295,7 @@ class P4BRunner:
             self._check_deadline()
             self.accounting.record_estimator_fit(1)
             en_out_b = ElasticNet(alpha=best_alpha_b, l1_ratio=best_l1_b, max_iter=self.config.max_iter, tol=self.config.tol)
-            en_out_b.fit(X_out_tr, y_out_tr)
+            en_outer_b_convergence = fit_and_capture_convergence(en_out_b, X_out_tr, y_out_tr)
             yhat_va_b = en_out_b.predict(X_out_va)
             rmse_va_b = math.sqrt(float(np.mean((y_out_va - yhat_va_b) ** 2)))
             r2_va_b = float(1.0 - np.sum((y_out_va - yhat_va_b) ** 2) / ss_tot) if ss_tot > 0 else float("nan")
@@ -1148,7 +1320,15 @@ class P4BRunner:
                     "fold_estimator_fits": None,
                     "fold_preprocessor_fits": self.config.inner_splits + 1,
                 },
-                "convergence_status": "CONVERGED",
+                "convergence_status": (
+                    "CONVERGENCE_WARNING"
+                    if en_outer_b_convergence["convergence_warning_count"]
+                    or any(item["convergence_warning_count"] for item in en_fit_convergence[best_idx_b])
+                    else "CONVERGED"
+                ),
+                "convergence_warning_count": en_outer_b_convergence["convergence_warning_count"]
+                + sum(item["convergence_warning_count"] for item in en_fit_convergence[best_idx_b]),
+                "outer_refit_n_iter": en_outer_b_convergence["n_iter"],
             })
             for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va_b):
                 oof_records.append({
@@ -1166,6 +1346,33 @@ class P4BRunner:
             "oof_records": oof_records,
         }
 
+    def run_nested_cv_from_training_csv(
+        self,
+        train_csv: Path,
+        output_dir: Optional[Path] = None,
+        run_id: Optional[str] = None,
+        resume_checkpoint_dir: Optional[Path] = None,
+    ) -> Dict[str, Any]:
+        """Load only the frozen development membership from the labeled training CSV, then run."""
+        path = Path(train_csv)
+        if path.name.lower() != "train.csv":
+            raise ValueError("Production runner accepts only the authorized labeled train.csv source.")
+        rows, provenance = load_development_rows(
+            path, val_fraction=0.2, random_state=42, expected_total=1460, validate_id_uniqueness=True
+        )
+        provenance["source_basename"] = path.name
+        provenance["dataset_fingerprint"] = compute_canonical_fingerprint(rows)
+        provenance["row_id_membership_digest"] = hashlib.sha256(
+            json.dumps([row[ID_COLUMN] for row in rows], ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        return self._run_nested_cv_with_provenance(
+            rows,
+            output_dir=output_dir,
+            run_id=run_id,
+            resume_checkpoint_dir=resume_checkpoint_dir,
+            data_provenance=provenance,
+        )
+
     def run_nested_cv(
         self,
         dev_rows: Sequence[Mapping[str, str]],
@@ -1173,17 +1380,81 @@ class P4BRunner:
         run_id: Optional[str] = None,
         resume_checkpoint_dir: Optional[Path] = None,
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
+        data_provenance: Optional[Mapping[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        # Caller supplied mappings are assertions, not evidence of loader origin.
+        # Only the CSV entrypoint may forward provenance to the internal runner.
+        return self._run_nested_cv_with_provenance(
+            dev_rows, output_dir, run_id, resume_checkpoint_dir, pipeline_factory, None
+        )
+
+    def _run_nested_cv_with_provenance(
+        self,
+        dev_rows: Sequence[Mapping[str, str]],
+        output_dir: Optional[Path] = None,
+        run_id: Optional[str] = None,
+        resume_checkpoint_dir: Optional[Path] = None,
+        pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
+        data_provenance: Optional[Mapping[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        try:
+            return self._run_nested_cv(
+                dev_rows, output_dir, run_id, resume_checkpoint_dir, pipeline_factory, data_provenance
+            )
+        except Exception as exc:
+            from housing_regression.modeling.p4b_artifacts import (
+                assert_safe_private_containment,
+                classify_error_category,
+                write_durable_failure_json,
+            )
+            category = classify_error_category(exc, getattr(self, "_failure_stage", "STARTUP"))
+            safe_target = None
+            if output_dir is not None and run_id:
+                try:
+                    safe_target = assert_safe_private_containment(Path(output_dir), self.config.repo_root, run_id)
+                    safe_target.mkdir(parents=True, exist_ok=True)
+                    if not (safe_target / "p4b_failure.json").exists():
+                        write_durable_failure_json(
+                        safe_target, run_id, getattr(self, "_failure_stage", "STARTUP"), self.config.code_head_commit, exc,
+                        {"estimator_fits": self.accounting.estimator_fits, "preprocessor_fits": self.accounting.preprocessor_fits},
+                        {"protocol_version": self.config.protocol_version, "d_ceiling": self.config.d_ceiling,
+                         "outer_splits": self.config.outer_splits, "inner_splits": self.config.inner_splits},
+                        )
+                except Exception:
+                    safe_target = None
+                    category = "SAFE_FAILURE_RECORD_UNAVAILABLE"
+            message = f"P4B_RUN_FAILED:{category}"
+            try:
+                safe_exc = type(exc)(message)
+            except Exception:
+                safe_exc = RuntimeError(message)
+            pending_safe_exc = safe_exc
+        raise pending_safe_exc
+
+    def _run_nested_cv(
+        self,
+        dev_rows: Sequence[Mapping[str, str]],
+        output_dir: Optional[Path] = None,
+        run_id: Optional[str] = None,
+        resume_checkpoint_dir: Optional[Path] = None,
+        pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
+        data_provenance: Optional[Mapping[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Execute full nested cross-validation across all outer folds with preflight checks and outputs."""
+        self._failure_stage = "PREFLIGHT"
         # 0. Enforce B03 Fail-Closed: timeout must be positive, single_thread=True, and isolated worker enabled
+        if os.name != "nt":
+            raise RuntimeError("FAIL_CLOSED: Win32 Job Object process isolation is required.")
         if self.config.timeout_seconds is None:
             raise ValueError("FAIL_CLOSED: timeout_seconds must be explicitly provided (cannot be None).")
-        if not math.isfinite(self.config.timeout_seconds) or self.config.timeout_seconds <= 0:
+        if isinstance(self.config.timeout_seconds, bool) or not math.isfinite(self.config.timeout_seconds) or self.config.timeout_seconds <= 0:
             raise ValueError(f"FAIL_CLOSED: timeout_seconds must be a positive finite float, got {self.config.timeout_seconds}.")
-        if not self.config.use_isolated_worker_process:
+        if self.config.use_isolated_worker_process is not True:
             raise RuntimeError("FAIL_CLOSED: Timed execution requires use_isolated_worker_process=True.")
-        if not self.config.single_thread:
+        if self.config.single_thread is not True:
             raise RuntimeError("FAIL_CLOSED: single_thread must be True.")
+
+        input_provenance = verify_development_provenance(dev_rows, data_provenance, self.config)
 
         # 1. Conservative Preflight Budget Check
         est_req, prep_req = estimate_preflight_budget(self.config)
@@ -1197,12 +1468,14 @@ class P4BRunner:
             )
 
         # 2. Setup threadpool limits if configured
-        thread_limit = 1 if self.config.single_thread else None
+        thread_limit = 1
 
         # 3. Setup timeout deadline
         start_time = time.perf_counter()
         if self.config.timeout_seconds is not None:
-            self.deadline = start_time + self.config.timeout_seconds
+            # Reserve a separate finite allowance for Windows process bootstrap;
+            # each ready worker still gets only timeout_seconds for execution.
+            self.deadline = start_time + WORKER_STARTUP_TIMEOUT_SECONDS + self.config.timeout_seconds
         else:
             self.deadline = None
 
@@ -1216,13 +1489,27 @@ class P4BRunner:
             create_public_summary,
             verify_checkpoint_for_resume,
             write_durable_failure_json,
+            checkpoint_run_config,
         )
 
         canonical_fp = compute_canonical_fingerprint(dev_rows)
 
         if output_dir is not None:
+            self._failure_stage = "PATH_VALIDATION"
             output_dir = assert_safe_private_containment(Path(output_dir), repo_root=self.config.repo_root, run_id=run_id)
+
+        if resume_checkpoint_dir is not None and not run_id:
+            raise CheckpointVerificationError("Resume requires a nonempty expected run_id.")
+        if resume_checkpoint_dir is not None:
+            self._failure_stage = "PATH_VALIDATION"
+            resume_checkpoint_dir = assert_safe_private_containment(
+                Path(resume_checkpoint_dir), repo_root=self.config.repo_root, run_id=run_id,
+            )
+        if output_dir is not None:
             output_dir.mkdir(parents=True, exist_ok=True)
+
+        outer_folds_for_identity = kfold_assignments(len(dev_rows), self.config.outer_splits, self.config.outer_seed)
+        fold_plan_identity = compute_fold_plan_digest(len(dev_rows), self.config)
 
         # 5. Handle resume checkpoint reading if requested
         completed_folds: Dict[int, Dict[str, Any]] = {}
@@ -1232,7 +1519,7 @@ class P4BRunner:
             import pandas as pd
             import scipy
             env_vers = {
-                "python": "3.12",
+                "python": platform.python_version(),
                 "sklearn": sklearn.__version__,
                 "numpy": np.__version__,
                 "pandas": pd.__version__,
@@ -1254,6 +1541,9 @@ class P4BRunner:
                     env_versions=env_vers,
                     expected_run_id=run_id,
                     expected_fold_idx=expected_fold_idx,
+                    expected_fold_plan_digest=fold_plan_identity,
+                    expected_oof_ids=[str(dev_rows[i][ID_COLUMN]) for i, assigned in enumerate(outer_folds_for_identity) if assigned == expected_fold_idx],
+                    expected_data_provenance=input_provenance,
                 )
                 k = chk_data["completed_outer_fold"]
                 completed_folds[k] = chk_data
@@ -1271,6 +1561,7 @@ class P4BRunner:
             try:
                 for k in range(self.config.outer_splits):
                     current_stage = f"OUTER_FOLD_{k}"
+                    self._failure_stage = current_stage
                     self._check_deadline()
 
                     # Check if already completed from resume checkpoint
@@ -1286,6 +1577,16 @@ class P4BRunner:
                     if self.config.use_isolated_worker_process and self.config.timeout_seconds is not None:
                         ctx = mp.get_context("spawn")
                         queue = ctx.Queue()
+                        worker_ready_queue = self.ready_queue if self.ready_queue is not None else ctx.Queue()
+                        start_event = ctx.Event()
+                        worker_timing_ns = ctx.Array("q", 5)
+                        self.last_worker_timing = {
+                            "fold": k,
+                            "configured_timeout_seconds": self.config.timeout_seconds,
+                            "startup_allowance_seconds": WORKER_STARTUP_TIMEOUT_SECONDS,
+                            "overall_deadline_ns": int(self.deadline * 1_000_000_000),
+                            "parent_launch_ns": time.perf_counter_ns(),
+                        }
                         proc = ctx.Process(
                             target=_mp_worker_target,
                             args=(
@@ -1295,74 +1596,166 @@ class P4BRunner:
                                 tr_rows,
                                 va_rows,
                                 self.stall_mock_worker,
-                                self.ready_queue,
+                                worker_ready_queue,
                                 self.spawn_descendant,
                                 pipeline_factory if pipeline_factory is not AmesDataPreparationPipeline else None,
+                                start_event,
+                                worker_timing_ns,
                             ),
                         )
                         proc.start()
+                        self.last_worker_timing["parent_start_return_ns"] = time.perf_counter_ns()
+                        self.last_worker_timing["worker_pid"] = proc.pid
 
-                        # Windows: Enclose worker process in kill-on-close Job Object
+                        # Windows: Enclose worker process in kill-on-close Job Object before releasing start_event
                         worker_job = None
                         if os.name == "nt":
                             try:
-                                from tests.modeling.test_harness import (
-                                    assign_process_to_job,
-                                    close_job_object,
-                                    create_kill_on_close_job_object,
-                                )
-                                worker_job = create_kill_on_close_job_object()
+                                worker_job = create_kill_on_close_job_object(self.config.max_worker_memory_bytes)
                                 import ctypes
-                                h_proc = ctypes.windll.kernel32.OpenProcess(0x1F0FFF, False, proc.pid)
-                                if h_proc:
-                                    try:
-                                        assign_process_to_job(worker_job, h_proc)
-                                    finally:
-                                        ctypes.windll.kernel32.CloseHandle(h_proc)
-                            except Exception:
-                                pass
-
-                        try:
-                            # If ready_queue is set, wait for worker readiness signal before counting down timeout
-                            if self.ready_queue is not None:
+                                from housing_regression.modeling.p4b_job import _get_kernel32
+                                kernel32 = _get_kernel32()
+                                h_proc = kernel32.OpenProcess(0x1F0FFF, False, proc.pid)
+                                if not h_proc:
+                                    raise RuntimeError(f"OpenProcess failed for PID {proc.pid}: error {ctypes.get_last_error()}")
                                 try:
-                                    # Wait up to 5s for worker to start, cap threads, and signal readiness
-                                    ready_msg = self.ready_queue.get(timeout=5.0)
-                                    # Forward or re-put back to ready_queue for caller assertion
-                                    self.last_ready_msg = ready_msg
-                                except Exception:
-                                    pass
-
-                            remaining_timeout = max(0.01, self.deadline - time.perf_counter()) if self.deadline else None
-                            proc.join(timeout=remaining_timeout)
-
-                            if proc.is_alive():
-                                child_pid = proc.pid
-                                if worker_job:
-                                    close_job_object(worker_job)
-                                    worker_job = None
+                                    assign_process_to_job(worker_job, h_proc)
+                                finally:
+                                    kernel32.CloseHandle(h_proc)
+                            except Exception:
+                                # Fail closed: kill worker immediately and raise before any fitting occurs
                                 proc.terminate()
                                 proc.join(timeout=1.0)
                                 if proc.is_alive():
                                     proc.kill()
-                                    proc.join()
-                                assert not proc.is_alive(), f"Orphan process detected! PID {child_pid}"
-                                raise TimeoutExceededError(
-                                    f"Worker process for outer fold {k} (PID {child_pid}) exceeded timeout and was terminated."
+                                    proc.join(timeout=1.0)
+                                if proc.is_alive():
+                                    raise RuntimeError("FAIL_CLOSED: worker termination could not be verified.") from None
+                                if worker_job:
+                                    close_job_object(worker_job)
+                                raise RuntimeError("FAIL_CLOSED: Job Object installation failed.") from None
+
+                        # Release start_event so worker can now proceed knowing it's protected by Job Object
+                        start_event.set()
+                        self.last_worker_timing["parent_gate_release_ns"] = time.perf_counter_ns()
+
+                        try:
+                            worker_deadline = min(
+                                self.deadline,
+                                time.perf_counter() + self.config.timeout_seconds,
+                            )
+                            # Startup allowance is enforced separately on every worker path.
+                            readiness_deadline = min(
+                                self.deadline,
+                                time.perf_counter() + WORKER_STARTUP_TIMEOUT_SECONDS,
+                            )
+                            readiness_remaining = readiness_deadline - time.perf_counter()
+                            if readiness_remaining <= 0:
+                                self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
+                                raise TimeoutExceededError("Worker readiness exceeded the configured deadline.")
+                            try:
+                                ready_msg = worker_ready_queue.get(timeout=readiness_remaining)
+                                if not isinstance(ready_msg, Mapping) or ready_msg.get("status") != "READY":
+                                    raise RuntimeError("Worker failed the readiness contract.")
+                                self.last_ready_msg = ready_msg
+                                self.last_worker_timing["parent_ready_received_ns"] = time.perf_counter_ns()
+                                worker_deadline = min(
+                                    self.deadline,
+                                    time.perf_counter() + self.config.timeout_seconds,
                                 )
+                                self.last_worker_timing["worker_execution_deadline_ns"] = int(
+                                    worker_deadline * 1_000_000_000
+                                )
+                            except queue_module.Empty:
+                                self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
+                                raise TimeoutExceededError("Worker readiness exceeded the configured deadline.") from None
 
-                            if queue.empty():
-                                raise RuntimeError(f"Worker process for outer fold {k} died without returning output.")
+                            remaining_timeout = worker_deadline - time.perf_counter()
+                            if remaining_timeout <= 0:
+                                self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
+                                raise TimeoutExceededError("Worker startup exceeded the configured deadline.")
+                            proc.join(timeout=remaining_timeout)
 
-                            msg = queue.get()
-                            if msg[0] == "EXCEPTION":
+                            if proc.is_alive():
+                                self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
+                                raise TimeoutExceededError("Worker exceeded the configured deadline.")
+
+                            result_remaining = worker_deadline - time.perf_counter()
+                            if result_remaining <= 0:
+                                self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
+                                raise TimeoutExceededError("Worker result exceeded the configured deadline.")
+                            try:
+                                msg = queue.get(timeout=result_remaining)
+                            except queue_module.Empty:
+                                raise RuntimeError("Worker exited without returning output.") from None
+                            if not isinstance(msg, tuple) or not msg:
+                                raise RuntimeError("Worker returned an invalid result envelope.")
+                            if msg[0] == "EXCEPTION" and len(msg) == 3:
                                 raise RuntimeError(f"Worker process error ({msg[1]}): {msg[2]}")
+                            if not isinstance(msg, tuple) or len(msg) != 4 or msg[0] != "SUCCESS":
+                                raise RuntimeError("Worker returned an invalid result envelope.")
                             fold_output = msg[1]
                             self.accounting.record_estimator_fit(msg[2])
                             self.accounting.record_preprocessor_fit(msg[3])
                         finally:
+                            cleanup_verified = True
                             if worker_job:
-                                close_job_object(worker_job)
+                                self.last_worker_timing["job_close_start_ns"] = time.perf_counter_ns()
+                                try:
+                                    close_job_object(worker_job)
+                                except Exception:
+                                    try:
+                                        terminate_job_object(worker_job)
+                                    except Exception:
+                                        cleanup_verified = False
+                                    else:
+                                        try:
+                                            close_job_object(worker_job)
+                                        except Exception:
+                                            cleanup_verified = False
+                                worker_job = None
+                                self.last_worker_timing["job_close_end_ns"] = time.perf_counter_ns()
+                            try:
+                                proc.join(timeout=1.0)
+                            except Exception:
+                                cleanup_verified = False
+                            try:
+                                worker_alive = proc.is_alive()
+                            except Exception:
+                                cleanup_verified = False
+                                worker_alive = True
+                            if worker_alive:
+                                try:
+                                    self.last_worker_timing["terminate_requested_ns"] = time.perf_counter_ns()
+                                    proc.terminate()
+                                    proc.join(timeout=1.0)
+                                except Exception:
+                                    cleanup_verified = False
+                                try:
+                                    worker_alive = proc.is_alive()
+                                except Exception:
+                                    cleanup_verified = False
+                                    worker_alive = True
+                            if worker_alive:
+                                try:
+                                    self.last_worker_timing["kill_requested_ns"] = time.perf_counter_ns()
+                                    proc.kill()
+                                    proc.join(timeout=1.0)
+                                except Exception:
+                                    cleanup_verified = False
+                                try:
+                                    worker_alive = proc.is_alive()
+                                except Exception:
+                                    cleanup_verified = False
+                                    worker_alive = True
+                            if worker_alive or not cleanup_verified:
+                                raise RuntimeError("FAIL_CLOSED: worker process-tree termination could not be verified.") from None
+                            self.last_worker_timing["parent_worker_exit_verified_ns"] = time.perf_counter_ns()
+                            self.last_worker_timing["worker_target_entry_ns"] = worker_timing_ns[0] or None
+                            self.last_worker_timing["worker_gate_release_ns"] = worker_timing_ns[1] or None
+                            self.last_worker_timing["worker_stall_entered_ns"] = worker_timing_ns[2] or None
+                            self.last_worker_timing["worker_ready_sent_ns"] = worker_timing_ns[3] or None
+                            self.last_worker_timing["descendant_pid"] = worker_timing_ns[4] or None
                     else:
                         fold_output = self.execute_outer_fold(
                             outer_fold_idx=k,
@@ -1386,23 +1779,14 @@ class P4BRunner:
                             "code_head_commit": self.config.code_head_commit,
                             "dataset_fingerprint": canonical_fp,
                             "payload_digest": payload_digest,
+                            "fold_plan_digest": fold_plan_identity,
                             "results": fold_output["results"],
                             "oof_records": fold_output["oof_records"],
-                            "run_config": {
-                                "d_ceiling": self.config.d_ceiling,
-                                "k_candidates": list(self.config.k_candidates),
-                                "active_methods": self.config.active_methods or [
-                                    "filter_pearson",
-                                    "forward_sfs",
-                                    "rfe_ridge",
-                                    "lasso_cv",
-                                    "elastic_net_cv",
-                                ],
-                            },
+                            "run_config": checkpoint_run_config(self.config),
                             "metadata": {
                                 "protocol_version": self.config.protocol_version,
                                 "environment": {
-                                    "python_version": "3.12",
+                        "python_version": platform.python_version(),
                                     "sklearn_version": sklearn.__version__,
                                     "numpy_version": np.__version__,
                                     "pandas_version": pd.__version__,
@@ -1411,6 +1795,7 @@ class P4BRunner:
                                 "data_boundary": {
                                     "outer_kfold": {"n_splits": self.config.outer_splits, "random_state": self.config.outer_seed},
                                     "inner_kfold": {"n_splits": self.config.inner_splits, "random_state": self.config.inner_seed},
+                                    **input_provenance,
                                 },
                             },
                         }
@@ -1420,26 +1805,7 @@ class P4BRunner:
             except Exception as exc:
                 run_status = "FAILED"
                 exception_info = f"{type(exc).__name__}: {str(exc)}"
-                if output_dir is not None:
-                    write_durable_failure_json(
-                        target_dir=output_dir,
-                        run_id=run_id or "p4b_run",
-                        stage=current_stage,
-                        code_head_commit=self.config.code_head_commit,
-                        exception=exc,
-                        accounting_summary={
-                            "estimator_fits": self.accounting.estimator_fits,
-                            "preprocessor_fits": self.accounting.preprocessor_fits,
-                            "elapsed_seconds": time.perf_counter() - start_time,
-                        },
-                        config_summary={
-                            "protocol_version": self.config.protocol_version,
-                            "d_ceiling": self.config.d_ceiling,
-                            "outer_splits": self.config.outer_splits,
-                            "inner_splits": self.config.inner_splits,
-                        },
-                    )
-                raise exc
+                raise
 
             finally:
                 elapsed_total = time.perf_counter() - start_time
@@ -1472,6 +1838,7 @@ class P4BRunner:
             summary = {
                 "run_id": run_id,
                 "status": run_status,
+                "input_provenance": input_provenance,
                 "exception": exception_info,
                 "config": {
                     "protocol_version": self.config.protocol_version,
@@ -1479,6 +1846,7 @@ class P4BRunner:
                     "outer_splits": self.config.outer_splits,
                     "inner_splits": self.config.inner_splits,
                     "d_ceiling": self.config.d_ceiling,
+                    "max_worker_memory_bytes": self.config.max_worker_memory_bytes,
                 },
                 "fit_accounting": {
                     "total_estimator_fits": self.accounting.estimator_fits,
@@ -1506,6 +1874,10 @@ class P4BRunner:
                     run_id=run_id or "p4b_run",
                     per_outer_fold_results=all_fold_results,
                     aggregate_results=aggregate_results,
+                    dataset_fingerprint_verified=input_provenance["verified"],
+                    development_rows=input_provenance["development_rows"],
+                    outer_fold_digest=input_provenance["outer_fold_digest"],
+                    digest_provenance=input_provenance["verification_status"],
                 )
                 pub_path = out_path / "p4b_public_summary.json"
                 pub_sha, pub_size = atomic_write_json(pub_summary_data, pub_path)
@@ -1526,6 +1898,8 @@ class P4BRunner:
                     canonical_dataset_sha256=canonical_fp,
                     file_inventory=file_inv,
                     development_rows=len(dev_rows),
+                    outer_fold_digest_expected=input_provenance["outer_fold_digest"],
+                    verification_status=input_provenance["verification_status"],
                 )
                 atomic_write_json(manifest_data, out_path / "p4b_manifest.json")
 
@@ -1534,8 +1908,5 @@ class P4BRunner:
                 "oof_records": all_oof_records,
             }
 
-        if thread_limit is not None:
-            with threadpoolctl.threadpool_limits(limits=thread_limit):
-                return _execute_loop()
-        else:
+        with threadpoolctl.threadpool_limits(limits=thread_limit):
             return _execute_loop()
