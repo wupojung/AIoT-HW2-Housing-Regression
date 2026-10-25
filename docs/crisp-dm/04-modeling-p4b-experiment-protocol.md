@@ -4,8 +4,8 @@
 - **所屬任務**：Phase 4-B-A 特徵選擇與正則化比較實驗
 - **關聯 Issue**：Issue #21（P4-B 特徵選擇規劃）、Issue #22（P4-B-A 協定凍結）
 - **基準版本 (BASE SHA)**：`ee03a51978a0f615f39b656bee318946dcddd890`（已整併 P4-A 基準模型）
-- **前次審查修訂點 (Amendment BASE)**：`7c7ad9efbc0a95f8a4c3cfba2bd7d3b78586e7d9`
-- **協定狀態**：Draft Candidate（A1 階段協定凍結審查草案；本協定目前處於審查修改階段，待通過 A1 Review Gate 審定前不代表正式批准；本階段僅制定規範與設計合約，嚴格禁止執行真實資料實驗、模型擬合、單元測試、基準測試、CI 觸發或 A2+ 實作）
+- **前次審查修訂點 (Amendment BASE)**：`385f393b7f1a845abe0a5cc6babe3e3301b1ec24`
+- **協定狀態**：Draft Candidate（A1 階段協定凍結審查草案；本協定目前處於 PR #24 PM 審查修改階段，待通過 Review Gate 正式審定前不代表正式批准；本階段僅制定規範與設計合約，嚴格禁止執行真實資料實驗、模型擬合、單元測試、基準測試、CI 觸發或 A2+ 實作）
 
 ---
 
@@ -24,9 +24,8 @@
    - 採用標準 `sklearn.model_selection.KFold(n_splits=5, shuffle=True, random_state=42)`。
    - 折大小嚴格為 234 / 234 / 234 / 233 / 233 筆。
    - **外層折分配摘要來源與驗證性**：
-     - 外層成員與折分配 SHA-256 摘要值為：`7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463`。
-     - **來源佐證（Provenance Verification）**：該摘要已在基準版本 `ee03a519` 之 P4-A 實作（`tests/modeling/test_p4a_ols_cv.py` 與 `docs/crisp-dm/04-modeling-p4a-ols-baseline.md`）中獲得獨立合成回歸測試與程式碼驗證，確認具備完整來源憑據（Verified Provenance）。
-     - 本階段僅引用該既定摘要進行外層成員檢驗，絕不重新計算、變更折分配或存取已封存之資料集。
+     - 外層成員與折分配預期 SHA-256 摘要值為：`7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463`。
+     - **來源佐證與驗證閘門（Provenance Citation & Runtime Verification Gate）**：該摘要源自基準版本 `ee03a519` 之 P4-A 實作（`tests/modeling/test_p4a_ols_cv.py` 與 `docs/crisp-dm/04-modeling-p4a-ols-baseline.md`）。本協定引用此摘要作為外層劃分之預期簽章，並將其列為未來 A2/A3 執行時之**執行期驗證閘門（Runtime Verification Gate）**——執行期必須由載入器核算一致後方得啟動，絕不在 A1 階段提前宣稱已被本階段獨立實測驗證，亦不重新計算或存取已封存資料。
 4. **授權開發資料集嚴格綱要映射與指紋序列化合約（Deterministic Source Schema & Fingerprint Specification）**：
    - 為在不洩漏或儲存逐列真實資料、私有識別碼的前提下徹底消除原始 CSV 解析與序列化歧義，規範在後續 A2 階段由核可之載入器依據**專案既有原始資料綱要**（`python/src/housing_regression/data_prep/constants.py`）執行完全互斥且窮盡（Mutually Exclusive & Exhaustive）的 80 欄欄位型別解析與無歧義二進位編碼：
      - **欄位全清冊與固定序列化順序（80 欄）**：
@@ -56,7 +55,7 @@
        - `0x02` = `INT`：`Length=8`, `Payload` 為 8 bytes Signed Big-Endian Integer (`>q`)。
        - `0x03` = `FLOAT`：`Length=8`, `Payload` 為 8 bytes IEEE-754 Double Big-Endian (`>d`)。
      - **雜湊演算法**：按授權 1,168 筆原始出現順序，對全體二進位串流累計計算 SHA-256。
-     - **儲存邊界**：該指紋僅記錄於受 Git 忽略之私有中繼資料（`p4b_manifest.json`），公開輸出僅標註校驗狀態（如 `dataset_fingerprint_verified: true`）。A1 階段嚴禁計算或存取真實指紋。
+     - **儲存邊界**：該指紋僅記錄於受 Git 忽略之私有中繼資料（`p4b_manifest.json`），公開輸出僅標註校驗狀態（如 `dataset_fingerprint_verified: "PENDING_A2_VERIFICATION"`）。A1 階段嚴禁計算或存取真實指紋。
 
 ---
 
@@ -73,20 +72,23 @@
 │   │   ├── 凍結內層切分: KFold(n_splits=3, shuffle=True, random_state=1042)
 │   │   │   (產生固定 3 組 Inner Train: ~623 rows / Inner Val: ~311 rows 分割清單)
 │   │   │
-│   │   ├── 每一折 (Inner Train, Inner Val)：
-│   │   │   ├── 從原始資料列在 Inner Train 獨立執行 fit AmesDataPreparationPipeline
-│   │   │   ├── transform Inner Train 與 Inner Val
-│   │   │   ├── 【重要防洩漏合約】特徵選擇程序（Filter, SFS, RFE, Lasso, ElasticNet）
-│   │   │   │   僅在 Inner Train 上依訓練集內部準則擬合並決定候選特徵路徑；
-│   │   │   │   Inner Val 保持未受接觸，僅用於單次預測評分；
-│   │   │   ├── 對各候選 K 或正則化超參數 alpha，以選定特徵在 Inner Train 擬合模型
-│   │   │   └── 對 Inner Val 評估單次預測 RMSE，計算跨 3 個 Inner Val 的平均驗證 RMSE
+│   │   ├── 各演算法／各評估軌道【完全獨立】執行其專屬的超參數搜尋：
+│   │   │   ├── 每一折 (Inner Train, Inner Val)：
+│   │   │   │   ├── 從原始資料列在 Inner Train 獨立執行 fit AmesDataPreparationPipeline
+│   │   │   │   ├── transform Inner Train 與 Inner Val
+│   │   │   │   ├── 【重要防洩漏合約】特徵選擇程序（Filter, SFS, RFE, Lasso, ElasticNet）
+│   │   │   │   │   僅在 Inner Train 上依訓練集內部準則擬合並決定候選特徵路徑；
+│   │   │   │   │   Inner Val 保持未受接觸，僅用於單次預測評分；
+│   │   │   │   ├── 對各候選 K 或正則化超參數 alpha，以選定特徵在 Inner Train 擬合模型
+│   │   │   │   └── 對 Inner Val 評估單次預測 RMSE，計算跨 3 個 Inner Val 的平均驗證 RMSE
+│   │   │   │
+│   │   │   └── 各方法於各軌道各自選出該方法在該折之最佳超參數（最佳 K* 或 alpha*）
 │   │   │
-│   │   └── 依內層平均驗證 RMSE 選出各軌道最佳超參數（最佳 K* 或正則化參數 alpha*）
+│   │   └── 【明確獨立性宣告】：各演算法與各軌道獨立報告其表現，絕不於內層跨演算法排名
 │   │
 │   └── [外層重新擬合與評估 Outer Refit & Evaluation]
 │       ├── 在 Outer Train 全體（~934 rows）重新從原始列 fit 一個全新的外層前處理器
-│       ├── 以決策之 K* 或 alpha*，在 Outer Train 上完全重新執行特徵選擇程序以取得特徵子集
+│       ├── 各方法以各自決策之 K* 或 alpha*，在 Outer Train 上完全重新執行特徵選擇程序以取得特徵子集
 │       ├── 重新在 Outer Train 擬合模型：
 │       │   ├── Track A 重新擬合 SVD OLS
 │       │   └── Track B 重新擬合原生正則化模型
@@ -104,7 +106,7 @@
    - **禁止合併內層特徵集合**：內層 3 折之特徵選擇僅用於評估與決策最佳**超參數**（最佳特徵數 $K^*$ 或最佳正則化強度 $\alpha^*$），3 個內層折各自選出的特徵子集可能不同，**絕不進行特徵名稱聯集（Union）或將內層子集作為最終特徵集**。
    - **外層重選流程**：
      - 在 Outer Train（~934 筆）全體從原始資料重新 `fit` 一個全新的外層前處理器。
-     - 以決策出的 $K^*$ 或 $\alpha^*$，在該 Outer Train 的特徵矩陣上**重新完整執行特徵選擇程序**。
+     - 各方法以決策出的 $K^*$ 或 $\alpha^*$，在該 Outer Train 的特徵矩陣上**重新完整執行特徵選擇程序**。
      - 取得該 Outer Fold 專屬的外層選定特徵名稱集合。
      - Track A 擬合 SVD OLS，Track B 擬合原生模型，分別對 Outer Val 進行一次性預測產出 Outer OOF。兩軌道彼此完全獨立。
 
@@ -219,8 +221,8 @@
 
 | 軌道 | 名稱 | 估計器與預測機制 | 評估目標與超參數選擇依據 |
 |---|---|---|---|
-| **Track A** | **Selected Features + OLS Refit** | 以選定之特徵子集（Filter/SFS/RFE 之 $K$，或 Lasso/ElasticNet 之非零特徵），**在訓練分區使用未懲罰 SVD OLS 重新擬合**。 | 評估特徵子集的**資訊代表性**與維度縮減效果。其超參數（$K^*$ 或 $\alpha^*_A$）**嚴格依據內層 SVD OLS Refit 驗證 RMSE 決定**。 |
-| **Track B** | **End-to-End Native Regularized Model** | 直接使用正則化演算法（Lasso / ElasticNet）原生權重進行預測。 | 評估正則化演算法本身在**方差收縮與多重共線性抑制**下的預測能力。其超參數 $\alpha^*_B$ **嚴格依據內層原生正則化預測驗證 RMSE 決定**。 |
+| **Track A** | **Selected Features + OLS Refit** | 以選定之特徵子集（Filter/SFS/RFE 之 $K$，或 Lasso/ElasticNet 之非零特徵），**在訓練分區使用未懲罰 SVD OLS 重新擬合**。 | 評估特徵子集的**資訊代表性**與維度縮減效果。其超參數（$K^*$ 或 $\alpha^*_A$）**嚴格依據該方法內層 SVD OLS Refit 驗證 RMSE 獨立決定**。 |
+| **Track B** | **End-to-End Native Regularized Model** | 直接使用正則化演算法（Lasso / ElasticNet）原生權重進行預測。 | 評估正則化演算法本身在**方差收縮與多重共線性抑制**下的預測能力。其超參數 $\alpha^*_B$ **嚴格依據該方法內層原生正則化預測驗證 RMSE 獨立決定**。 |
 
 ### 奇異值分解 OLS 數值規格（Deterministic SVD OLS Specification）
 - **與 P4-A 求解器之一致性決策（Solver Specification Note）**：
@@ -235,51 +237,45 @@
 
 ---
 
-## 7. 內層選取準則、確定性全序平手決策演算法（Selection Criteria & Deterministic Total-Order Tie-Breaking）
+## 7. 獨立超參數選擇準則與平手決策演算法（Independent Selection & Tie-Breaking）
 
-1. **內層目標函數**：
-   - 內層 3 折交叉驗證之平均驗證均方根誤差（Mean Validation RMSE）：
+1. **各方法獨立調校與獨立報告原則（Independent Evaluation, No Grand Winner Selection）**：
+   - 巢狀交叉驗證的核心目標是**如實估計各特徵選擇／正則化方法及其分析軌道的泛化性能**。
+   - **嚴格禁止跨演算法評選單一「大贏家（Grand Winner）」**：每一種方法（Filter, SFS, RFE, LassoCV, ElasticNetCV）在每一個分析軌道（Track A, Track B）均各自獨立藉由內層 3 折 CV 決定其專屬超參數，並在外層 5 折 CV 產生其獨立的泛化指標與 OOF 預測。
+   - 平手決策僅用於**單一方法在其自身候選超參數集合內部**發生平手時進行確定性仲裁，絕不跨演算法比較或強行排序不同演算法。跨演算法的綜合優劣比較屬於後續綜合研究報告之範疇，外層評估指標不直接自動產生具備無偏保證的最佳方法。若未來需要選定單一落地模型，必須經由專屬的後續決策機制進行，絕不在此處預設演算法階層。
+2. **內層目標函數**：
+   - 單一方法於內層 3 折交叉驗證之平均驗證均方根誤差（Mean Validation RMSE）：
      $$\text{Score} = \frac{1}{3} \sum_{m=1}^3 \text{RMSE}_m$$
-2. **確定性平手集合形成演算法（Deterministic Epsilon Tie-Set Formation Algorithm）**：
+3. **單一方法內部確定性平手集合形成演算法（Within-Method Tie-Set Formation Algorithm）**：
    - 浮點數容差嚴格固定為 $\epsilon = 10^{-9}$。
-   - 為徹底解決「成對 $\epsilon$ 比較非遞移性（Non-transitivity）」導致的順序相依問題，本協定嚴格採用**全域最小值集合形成法（Global Minimum Tie-Set Formation）**：
-     1. **異常排除**：非有限值（NaN 或 Inf）之候選設定直接剔除，不進入評選。
-     2. **全域最優錨點確定**：在所有合法候選中，找出數值嚴格最小之內層平均 RMSE：
-        $$\text{Score}_{\min} = \min_{c \in \mathcal{C}} \text{Score}(c)$$
-     3. **平手集合判定（Tie-Set Formation）**：所有滿足以下條件之候選組成平手候選集合 $\mathcal{T}$：
-        $$\mathcal{T} = \{ c \in \mathcal{C} \mid \text{Score}(c) - \text{Score}_{\min} \le \epsilon \}$$
-        （邊界嚴格包含 $\le \epsilon$；此集合之形成完全獨立於候選者的尋訪或迭代順序）。
-     4. **集合內全序決策（Total Order within Tie-Set）**：僅在集合 $\mathcal{T}$ 內部依以下規則選出唯一勝出者：
-3. **各軌道平手集合內全序階層（Total-Order Hierarchy Applied Within Tie-Set）**：
-   - **Track A 內部全序階層**：
-     1. **稀疏性優先（Sparsity Priority）**：特徵數較少者優先（$K$ 較小者優先）。
-     2. **固定演算法優先序**：若特徵數相同，依演算法固定順序：Filter $\to$ Forward SFS $\to$ RFE $\to$ Lasso $\to$ ElasticNet。
-     3. **內部超參數順序**：若同一演算法內特徵數相同，取正則化強度較大者（較大之 $\alpha$；若 ElasticNet 則次選 `l1_ratio` 較大者）。
-     4. **原初網格序**：若仍平手，取定義網格中索引較小者。
-   - **Track B 內部全序階層**：
-     1. **固定方法優先序**：**LassoCV 優先於 ElasticNetCV**。
-     2. **正則化強度優先**：同一方法內部，優先選取較大之 $\alpha$。
-     3. **$L_1$ 懲罰偏好**：若 ElasticNetCV 且 $\alpha$ 相同，優先選取較大之 `l1_ratio`。
-     4. **原初網格序**：若仍平手，依定義網格產生之原初順序取最前者。
+   - 為解決成對比較的非遞移性，各方法在評估其專屬候選超參數集合 $\mathcal{C}_{\text{method}}$ 時，採用**全域最小值集合法**：
+     1. **異常排除**：非有限值（NaN/Inf）直接剔除。
+     2. **最優錨點確定**：$\text{Score}_{\min} = \min_{c \in \mathcal{C}_{\text{method}}} \text{Score}(c)$。
+     3. **平手集合判定**：$\mathcal{T}_{\text{method}} = \{ c \in \mathcal{C}_{\text{method}} \mid \text{Score}(c) - \text{Score}_{\min} \le \epsilon \}$。
+     4. **集合內仲裁（Tie-Break within Method）**：
+        - **Filter / SFS / RFE（調校 $K \in \{2, 3, 5, 10, 20\}$）**：優先選取 $K$ 較小者（Sparsity Priority）。若 $K$ 相同（僅可能發生於完全相同設定），取候選清單中最前者。
+        - **LassoCV（調校 $\alpha$）**：優先選取較大之 $\alpha$（強正則化優先）；若仍平手，取定義網格中索引較小者。
+        - **ElasticNetCV（調校 $(\alpha, \text{l1\_ratio})$）**：優先選取較大之 $\alpha$；若 $\alpha$ 相同，優先選取較大之 `l1_ratio`（稀疏度優先）；若仍平手，取定義網格中索引較小者。
 4. **無 1-SE 法則（No 1SE Rule）**：
-   - 嚴格以上述平手集合演算法決策，不採用主觀的 1 個標準誤差準則（1SE Rule）。
-5. **外層排行榜選擇樂觀偏差警告（Outer Selection Optimism Warning）**：
-   - 5 折外層 CV 排行榜之最優分數仍存在選擇樂觀偏差。Phase 5 封存保留集（292 筆 Holdout）必須持續維持密封狀態，作為獨立驗證屏障。
+   - 嚴格以內層平均驗證 RMSE 最小者勝出，不採用啟發式的 1 個標準誤差準則。
+5. **外層評估排行榜之樂觀偏差宣告（Outer Evaluation Optimism Caution）**：
+   - 在 5 折外層 CV 評估產出各方法的平均 RMSE 後，若依外層數值排列排行榜，其數值最優者仍帶有些微的選擇樂觀偏差（Leaderboard Selection Optimism）。
+   - Phase 5 封存保留集（292 筆 Holdout）維持絕對密封狀態，作為最後評估最終模型泛化表現的獨立隔離集。
 
 ---
 
-## 8. 巢狀交叉驗證原理與明確合成對照（Nested-CV Rationale & Qualitative Synthetic Demo）
+## 8. 標籤依賴預篩選洩漏反例與巢狀交叉驗證原理（Label-Dependent Preselection Leakage & Nested CV）
 
-### 8.1 為什麼必須採用巢狀交叉驗證？
-若在同一層交叉驗證中同時進行特徵篩選與泛化評估，驗證折之資訊將外洩至特徵選擇決定中，使模型評估產生假性高分。
+### 8.1 標籤依賴預篩選資訊洩漏反例說明（Global Label-Dependent Preselection Leakage Counterexample）
+若在交叉驗證分折前，即利用全體樣本的標籤 $y$ 進行特徵篩選（例如挑選與 $y$ 相關係數最高者），驗證折的標籤資訊已實質洩漏至特徵空間建構中。
 
-### 8.2 概念說明性合成程式碼對照（Conceptual Qualitative Demonstration）
-以下程式碼僅供概念說明設計原理，明確標記為非實驗執行產物：
+### 8.2 概念反例程式碼（Conceptual Synthetic Counterexample）
+以下程式碼僅為概念說明「全局特徵預選造成假性高分」之理論缺陷，**明確標記為非實驗執行產物，嚴禁在 A1 執行**：
 
 ```python
 # =========================================================================
-# 【概念說明用合成程式碼：資訊洩漏 vs 巢狀隔離 (Conceptual Demo Only)】
-# 本程式碼僅用於定義協定之防洩漏設計原理，嚴禁在 A1 階段執行或引用為實驗數據。
+# 【概念說明用合成程式碼：全局標籤預選洩漏 vs 嚴格折內篩選 (Conceptual Demo)】
+# 本程式碼僅用於展示資料洩漏之理論機制，嚴禁在 A1 階段執行或引用為實驗數據。
 # 數值輸出受有限樣本隨機變異（Finite-sample variability）影響，非保證性實驗測量。
 # =========================================================================
 import numpy as np
@@ -292,8 +288,9 @@ X_synthetic = np.random.randn(100, 1000)
 y_synthetic = np.random.randn(100)
 
 # -------------------------------------------------------------------------
-# [錯誤模式 Flawed Practice]: 全局篩選特徵後再切分 CV (資訊洩漏)
+# [錯誤模式 Flawed Practice]: 全局標籤依賴預選 (Global Label-Dependent Preselection)
 # -------------------------------------------------------------------------
+# 利用全體 100 筆 y 計算相關性，挑選 top 5（將全體標籤資訊洩漏進特徵子集）
 corrs = np.abs([np.corrcoef(X_synthetic[:, j], y_synthetic)[0, 1] for j in range(1000)])
 flawed_selected_idx = np.argsort(corrs)[-5:]
 
@@ -303,25 +300,30 @@ for tr_idx, val_idx in kf.split(X_synthetic):
     reg = LinearRegression().fit(X_synthetic[tr_idx][:, flawed_selected_idx], y_synthetic[tr_idx])
     pred = reg.predict(X_synthetic[val_idx][:, flawed_selected_idx])
     flawed_val_mse.append(np.mean((pred - y_synthetic[val_idx]) ** 2))
-# 理論推論預期：因納入與驗證集相關之雜訊特徵，驗證誤差常呈現偏低之選擇樂觀偏差。
+# 理論推論預期：因納入與驗證集標籤偶然相關之雜訊特徵，驗證誤差常呈現偏低之虛假樂觀偏差。
 
 # -------------------------------------------------------------------------
-# [正確模式 Nested CV]: 嚴格於各折訓練集內部獨立篩選特徵
+# [折內隔離說明 Strict In-Fold Selection]: 僅在訓練集內部挑選固定特徵數
 # -------------------------------------------------------------------------
-nested_val_mse = []
+# 注意：以下固定 K=5 之示範僅展示「特徵挑選不洩漏至驗證折」，並非完整之巢狀超參數調校！
+# 正式的巢狀 CV 必須在訓練折內部再做內層切分（如 3-fold）來調校 K*，隨後才於外層評估。
+fixed_k_val_mse = []
 for tr_idx, val_idx in kf.split(X_synthetic):
     tr_corrs = np.abs([np.corrcoef(X_synthetic[tr_idx, j], y_synthetic[tr_idx])[0, 1] for j in range(1000)])
     clean_selected_idx = np.argsort(tr_corrs)[-5:]
 
     reg = LinearRegression().fit(X_synthetic[tr_idx][:, clean_selected_idx], y_synthetic[tr_idx])
     pred = reg.predict(X_synthetic[val_idx][:, clean_selected_idx])
-    nested_val_mse.append(np.mean((pred - y_synthetic[val_idx]) ** 2))
+    fixed_k_val_mse.append(np.mean((pred - y_synthetic[val_idx]) ** 2))
 # 理論推論預期：驗證集隔離未洩漏，誤差如實反映雜訊本質（受有限樣本變異波動）。
 ```
 
+### 8.3 巢狀 5x3 交叉驗證的不可替代性（Necessity of Nested 5x3 CV for Tuning）
+上述折內挑選示範若要進一步「自動挑選最佳特徵數 $K \in \{2, 3, 5, 10, 20\}$」或正則化強度 $\alpha$，就必須在該訓練折內部再架設內層 3 折驗證循環。若直接用外層驗證折來挑選 $K$，外層驗證折便轉化為「超參數挑選折」，無法再提供無偏的泛化誤差估計。因此，本協定嚴格採行內層 3 折選超參數、外層 5 折評估泛化之巢狀架構。
+
 ---
 
-## 9. 擬合預算、資源控制與防禦中斷機制（Fit Accounting, Resource Controls & Abort Policy）
+## 9. 擬合預算、階段執行閘門與防禦中斷機制（Fit Accounting, Stage Gates & Abort Policy）
 
 ### 9.1 擬合單位獨立會計定義（Dual Fit Unit Accounting）
 - **估計器擬合單位（Estimator Fit Unit）**：定義為一個迴歸估計器（SVD OLS、Ridge、Lasso、ElasticNet）在指定樣本與特徵子集上完成一次參數計算。
@@ -374,16 +376,21 @@ for tr_idx, val_idx in kf.split(X_synthetic):
 - **估計器擬合硬上限（Cumulative Estimator Fit Cap）**：
   $$\text{Cumulative Fit Cap} = 150,000 \text{ 次估計器擬合}$$
 
-### 9.4 雙層資源閘門、A4 啟動校準包絡與中斷合約（Two-Tier Resource Gate & A4 Calibration Envelope）
-- **雙層資源防禦機制（Two-Tier Resource Gate Architecture）**：
-  - 為消除「限制未設定前不能跑 A4，但 A4 又未測量出限制」之循環相依，本協定嚴格確立雙層資源邊界：
-    1. **第 1 層：A4 基準校準安全包絡（A4 Calibration Bootstrap Envelope）**：
-       - A4 基準測試僅允許在專案經 Owner 事先核准之一組**明確、有限、正值、Fail-Closed 之校準防禦包絡**（例如微型基準測試單次呼叫秒數與記憶體上限）下啟動執行。
-       - 在 Owner 審定該組 A4 啟動包絡設定檔前，A4 基準校準**不得啟動**。
-       - A4 之任務即是在此啟動包絡的保護下，完成代表性子集微測量，並據此**量測、凍結並寫入正式執行之數值限制**（`max_wall_seconds` 與 `max_peak_memory_bytes`）。
-    2. **第 2 層：正式執行資源閘門（Formal Execution Limits）**：
-       - A2 完整測試與後續正式特徵選擇實驗，**在 A4 尚未實測並凍結正式數值限制前，嚴格處於 BLOCKED 狀態**。
-       - 若設定檔限制為 null、未設定或正式執行超出該限制，Runner 必須立即中止（Fail-Closed）。
+### 9.4 階段任務對齊與分級資源閘門（Stage Alignment & Tiered Resource Gates）
+依據 Issue #22 任務分解架構，各階段之執行權限與資源邊界嚴格定義如下：
+- **階段定義對齊**：
+  - **A1**：協定凍結草案（Protocol Candidate Freeze）——純文檔設計，不執行程式碼。
+  - **A2**：Runner 實作與有界合成測試（Runner Implementation & Bounded Synthetic Tests）——在專屬 Owner 授權下，允許實作程式碼並執行**有界的純合成單元測試與防禦性測試**，無需 A4 資源預算即可驗證合約邏輯。
+  - **A3**：獨立防洩漏與可重現性 QA（Independent Leakage & Reproducibility QA）——在專屬授權下對 A2 產出執行獨立合成驗證。
+  - **A4**：有界基準校準（Bounded Benchmark Calibration）——實測計算開銷與記憶體，正式凍結實體資源上限。
+- **分級資源閘門合約（Tiered Resource Gate Policy）**：
+  1. **合成測試權限邊界（Synthetic Test Boundary for A2/A3）**：
+     - A2 與 A3 階段之純合成單元測試（如索引驗證、Spy 攔截、異常防禦等），在各自獲得專屬 Owner 授權後即可執行，**不受 A4 實體資源限制之阻絕**。
+  2. **A4 基準校準安全包絡（A4 Calibration Bootstrap Envelope）**：
+     - A4 基準測試僅允許在專案經 Owner 事先核准之一組**明確、有限、正值、Fail-Closed 之校準防禦包絡**下啟動。在該包絡未經審定前，A4 不得啟動。
+     - A4 於此包絡內完成代表性微測量，正式量測並**凍結正式執行數值限制**（`max_wall_seconds` 與 `max_peak_memory_bytes`）。
+  3. **正式大容量真實資料執行閘門（Formal Real-Data Execution Limits）**：
+     - 任何正式的特徵選擇運算（讀取真實開發資料集、大規模模型搜尋等），**在 A4 尚未正式凍結數值限制前，嚴格處於 BLOCKED 狀態**。限制未設定或執行超限必定立即中止（Fail-Closed）。
 - **檢查點原子寫入與接續身份校驗合約（Checkpoint Resume Identity Contract）**：
   - 以「外層折 + 方法」為單位執行原子寫入（寫入 `.tmp` 檔並驗證 SHA-256 後替換）。
   - **拒絕接續驗證（Resume Refusal Checks）**：當 Runner 嘗試接續執行時，必須完整校驗以下身份條件，任一條件不符則**拒絕接續（Fail-Closed）並建立全新 Run ID**：
@@ -435,19 +442,20 @@ for tr_idx, val_idx in kf.split(X_synthetic):
 - **公開摘要產物**：`p4b_public_summary.json`。
   - **公開輸出中嚴格禁止包含任何逐列預測、真實房價或受保護本機路徑**。
 
-### 11.2 產物校驗資訊清單綱要（Manifest Schema）
+### 11.2 產物校驗資訊清單綱要範本（Manifest Schema Template）
 
 ```json
 {
-  "_schema_notice": "THIS IS A SCHEMA SPECIFICATION ONLY. CONTAINS NO EXPERIMENTAL RESULTS.",
+  "_schema_notice": "THIS IS A SCHEMA SPECIFICATION TEMPLATE ONLY. CONTAINS NO RUNTIME RESULTS.",
   "run_id": null,
   "created_at": null,
   "code_head_commit": null,
   "phase3_contract_version": null,
   "dataset_provenance": {
     "development_rows": 1168,
-    "outer_fold_digest": "7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463",
-    "canonical_development_dataset_sha256": null
+    "outer_fold_digest_expected": "7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463",
+    "canonical_development_dataset_sha256": null,
+    "verification_status": "PENDING_EXECUTION"
   },
   "file_inventory": [
     {
@@ -466,11 +474,11 @@ for tr_idx, val_idx in kf.split(X_synthetic):
 }
 ```
 
-### 11.3 公開摘要結構綱要（Public Summary Schema，純綱要展示）
+### 11.3 公開摘要結構綱要範本（Public Summary Schema Template，純範本展示）
 
 ```json
 {
-  "_schema_notice": "THIS IS A SCHEMA SPECIFICATION ONLY. CONTAINS NO EXPERIMENTAL RESULTS.",
+  "_schema_notice": "THIS IS A SCHEMA SPECIFICATION TEMPLATE ONLY. CONTAINS NO RUNTIME RESULTS.",
   "metadata": {
     "protocol_version": "v1.0",
     "issue_reference": "Issue #21 / Issue #22",
@@ -493,9 +501,9 @@ for tr_idx, val_idx in kf.split(X_synthetic):
       "development_rows": 1168,
       "outer_kfold": {"n_splits": 5, "shuffle": true, "random_state": 42},
       "inner_kfold": {"n_splits": 3, "shuffle": true, "random_state": 1042},
-      "outer_fold_digest": "7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463",
-      "dataset_fingerprint_verified": true,
-      "digest_provenance": "verified_in_p4a"
+      "outer_fold_digest_expected": "7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463",
+      "dataset_fingerprint_verified": false,
+      "digest_provenance": "PENDING_RUNTIME_VERIFICATION"
     }
   },
   "method_contract": {
@@ -536,7 +544,7 @@ for tr_idx, val_idx in kf.split(X_synthetic):
       "mean_outer_r2": null,
       "total_estimator_fits": null,
       "total_preprocessor_fits": null,
-      "fit_cap_status": "within_budget"
+      "fit_cap_status": null
     }
   ]
 }
