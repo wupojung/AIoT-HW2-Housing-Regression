@@ -3,11 +3,11 @@
 Data isolation & execution contract:
 - Nested 5-fold outer / 3-fold inner cross-validation.
 - Fold-local AmesDataPreparationPipeline fitted exclusively on current training partitions.
-- Preflight budget checks (150,000 estimator fits, 200 preprocessor fits) and runtime fail-closed enforcement.
-- Dimension ceiling hard cap: D_ceiling = 300 features.
-- Single worker / deterministic single-thread execution.
-- Collision-safe canonical dataset fingerprinting and resume refusal checks.
-- Zero references to competition test data or sealed holdout rows.
+- Conservative preflight fit budget calculation before any fitting begins.
+- Strict timeout deadline enforcement between work units.
+- Single worker / single-thread execution via threadpoolctl.
+- Containment enforcement: private research outputs strictly under local/research/phase4-p4b/<run-id>.
+- Zero Git or shell subprocess commands in runtime.
 """
 
 from __future__ import annotations
@@ -30,6 +30,7 @@ import numpy as np
 from sklearn.linear_model import ElasticNet, Lasso, Ridge
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
+import threadpoolctl
 
 from housing_regression.data_prep import (
     ALL_PREDICTOR_COLUMNS,
@@ -120,6 +121,10 @@ class BudgetExceededError(RuntimeError):
     """Raised when estimator or preprocessor fit budget is exceeded."""
 
 
+class TimeoutExceededError(RuntimeError):
+    """Raised when execution exceeds the configured wall-clock timeout."""
+
+
 class InvalidDataFormatError(ValueError):
     """Raised when raw CSV cell violates canonical data format."""
 
@@ -172,8 +177,82 @@ class P4BConfig:
     max_iter: int = 5000
     tol: float = 1e-4
     single_thread: bool = True
+    timeout_seconds: Optional[float] = None
     active_methods: Optional[List[str]] = None  # None means all 5 methods
     active_pairs: Optional[List[Tuple[str, str]]] = None  # None means all 7 pairs
+
+    def validate_positive(self) -> None:
+        if self.outer_splits < 2:
+            raise ValueError(f"outer_splits must be >= 2, got {self.outer_splits}")
+        if self.inner_splits < 2:
+            raise ValueError(f"inner_splits must be >= 2, got {self.inner_splits}")
+        if self.d_ceiling <= 0:
+            raise ValueError(f"d_ceiling must be positive, got {self.d_ceiling}")
+        if self.estimator_fit_cap <= 0:
+            raise ValueError(f"estimator_fit_cap must be positive, got {self.estimator_fit_cap}")
+        if self.preprocessor_fit_cap <= 0:
+            raise ValueError(f"preprocessor_fit_cap must be positive, got {self.preprocessor_fit_cap}")
+
+
+def estimate_preflight_budget(config: P4BConfig) -> Tuple[int, int]:
+    """Calculate conservative upper bound on estimator fits and preprocessor fits."""
+    config.validate_positive()
+    M = config.outer_splits
+    m = config.inner_splits
+    d = config.d_ceiling
+    k_count = len(config.k_candidates)
+    max_k = max(config.k_candidates) if config.k_candidates else 20
+    min_k = min(config.k_candidates) if config.k_candidates else 2
+
+    # Preprocessor fits: (inner_splits + 1 outer) per outer fold
+    preprocessor_fits = M * (m + 1)
+
+    active_methods = config.active_methods or [
+        "filter_pearson",
+        "forward_sfs",
+        "rfe_ridge",
+        "lasso_cv",
+        "elastic_net_cv",
+    ]
+
+    total_estimator_fits = 0
+
+    if "filter_pearson" in active_methods:
+        # Inner: m * k_count, Outer: 1
+        filter_per_outer = m * k_count + 1
+        total_estimator_fits += M * filter_per_outer
+
+    if "forward_sfs" in active_methods:
+        # SFS forward steps: for step 0..max_k-1, evaluates remaining features <= d
+        # Sum_{i=0..max_k-1} (d - i)
+        sfs_steps_fits = sum(d - i for i in range(max_k))
+        # Inner: m * (sfs_steps_fits + k_count)
+        # Outer: sfs_steps_fits + 1 (final OLS)
+        sfs_per_outer = m * (sfs_steps_fits + k_count) + sfs_steps_fits + 1
+        total_estimator_fits += M * sfs_per_outer
+
+    if "rfe_ridge" in active_methods:
+        # RFE steps from d down to min_k: (d - min_k + 1) Ridge fits
+        rfe_elim_fits = d - min_k + 1
+        # Inner: m * (rfe_elim_fits + k_count OLS)
+        # Outer: rfe_elim_fits + 1 (final OLS)
+        rfe_per_outer = m * (rfe_elim_fits + k_count) + rfe_elim_fits + 1
+        total_estimator_fits += M * rfe_per_outer
+
+    if "lasso_cv" in active_methods:
+        # Inner: m * alphas (Lasso) + m * alphas (OLS refit)
+        # Outer: 1 Lasso + 1 OLS + 1 native Lasso
+        alphas = config.lasso_alphas_count
+        lasso_per_outer = m * alphas * 2 + 3
+        total_estimator_fits += M * lasso_per_outer
+
+    if "elastic_net_cv" in active_methods:
+        # Grid: alphas * l1_ratios
+        en_grid_size = config.elastic_net_alphas_count * len(config.elastic_net_l1_ratios)
+        en_per_outer = m * en_grid_size * 2 + 3
+        total_estimator_fits += M * en_per_outer
+
+    return total_estimator_fits, preprocessor_fits
 
 
 def get_canonical_column_order() -> List[str]:
@@ -270,10 +349,8 @@ def select_features_filter(
     for idx, (name, score) in enumerate(zip(feature_names, corrs)):
         items.append((idx, name, float(score)))
 
-    # Sort descending by score; for score equality (within eps), ascending by name
     def compare_key(item):
         idx, name, score = item
-        # Round score to bin resolution of eps for sorting stability
         bin_score = round(score / eps) * eps
         return (-bin_score, name)
 
@@ -291,6 +368,7 @@ def forward_sfs_greedy_path(
     max_k: int,
     accounting: FitAccounting,
     eps: float = 1e-9,
+    check_deadline: Optional[Callable[[], None]] = None,
 ) -> List[Tuple[int, str]]:
     """Forward Sequential Feature Selection on training partition minimizing Train RMSE."""
     n_features = X_train.shape[1]
@@ -300,6 +378,8 @@ def forward_sfs_greedy_path(
     remaining_indices = list(range(n_features))
 
     for step in range(limit_k):
+        if check_deadline:
+            check_deadline()
         best_candidate: Optional[int] = None
         best_rmse = float("inf")
         candidate_evals = []
@@ -313,7 +393,6 @@ def forward_sfs_greedy_path(
             rmse = math.sqrt(float(np.mean((y_train - yhat) ** 2)))
             candidate_evals.append((cand_idx, feature_names[cand_idx], rmse))
 
-        # Tie-break: min rmse; within eps, ASCII ascending
         def sfs_cand_key(item):
             c_idx, name, rmse = item
             bin_rmse = round(rmse / eps) * eps
@@ -339,6 +418,7 @@ def rfe_ridge_path(
     accounting: FitAccounting,
     random_state: int = 42,
     eps: float = 1e-9,
+    check_deadline: Optional[Callable[[], None]] = None,
 ) -> Dict[int, Tuple[List[int], List[str]]]:
     """RFE using Ridge(alpha=1.0) step=1 down to min_k, storing feature subsets at each k."""
     current_indices = list(range(X_train.shape[1]))
@@ -346,6 +426,8 @@ def rfe_ridge_path(
     k_map: Dict[int, Tuple[List[int], List[str]]] = {}
 
     while len(current_indices) >= min_k:
+        if check_deadline:
+            check_deadline()
         k_map[len(current_indices)] = (list(current_indices), list(current_names))
         if len(current_indices) == min_k:
             break
@@ -356,10 +438,8 @@ def rfe_ridge_path(
         coef_abs = np.abs(ridge.coef_)
 
         min_val = float(np.min(coef_abs))
-        # Find candidates within eps of minimum coefficient
         tied = [i for i, c in enumerate(coef_abs) if c - min_val <= eps]
         tied_names = [current_names[i] for i in tied]
-        # Eliminate candidate with largest lexicographical name
         elim_name = max(tied_names)
         elim_pos = current_names.index(elim_name)
 
@@ -386,7 +466,6 @@ def tie_break_lasso_alpha(
     """Tie-break for Lasso alpha: min RMSE; within eps, larger alpha; if still tied, smaller grid index."""
     min_score = min(score for _, _, score in candidates_scores)
     tied = [(alpha, idx) for alpha, idx, score in candidates_scores if score - min_score <= eps]
-    # Max alpha; if tied, min idx
     tied.sort(key=lambda item: (-item[0], item[1]))
     return tied[0]
 
@@ -428,6 +507,15 @@ class P4BRunner:
                 self.en_grid.append((float(alpha), float(l1), grid_idx))
                 grid_idx += 1
 
+        self.deadline: Optional[float] = None
+
+    def _check_deadline(self) -> None:
+        """Enforce wall-clock timeout between units of work."""
+        if self.deadline is not None and time.perf_counter() > self.deadline:
+            raise TimeoutExceededError(
+                f"Execution exceeded configured timeout limit ({self.config.timeout_seconds}s)."
+            )
+
     def _apply_partition_scaling(
         self,
         X_train: np.ndarray,
@@ -435,7 +523,6 @@ class P4BRunner:
         feature_names: List[str],
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Fit StandardScaler on numeric/ordinal features on train partition only, leaving one-hot unscaled."""
-        # Check dimension ceiling
         d_obs = X_train.shape[1]
         if d_obs > self.config.d_ceiling:
             raise DimensionCeilingExceededError(
@@ -445,13 +532,9 @@ class P4BRunner:
         X_tr = X_train.copy()
         X_va = X_val.copy()
 
-        # Identify numeric / ordinal columns vs one-hot columns
-        # One-hot features generated by AmesDataPreparationPipeline have format '<col>_<level>'
-        # or are structural indicators 'Has...' or missing indicators '..._is_missing'
         scale_indices = []
         for i, name in enumerate(feature_names):
             if name in NOMINAL_COLUMNS or "_" in name:
-                # One-hot dummy or indicator flag: keep 0/1 unscaled
                 continue
             scale_indices.append(i)
 
@@ -470,6 +553,7 @@ class P4BRunner:
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
     ) -> Dict[str, Any]:
         """Execute one complete Outer Fold with Inner 3-fold tuning and Outer Refit/Evaluation."""
+        self._check_deadline()
         inner_kf = KFold(
             n_splits=self.config.inner_splits,
             shuffle=True,
@@ -477,9 +561,10 @@ class P4BRunner:
         )
         inner_splits_indices = list(inner_kf.split(range(len(outer_train_rows))))
 
-        # 1. Preprocess each of 3 inner splits
+        # 1. Preprocess each of inner splits
         inner_partitions = []
         for inner_idx, (in_tr_idx, in_va_idx) in enumerate(inner_splits_indices):
+            self._check_deadline()
             in_tr_rows = [outer_train_rows[i] for i in in_tr_idx]
             in_va_rows = [outer_train_rows[i] for i in in_va_idx]
 
@@ -504,6 +589,7 @@ class P4BRunner:
             })
 
         # 2. Outer Train preprocessing (1 fit)
+        self._check_deadline()
         self.accounting.record_preprocessor_fit(1)
         outer_pipe = pipeline_factory()
         out_tr_res = outer_pipe.fit_transform(outer_train_rows, split_name=f"outer{outer_fold_idx}_train")
@@ -517,7 +603,6 @@ class P4BRunner:
 
         outer_val_ids = list(out_va_res.ids)
 
-        # 3. Inner tuning and outer refit per method
         fold_results: List[Dict[str, Any]] = []
         oof_records: List[Dict[str, Any]] = []
 
@@ -531,9 +616,11 @@ class P4BRunner:
 
         # --- A. Filter Pearson (Track A) ---
         if "filter_pearson" in active_methods:
+            self._check_deadline()
             k_val_scores: Dict[int, List[float]] = {k: [] for k in self.config.k_candidates}
             for part in inner_partitions:
                 for k in self.config.k_candidates:
+                    self._check_deadline()
                     sel_indices, _ = select_features_filter(part["X_tr"], part["y_tr"], part["feature_names"], k)
                     self.accounting.record_estimator_fit(1)
                     fit = fit_ols_svd(part["X_tr"][:, sel_indices], part["y_tr"], add_intercept=True)
@@ -544,7 +631,6 @@ class P4BRunner:
             avg_k_scores = [(k, float(np.mean(k_val_scores[k]))) for k in self.config.k_candidates]
             best_k = tie_break_subset_k(avg_k_scores)
 
-            # Outer Refit
             out_sel_idx, out_sel_names = select_features_filter(
                 X_out_tr, y_out_tr, out_tr_res.feature_names, best_k
             )
@@ -589,6 +675,7 @@ class P4BRunner:
 
         # --- B. Forward SFS (Track A) ---
         if "forward_sfs" in active_methods:
+            self._check_deadline()
             max_cand_k = max(self.config.k_candidates)
             k_val_scores = {k: [] for k in self.config.k_candidates}
             for part in inner_partitions:
@@ -598,8 +685,10 @@ class P4BRunner:
                     part["feature_names"],
                     max_k=max_cand_k,
                     accounting=self.accounting,
+                    check_deadline=self._check_deadline,
                 )
                 for k in self.config.k_candidates:
+                    self._check_deadline()
                     sel_indices = [idx for idx, _ in path[:k]]
                     self.accounting.record_estimator_fit(1)
                     fit = fit_ols_svd(part["X_tr"][:, sel_indices], part["y_tr"], add_intercept=True)
@@ -610,13 +699,13 @@ class P4BRunner:
             avg_k_scores = [(k, float(np.mean(k_val_scores[k]))) for k in self.config.k_candidates]
             best_k = tie_break_subset_k(avg_k_scores)
 
-            # Outer Refit
             outer_path = forward_sfs_greedy_path(
                 X_out_tr,
                 y_out_tr,
                 out_tr_res.feature_names,
                 max_k=best_k,
                 accounting=self.accounting,
+                check_deadline=self._check_deadline,
             )
             out_sel_idx = [idx for idx, _ in outer_path]
             out_sel_names = [name for _, name in outer_path]
@@ -645,7 +734,7 @@ class P4BRunner:
                     "effective_condition_number": diagnostics["condition_number_effective"],
                 },
                 "fit_accounting": {
-                    "fold_estimator_fits": None,  # Will be aggregated
+                    "fold_estimator_fits": None,
                     "fold_preprocessor_fits": self.config.inner_splits + 1,
                 },
                 "convergence_status": "CONVERGED",
@@ -662,6 +751,7 @@ class P4BRunner:
 
         # --- C. RFE Ridge (Track A) ---
         if "rfe_ridge" in active_methods:
+            self._check_deadline()
             min_cand_k = min(self.config.k_candidates)
             k_val_scores = {k: [] for k in self.config.k_candidates}
             for part in inner_partitions:
@@ -671,8 +761,10 @@ class P4BRunner:
                     part["feature_names"],
                     min_k=min_cand_k,
                     accounting=self.accounting,
+                    check_deadline=self._check_deadline,
                 )
                 for k in self.config.k_candidates:
+                    self._check_deadline()
                     sel_indices, _ = k_map[k]
                     self.accounting.record_estimator_fit(1)
                     fit = fit_ols_svd(part["X_tr"][:, sel_indices], part["y_tr"], add_intercept=True)
@@ -683,13 +775,13 @@ class P4BRunner:
             avg_k_scores = [(k, float(np.mean(k_val_scores[k]))) for k in self.config.k_candidates]
             best_k = tie_break_subset_k(avg_k_scores)
 
-            # Outer Refit
             outer_k_map = rfe_ridge_path(
                 X_out_tr,
                 y_out_tr,
                 out_tr_res.feature_names,
                 min_k=best_k,
                 accounting=self.accounting,
+                check_deadline=self._check_deadline,
             )
             out_sel_idx, out_sel_names = outer_k_map[best_k]
 
@@ -734,25 +826,23 @@ class P4BRunner:
 
         # --- D. LassoCV (Track A & Track B) ---
         if "lasso_cv" in active_methods:
-            # Evaluate across inner partitions
+            self._check_deadline()
             alpha_track_a_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.lasso_alphas))}
             alpha_track_b_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.lasso_alphas))}
 
             for part in inner_partitions:
                 for idx, alpha in enumerate(self.lasso_alphas):
+                    self._check_deadline()
                     self.accounting.record_estimator_fit(1)
                     lasso = Lasso(alpha=alpha, max_iter=self.config.max_iter, tol=self.config.tol)
                     lasso.fit(part["X_tr"], part["y_tr"])
 
-                    # Track B (native)
                     yhat_b = lasso.predict(part["X_va"])
                     rmse_b = math.sqrt(float(np.mean((part["y_va"] - yhat_b) ** 2)))
                     alpha_track_b_scores[idx].append(rmse_b)
 
-                    # Track A (OLS refit on non-zero coefficients)
                     non_zero = np.where(np.abs(lasso.coef_) > 1e-9)[0]
                     if len(non_zero) == 0:
-                        # Fallback to mean prediction if all zero
                         yhat_a = np.full_like(part["y_va"], np.mean(part["y_tr"]))
                     else:
                         self.accounting.record_estimator_fit(1)
@@ -761,7 +851,6 @@ class P4BRunner:
                     rmse_a = math.sqrt(float(np.mean((part["y_va"] - yhat_a) ** 2)))
                     alpha_track_a_scores[idx].append(rmse_a)
 
-            # Independent tie-breaking for Track A and Track B
             cands_a = [
                 (float(self.lasso_alphas[i]), i, float(np.mean(alpha_track_a_scores[i])))
                 for i in range(len(self.lasso_alphas))
@@ -774,6 +863,7 @@ class P4BRunner:
             best_alpha_b, best_idx_b = tie_break_lasso_alpha(cands_b)
 
             # Track A Outer Refit
+            self._check_deadline()
             self.accounting.record_estimator_fit(1)
             lasso_out_a = Lasso(alpha=best_alpha_a, max_iter=self.config.max_iter, tol=self.config.tol)
             lasso_out_a.fit(X_out_tr, y_out_tr)
@@ -825,6 +915,7 @@ class P4BRunner:
                 })
 
             # Track B Outer Refit
+            self._check_deadline()
             self.accounting.record_estimator_fit(1)
             lasso_out_b = Lasso(alpha=best_alpha_b, max_iter=self.config.max_iter, tol=self.config.tol)
             lasso_out_b.fit(X_out_tr, y_out_tr)
@@ -866,21 +957,21 @@ class P4BRunner:
 
         # --- E. ElasticNetCV (Track A & Track B) ---
         if "elastic_net_cv" in active_methods:
+            self._check_deadline()
             en_track_a_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.en_grid))}
             en_track_b_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.en_grid))}
 
             for part in inner_partitions:
                 for alpha, l1_ratio, idx in self.en_grid:
+                    self._check_deadline()
                     self.accounting.record_estimator_fit(1)
                     en = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=self.config.max_iter, tol=self.config.tol)
                     en.fit(part["X_tr"], part["y_tr"])
 
-                    # Track B
                     yhat_b = en.predict(part["X_va"])
                     rmse_b = math.sqrt(float(np.mean((part["y_va"] - yhat_b) ** 2)))
                     en_track_b_scores[idx].append(rmse_b)
 
-                    # Track A
                     non_zero = np.where(np.abs(en.coef_) > 1e-9)[0]
                     if len(non_zero) == 0:
                         yhat_a = np.full_like(part["y_va"], np.mean(part["y_tr"]))
@@ -891,7 +982,6 @@ class P4BRunner:
                     rmse_a = math.sqrt(float(np.mean((part["y_va"] - yhat_a) ** 2)))
                     en_track_a_scores[idx].append(rmse_a)
 
-            # Independent tie-breaking
             cands_a = [
                 (self.en_grid[i][0], self.en_grid[i][1], i, float(np.mean(en_track_a_scores[i])))
                 for i in range(len(self.en_grid))
@@ -904,6 +994,7 @@ class P4BRunner:
             best_alpha_b, best_l1_b, best_idx_b = tie_break_elastic_net(cands_b)
 
             # Track A Outer Refit
+            self._check_deadline()
             self.accounting.record_estimator_fit(1)
             en_out_a = ElasticNet(alpha=best_alpha_a, l1_ratio=best_l1_a, max_iter=self.config.max_iter, tol=self.config.tol)
             en_out_a.fit(X_out_tr, y_out_tr)
@@ -955,6 +1046,7 @@ class P4BRunner:
                 })
 
             # Track B Outer Refit
+            self._check_deadline()
             self.accounting.record_estimator_fit(1)
             en_out_b = ElasticNet(alpha=best_alpha_b, l1_ratio=best_l1_b, max_iter=self.config.max_iter, tol=self.config.tol)
             en_out_b.fit(X_out_tr, y_out_tr)
@@ -1007,78 +1099,182 @@ class P4BRunner:
         run_id: Optional[str] = None,
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
     ) -> Dict[str, Any]:
-        """Execute full nested cross-validation across all outer folds."""
-        n_rows = len(dev_rows)
-        outer_folds = kfold_assignments(n_rows, self.config.outer_splits, self.config.outer_seed)
-
-        all_fold_results: List[Dict[str, Any]] = []
-        all_oof_records: List[Dict[str, Any]] = []
-
-        start_time = time.perf_counter()
-
-        for k in range(self.config.outer_splits):
-            tr_rows = [dict(dev_rows[i]) for i, f in enumerate(outer_folds) if f != k]
-            va_rows = [dict(dev_rows[i]) for i, f in enumerate(outer_folds) if f == k]
-
-            fold_output = self.execute_outer_fold(
-                outer_fold_idx=k,
-                outer_train_rows=tr_rows,
-                outer_val_rows=va_rows,
-                pipeline_factory=pipeline_factory,
+        """Execute full nested cross-validation across all outer folds with preflight checks and outputs."""
+        # 1. Conservative Preflight Budget Check
+        est_req, prep_req = estimate_preflight_budget(self.config)
+        if est_req > self.config.estimator_fit_cap:
+            raise BudgetExceededError(
+                f"Preflight check rejected: estimated {est_req} estimator fits exceeds cap {self.config.estimator_fit_cap}."
             )
-            all_fold_results.extend(fold_output["results"])
-            all_oof_records.extend(fold_output["oof_records"])
+        if prep_req > self.config.preprocessor_fit_cap:
+            raise BudgetExceededError(
+                f"Preflight check rejected: estimated {prep_req} preprocessor fits exceeds cap {self.config.preprocessor_fit_cap}."
+            )
 
-        elapsed_total = time.perf_counter() - start_time
+        # 2. Setup threadpool limits if configured
+        thread_limit = 1 if self.config.single_thread else None
 
-        # Compute aggregate results across outer folds per supported pair
-        aggregate_results: List[Dict[str, Any]] = []
-        # Group by (method, track)
-        pairs_seen: Set[Tuple[str, str]] = set()
-        for item in all_fold_results:
-            pair = (item["method"], item["track"])
-            pairs_seen.add(pair)
+        # 3. Setup timeout deadline
+        start_time = time.perf_counter()
+        if self.config.timeout_seconds is not None:
+            self.deadline = start_time + self.config.timeout_seconds
+        else:
+            self.deadline = None
 
-        for method, track in sorted(pairs_seen):
-            matches = [r for r in all_fold_results if r["method"] == method and r["track"] == track]
-            rmses = [r["outer_val_rmse"] for r in matches]
-            r2s = [r["outer_val_r2"] for r in matches]
-            mean_rmse = float(np.mean(rmses))
-            std_rmse = float(np.std(rmses, ddof=1)) if len(rmses) > 1 else 0.0
-            mean_r2 = float(np.mean(r2s))
+        # 4. Verify output containment if output_dir is provided
+        if output_dir is not None:
+            from housing_regression.modeling.p4b_artifacts import (
+                assert_safe_private_containment,
+                atomic_write_csv,
+                atomic_write_json,
+                create_manifest,
+                create_public_summary,
+            )
+            assert_safe_private_containment(Path(output_dir))
 
-            aggregate_results.append({
-                "method": method,
-                "track": track,
-                "mean_outer_rmse": mean_rmse,
-                "std_outer_rmse": std_rmse,
-                "mean_outer_r2": mean_r2,
-                "total_estimator_fits": self.accounting.estimator_fits,
-                "total_preprocessor_fits": self.accounting.preprocessor_fits,
-                "fit_cap_status": "WITHIN_CAP",
-            })
+        def _execute_loop() -> Dict[str, Any]:
+            n_rows = len(dev_rows)
+            outer_folds = kfold_assignments(n_rows, self.config.outer_splits, self.config.outer_seed)
 
-        summary = {
-            "run_id": run_id,
-            "config": {
-                "protocol_version": self.config.protocol_version,
-                "code_head_commit": self.config.code_head_commit,
-                "outer_splits": self.config.outer_splits,
-                "inner_splits": self.config.inner_splits,
-                "d_ceiling": self.config.d_ceiling,
-            },
-            "fit_accounting": {
-                "total_estimator_fits": self.accounting.estimator_fits,
-                "total_preprocessor_fits": self.accounting.preprocessor_fits,
-                "estimator_fit_cap": self.accounting.estimator_fit_cap,
-                "preprocessor_fit_cap": self.accounting.preprocessor_fit_cap,
-                "elapsed_seconds": elapsed_total,
-            },
-            "per_outer_fold_results": all_fold_results,
-            "aggregate_results": aggregate_results,
-        }
+            all_fold_results: List[Dict[str, Any]] = []
+            all_oof_records: List[Dict[str, Any]] = []
+            run_status = "SUCCESS"
+            exception_info: Optional[str] = None
 
-        return {
-            "summary": summary,
-            "oof_records": all_oof_records,
-        }
+            try:
+                for k in range(self.config.outer_splits):
+                    self._check_deadline()
+                    tr_rows = [dict(dev_rows[i]) for i, f in enumerate(outer_folds) if f != k]
+                    va_rows = [dict(dev_rows[i]) for i, f in enumerate(outer_folds) if f == k]
+
+                    fold_output = self.execute_outer_fold(
+                        outer_fold_idx=k,
+                        outer_train_rows=tr_rows,
+                        outer_val_rows=va_rows,
+                        pipeline_factory=pipeline_factory,
+                    )
+                    all_fold_results.extend(fold_output["results"])
+                    all_oof_records.extend(fold_output["oof_records"])
+
+                    # Intermediate fold checkpoint if output_dir is specified
+                    if output_dir is not None:
+                        fold_chk = {
+                            "run_id": run_id,
+                            "completed_outer_fold": k,
+                            "code_head_commit": self.config.code_head_commit,
+                            "dataset_fingerprint": compute_canonical_fingerprint(dev_rows),
+                            "metadata": {
+                                "protocol_version": self.config.protocol_version,
+                                "data_boundary": {
+                                    "outer_kfold": {"random_state": self.config.outer_seed},
+                                    "inner_kfold": {"random_state": self.config.inner_seed},
+                                },
+                            },
+                        }
+                        chk_file = Path(output_dir) / f"checkpoint_fold_{k}.json"
+                        atomic_write_json(fold_chk, chk_file)
+
+            except Exception as exc:
+                run_status = "FAILED"
+                exception_info = f"{type(exc).__name__}: {str(exc)}"
+                raise exc
+
+            finally:
+                elapsed_total = time.perf_counter() - start_time
+
+            pairs_seen: Set[Tuple[str, str]] = set()
+            for item in all_fold_results:
+                pair = (item["method"], item["track"])
+                pairs_seen.add(pair)
+
+            aggregate_results: List[Dict[str, Any]] = []
+            for method, track in sorted(pairs_seen):
+                matches = [r for r in all_fold_results if r["method"] == method and r["track"] == track]
+                rmses = [r["outer_val_rmse"] for r in matches]
+                r2s = [r["outer_val_r2"] for r in matches]
+                mean_rmse = float(np.mean(rmses))
+                std_rmse = float(np.std(rmses, ddof=1)) if len(rmses) > 1 else 0.0
+                mean_r2 = float(np.mean(r2s))
+
+                aggregate_results.append({
+                    "method": method,
+                    "track": track,
+                    "mean_outer_rmse": mean_rmse,
+                    "std_outer_rmse": std_rmse,
+                    "mean_outer_r2": mean_r2,
+                    "total_estimator_fits": self.accounting.estimator_fits,
+                    "total_preprocessor_fits": self.accounting.preprocessor_fits,
+                    "fit_cap_status": "WITHIN_CAP" if run_status == "SUCCESS" else "FAILED",
+                })
+
+            summary = {
+                "run_id": run_id,
+                "status": run_status,
+                "exception": exception_info,
+                "config": {
+                    "protocol_version": self.config.protocol_version,
+                    "code_head_commit": self.config.code_head_commit,
+                    "outer_splits": self.config.outer_splits,
+                    "inner_splits": self.config.inner_splits,
+                    "d_ceiling": self.config.d_ceiling,
+                },
+                "fit_accounting": {
+                    "total_estimator_fits": self.accounting.estimator_fits,
+                    "total_preprocessor_fits": self.accounting.preprocessor_fits,
+                    "estimator_fit_cap": self.accounting.estimator_fit_cap,
+                    "preprocessor_fit_cap": self.accounting.preprocessor_fit_cap,
+                    "elapsed_seconds": elapsed_total,
+                },
+                "per_outer_fold_results": all_fold_results,
+                "aggregate_results": aggregate_results,
+            }
+
+            # Wire outputs if output_dir provided
+            if output_dir is not None:
+                out_path = Path(output_dir)
+                out_path.mkdir(parents=True, exist_ok=True)
+
+                # 1. Private OOF CSV
+                oof_path = out_path / "p4b_oof_predictions.csv"
+                oof_fields = ["Id", "OuterFold", "Method", "Track", "ActualSalePrice", "PredictedSalePrice"]
+                oof_sha, oof_size = atomic_write_csv(all_oof_records, oof_fields, oof_path)
+
+                # 2. Public summary JSON
+                pub_summary_data = create_public_summary(
+                    config=self.config,
+                    run_id=run_id or "p4b_run",
+                    per_outer_fold_results=all_fold_results,
+                    aggregate_results=aggregate_results,
+                )
+                pub_path = out_path / "p4b_public_summary.json"
+                pub_sha, pub_size = atomic_write_json(pub_summary_data, pub_path)
+
+                # 3. Private details JSON
+                details_path = out_path / "p4b_private_details.json"
+                det_sha, det_size = atomic_write_json(summary, details_path)
+
+                # 4. Manifest JSON
+                file_inv = [
+                    {"relative_path": "p4b_oof_predictions.csv", "sha256": oof_sha, "byte_size": oof_size, "is_public": False},
+                    {"relative_path": "p4b_public_summary.json", "sha256": pub_sha, "byte_size": pub_size, "is_public": True},
+                    {"relative_path": "p4b_private_details.json", "sha256": det_sha, "byte_size": det_size, "is_public": False},
+                ]
+                manifest_data = create_manifest(
+                    run_id=run_id or "p4b_run",
+                    code_head_commit=self.config.code_head_commit,
+                    canonical_dataset_sha256=compute_canonical_fingerprint(dev_rows),
+                    file_inventory=file_inv,
+                    development_rows=len(dev_rows),
+                )
+                atomic_write_json(manifest_data, out_path / "p4b_manifest.json")
+
+            return {
+                "summary": summary,
+                "oof_records": all_oof_records,
+            }
+
+        if thread_limit is not None:
+            with threadpoolctl.threadpool_limits(limits=thread_limit):
+                return _execute_loop()
+        else:
+            return _execute_loop()

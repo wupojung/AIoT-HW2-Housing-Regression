@@ -1,4 +1,11 @@
-"""Artifact creation, serialization, atomic persistence, and resume verification for P4-B-A."""
+"""Artifact creation, serialization, atomic persistence, and resume verification for P4-B-A.
+
+Safety & containment boundaries:
+- Pure Python path and serialization operations.
+- STRICTLY ZERO Git or shell subprocess invocations.
+- Enforces private output containment under local/research/phase4-p4b/<run-id> boundary.
+- Atomic file writing via temporary files with SHA-256 calculation.
+"""
 
 from __future__ import annotations
 
@@ -18,20 +25,29 @@ class CheckpointVerificationError(RuntimeError):
     """Raised when checkpoint identity does not match current run configuration."""
 
 
-def is_path_git_ignored(path: Path, repo_root: Path) -> bool:
-    """Check if the given path is ignored by git. Fails closed on any error."""
-    import subprocess
-    try:
-        res = subprocess.run(
-            ["git", "check-ignore", "-q", str(path)],
-            cwd=str(repo_root),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
+class PathContainmentError(RuntimeError):
+    """Raised when an artifact output path violates the designated safe research boundary."""
+
+
+def assert_safe_private_containment(target_dir: Path, repo_root: Optional[Path] = None) -> None:
+    """Enforce that target_dir is strictly contained within local/research/phase4-p4b.
+
+    Fails closed without calling git or any subprocess.
+    """
+    resolved_target = Path(target_dir).resolve()
+    # Check normalized path parts for containment
+    parts = resolved_target.parts
+    # Look for local / research / phase4-p4b sequence
+    found_boundary = False
+    for i in range(len(parts) - 2):
+        if parts[i].lower() == "local" and parts[i + 1].lower() == "research" and parts[i + 2].lower() == "phase4-p4b":
+            found_boundary = True
+            break
+
+    if not found_boundary:
+        raise PathContainmentError(
+            f"Destination '{target_dir}' is not contained under 'local/research/phase4-p4b'."
         )
-        return res.returncode == 0
-    except Exception:
-        return False
 
 
 def compute_file_sha256_and_size(path: Path) -> tuple[str, int]:

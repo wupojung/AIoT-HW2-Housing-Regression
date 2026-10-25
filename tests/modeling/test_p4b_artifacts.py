@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = REPO_ROOT / "python" / "src"
@@ -16,12 +18,13 @@ if str(SRC_DIR) not in sys.path:
 
 from housing_regression.modeling.p4b_artifacts import (
     CheckpointVerificationError,
+    PathContainmentError,
+    assert_safe_private_containment,
     atomic_write_csv,
     atomic_write_json,
     compute_file_sha256_and_size,
     create_manifest,
     create_public_summary,
-    is_path_git_ignored,
     verify_checkpoint_for_resume,
 )
 from housing_regression.modeling.p4b_runner import P4BConfig
@@ -31,14 +34,45 @@ class P4BArtifactsTests(unittest.TestCase):
     """Synthetic unit tests for artifact writing and safety boundaries."""
 
     def setUp(self):
-        self.tmp_dir = Path(tempfile.mkdtemp())
+        # Create a temp directory structured to mimic repo containment
+        self.tmp_base = Path(tempfile.mkdtemp())
+        self.safe_dir = self.tmp_base / "local" / "research" / "phase4-p4b" / "test_run"
+        self.safe_dir.mkdir(parents=True, exist_ok=True)
 
     def tearDown(self):
-        shutil.rmtree(self.tmp_dir, ignore_errors=True)
+        shutil.rmtree(self.tmp_base, ignore_errors=True)
+
+    def test_no_git_subprocess_invocation(self):
+        """Blocker 1: Verify modeling artifact code NEVER invokes subprocess/git."""
+        with patch("subprocess.run") as mock_subproc:
+            # Containment check
+            assert_safe_private_containment(self.safe_dir)
+            # Atomic writes
+            json_file = self.safe_dir / "test.json"
+            atomic_write_json({"a": 1}, json_file)
+            csv_file = self.safe_dir / "test.csv"
+            atomic_write_csv([{"col": "val"}], ["col"], csv_file)
+
+            # Assert subprocess was never called
+            mock_subproc.assert_not_called()
+
+    def test_private_containment_enforcement(self):
+        """Blocker 1: Fail closed if target directory is not under local/research/phase4-p4b."""
+        # Safe directory passes
+        assert_safe_private_containment(self.safe_dir)
+
+        # Unsafe directory fails closed
+        unsafe_dir = self.tmp_base / "public" / "artifacts"
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(unsafe_dir)
+
+        docs_dir = self.tmp_base / "docs" / "crisp-dm"
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(docs_dir)
 
     def test_atomic_write_json_and_csv(self):
         """Verify atomic file writes via temp file and SHA-256 calculation."""
-        json_path = self.tmp_dir / "test.json"
+        json_path = self.safe_dir / "test.json"
         data = {"hello": "world", "count": 42}
         sha, size = atomic_write_json(data, json_path)
 
@@ -47,8 +81,7 @@ class P4BArtifactsTests(unittest.TestCase):
         self.assertGreater(size, 0)
         self.assertEqual(len(sha), 64)
 
-        # Verify CSV atomic write
-        csv_path = self.tmp_dir / "test.csv"
+        csv_path = self.safe_dir / "test.csv"
         records = [{"Id": "1", "val": 10}, {"Id": "2", "val": 20}]
         c_sha, c_size = atomic_write_csv(records, ["Id", "val"], csv_path)
         self.assertTrue(csv_path.exists())
@@ -65,7 +98,7 @@ class P4BArtifactsTests(unittest.TestCase):
             aggregate_results=[],
         )
         serialized = json.dumps(summary)
-        self.assertNotIn("SalePrice", serialized)  # No raw target values
+        self.assertNotIn("SalePrice", serialized)
         self.assertNotIn("test_run_123/p4b_oof_predictions.csv", serialized)
         self.assertIn("metadata", summary)
         self.assertIn("data_boundary", summary["metadata"])
@@ -120,7 +153,7 @@ class P4BArtifactsTests(unittest.TestCase):
                 "protocol_version": "v1.0",
                 "environment": {
                     "python_version": "3.12",
-                    "sklearn_version": "1.8.0",  # mismatched
+                    "sklearn_version": "1.8.0",
                     "numpy_version": "2.5.4",
                     "pandas_version": "3.1.0",
                     "scipy_version": "1.18.1",
