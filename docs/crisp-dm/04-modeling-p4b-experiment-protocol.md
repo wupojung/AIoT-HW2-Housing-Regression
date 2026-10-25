@@ -4,7 +4,7 @@
 - **所屬任務**：Phase 4-B-A 特徵選擇與正則化比較實驗
 - **關聯 Issue**：Issue #21（P4-B 特徵選擇規劃）、Issue #22（P4-B-A 協定凍結）
 - **基準版本 (BASE SHA)**：`ee03a51978a0f615f39b656bee318946dcddd890`（已整併 P4-A 基準模型）
-- **前次審查修訂點 (Amendment BASE)**：`307bc8405742aee262ba1e9722efefcc721cb762`
+- **前次審查修訂點 (Amendment BASE)**：`7c7ad9efbc0a95f8a4c3cfba2bd7d3b78586e7d9`
 - **協定狀態**：Draft Candidate（A1 階段協定凍結審查草案；本協定目前處於審查修改階段，待通過 A1 Review Gate 審定前不代表正式批准；本階段僅制定規範與設計合約，嚴格禁止執行真實資料實驗、模型擬合、單元測試、基準測試、CI 觸發或 A2+ 實作）
 
 ---
@@ -28,26 +28,28 @@
      - **來源佐證（Provenance Verification）**：該摘要已在基準版本 `ee03a519` 之 P4-A 實作（`tests/modeling/test_p4a_ols_cv.py` 與 `docs/crisp-dm/04-modeling-p4a-ols-baseline.md`）中獲得獨立合成回歸測試與程式碼驗證，確認具備完整來源憑據（Verified Provenance）。
      - 本階段僅引用該既定摘要進行外層成員檢驗，絕不重新計算、變更折分配或存取已封存之資料集。
 4. **授權開發資料集嚴格綱要映射與指紋序列化合約（Deterministic Source Schema & Fingerprint Specification）**：
-   - 為在不洩漏或儲存逐列真實資料、私有識別碼的前提下徹底消除原始 CSV 解析與序列化歧義，規範在後續 A2 階段由核可之載入器依據**專案既有原始資料綱要**（`python/src/housing_regression/data_prep/constants.py`）執行確定性型別解析與無歧義二進位編碼：
-     - **原始欄位與目標定義（80 欄全清冊）**：
+   - 為在不洩漏或儲存逐列真實資料、私有識別碼的前提下徹底消除原始 CSV 解析與序列化歧義，規範在後續 A2 階段由核可之載入器依據**專案既有原始資料綱要**（`python/src/housing_regression/data_prep/constants.py`）執行完全互斥且窮盡（Mutually Exclusive & Exhaustive）的 80 欄欄位型別解析與無歧義二進位編碼：
+     - **欄位全清冊與固定序列化順序（80 欄）**：
        - 排除 `Id` 與任何未授權外部欄位。
        - 包含 79 個原始候選預測欄位及 1 個目標欄位 `SalePrice`，序列化時嚴格按以下固定順序排列：
          1. 79 個候選預測欄位依欄位名稱 ASCII 字典序升冪排列。
          2. 最後 1 欄固定為目標欄位 `SalePrice`。
-     - **原始欄位型別歸屬與 CSV 字串解析規則（Field Typing & Raw CSV Parsing Rules）**：
+     - **原始欄位型別歸屬與 CSV 字串解析規則（80 欄劃分：16 INT + 20 FLOAT + 44 STRING）**：
        - **缺失值標記（Missing Value Token）識別**：原始 CSV 字串若為空白字串 `""`、未帶內容之引號 `""`、或空白填充，一律統一解析為 `NULL`（`TypeTag=0x00`）。
-       - **數值欄位（Numeric Columns，共 35 欄 + 目標欄位 1 欄）**：
-         - 依據 `constants.py` 之 `NUMERIC_COLUMNS`（34 欄）、`LotFrontage`、以及 `SalePrice`。
-         - *離散計數與年份欄位（Integer Columns）*：
-           - 包含：`MSSubClass`（注意：`MSSubClass` 於特徵工程中雖作為名義變數，但於原始 CSV 中為整數代碼，為確保指紋忠實反映原始資料本質，解析為 INT）、`YearBuilt`, `YearRemodAdd`, `BsmtFullBath`, `BsmtHalfBath`, `FullBath`, `HalfBath`, `BedroomAbvGr`, `KitchenAbvGr`, `TotRmsAbvGrd`, `Fireplaces`, `GarageCars`, `MoSold`, `YrSold`, `OverallQual`, `OverallCond`, `SalePrice`。
-           - 解析語法：嚴格符合可選正負號與十進位整數正規表示法 `^[+-]?[0-9]+$`。解析後轉為 64 位元有號大端序整數（`TypeTag=0x02`）。任何包含小數點、指數記號或非數字字元之字串皆判定為解析失敗（Reject / Fail-Closed）。
-         - *連續面積與長度欄位（Float Columns）*：
-           - 包含：`LotFrontage`, `LotArea`, `MasVnrArea`, `BsmtFinSF1`, `BsmtFinSF2`, `BsmtUnfSF`, `TotalBsmtSF`, `1stFlrSF`, `2ndFlrSF`, `LowQualFinSF`, `GrLivArea`, `GarageYrBlt`, `GarageArea`, `WoodDeckSF`, `OpenPorchSF`, `EnclosedPorch`, `3SsnPorch`, `ScreenPorch`, `PoolArea`, `MiscVal`。
-           - 解析語法：標準十進位或科學記號浮點數字串。解析後轉為 IEEE-754 64 位元大端序浮點數（`TypeTag=0x03`）。
-           - **無窮大與極端值政策（Infinity & Extremes Policy）**：若字串解析產出正負無窮大（`+inf`, `-inf`），**一律強制拒絕並拋出 `InvalidDataFormatError`（Fail-Closed）**，嚴禁靜默轉為 IEEE Inf；負零 `-0.0` 則標準化為正零 `+0.0`。
-       - **名義與有序類別欄位（String Columns，共 44 欄）**：
-         - 包含 `constants.py` 之 `NOMINAL_COLUMNS`（排除已列為整數代碼之 `MSSubClass`）與 `ORDINAL_COLUMNS`。
-         - 原始 CSV 字串保留字面值，經 **Unicode NFC 規範化** 後轉為 UTF-8 位元組（`TypeTag=0x01`）。若字串恰為真實空字串（未缺漏但長度為 0），編碼為 `Length=0` 之字串 Payload。
+       - **字串欄位（STRING Columns，共 44 欄）**：
+         - **包含項目**：
+           - `constants.py` 之 25 個名義欄位（`NOMINAL_COLUMNS`）：**`MSSubClass` 依據專案 Phase 3 規格嚴格歸為名義類別字串**，加上 `MSZoning`, `Street`, `Alley`, `LandContour`, `Utilities`, `LotConfig`, `Neighborhood`, `Condition1`, `Condition2`, `BldgType`, `HouseStyle`, `RoofStyle`, `RoofMatl`, `Exterior1st`, `Exterior2nd`, `MasVnrType`, `Foundation`, `Heating`, `CentralAir`, `Electrical`, `GarageType`, `MiscFeature`, `SaleType`, `SaleCondition`（共 25 欄）。
+           - `constants.py` 之 19 個有序欄位（`ORDINAL_COLUMNS`）：`ExterQual`, `ExterCond`, `BsmtQual`, `BsmtCond`, `BsmtExposure`, `BsmtFinType1`, `BsmtFinType2`, `HeatingQC`, `KitchenQual`, `Functional`, `FireplaceQu`, `GarageFinish`, `GarageQual`, `GarageCond`, `PavedDrive`, `PoolQC`, `Fence`, `LotShape`, `LandSlope`（共 19 欄）。
+         - **編碼規範**：保留原始 CSV 之精確字面值（例如名義代碼 `MSSubClass` 保留原始文字，如 `"20"` 與 `"020"` 視為不同類別水準，不轉為整數），字串經 **Unicode NFC 規範化** 後轉為 UTF-8 位元組序列（`TypeTag=0x01`）。真值為空字串編碼為 `Length=0`。
+       - **整數欄位（INT Columns，共 16 欄）**：
+         - **包含項目**：
+           - 15 個離散計數與年份數值欄位：`YearBuilt`, `YearRemodAdd`, `BsmtFullBath`, `BsmtHalfBath`, `FullBath`, `HalfBath`, `BedroomAbvGr`, `KitchenAbvGr`, `TotRmsAbvGrd`, `Fireplaces`, `GarageCars`, `MoSold`, `YrSold`, `OverallQual`, `OverallCond`。
+           - 1 個目標欄位：`SalePrice`。
+         - **解析與編碼規範**：字串必須嚴格符合十進位整數正規表示法 `^[+-]?[0-9]+$`。解析後轉為 64 位元有號大端序整數（`>q`，8 bytes，`TypeTag=0x02`）。任何包含小數點、指數記號或非數字字元之字串必定判定為解析失敗並拒絕（Fail-Closed）。
+       - **浮點數欄位（FLOAT Columns，共 20 欄）**：
+         - **包含項目**：`constants.py` 中 20 個連續面積與長度欄位：`LotFrontage`, `LotArea`, `MasVnrArea`, `BsmtFinSF1`, `BsmtFinSF2`, `BsmtUnfSF`, `TotalBsmtSF`, `1stFlrSF`, `2ndFlrSF`, `LowQualFinSF`, `GrLivArea`, `GarageYrBlt`, `GarageArea`, `WoodDeckSF`, `OpenPorchSF`, `EnclosedPorch`, `3SsnPorch`, `ScreenPorch`, `PoolArea`, `MiscVal`。
+         - **解析與編碼規範**：標準浮點數格式解析後轉為 IEEE-754 雙精度 64 位元大端序浮點數（`>d`，8 bytes，`TypeTag=0x03`）。
+         - **無窮大拒絕與極端值政策**：若輸入為 `+inf` 或 `-inf`，**必定拋出 `InvalidDataFormatError` 拒絕執行（Fail-Closed）**；負零 `-0.0` 標準化為正零 `+0.0`。
      - **每欄二進位封包格式**：`[TypeTag: 1 byte][Length: 4 bytes big-endian unsigned int][Payload: Length bytes]`。
        - `0x00` = `NULL`：`Length=0`, `Payload` 空。
        - `0x01` = `STRING`：`Payload` 為 NFC UTF-8 位元組。
@@ -412,7 +414,7 @@ for tr_idx, val_idx in kf.split(X_synthetic):
 | `TEST-P4B-11` | 公開摘要去識別化 | 驗證 `p4b_public_summary.json` 不含任何逐列 OOF、真實標籤或本機敏感路徑。 | 隱私安全測試 |
 | `TEST-P4B-12` | 候選 K 值範圍合約 | 驗證選擇器嚴格僅能輸出 $K \in \{2, 3, 5, 10, 20\}$ 之特徵集合，傳入非法 $K$ 拋出異常。 | 參數邊界測試 |
 | `TEST-P4B-13` | SFS 訓練集獨立挑選 | 斷言驗證 SFS 貪婪挑選特徵過程僅依賴 Inner Train 殘差，Inner Val 保持未讀取。 | 演算法隔離測試 |
-| `TEST-P4B-14` | 指紋防碰撞、型別解析與無窮大拒絕 | 驗證二進位型別標記（`>q`, `>d`, NFC UTF-8）精確區分 `[Null]` vs `[""]`、名義數字代碼（`MSSubClass` 作為 INT）與浮點連續欄位，注入 `+inf`/`-inf` 或無效數字語法必定觸發 `InvalidDataFormatError` 拒絕，且重複雜湊 100% 一致。 | 資料完整性測試 |
+| `TEST-P4B-14` | 指紋防碰撞、名義代碼保留與無窮大拒絕 | 驗證二進位型別標記（`>q`, `>d`, NFC UTF-8）精確區分 `[Null]` vs `[""]`；斷言名義數字代碼 `MSSubClass` 嚴格作為 STRING 序列化並區分 `"20"` vs `"020"` 等原始詞彙；驗證整數/浮點正規化轉換，注入 `+inf`/`-inf` 或無效數字語法必定觸發 `InvalidDataFormatError` 拒絕，且重複雜湊 100% 一致。 | 資料完整性測試 |
 | `TEST-P4B-15` | 檢查點身份不符拒絕接續 | 模擬變更套件版本或折分種子，驗證 Runner 必定拒絕接續中斷檔並拋出例外。 | 接續安全測試 |
 | `TEST-P4B-16` | Track B 確定性全序平手 | 注入相同評分之 Lasso 與 ElasticNet 候選，驗證全域平手集合形成法必定由 Lasso 優先。 | 確定性測試 |
 | `TEST-P4B-17` | 連鎖近似分數平手無關性 | 構造分數呈微小步進（例如 $s_1=0.1000000000$, $s_2=0.1000000005$, $s_3=0.1000000012$）之候選串列，驗證全域最小值集合法勝出者與評估迭代順序完全無關。 | 邊界穩定性測試 |
