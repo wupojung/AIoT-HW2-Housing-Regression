@@ -182,7 +182,7 @@ class P4BConfig:
     tol: float = 1e-4
     single_thread: bool = True
     timeout_seconds: Optional[float] = None
-    use_isolated_worker_process: bool = False
+    use_isolated_worker_process: bool = True
     repo_root: Optional[Path] = None
     active_methods: Optional[List[str]] = None  # None means all 5 methods
     active_pairs: Optional[List[Tuple[str, str]]] = None  # None means all 7 pairs
@@ -482,11 +482,25 @@ def _mp_worker_target(
     outer_fold_idx: int,
     outer_train_rows: List[Dict[str, str]],
     outer_val_rows: List[Dict[str, str]],
+    stall_before_fit: bool = False,
 ) -> None:
     try:
-        runner = P4BRunner(config)
-        res = runner.execute_outer_fold(outer_fold_idx, outer_train_rows, outer_val_rows)
-        queue.put(("SUCCESS", res, runner.accounting.estimator_fits, runner.accounting.preprocessor_fits))
+        # B03: enforce single-thread limits strictly inside child worker
+        thread_limit = 1 if config.single_thread else None
+        if thread_limit is not None:
+            with threadpoolctl.threadpool_limits(limits=thread_limit):
+                if stall_before_fit:
+                    # Deliberately stall for timeout testing
+                    time.sleep(30.0)
+                runner = P4BRunner(config)
+                res = runner.execute_outer_fold(outer_fold_idx, outer_train_rows, outer_val_rows)
+                queue.put(("SUCCESS", res, runner.accounting.estimator_fits, runner.accounting.preprocessor_fits))
+        else:
+            if stall_before_fit:
+                time.sleep(30.0)
+            runner = P4BRunner(config)
+            res = runner.execute_outer_fold(outer_fold_idx, outer_train_rows, outer_val_rows)
+            queue.put(("SUCCESS", res, runner.accounting.estimator_fits, runner.accounting.preprocessor_fits))
     except Exception as exc:
         queue.put(("EXCEPTION", type(exc).__name__, str(exc)))
 
@@ -518,6 +532,7 @@ class P4BRunner:
                 grid_idx += 1
 
         self.deadline: Optional[float] = None
+        self.stall_mock_worker: bool = False
 
     def _check_deadline(self) -> None:
         """Enforce wall-clock timeout between units of work."""
@@ -1111,6 +1126,13 @@ class P4BRunner:
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
     ) -> Dict[str, Any]:
         """Execute full nested cross-validation across all outer folds with preflight checks and outputs."""
+        # 0. Enforce B03 Fail-Closed: timeout must be positive and isolated worker enabled
+        if self.config.timeout_seconds is not None:
+            if self.config.timeout_seconds <= 0:
+                raise ValueError("timeout_seconds must be positive if specified.")
+            if not self.config.use_isolated_worker_process:
+                raise RuntimeError("FAIL_CLOSED: Timed execution requires use_isolated_worker_process=True.")
+
         # 1. Conservative Preflight Budget Check
         est_req, prep_req = estimate_preflight_budget(self.config)
         if est_req > self.config.estimator_fit_cap:
@@ -1137,6 +1159,7 @@ class P4BRunner:
             assert_safe_private_containment,
             atomic_write_csv,
             atomic_write_json,
+            compute_checkpoint_payload_digest,
             create_manifest,
             create_public_summary,
             verify_checkpoint_for_resume,
@@ -1163,8 +1186,10 @@ class P4BRunner:
                 "pandas": pd.__version__,
                 "scipy": scipy.__version__,
             }
-            # Search for checkpoint_fold_*.json
-            for chk_file in sorted(resume_dir.glob("checkpoint_fold_*.json")):
+            chk_files = list(sorted(resume_dir.glob("checkpoint_fold_*.json")))
+            if not chk_files:
+                raise CheckpointVerificationError(f"No checkpoint files found in resume directory '{resume_dir}'.")
+            for chk_file in chk_files:
                 with open(chk_file, "r", encoding="utf-8") as f:
                     chk_data = json.load(f)
                 verify_checkpoint_for_resume(chk_data, canonical_fp, self.config, env_vers)
@@ -1189,34 +1214,34 @@ class P4BRunner:
                     # Check if already completed from resume checkpoint
                     if k in completed_folds:
                         chk_data = completed_folds[k]
-                        all_fold_results.extend(chk_data.get("results", []))
-                        all_oof_records.extend(chk_data.get("oof_records", []))
+                        all_fold_results.extend(chk_data["results"])
+                        all_oof_records.extend(chk_data["oof_records"])
                         continue
 
                     tr_rows = [dict(dev_rows[i]) for i, f in enumerate(outer_folds) if f != k]
                     va_rows = [dict(dev_rows[i]) for i, f in enumerate(outer_folds) if f == k]
 
                     if self.config.use_isolated_worker_process and self.config.timeout_seconds is not None:
-                        # B03: Execute fold inside independently killable worker process
                         ctx = mp.get_context("spawn")
                         queue = ctx.Queue()
                         proc = ctx.Process(
                             target=_mp_worker_target,
-                            args=(queue, self.config, k, tr_rows, va_rows),
+                            args=(queue, self.config, k, tr_rows, va_rows, self.stall_mock_worker),
                         )
                         proc.start()
                         remaining_timeout = max(0.01, self.deadline - time.perf_counter()) if self.deadline else None
                         proc.join(timeout=remaining_timeout)
 
                         if proc.is_alive():
-                            # Kill child process on timeout
+                            child_pid = proc.pid
                             proc.terminate()
                             proc.join(timeout=1.0)
                             if proc.is_alive():
                                 proc.kill()
                                 proc.join()
+                            assert not proc.is_alive(), f"Orphan process detected! PID {child_pid}"
                             raise TimeoutExceededError(
-                                f"Worker process for outer fold {k} exceeded timeout and was terminated."
+                                f"Worker process for outer fold {k} (PID {child_pid}) exceeded timeout and was terminated."
                             )
 
                         if queue.empty():
@@ -1226,7 +1251,6 @@ class P4BRunner:
                         if msg[0] == "EXCEPTION":
                             raise RuntimeError(f"Worker process error ({msg[1]}): {msg[2]}")
                         fold_output = msg[1]
-                        # Sync fit accounting counts from worker
                         self.accounting.record_estimator_fit(msg[2])
                         self.accounting.record_preprocessor_fit(msg[3])
                     else:
@@ -1245,13 +1269,26 @@ class P4BRunner:
                         import sklearn
                         import pandas as pd
                         import scipy
+                        payload_digest = compute_checkpoint_payload_digest(fold_output["results"], fold_output["oof_records"])
                         fold_chk = {
                             "run_id": run_id,
                             "completed_outer_fold": k,
                             "code_head_commit": self.config.code_head_commit,
                             "dataset_fingerprint": canonical_fp,
+                            "payload_digest": payload_digest,
                             "results": fold_output["results"],
                             "oof_records": fold_output["oof_records"],
+                            "run_config": {
+                                "d_ceiling": self.config.d_ceiling,
+                                "k_candidates": list(self.config.k_candidates),
+                                "active_methods": self.config.active_methods or [
+                                    "filter_pearson",
+                                    "forward_sfs",
+                                    "rfe_ridge",
+                                    "lasso_cv",
+                                    "elastic_net_cv",
+                                ],
+                            },
                             "metadata": {
                                 "protocol_version": self.config.protocol_version,
                                 "environment": {
@@ -1262,8 +1299,8 @@ class P4BRunner:
                                     "scipy_version": scipy.__version__,
                                 },
                                 "data_boundary": {
-                                    "outer_kfold": {"random_state": self.config.outer_seed},
-                                    "inner_kfold": {"random_state": self.config.inner_seed},
+                                    "outer_kfold": {"n_splits": self.config.outer_splits, "random_state": self.config.outer_seed},
+                                    "inner_kfold": {"n_splits": self.config.inner_splits, "random_state": self.config.inner_seed},
                                 },
                             },
                         }
@@ -1274,7 +1311,6 @@ class P4BRunner:
                 run_status = "FAILED"
                 exception_info = f"{type(exc).__name__}: {str(exc)}"
                 if output_dir is not None:
-                    # B04: Write atomic sanitized failure JSON before re-raising
                     write_durable_failure_json(
                         target_dir=output_dir,
                         run_id=run_id or "p4b_run",

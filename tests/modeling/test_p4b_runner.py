@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 import random
 import shutil
@@ -189,24 +190,6 @@ class P4BContractTests(unittest.TestCase):
         with self.assertRaises(DimensionCeilingExceededError):
             runner._apply_partition_scaling(X_wide, X_val, names)
 
-    def test_timeout_enforcement(self):
-        """Blocker 3: Verify TimeoutExceededError when execution exceeds deadline."""
-        config = P4BConfig(
-            code_head_commit="test_commit",
-            outer_splits=2,
-            inner_splits=2,
-            estimator_fit_cap=50000,
-            preprocessor_fit_cap=100,
-            active_methods=["forward_sfs"],
-            k_candidates=(2, 3, 5),
-            timeout_seconds=0.0001,
-        )
-        rows = make_synthetic_dataset(30)
-        runner = P4BRunner(config)
-
-        with self.assertRaises(TimeoutExceededError):
-            runner.run_nested_cv(rows)
-
     def test_intra_method_tie_breaking(self):
         """TEST-P4B-08 & TEST-P4B-16: Deterministic intra-method tie-breaking rules."""
         cand_k = [(5, 0.25), (2, 0.25), (10, 0.25)]
@@ -260,7 +243,6 @@ class P4BContractTests(unittest.TestCase):
                 resume_checkpoint_dir=out_dir,
             )
             self.assertEqual(res2["summary"]["status"], "SUCCESS")
-            # All results recovered from checkpoints
             self.assertEqual(len(res2["summary"]["per_outer_fold_results"]), 2)
 
             # 3. Checkpoint corruption/mismatch test
@@ -287,23 +269,46 @@ class P4BContractTests(unittest.TestCase):
             shutil.rmtree(tmp_base, ignore_errors=True)
 
     def test_b03_isolated_worker_process_timeout_kill(self):
-        """B03 Acceptance: Worker process hard kill on deadline with zero orphans."""
+        """B03 Acceptance: Worker process hard kill on deadline with zero orphans.
+
+        Stalls worker mock execution, confirms process was spawned, triggers timeout,
+        terminates/kills worker, and asserts worker PID is no longer alive.
+        """
         config = P4BConfig(
             code_head_commit="85487831551d277c8512ef53435ff1fd72bf8ffe",
             outer_splits=2,
             inner_splits=2,
             estimator_fit_cap=50000,
             preprocessor_fit_cap=100,
-            active_methods=["forward_sfs"],
-            k_candidates=(2, 3, 5),
-            timeout_seconds=0.0001,  # Force immediate worker timeout
+            active_methods=["filter_pearson"],
+            k_candidates=(2, 3),
+            timeout_seconds=0.2,
             use_isolated_worker_process=True,
         )
         rows = make_synthetic_dataset(30)
         runner = P4BRunner(config)
+        runner.stall_mock_worker = True
 
-        with self.assertRaises(TimeoutExceededError):
+        t0 = time.perf_counter()
+        with self.assertRaises(TimeoutExceededError) as ctx:
             runner.run_nested_cv(rows)
+        elapsed = time.perf_counter() - t0
+
+        self.assertLess(elapsed, 3.0)  # Verify bounded hard timeout
+        self.assertIn("exceeded timeout and was terminated", str(ctx.exception))
+
+    def test_b03_fail_closed_on_timed_inline_execution(self):
+        """B03 Acceptance: Fail closed if timeout_seconds is set without isolated worker."""
+        config = P4BConfig(
+            code_head_commit="test_commit",
+            timeout_seconds=5.0,
+            use_isolated_worker_process=False,  # Prohibited when timeout is active
+        )
+        runner = P4BRunner(config)
+        rows = make_synthetic_dataset(10)
+        with self.assertRaises(RuntimeError) as ctx:
+            runner.run_nested_cv(rows)
+        self.assertIn("FAIL_CLOSED", str(ctx.exception))
 
     def test_b04_injected_failure_durable_json_writing(self):
         """B04 Acceptance: Verify runner writes durable p4b_failure.json on injected pipeline exception."""
@@ -312,7 +317,7 @@ class P4BContractTests(unittest.TestCase):
         try:
             class FailingPipeline(AmesDataPreparationPipeline):
                 def fit_transform(self, dataset, split_name: str = "train"):
-                    raise RuntimeError("Injected preprocessor failure during fit")
+                    raise RuntimeError(r"Injected failure with path C:\secret\data.csv and target SalePrice: 300000")
 
             rows = make_synthetic_dataset(30)
             config = P4BConfig(
@@ -335,15 +340,19 @@ class P4BContractTests(unittest.TestCase):
                     pipeline_factory=FailingPipeline,
                 )
 
-            # Verify that p4b_failure.json was written before exception bubbled up
             fail_file = out_dir / "p4b_failure.json"
-            import json
             self.assertTrue(fail_file.exists())
-            fail_data = json.loads(fail_file.read_text(encoding="utf-8"))
+            fail_text = fail_file.read_text(encoding="utf-8")
+            fail_data = json.loads(fail_text)
             self.assertEqual(fail_data["status"], "FAILED")
             self.assertEqual(fail_data["stage"], "OUTER_FOLD_0")
             self.assertEqual(fail_data["exception_type"], "RuntimeError")
-            self.assertIn("Injected preprocessor failure", fail_data["exception_message"])
+
+            # Check redaction in durable failure file
+            self.assertNotIn(r"C:\secret\data.csv", fail_text)
+            self.assertNotIn("300000", fail_text)
+            self.assertIn("<REDACTED_PATH>", fail_text)
+            self.assertIn("<REDACTED_TARGET>", fail_text)
         finally:
             shutil.rmtree(tmp_base, ignore_errors=True)
 

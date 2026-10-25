@@ -40,27 +40,38 @@ def assert_safe_private_containment(
 ) -> Path:
     """Enforce that target_dir is strictly contained within repo_root/local/research/phase4-p4b/<run_id>.
 
-    Rejects symlinks, parent directory escapes (..), sibling paths, and noncanonical run IDs.
+    Rejects symlinks, parent directory escapes (..), sibling paths, and missing or noncanonical run IDs.
     Fails closed without calling git or any subprocess.
     """
+    if run_id is None or not run_id.strip():
+        raise PathContainmentError("run_id is required and cannot be empty or None.")
+
+    if not RUN_ID_REGEX.match(run_id):
+        raise PathContainmentError(f"Noncanonical run_id '{run_id}'. Must be alphanumeric/dash/underscore only.")
+
     if repo_root is None:
-        # Default to finding repo root from file location
         repo_root = Path(__file__).resolve().parents[4]
+
+    # Check if target_dir or any of its parents are symlinks
+    raw_target = Path(target_dir)
+    curr = raw_target
+    while True:
+        if curr.is_symlink():
+            raise PathContainmentError(f"Symlinks are prohibited in containment path: '{curr}'.")
+        if curr.parent == curr:
+            break
+        curr = curr.parent
+
     resolved_root = repo_root.resolve()
-
     canonical_research_base = (resolved_root / "local" / "research" / "phase4-p4b").resolve()
-    resolved_target = Path(target_dir).resolve()
+    expected_run_dir = (canonical_research_base / run_id).resolve()
+    resolved_target = raw_target.resolve()
 
-    if run_id is not None:
-        if not RUN_ID_REGEX.match(run_id):
-            raise PathContainmentError(f"Noncanonical run_id '{run_id}'. Must be alphanumeric/dash/underscore only.")
-        expected_run_dir = (canonical_research_base / run_id).resolve()
-        if resolved_target != expected_run_dir and expected_run_dir not in resolved_target.parents:
-            raise PathContainmentError(
-                f"Target '{resolved_target}' is not within expected run directory '{expected_run_dir}'."
-            )
+    if resolved_target != expected_run_dir and expected_run_dir not in resolved_target.parents:
+        raise PathContainmentError(
+            f"Target '{resolved_target}' is not within expected run directory '{expected_run_dir}'."
+        )
 
-    # Must be strictly within canonical_research_base
     try:
         rel = resolved_target.relative_to(canonical_research_base)
     except ValueError as exc:
@@ -115,6 +126,19 @@ def atomic_write_csv(records: Sequence[Mapping[str, Any]], fieldnames: Sequence[
     return sha256, size
 
 
+def sanitize_error_message(msg: str) -> str:
+    """Sanitize exception message to ensure no local paths or row data are exposed."""
+    # Redact Windows / Unix filepaths
+    sanitized = re.sub(r"[a-zA-Z]:\\[^\s,;\"']+", "<REDACTED_PATH>", msg)
+    sanitized = re.sub(r"/[a-zA-Z0-9_\-\./]+", "<REDACTED_PATH>", sanitized)
+    # Redact common row target tokens
+    sanitized = re.sub(r"SalePrice\s*[:=]\s*[0-9\.]+", "<REDACTED_TARGET>", sanitized)
+    # Truncate to bounded length
+    if len(sanitized) > 200:
+        sanitized = sanitized[:197] + "..."
+    return sanitized
+
+
 def write_durable_failure_json(
     target_dir: Path,
     run_id: str,
@@ -126,9 +150,10 @@ def write_durable_failure_json(
 ) -> Path:
     """B04: Write atomic sanitized failure JSON before re-raising.
 
-    Redacts raw paths and sensitive row records.
+    Redacts raw paths and sensitive row records. Surfaces secondary write failures with sanitized status.
     """
     failure_path = Path(target_dir) / "p4b_failure.json"
+    clean_msg = sanitize_error_message(str(exception))
     data = {
         "run_id": run_id,
         "status": "FAILED",
@@ -136,16 +161,23 @@ def write_durable_failure_json(
         "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "code_head_commit": code_head_commit,
         "exception_type": type(exception).__name__,
-        "exception_message": str(exception),
+        "exception_message": clean_msg,
         "fit_accounting": dict(accounting_summary),
         "config_summary": dict(config_summary),
     }
     try:
         atomic_write_json(data, failure_path)
     except Exception as exc:
-        # Surface any secondary write failure explicitly
-        raise RuntimeError(f"Failed writing durable failure record to '{failure_path}': {exc}") from exc
+        raise RuntimeError(f"DURABLE_FAILURE_WRITE_FAILED: {type(exc).__name__}") from None
     return failure_path
+
+
+def compute_checkpoint_payload_digest(results: Sequence[Mapping[str, Any]], oof_records: Sequence[Mapping[str, Any]]) -> str:
+    """Compute deterministic SHA-256 digest over checkpoint result payloads."""
+    h = hashlib.sha256()
+    payload_str = json.dumps({"results": list(results), "oof_records": list(oof_records)}, sort_keys=True)
+    h.update(payload_str.encode("utf-8"))
+    return h.hexdigest()
 
 
 def create_manifest(
@@ -237,10 +269,14 @@ def verify_checkpoint_for_resume(
     config: P4BConfig,
     env_versions: Mapping[str, str],
 ) -> None:
-    """Verify all 5 resume identity conditions. Fail closed with CheckpointVerificationError on mismatch."""
+    """Verify all resume identity conditions, run config, and payload integrity.
+
+    Fail closed with CheckpointVerificationError on any mismatch.
+    """
     meta = checkpoint_data.get("metadata", {})
     env = meta.get("environment", {})
     db = meta.get("data_boundary", {})
+    cfg = checkpoint_data.get("run_config", {})
 
     # 1. Dataset fingerprint
     actual_fp = checkpoint_data.get("dataset_fingerprint") or meta.get("dataset_fingerprint")
@@ -271,10 +307,43 @@ def verify_checkpoint_for_resume(
                 f"Dependency version mismatch for {pkg}: expected {exp_ver}, got {act_ver}."
             )
 
-    # 5. Split seeds
+    # 5. Split seeds & fold plan
     outer_seed = db.get("outer_kfold", {}).get("random_state")
     inner_seed = db.get("inner_kfold", {}).get("random_state")
-    if outer_seed != config.outer_seed or inner_seed != config.inner_seed:
-        raise CheckpointVerificationError(
-            f"Split seed mismatch: expected ({config.outer_seed}, {config.inner_seed}), got ({outer_seed}, {inner_seed})."
-        )
+    outer_splits = db.get("outer_kfold", {}).get("n_splits")
+    inner_splits = db.get("inner_kfold", {}).get("n_splits")
+    if (
+        outer_seed != config.outer_seed
+        or inner_seed != config.inner_seed
+        or outer_splits != config.outer_splits
+        or inner_splits != config.inner_splits
+    ):
+        raise CheckpointVerificationError("Split plan/seed mismatch in checkpoint.")
+
+    # 6. Run-defining configuration
+    if cfg:
+        if (
+            cfg.get("d_ceiling") != config.d_ceiling
+            or cfg.get("k_candidates") != list(config.k_candidates)
+            or cfg.get("active_methods") != (config.active_methods or ["filter_pearson", "forward_sfs", "rfe_ridge", "lasso_cv", "elastic_net_cv"])
+        ):
+            raise CheckpointVerificationError("Run-defining config parameters mismatch in checkpoint.")
+
+    # 7. Fold index validity and payload non-emptiness
+    fold_idx = checkpoint_data.get("completed_outer_fold")
+    if fold_idx is None or not (0 <= fold_idx < config.outer_splits):
+        raise CheckpointVerificationError(f"Invalid fold index {fold_idx} for splits {config.outer_splits}.")
+
+    results = checkpoint_data.get("results")
+    oof_records = checkpoint_data.get("oof_records")
+    if not results or not oof_records:
+        raise CheckpointVerificationError(f"Checkpoint for fold {fold_idx} is missing results or oof_records.")
+
+    # 8. Checkpoint payload digest verification
+    expected_digest = checkpoint_data.get("payload_digest")
+    if expected_digest is not None:
+        actual_digest = compute_checkpoint_payload_digest(results, oof_records)
+        if actual_digest != expected_digest:
+            raise CheckpointVerificationError(
+                f"Checkpoint payload digest mismatch: expected {expected_digest}, computed {actual_digest}."
+            )

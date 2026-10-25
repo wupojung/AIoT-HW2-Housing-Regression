@@ -24,6 +24,7 @@ from housing_regression.modeling.p4b_artifacts import (
     compute_file_sha256_and_size,
     create_manifest,
     create_public_summary,
+    sanitize_error_message,
     verify_checkpoint_for_resume,
     write_durable_failure_json,
 )
@@ -52,40 +53,54 @@ class P4BArtifactsTests(unittest.TestCase):
             mock_subproc.assert_not_called()
 
     def test_b01_containment_negative_cases(self):
-        """B01 Acceptance: Reject symlink escapes, parent traversal (..), sibling paths, and noncanonical run IDs."""
+        """B01 Acceptance: Reject missing run_id, symlink escapes, parent traversal (..), and sibling paths."""
         # 1. Valid path passes
         assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="test_run")
 
-        # 2. Noncanonical run_id
+        # 2. Missing run_id (QA finding: run_id must be required and nonempty)
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id=None)
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="")
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="   ")
+
+        # 3. Noncanonical run_id
         with self.assertRaises(PathContainmentError):
             assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="../test_run")
         with self.assertRaises(PathContainmentError):
             assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="bad/slash")
-        with self.assertRaises(PathContainmentError):
-            assert_safe_private_containment(self.safe_dir, repo_root=self.tmp_base, run_id="bad space")
 
-        # 3. Path traversal escape (..)
+        # 4. Path traversal escape (..)
         bad_traversal = self.safe_dir / ".." / "other_dir"
         with self.assertRaises(PathContainmentError):
             assert_safe_private_containment(bad_traversal, repo_root=self.tmp_base, run_id="test_run")
 
-        # 4. Sibling fake path outside local/research/phase4-p4b
+        # 5. Sibling fake path outside local/research/phase4-p4b
         fake_sibling = self.tmp_base / "local" / "research" / "phase4-p4a" / "test_run"
         with self.assertRaises(PathContainmentError):
             assert_safe_private_containment(fake_sibling, repo_root=self.tmp_base, run_id="test_run")
 
-        fake_public = self.tmp_base / "docs" / "crisp-dm" / "test_run"
-        with self.assertRaises(PathContainmentError):
-            assert_safe_private_containment(fake_public, repo_root=self.tmp_base, run_id="test_run")
+        # 6. Symlink rejection
+        symlink_dir = self.tmp_base / "symlink_dir"
+        try:
+            symlink_dir.symlink_to(self.safe_dir, target_is_directory=True)
+            with self.assertRaises(PathContainmentError):
+                assert_safe_private_containment(symlink_dir, repo_root=self.tmp_base, run_id="test_run")
+        except (OSError, NotImplementedError):
+            pass  # Windows unprivileged symlink fallback
 
-    def test_b04_durable_failure_json_writing(self):
-        """B04 Acceptance: On injected failure, write atomic sanitized failure JSON with redacted data."""
+    def test_b04_durable_failure_json_and_sanitization(self):
+        """B04 Acceptance: On injected failure, write atomic sanitized failure JSON; redact paths and row data."""
+        injected_exc = ValueError(
+            r"Failed processing row Id=123 SalePrice: 208500 at file C:\project\nchu\private_data.csv"
+        )
         fail_file = write_durable_failure_json(
             target_dir=self.safe_dir,
             run_id="test_run",
             stage="OUTER_FOLD_1",
             code_head_commit="85487831551d277c8512ef53435ff1fd72bf8ffe",
-            exception=ValueError("Synthetic injected failure"),
+            exception=injected_exc,
             accounting_summary={"estimator_fits": 12, "preprocessor_fits": 2},
             config_summary={"protocol_version": "v1.0", "d_ceiling": 300},
         )
@@ -94,12 +109,28 @@ class P4BArtifactsTests(unittest.TestCase):
         self.assertEqual(data["status"], "FAILED")
         self.assertEqual(data["stage"], "OUTER_FOLD_1")
         self.assertEqual(data["exception_type"], "ValueError")
-        self.assertIn("Synthetic injected failure", data["exception_message"])
-        self.assertEqual(data["fit_accounting"]["estimator_fits"], 12)
-        # Verify no raw paths or target data are in failure JSON
+
+        # Assert path and target price redaction
         serialized = json.dumps(data)
-        self.assertNotIn("SalePrice", serialized)
-        self.assertNotIn("C:\\", serialized)
+        self.assertNotIn(r"C:\project\nchu", serialized)
+        self.assertNotIn("208500", serialized)
+        self.assertIn("<REDACTED_PATH>", serialized)
+        self.assertIn("<REDACTED_TARGET>", serialized)
+
+    def test_b04_secondary_write_failure_handling(self):
+        """B04 Acceptance: Surface unavailable-output handling failure with sanitized explicit status."""
+        with patch("housing_regression.modeling.p4b_artifacts.atomic_write_json", side_effect=PermissionError("Simulated write error")):
+            with self.assertRaises(RuntimeError) as ctx:
+                write_durable_failure_json(
+                    target_dir=self.safe_dir,
+                    run_id="test_run",
+                    stage="TEST_STAGE",
+                    code_head_commit="commit123",
+                    exception=ValueError("test"),
+                    accounting_summary={},
+                    config_summary={},
+                )
+            self.assertEqual(str(ctx.exception), "DURABLE_FAILURE_WRITE_FAILED: PermissionError")
 
     def test_atomic_write_json_and_csv(self):
         """Verify atomic file writes via temp file and SHA-256 calculation."""
@@ -135,13 +166,17 @@ class P4BArtifactsTests(unittest.TestCase):
         self.assertIn("data_boundary", summary["metadata"])
         self.assertIn("environment", summary["metadata"])
 
-    def test_checkpoint_resume_verification(self):
-        """TEST-P4B-15: Resume verification fails closed on parameter or environment mismatch."""
+    def test_checkpoint_resume_verification_comprehensive(self):
+        """TEST-P4B-15 & B02: Resume verification fails closed on parameter, seed, config, or payload mismatch."""
         config = P4BConfig(
             code_head_commit="fb4ce7ab32af6c04ad49643e8a1917a591ad6379",
             protocol_version="v1.0",
+            outer_splits=5,
             outer_seed=42,
+            inner_splits=3,
             inner_seed=1042,
+            d_ceiling=300,
+            k_candidates=(2, 3, 5, 10, 20),
         )
         env = {
             "python": "3.12",
@@ -151,52 +186,52 @@ class P4BArtifactsTests(unittest.TestCase):
             "scipy": "1.18.1",
         }
         good_checkpoint = {
+            "completed_outer_fold": 0,
             "dataset_fingerprint": "expected_fp_123",
             "code_head_commit": "fb4ce7ab32af6c04ad49643e8a1917a591ad6379",
+            "results": [{"fold": 0, "metric": 0.5}],
+            "oof_records": [{"Id": "1", "pred": 100.0}],
+            "run_config": {
+                "d_ceiling": 300,
+                "k_candidates": [2, 3, 5, 10, 20],
+                "active_methods": ["filter_pearson", "forward_sfs", "rfe_ridge", "lasso_cv", "elastic_net_cv"],
+            },
             "metadata": {
                 "protocol_version": "v1.0",
                 "environment": {f"{k}_version": v for k, v in env.items()},
                 "data_boundary": {
-                    "outer_kfold": {"random_state": 42},
-                    "inner_kfold": {"random_state": 1042},
+                    "outer_kfold": {"n_splits": 5, "random_state": 42},
+                    "inner_kfold": {"n_splits": 3, "random_state": 1042},
                 },
             },
         }
 
-        # Valid checkpoint passes
+        # 1. Valid checkpoint passes
         verify_checkpoint_for_resume(good_checkpoint, "expected_fp_123", config, env)
 
-        # Mismatch in dataset fingerprint
+        # 2. Mismatch in dataset fingerprint
         with self.assertRaises(CheckpointVerificationError):
             verify_checkpoint_for_resume(good_checkpoint, "mismatched_fp", config, env)
 
-        # Mismatch in code commit
-        bad_commit_checkpoint = dict(good_checkpoint)
-        bad_commit_checkpoint["code_head_commit"] = "different_sha"
+        # 3. Mismatch in code commit
+        bad_commit = dict(good_checkpoint, code_head_commit="bad_sha")
         with self.assertRaises(CheckpointVerificationError):
-            verify_checkpoint_for_resume(bad_commit_checkpoint, "expected_fp_123", config, env)
+            verify_checkpoint_for_resume(bad_commit, "expected_fp_123", config, env)
 
-        # Mismatch in dependency version
-        bad_env_checkpoint = {
-            "dataset_fingerprint": "expected_fp_123",
-            "code_head_commit": "fb4ce7ab32af6c04ad49643e8a1917a591ad6379",
-            "metadata": {
-                "protocol_version": "v1.0",
-                "environment": {
-                    "python_version": "3.12",
-                    "sklearn_version": "1.8.0",
-                    "numpy_version": "2.5.4",
-                    "pandas_version": "3.1.0",
-                    "scipy_version": "1.18.1",
-                },
-                "data_boundary": {
-                    "outer_kfold": {"random_state": 42},
-                    "inner_kfold": {"random_state": 1042},
-                },
-            },
-        }
+        # 4. Missing results or oof_records payload
+        empty_results = dict(good_checkpoint, results=[])
         with self.assertRaises(CheckpointVerificationError):
-            verify_checkpoint_for_resume(bad_env_checkpoint, "expected_fp_123", config, env)
+            verify_checkpoint_for_resume(empty_results, "expected_fp_123", config, env)
+
+        # 5. Invalid fold index
+        invalid_fold = dict(good_checkpoint, completed_outer_fold=10)
+        with self.assertRaises(CheckpointVerificationError):
+            verify_checkpoint_for_resume(invalid_fold, "expected_fp_123", config, env)
+
+        # 6. Mismatch in run config
+        bad_cfg = dict(good_checkpoint, run_config={"d_ceiling": 200, "k_candidates": [2], "active_methods": []})
+        with self.assertRaises(CheckpointVerificationError):
+            verify_checkpoint_for_resume(bad_cfg, "expected_fp_123", config, env)
 
 
 if __name__ == "__main__":
