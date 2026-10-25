@@ -2,12 +2,18 @@
 """Run Issue #17 P4-A: all-feature OLS baseline with seed-42 5-fold CV on development rows.
 
 Reads only the labeled train CSV (development-train lines only; holdout lines are skipped
-unparsed). Never opens the competition test file. Writes outputs to ignored local/:
-- p4a_ols_cv_public.json: public-safe aggregate/fold metrics and diagnostics (no rows, no paths)
-- p4a_ols_cv_local.json: adds full singular spectra and fold assignments (local only)
+unparsed). Never opens the competition test file.
+
+Output policy:
+- --output-dir specifies the directory for public-safe p4a_ols_cv_public.json.
+- Private p4a_ols_cv_local.json always goes to the fixed repository ignored path:
+  local/research/phase4-p4a/p4a_ols_cv_local.json
+- Verifies that the private artifact path is git-ignored using `git check-ignore` before creating
+  directories or writing either file. Fails closed immediately if not ignored or on any check error.
+- Writes the private local artifact before writing the public summary.
 
 Usage:
-    python tools/modeling/run_p4a_ols_cv.py --data-dir <local>/datasets --output-dir <local>/research/phase4-p4a
+    python tools/modeling/run_p4a_ols_cv.py --data-dir <local>/datasets --output-dir <public-or-local-dir>
 """
 
 from __future__ import annotations
@@ -26,24 +32,23 @@ if str(SRC_DIR) not in sys.path:
 from housing_regression.modeling import load_development_rows, run_ols_cv  # noqa: E402
 from housing_regression.modeling.ols_cv import public_summary  # noqa: E402
 
+FIXED_PRIVATE_DIR = REPO_ROOT / "local" / "research" / "phase4-p4a"
+FIXED_PRIVATE_ARTIFACT_PATH = FIXED_PRIVATE_DIR / "p4a_ols_cv_local.json"
+
 
 def is_path_git_ignored(path: Path) -> bool:
-    """Check if the given path is ignored by git."""
+    """Check if the given path is ignored by git. Fails closed on any error."""
     try:
         res = subprocess.run(
             ["git", "check-ignore", "-q", str(path)],
             cwd=str(REPO_ROOT),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            check=False,
         )
         return res.returncode == 0
-    except Exception:
-        # Fallback check if git is not accessible: check if under local/
-        try:
-            path.resolve().relative_to((REPO_ROOT / "local").resolve())
-            return True
-        except ValueError:
-            return False
+    except Exception as exc:
+        raise RuntimeError(f"Failed to execute git check-ignore for {path}: {exc}") from exc
 
 
 def main() -> int:
@@ -54,34 +59,34 @@ def main() -> int:
     parser.add_argument("--folds", type=int, default=5)
     args = parser.parse_args()
 
-    out_dir = args.output_dir.resolve()
-    out_dir.mkdir(parents=True, exist_ok=True)
+    public_dir = args.output_dir.resolve()
+    private_file = FIXED_PRIVATE_ARTIFACT_PATH.resolve()
+
+    # Pre-flight check: verify private artifact destination is git-ignored before creating dirs or writing
+    if not is_path_git_ignored(private_file):
+        raise SystemExit(
+            f"BLOCKED: private artifact path '{private_file}' is not git-ignored. Failing closed."
+        )
 
     rows, provenance = load_development_rows(args.data_dir / "train.csv", 0.2, args.seed)
     if len(rows) != 1168:
         raise SystemExit(f"BLOCKED: expected 1168 development rows, got {len(rows)}")
     result = run_ols_cv(rows, n_splits=args.folds, random_state=args.seed)
 
+    # 1. Write private artifact first to the fixed ignored path
+    FIXED_PRIVATE_DIR.mkdir(parents=True, exist_ok=True)
+    local = dict(result)
+    local["provenance"] = provenance
+    private_file.write_text(json.dumps(local, indent=2), encoding="utf-8")
+    print(f"Private artifact written: {private_file}")
+
+    # 2. Write public summary second to the requested public output directory
+    public_dir.mkdir(parents=True, exist_ok=True)
     public = public_summary(result)
     public["provenance"] = provenance
-    (out_dir / "p4a_ols_cv_public.json").write_text(json.dumps(public, indent=2), encoding="utf-8")
-
-    # Guard private local artifact against being written outside ignored local/
-    if is_path_git_ignored(out_dir / "p4a_ols_cv_local.json"):
-        local = dict(result)
-        local["provenance"] = provenance
-        (out_dir / "p4a_ols_cv_local.json").write_text(json.dumps(local, indent=2), encoding="utf-8")
-    else:
-        # Enforce writing private details exclusively to verified ignored local directory
-        secure_local_dir = REPO_ROOT / "local" / "research" / "phase4-p4a"
-        secure_local_dir.mkdir(parents=True, exist_ok=True)
-        local = dict(result)
-        local["provenance"] = provenance
-        (secure_local_dir / "p4a_ols_cv_local.json").write_text(json.dumps(local, indent=2), encoding="utf-8")
-        print(
-            f"Notice: --output-dir ({out_dir}) is not git-ignored. "
-            f"Public summary saved to --output-dir; private local artifact routed securely to {secure_local_dir}."
-        )
+    public_file = public_dir / "p4a_ols_cv_public.json"
+    public_file.write_text(json.dumps(public, indent=2), encoding="utf-8")
+    print(f"Public summary written: {public_file}")
 
     agg = result["aggregate"]
     print(f"development rows: {len(rows)}; folds: {result['cv']['fold_sizes']}")

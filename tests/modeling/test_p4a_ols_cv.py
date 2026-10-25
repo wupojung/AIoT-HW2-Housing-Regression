@@ -161,6 +161,86 @@ class IsolationTests(unittest.TestCase):
         self.assertTrue(is_path_git_ignored(REPO_ROOT / "local" / "research" / "test.json"))
         self.assertFalse(is_path_git_ignored(REPO_ROOT / "docs" / "test.json"))
 
+    def test_output_policy_separation_and_sanitization(self):
+        """Synthetic test: verify public JSON contains no private row markers and private artifact stays in ignored path."""
+        import tools.modeling.run_p4a_ols_cv as runner_mod
+
+        rows = synthetic_rows(1460)
+        # Add a unique synthetic row marker to development row 0
+        dev_indices = development_train_indices(1460)
+        secret_marker = "SYNTHETIC_PRIVATE_ID_MARKER_XYZ987"
+        rows[dev_indices[0]]["Id"] = secret_marker
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            train_path = tmp_path / "train.csv"
+            write_csv(train_path, rows)
+
+            pub_dir = tmp_path / "arbitrary_public_out"
+            fake_private_dir = tmp_path / "local" / "research" / "phase4-p4a"
+            fake_private_file = fake_private_dir / "p4a_ols_cv_local.json"
+
+            with mock.patch.object(runner_mod, "FIXED_PRIVATE_DIR", fake_private_dir), \
+                 mock.patch.object(runner_mod, "FIXED_PRIVATE_ARTIFACT_PATH", fake_private_file), \
+                 mock.patch.object(runner_mod, "is_path_git_ignored", return_value=True):
+
+                test_args = [
+                    "run_p4a_ols_cv.py",
+                    "--data-dir", str(tmp_path),
+                    "--output-dir", str(pub_dir),
+                    "--folds", "5",
+                ]
+                with mock.patch.object(sys, "argv", test_args):
+                    ret = runner_mod.main()
+                    self.assertEqual(ret, 0)
+
+            # Public file exists in pub_dir
+            pub_file = pub_dir / "p4a_ols_cv_public.json"
+            self.assertTrue(pub_file.is_file())
+            # Private file does NOT exist in pub_dir
+            self.assertFalse((pub_dir / "p4a_ols_cv_local.json").exists())
+            # Private file exists in fake_private_dir
+            self.assertTrue(fake_private_file.is_file())
+
+            # Check public JSON content: sanitized, no secret marker, no OOF, no fold assignments
+            pub_text = pub_file.read_text(encoding="utf-8")
+            self.assertNotIn(secret_marker, pub_text)
+            self.assertNotIn("_oof_predictions", pub_text)
+            self.assertNotIn("_fold_assignments", pub_text)
+            self.assertNotIn('"predicted"', pub_text)
+
+            # Check private JSON content: secret marker is present in _oof_predictions
+            priv_text = fake_private_file.read_text(encoding="utf-8")
+            self.assertIn(secret_marker, priv_text)
+            self.assertIn("_oof_predictions", priv_text)
+            self.assertIn("_fold_assignments", priv_text)
+
+    def test_output_policy_fails_closed_when_private_destination_not_ignored(self):
+        """Fail-closed test: unsafe private destination must fail before any public directory/file is created."""
+        import tools.modeling.run_p4a_ols_cv as runner_mod
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            pub_dir = tmp_path / "public_should_not_be_created"
+            fake_private_file = tmp_path / "unsafe_private" / "p4a_ols_cv_local.json"
+
+            with mock.patch.object(runner_mod, "FIXED_PRIVATE_ARTIFACT_PATH", fake_private_file), \
+                 mock.patch.object(runner_mod, "is_path_git_ignored", return_value=False):
+
+                test_args = [
+                    "run_p4a_ols_cv.py",
+                    "--data-dir", str(tmp_path),
+                    "--output-dir", str(pub_dir),
+                ]
+                with mock.patch.object(sys, "argv", test_args):
+                    with self.assertRaises(SystemExit) as ctx:
+                        runner_mod.main()
+                    self.assertIn("BLOCKED", str(ctx.exception))
+
+            # Public directory must not have been created
+            self.assertFalse(pub_dir.exists())
+            self.assertFalse(fake_private_file.exists())
+
 
 class FoldLocalPreprocessingTests(unittest.TestCase):
     def test_fresh_pipeline_fit_on_training_fold_only(self):

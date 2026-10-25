@@ -24,13 +24,13 @@ python -m pytest tests/modeling/test_p4a_ols_cv.py -q
 
 ### 私有真實資料重現
 
-此命令需要本機忽略路徑中的 `local/datasets/train.csv`。輸出目錄應使用新的唯一 `local/` 路徑，以保留既有實驗產物；以下時間戳請每次執行都換成未使用過的值：
+此命令需要本機忽略路徑中的 `local/datasets/train.csv`。`--output-dir` 參數明確指定公開彙總 `p4a_ols_cv_public.json` 的存放目錄；私有產物 `p4a_ols_cv_local.json` 則一律寫入固定被忽略之本機路徑 `local/research/phase4-p4a/`，絕不輸出至公開目錄。執行前會以 `git check-ignore` 嚴格檢查私有目標路徑是否被忽略，若未被忽略或檢查失敗則直接中止（fail-closed），且在寫入任何公開檔案前先完成私有產物寫入：
 
 ```text
-python tools/modeling/run_p4a_ols_cv.py --data-dir local/datasets --output-dir local/research/phase4-p4a-kfold-YYYYMMDD-HHMMSS --seed 42 --folds 5
+python tools/modeling/run_p4a_ols_cv.py --data-dir local/datasets --output-dir local/research/phase4-p4a --seed 42 --folds 5
 ```
 
-Runner 只解析外層切分選出的開發列；Holdout 行只略過、不解析，且不開啟 Competition Test。Public summary 可供審閱；local JSON 含逐列 OOF 和其他私有中繼資料，不得提交或公開。
+Runner 只解析外層切分選出的開發列；Holdout 行只略過、不解析，且不開啟 Competition Test。Public summary 可供公開審閱；local JSON 含逐列 OOF 和其他私有中繼資料，不得提交或公開。
 
 ## 3. 結果（開發集 5 折 CV）
 
