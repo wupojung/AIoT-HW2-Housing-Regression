@@ -108,7 +108,12 @@ class P4BV2ContractTests(unittest.TestCase):
             "package_versions": {"python": "3.x", "sklearn": "1.x", "numpy": "2.x",
                                  "pandas": "3.x", "scipy": "1.x"},
         }
-        oof = [{"Id": "synthetic-1", "fold": 1, "task_id": "task_fixture"}]
+        oof = [{
+            "Id": "synthetic-1",
+            "fold": 1,
+            "task_id": "task_fixture",
+            "method": "pearson",
+        }]
         checkpoint = create_task_checkpoint(
             result, oof, run_id="run_1", code_sha="a" * 40,
             data_digest="d" * 64, fold_digest="f" * 64,
