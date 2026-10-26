@@ -1,4 +1,4 @@
-# RegScope — UI/UX Design Specification v0.2
+# RegScope — UI/UX Design Specification v0.3
 
 Status: Owner-confirmed concept, **P6-A docs-only / no engineering authorization**.
 Date: 2026-10-26. Tracking: https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/34
@@ -85,18 +85,66 @@ RegScope is a CRISP-DM-first research teaching site: explain how the work was do
 Content: research motivation, dataset source, target SalePrice (Ames case), objectives, explicit limitations.
 Interaction: choose documented research case globally, read problem and supporting sources.
 
-### Phase 2 — Data Understanding / 資料理解
+### Phase 2 — Data Understanding / 資料理解 (EDA-driven redesign v0.3)
+
+**OWNER CONFIRMED:** CRISP-DM Home stays the primary six-step teaching journey, with one Phase content panel and progressive disclosure. **DESIGN PROPOSAL:** replace the old generic EDA panel with verified finding → interpretation/limitation → downstream hypothesis navigation.
+
 ~~~text
-+------------------------------------------------------------------+
-| PHASE 2: What does the raw data contain?                         |
-| [Rows] [Features] [Numerical / categorical] [Missingness]        |
-| Feature: [documented column v]                                   |
-| [ONE EDA visualization: distribution / missing / relationship]  |
-| [Data dictionary and full EDA evidence v]                        |
-| [< Previous]                                         [Next >]     |
-+------------------------------------------------------------------+
++--------------------------------------------------------------------------------+
+| PHASE 2 / DATA UNDERSTANDING       [VERIFIED EDA / QA PASS] [Ames Housing]      |
+| What did we discover BEFORE cleaning or modeling?                              |
+| Population: Kaggle train 1,460 / test 1,459 | Source: Phase 2 report [view]     |
+|                                                                                |
+| KEY FINDINGS (verified observations; see individual denominators below)        |
+| 79 candidate raw features | SalePrice right-skew | NA semantics differ         |
+| Correlations / predictor collinearity are signals, NOT model rankings          |
+|                                                                                |
+| Insight: [Dataset Profile] [SalePrice] [Missingness] [Correlation]             |
+| +--------------------------------------------------------------------------+   |
+| | ONE PUBLIC QA-REVIEWED FIGURE: FIG-01 / 03 / 02 / 06                     |   |
+| | [Figure title + observed population/denominator + accessible table]       |   |
+| | [Evidence URL] [SVG/PNG alternative] [status and source/version]         |   |
+| +--------------------------------------------------------------------------+   |
+| +-------------------+-----------------------+------------------------------+  |
+| | VERIFIED FINDING  | INTERPRETATION +      | NEXT HYPOTHESIS             |  |
+| | quantified facts  | methodological caveat | [CANDIDATE / UNCONFIRMED]  |  |
+| +-------------------+-----------------------+------------------------------+  |
+| [Inspect Phase 3 hypothesis] [Inspect Phase 4 comparison]                       |
+| [Expand method, figures, QA/report and provenance v]                            |
+| [< Previous]                                                     [Next >]      |
++--------------------------------------------------------------------------------+
 ~~~
-Interaction: inspect one column/one exploratory research question at a time. Distinguish raw and encoded counts.
+
+**Four insight choices / exactly one principal figure at a time:**
+
+| Insight / selection | Reviewed public figure | Primary verified observation (scope, denominator, units) | Interpretation and limit | Candidate next action (NOT adopted by this card) |
+|---|---|---|---|---|
+| Dataset Profile (default, DESIGN PROPOSAL) | [FIG-01](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/main/docs/crisp-dm/assets/phase2/fig01_dataset_overview.png) | Kaggle train **1,460 rows × 81 columns** (includes Id/SalePrice); competition test **1,459 × 80** (has no SalePrice); **79 original candidate features** excluding Id/target. Id duplicates **0** in either file and overlap **0**; dictionary crosswalk **79/79** (77 exact + 2 aliases). | Descriptive schema and integrity checks only, not CV/holdout scores. Kaggle test ≠ **292 sealed internal holdout** ≠ **1,168 Development**. | Phase 3: design permitted split and train-fold-safe pipeline; see evidence before claiming adoption. |
+| SalePrice Distribution | [FIG-03](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/main/docs/crisp-dm/assets/phase2/fig03_saleprice_distribution.png) | **Train N=1,460** target in USD: mean **180,921.20**, median **163,000**, population-moment skewness **1.881**, 1.5×IQR upper fence **340,037.50 USD**, **61 upper-fence outlier candidates**, maximum **755,000 USD**. | Right-skewed *marginal target distribution* does **not** prove residual non-normality/heteroscedasticity, mandate log transformation, or justify dropping 61 rows. | Phase 3: investigate log1p target transform and inverse-transform reporting; decision **CANDIDATE HYPOTHESIS** until supported by downstream evidence. |
+| Missingness Semantics | [FIG-02](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/main/docs/crisp-dm/assets/phase2/fig02_missingness_overview.png) | Original literal \`NA\` cells: **train 6,965** and **test 7,000**; **15 structurally absent facility fields** by dictionary. Train examples: PoolQC **99.52%**, Alley **93.77%**, Fence **80.75%**, FireplaceQu **47.26%**, garage-related **5.55%**, basement-related around **2.53%**. LotFrontage **17.74% of train (259/1,460)** represents unrecorded measurement, not facility absence. | 'No pool/garage/basement' ≠ 'measurement unknown'; blanket global mean fill could erase meaningful absence; categories/field context matter. Test-only missingness also exists. | Phase 3: compare explicit absence category/zero against fold-trained imputers for genuine unknowns, and maintain leakage isolation. **Not an adopted policy merely from EDA.** |
+| Correlation & Collinearity | [FIG-06](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/main/docs/crisp-dm/assets/phase2/fig06_numeric_correlation_heatmap.png) | Train pairwise-complete Pearson with SalePrice: OverallQual **0.7910**, GrLivArea **0.7086**, GarageCars **0.6404**, GarageArea **0.6234**, TotalBsmtSF **0.6136** (each pairwise **N=1,460** for these five). Predictor pairs: GarageCars/GarageArea **0.882**, GrLivArea/TotRmsAbvGrd **0.825**, TotalBsmtSF/1stFlrSF **0.820**. Garage and basement groups show co-missingness. | Pearson r is association, **not causation, adjusted coefficient, importance ranking or Phase 4 winner**. Collinearity calls for testing, not automatic deletion. | Phase 4: compare feature selection/regularization or paired-feature sensitivity in **compatible, verified** CV; remain **CANDIDATE HYPOTHESIS** until research supports a result. |
+
+**Evidence and state semantics — DESIGN PROPOSAL:**
+- Only published and reviewed FIG-01, FIG-02, FIG-03, FIG-06 (PNG/SVG) may be used for this design. 87 local figure items exist in full EDA (174 PNG/SVG files); 83 nonpublic figure items, local datasets and row-level artifacts in ignored \`local/\` are **not** public downloads or UI assets. Don't synthesize new charts from private data.
+- Single selectable insight updates the **figure, measured facts, interpretation, limitation and next-action links atomically**. Case switch invalidates prior findings; unsupported case/figure yields UNAVAILABLE with reason and report reference, not fallback Ames values.
+- **VERIFIED OBSERVATION** means a cited Phase 2 descriptive statistic; **CANDIDATE HYPOTHESIS** means a downstream option not automatically adopted; **ACCEPTED DOWNSTREAM DECISION** appears only if an independently approved Phase 3/4 evidence link exists, identifying decision ID, phase, status and exact source. No adopted decision is claimed by this design.
+- FIG-01 etc. are public aggregate images; figures must offer alt description and **keyboard-accessible, screen-reader-readable alternate table** with population and units. Charts never expose raw rows. Small screens stack finding/interpretation/next-action cards vertically, keep one chart and a scrollable/accessible insight selector; precise breakpoint ENGINEERING TBD.
+- All states follow shared LOADING / EMPTY / ERROR / PLANNED / MOCK / UNAVAILABLE / VERIFIED contract. LOADING clears prior chart and facts; MOCK bears persistent visible/in-figure \`MOCK / 示意\` watermark and cannot be mistaken for the verified figures; missing or non-public figures become UNAVAILABLE with no fabricated chart. Source link and denominator remain adjacent to displayed facts. Navigation link into Phase 3/4 identifies *hypothesis to inspect*, never asserts it was accepted.
+
+**Minimal EDA finding payload (DESIGN PROPOSAL; read-only, aggregate, additive to shared case/run contract):**
+
+| Key | Meaning / validation |
+|---|---|
+| \`finding_id\` | stable unique ID per verified finding or hypothesis |
+| \`figure_id\` | FIG-01 / FIG-02 / FIG-03 / FIG-06, or null if unavailable |
+| \`case_id\`, \`source_url\`, \`source_version\` | Ames study + exact public Phase 2 source, no local paths |
+| \`observation_name\`, \`value\`, \`unit\`, \`population\`, \`denominator\` | number/string/null as meaningful; population = Kaggle train/test explicitly, never implied Development/Holdout |
+| \`evidence_url\` | approved public report/figure provenance |
+| \`statement_kind\` | \`verified_observation\` / \`candidate_hypothesis\` / \`accepted_downstream_decision\`; latter needs downstream decision evidence |
+| \`linked_phase\`, \`decision_status\`, \`decision_evidence_url\` | Phase 3/4, \`candidate\` / \`accepted\` / \`rejected\` / \`unavailable\`; absent evidence cannot be accepted |
+| \`limitation\`, \`ui_status\` | explicit caveat and shared UI status |
+
+The data may map onto the pre-existing aggregate [EDA QA/Dataset Health contract](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/main/docs/qa/EDA_QA_AND_DATASET_HEALTH_CONTRACT.md); this is **not** a request to alter EDA Runner, generate new figures or publish private manifests. The 2026-10-24 [official Phase 2 report](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/main/docs/crisp-dm/02-data-understanding.md) records empirical profiling/independent QA **PASS**, while PM Review/Epic Closeout is **PENDING** in that document. Do not render this as 'all Phase 2 governance gates closed'.
 
 ### Phase 3 — Data Preparation / 資料準備
 ~~~text
