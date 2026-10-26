@@ -47,3 +47,8 @@ Only move physical files after approval and verification of all incoming GitHub 
 ## Shared validation utility
 
 The one canonical JSON Schema CLI lives in [tools/validate_schema.py](./tools/validate_schema.py). All future Phase 1–6 schemas use the **same script**, passing their own `--schema` and JSON paths; do not duplicate `validate_schema.py` in each phase. This validates a single JSON against one Draft 2020-12 schema and does not perform cross-file bundle/reference/publication QA.
+
+
+## Canonical Phase 1–6 JSON handoff (2026-10-27)
+
+For every phase's static JSON location, field definitions, and Sample/Schema pair, start at [Phase 1–6 Data Contract Index](./data-contracts/README.md). Phase 5's independently approved contract remains its authoritative child spec. No live API is required for Phase 1–5.
