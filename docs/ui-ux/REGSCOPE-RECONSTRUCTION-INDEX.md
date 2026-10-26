@@ -56,3 +56,6 @@ For the exact response to all 15 second-round review findings, see [REGSCOPE-R2-
 ## Phase 5 API/JSON handoff (canonical)
 
 [Evaluation API Contract v1](./case-package/phase-05/PHASE-05-DATA-CONTRACT-v1.md) · [Sample JSON](./case-package/phase-05/sample/evaluations.json) · [JSON Schema](./case-package/phase-05/evaluation-index.schema.json). Phase 5 uses static GET reads from an immutable published Case Package; not a live POST evaluation service. The visual layout remains [PHASE-05.md](./pages/PHASE-05.md), with three tabs in one figure region. Evidence and Phase 5 scientific execution gates remain in Issue #37.
+
+
+For a responsibility-first index rather than the historical `ui-ux` folder name, see [docs/design/README.md](../design/README.md). Existing normative file paths remain unchanged pending separately reviewed migration; Phase 5 simple validation entry is [validate_schema.py](./case-package/phase-05/validate_schema.py).
