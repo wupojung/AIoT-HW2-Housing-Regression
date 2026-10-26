@@ -409,3 +409,137 @@ Illustrative **state** is independent of method/result availability. Every compo
 - [ ] Dashboard has isolated research vs custom source modes and validation/run/cancel/stale-result states.
 - [ ] Minimal manifest/run/metrics/visual/download contract supports all seven statuses with visible source/Mock watermark.
 - [ ] Mobile and accessibility rules are labeled as proposals; Owner/engineering boundaries clear.
+
+
+## Nex P6-A v0.4 amendment — Generalized dataset / prediction contract
+
+Source: [Nex PARTIAL comment](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35#issuecomment-6417360873). This **adds** to, and where more specific supersedes, earlier illustrative Ames/Phase 6 wording; the six-phase navigation, Phase 2/4 research design, reviewed evidence and Desktop 1920×1080 decision remain intact.
+
+### P0-1 — Case-driven Model Prediction Lab (DESIGN PROPOSAL)
+
+**OWNER CONFIRMED:** Phase 6 provides inference with an approved existing model, while the earlier "房價預測實驗室" layout is retained as the **Ames display preset**. **DESIGN PROPOSAL:** use a general heading "模型預測實驗室 / Model Prediction Lab" in the reusable container. Case metadata supplies display_title ("房價預測實驗室" for Ames), target_label (SalePrice), target_unit (USD), schema, explanatory description and eligibility badges. No hardcoded SalePrice, USD, house sizes or 97-feature assumptions for other cases.
+
+~~~text
++------------------------------------------------------------------------------------------------+
+| RegScope  HOME / CRISP-DM [1][2][3][4][5][6 Deployment]     PC Full HD 1920x1080 reference    |
+| MODEL PREDICTION LAB                         Case title: [from case metadata]                  |
+| Dataset / study: [Ames Housing v]            Target: [SalePrice] Unit: [USD]                    |
+| Research run: [measured method+config v]   RESEARCH STATUS: [verified / unavailable]          |
+| Deployable model: [approved model_id v / none] INFERENCE STATUS: [unavailable]                 |
+|                                                                                                |
+| +--------------------------------------------+ +---------------------------------------------+ |
+| | Raw input form (from model input_schema)     | | Prediction output (case target/unit)       | |
+| | Field 1 [value / unit / required marker]     | | [--] [target unit]                          | |
+| | Field 2 [category / absent / unknown]        | | Run / model version / provenance           | |
+| | [conditional fields / explanations]          | | Prediction interval only if approved       | |
+| | [Validate] [Predict disabled if not ready]   | | [ERROR / LOADING / UNAVAILABLE]            | |
+| +--------------------------------------------+ +---------------------------------------------+ |
+| [Research CV evidence separate from deployable status] [Reviewed references / downloads]       |
++------------------------------------------------------------------------------------------------+
+~~~
+
+**ENGINEERING TBD:** second case candidate *Used Car* requires its own Dataset Audit, feature dictionary, research runs, evaluation and approved deployable artifact. Used Car must show PLANNED/UNAVAILABLE, not invented metrics, figures or active inference. Home case selector should include it only when documented case content exists; a *design preview* may list it disabled with explicit "Candidate — not researched". No cross-case RMSE leaderboard.
+
+### P0-2 — Three-layer availability and selection
+
+| Layer | Identity / authoritative source | Availability and UI behavior |
+|---|---|---|
+| Research experiment | case_id + run_id + actual method/config/encoded K and CV protocol/track | Shows VERIFIED or other evidence status *independently*; no guarantee of fitted inference artifact |
+| Registered trained model | model_id + model_version + artifact SHA/digest + fitted preprocessing/pipeline revision + approved raw schema | Only published, approved, allowlisted models can be considered deployable; status can be UNAVAILABLE even for VERIFIED run |
+| Prediction request/result | request_id + chosen registered model + validated raw fields + model version/provenance | Run only if artifact, fitted pipeline, input schema, API compatibility and API QA are approved; response is estimate, not evaluation/holdout metric |
+
+Changes to case, run **or** model invalidate old form values, validation token, predicted outputs and in-flight results; stale API responses must be ignored. Model selector cannot invent a method × K → model mapping. Research-only runs remain selectable for reading evidence with disabled Predict and explanatory reason. If several approved model versions map to one run, user may choose among **only those explicitly registered**; never infer model ID from method/K.
+
+### P0-3 — Raw-input and missingness semantics
+
+**DESIGN PROPOSAL** — Minimum per-field contract, reviewed alongside the immutable fitted preprocessing:
+- \`raw_field_id\`, \`source_column\`, \`source_version\`, \`label\`, \`data_type\` (numeric, ordinal, nominal, boolean), \`unit\`, \`required\`, \`allowed_values\`, \`min/max\`, \`dependencies\`, \`missingness_kind\` and \`preprocessing_ref\`.
+- Three *different* states: (A) **structural absence** explicitly confirmed by user and supported by training schema (e.g., no garage → supported absence category); (B) **unknown measured value** when facility exists but measurement unrecorded, admitted **only** if fitted pipeline has a documented fold-trained imputer; (C) **omitted required UI field**, always INVALID and block Predict. These must never map to the same silent default.
+- Unknown category, unsupported unit, out-of-range value, conflicting fields (e.g., no garage plus positive garage area), unsupported missingness or schema version mismatch => explicit field-level ERROR. Optional fields may omit only if contract documents what fitted preprocessing does; otherwise validation fails. Encoded feature columns are **not** UI form fields; raw-to-encoded transform and order must match the fit pipeline, with no invented dwelling/car defaults.
+
+| Input example | Semantics | Action |
+|---|---|---|
+| \`garage_present=false\` and \`GarageCars=0\` where supported | structural absence | Encode as trained absence representation; not missing numeric measurement |
+| \`garage_present=true\`, garage size unknown, imputer supported | genuine unrecorded | Apply trained inference imputer; disclose uncertainty/handling |
+| \`OverallQual\` absent and marked required | required field omitted | REJECT, explain missing field |
+| \`GarageCars=2\` and garage explicitly absent | contradictory dependent fields | REJECT until corrected |
+
+All examples are **interface semantics**, not claims that these exact fields/defaults are available in an approved inference schema.
+
+### P1-1 — Train vs Predict split (DESIGN PROPOSAL)
+
+~~~text
+DASHBOARD / CUSTOM DATASET (future authorized training)
+[CSV / URL] -> [Parse + preview] -> [Choose numeric target + raw X] -> [Validate]
+    -> [Train/Evaluate (DISABLED until separately authorized)]
+    -> [New run summary with its own CV/test evidence; NOT Ames VERIFIED]
+PHASE 6 / DEPLOYED INFERENCE
+[Registered approved model] -> [Schema-driven single raw record]
+    -> [Validate] -> [Predict (only approved API)] -> [Estimated target + version]
+~~~
+
+User CSV with X and labeled Y requires **new fitting** of preprocessing and regression, separately gated for compute, security, size limits, CV and data leakage; it does not automatically invoke an existing Ames model or become a reviewed research case. Phase 6 single-record prediction does **not** retrain, rank feature selection or evaluate Holdout. Optional batch inference is a future proposal, not implied by the teacher's Custom Dataset bonus.
+
+### P1-2 — Minimal multi-case state (illustration, not research data)
+
+| Case | Research evidence | Evaluated deployable model | Inference UI | Eligibility |
+|---|---|---|---|---|
+| Ames Housing | Phase 2 EDA reviewed; Development experiments available with their own review status | **Not proven by metadata alone**; only approved model registry may say yes | disabled UNAVAILABLE until API + fitted pipeline + schema + QA approved | known teaching case |
+| Used Car | PLANNED / not yet audited or run | NONE | disabled PLANNED | second-case candidate only |
+
+Keep Phase 2–5 exhibits bound to selected case-specific cited run IDs. Unavailable case phase shows a truthful empty state. Cross-case metric rankings are prohibited unless a scientifically valid common protocol/target comparison exists.
+
+### P1-3 — Minimal API exchange (DESIGN PROPOSAL only)
+
+~~~json
+{
+  "model_id": "registered-model-id",
+  "schema_version": "reviewed-input-schema-version",
+  "raw_inputs": {
+    "raw_field_from_schema": "user-supplied-value"
+  }
+}
+~~~
+
+Success response conceptual envelope (numbers omitted deliberately):
+
+~~~json
+{
+  "status": "success",
+  "request_id": "opaque-request-id",
+  "model_id": "registered-model-id",
+  "model_version": "approved-version",
+  "target": {"name": "target-from-case", "unit": "case-unit", "prediction": null},
+  "prediction_interval": null,
+  "provenance": {"artifact_sha256": "registered-digest", "pipeline_version": "approved-pipeline-version"}
+}
+~~~
+
+Errors use a documented machine-readable \`code\` and readable \`message\`, with optional safe \`field_errors\` and correlation/request ID; no stack, model path, sensitive rows or internal traces. Minimum codes: \`INCOMPLETE_INPUT\`, \`UNKNOWN_CATEGORY\`, \`INVALID_UNIT\`, \`MODEL_UNAVAILABLE\`, \`SCHEMA_MISMATCH\` (also \`INVALID_FIELD_DEPENDENCY\` / \`OUT_OF_RANGE\` where needed). Only approved allowlist IDs, no URL/path/serialization payload selection. \`prediction_interval\` stays null/UNAVAILABLE unless independently validated and properly labeled (type/level/units/method). This example contains no real fitted model ID or empirical prediction.
+
+### P1-4 — Instructor rubric: original feature count audit
+
+**OWNER-independent assignment clarification:** Kaggle source dataset must have **more than 13 original candidate predictors (>=14)**; **no formal <40 upper bound**. One-hot encoded feature counts cannot satisfy this criterion by themselves. For each case's Phase 2 dataset profile and Phase 4 feature map, show:
+
+| Stage / number | Meaning | Rule |
+|---|---|---|
+| Source CSV total columns | includes ID and target if present | label train/test and version separately |
+| Original candidates | original raw predictors after excluding target and identifier | rubric uses this number |
+| Eligible original predictors | also remove leakage and inadmissible columns with reason | document exclusions and schema version |
+| Encoded model inputs | transformed model matrix dimension, post encoding | never call this original feature count |
+| Selected original / selected encoded | derived documented mapping for exact method/run | cannot equate raw and encoded K |
+
+**Verified Ames source example:** Kaggle train 1,460×81, test 1,459×80; 79 original candidates after excluding \`Id\` and \`SalePrice\`. Encoded count, effective after-leakage original count and selected counts must be read from their correct versioned run/feature map, not inferred or mixed with a different Development/Holdout population.
+
+### Authority and acceptance
+
+**OWNER CONFIRMED:** CRISP-DM-first Desktop Home, 1920×1080 Full HD reference, six numbered horizontal phases, global documented-case selection, independent Dashboard, Phase 4 progressive verified results, Phase 6 model inference when authorized. **DESIGN PROPOSAL:** case metadata-driven labels, model registry/contract, missingness validation, custom Train vs Predict separation and minimal API envelope. **ENGINEERING TBD:** Used Car audit/run, deployable model registry/artifacts, fitted preprocessing, security/compute budget, active endpoints, interval estimation and model QA.
+
+- [ ] Case-driven Phase 6 labels/target/unit with Ames only as example, Used Car disabled candidate.
+- [ ] Run research status distinct from model deployment status and prediction availability; selectors invalidate stale values.
+- [ ] Required/optional raw schema and all three missingness meanings enforced in design.
+- [ ] Custom CSV Train and approved-model Predict are separate flows with separate gates.
+- [ ] No unsupported API/interval/model result invented.
+- [ ] Assignment original feature threshold and count provenance explicit.
+
+**Gate unchanged:** this is documentation only. No P6-B engineering, Runner, Holdout, Merge, Preview or production deploy.
