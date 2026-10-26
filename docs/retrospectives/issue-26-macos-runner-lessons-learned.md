@@ -38,7 +38,7 @@
 
 ### W1P2 Implementer：架構與工程
 
-- **OBSERVED：** Windows `p4b_job.py` 使用 Job Object 管理受控程序、Job memory limit 和 kill-on-close；macOS 的 POSIX process group 是群組關係，不是同一種擁有型 Job 物件。launchd `AbandonProcessGroup` 針對同 PGID 剩餘程序；psutil/RSS 監控只能提供觀測，不是核心層級整組 RAM 硬上限。官方參考：[Windows Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)、[AssignProcessToJobObject](https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject)、[Apple launchd.plist(5)](https://github.com/apple-oss-distributions/launchd/blob/main/man/launchd.plist.5)、[Apple launchctl(1)](https://github.com/apple-oss-distributions/launchd/blob/main/man/launchctl.1)。
+- **OBSERVED：** Windows `p4b_job.py` 使用 Job Object 管理受控程序、Job memory limit 和 kill-on-close；macOS 的 POSIX process group 是群組關係，不是同一種擁有型 Job 物件。launchd `AbandonProcessGroup` 針對同 PGID 剩餘程序；psutil/RSS 監控只能提供觀測，不是核心層級整組 RAM 硬上限。官方參考：[Windows Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)、[AssignProcessToJobObject](https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject)、[Apple launchd manual `man/launchd.plist.5`](https://github.com/apple-oss-distributions/launchd/blob/main/man/launchd.plist.5)、[Apple launchctl(1)](https://github.com/apple-oss-distributions/launchd/blob/main/man/launchctl.1)。
 - **OBSERVED：** 架構 PoC 從未執行；設計 v1 將正常生命週期、異常退出、重啟、重播與撤銷放入同一矩陣，後續因 P03/P04 邊界無法證明而停止。
 - **INFERRED：** 兩個 Supervisor Job 加 Runner、Worker、Heartbeat、restart state 和 teardown，比目前課程需要的串行單工作者路徑複雜；先實作完整 Supervisor 增加了尚未被作業需求證明的失敗模式。
 - **RECOMMENDATION：** 保留已合併的 Windows A2 實作與合成測試、checkpoint/provenance、安全錯誤輸出等經驗。未來若取得新授權，先以單一 Worker、固定 argv、序列執行和小型合成任務建立最小可觀察路徑；不預先新增常駐 Watchdog 或 launchd Job。
