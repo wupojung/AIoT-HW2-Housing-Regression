@@ -1367,3 +1367,8 @@ Here \`prediction=null\` means **illustrative schema with no calculation perform
 4. Phase 5 Evaluation design/Issue to be prepared separately with Nex input; not invented in this supplement.
 
 **Governance:** No P6-B build, runner modification, actual prediction API, training, merge, release or deploy; all require further explicit authorization and review.
+
+
+## Integration reference — Offline data and Prediction API contract
+
+The independently versioned data-production and backend-interface design is in [REGSCOPE-DATA-API-CONTRACT.md](./REGSCOPE-DATA-API-CONTRACT.md). **Use that document for file inventories, JSON structures, static SVG/PNG/chart placement/asset specifications, exporter/validator responsibilities, model registry and Prediction API request/response formats**; use THIS UX document for visible page layout, every control and interaction. The companion document is a proposal, not evidence of existing generated assets or an authorized endpoint. Phase 5 detailed design remains pending Nex/Owner.
