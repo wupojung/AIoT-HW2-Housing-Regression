@@ -91,20 +91,24 @@
           "evidence",
           "asset_status",
           "review_status",
-          "limitations"
+          "limitations",
+          "linked_evaluation_ids"
         ],
         "properties": {
           "evaluation_id": {
             "type": "string",
-            "minLength": 1
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "maxLength": 128
           },
           "execution_run_id": {
             "type": "string",
-            "minLength": 1
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "maxLength": 128
           },
           "configuration_id": {
             "type": "string",
-            "minLength": 1
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "maxLength": 128
           },
           "final_fit_id": {
             "type": [
@@ -187,7 +191,8 @@
                     "type": [
                       "number",
                       "null"
-                    ]
+                    ],
+                    "minimum": 0
                   },
                   "status": {
                     "type": "string",
@@ -211,7 +216,52 @@
                       "null"
                     ]
                   }
-                }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "status": {
+                          "const": "VERIFIED"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "evidence_ref": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "reason_code": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "status": {
+                          "const": "UNAVAILABLE"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "value": {
+                          "type": "null"
+                        },
+                        "reason_code": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                ]
               },
               "rmse": {
                 "type": "object",
@@ -227,7 +277,8 @@
                     "type": [
                       "number",
                       "null"
-                    ]
+                    ],
+                    "minimum": 0
                   },
                   "status": {
                     "type": "string",
@@ -251,7 +302,52 @@
                       "null"
                     ]
                   }
-                }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "status": {
+                          "const": "VERIFIED"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "evidence_ref": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "reason_code": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "status": {
+                          "const": "UNAVAILABLE"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "value": {
+                          "type": "null"
+                        },
+                        "reason_code": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                ]
               },
               "r2": {
                 "type": "object",
@@ -291,7 +387,52 @@
                       "null"
                     ]
                   }
-                }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "status": {
+                          "const": "VERIFIED"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        },
+                        "evidence_ref": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "reason_code": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "status": {
+                          "const": "UNAVAILABLE"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "value": {
+                          "type": "null"
+                        },
+                        "reason_code": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                ]
               }
             },
             "additionalProperties": false
@@ -303,26 +444,60 @@
               },
               {
                 "type": "object",
+                "additionalProperties": false,
                 "required": [
                   "fold_count",
                   "aggregation",
+                  "ddof",
                   "sample_sd",
                   "fold_values_ref"
                 ],
                 "properties": {
                   "fold_count": {
                     "type": "integer",
-                    "minimum": 1
+                    "minimum": 2
                   },
                   "aggregation": {
-                    "type": "string"
+                    "enum": [
+                      "fold_mean",
+                      "pooled_oof",
+                      "not_applicable"
+                    ]
+                  },
+                  "ddof": {
+                    "const": 1
                   },
                   "sample_sd": {
-                    "type": [
-                      "number",
-                      "null"
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "mae",
+                      "rmse",
+                      "r2"
                     ],
-                    "minimum": 0
+                    "properties": {
+                      "mae": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "rmse": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "r2": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": 0
+                      }
+                    }
                   },
                   "fold_values_ref": {
                     "type": [
@@ -330,8 +505,7 @@
                       "null"
                     ]
                   }
-                },
-                "additionalProperties": false
+                }
               }
             ]
           },
@@ -357,7 +531,8 @@
                 "alt",
                 "finding",
                 "limitations",
-                "source_digest"
+                "source_digest",
+                "histogram"
               ],
               "properties": {
                 "figure_id": {
@@ -430,6 +605,7 @@
                 },
                 "axes": {
                   "type": "object",
+                  "additionalProperties": false,
                   "required": [
                     "x",
                     "y",
@@ -437,16 +613,19 @@
                   ],
                   "properties": {
                     "x": {
-                      "type": "object"
+                      "$ref": "#/$defs/axis"
                     },
                     "y": {
-                      "type": "object"
+                      "$ref": "#/$defs/axis"
                     },
                     "reference_line": {
-                      "type": "string"
+                      "enum": [
+                        "y_equals_x",
+                        "y_equals_0",
+                        "x_equals_0"
+                      ]
                     }
-                  },
-                  "additionalProperties": false
+                  }
                 },
                 "residual_sign": {
                   "type": [
@@ -481,26 +660,304 @@
                     "string",
                     "null"
                   ]
+                },
+                "histogram": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "required": [
+                    "bin_count",
+                    "bin_edges_ref",
+                    "n"
+                  ],
+                  "properties": {
+                    "bin_count": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "bin_edges_ref": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "n": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "additionalProperties": false
                 }
-              }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "status": {
+                        "const": "VERIFIED"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "asset_ref": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "alt": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "publication_review": {
+                        "const": "APPROVED"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "figure_id": {
+                        "const": "FIG-P5-01"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "residual_sign": {
+                        "type": "null"
+                      },
+                      "histogram": {
+                        "type": "null"
+                      },
+                      "axes": {
+                        "properties": {
+                          "reference_line": {
+                            "const": "y_equals_x"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "figure_id": {
+                        "const": "FIG-P5-02"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "residual_sign": {
+                        "const": "actual_minus_predicted"
+                      },
+                      "histogram": {
+                        "type": "null"
+                      },
+                      "axes": {
+                        "properties": {
+                          "reference_line": {
+                            "const": "y_equals_0"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "figure_id": {
+                        "const": "FIG-P5-03"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "residual_sign": {
+                        "const": "actual_minus_predicted"
+                      },
+                      "histogram": {
+                        "type": "object"
+                      },
+                      "axes": {
+                        "properties": {
+                          "reference_line": {
+                            "const": "x_equals_0"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
             },
             "maxItems": 3
           },
           "interval": {
             "type": "object",
+            "additionalProperties": false,
             "required": [
               "int_f",
               "int_s"
             ],
             "properties": {
               "int_f": {
-                "type": "object"
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status",
+                  "reason_code",
+                  "method",
+                  "assumptions_ref"
+                ],
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "UNAVAILABLE",
+                      "PENDING",
+                      "PASS",
+                      "FAIL"
+                    ]
+                  },
+                  "reason_code": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "method": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "assumptions_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
               },
               "int_s": {
-                "type": "object"
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status",
+                  "reason_code",
+                  "interval_type",
+                  "method",
+                  "nominal_level",
+                  "population",
+                  "asset_ref",
+                  "coverage_evidence",
+                  "review_url"
+                ],
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "UNAVAILABLE",
+                      "PENDING",
+                      "PASS",
+                      "FAIL"
+                    ]
+                  },
+                  "reason_code": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "interval_type": {
+                    "enum": [
+                      "confidence",
+                      "prediction",
+                      null
+                    ]
+                  },
+                  "method": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "nominal_level": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0,
+                    "exclusiveMaximum": 1
+                  },
+                  "population": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "asset_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "coverage_evidence": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "review_url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "status": {
+                          "const": "PASS"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "interval_type": {
+                          "type": "string"
+                        },
+                        "method": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "nominal_level": {
+                          "type": "number"
+                        },
+                        "population": {
+                          "type": "string"
+                        },
+                        "asset_ref": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "review_url": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                ]
               }
-            },
-            "additionalProperties": false
+            }
           },
           "evidence": {
             "type": "object",
@@ -557,6 +1014,15 @@
             "items": {
               "type": "string"
             }
+          },
+          "linked_evaluation_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]*$",
+              "maxLength": 128
+            }
           }
         }
       }
@@ -569,7 +1035,7 @@
         "population_options",
         "figure_tabs",
         "metric_order",
-        "interval"
+        "interval_figure_id"
       ],
       "properties": {
         "default_population": {
@@ -581,12 +1047,13 @@
         },
         "population_options": {
           "type": "array",
+          "uniqueItems": true,
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": [
               "id",
-              "label",
-              "status"
+              "label"
             ],
             "properties": {
               "id": {
@@ -598,19 +1065,8 @@
               },
               "label": {
                 "type": "string"
-              },
-              "status": {
-                "type": "string",
-                "enum": [
-                  "VERIFIED",
-                  "UNAVAILABLE",
-                  "PLANNED",
-                  "MOCK",
-                  "ERROR"
-                ]
               }
-            },
-            "additionalProperties": false
+            }
           }
         },
         "figure_tabs": {
@@ -619,12 +1075,11 @@
           "maxItems": 3,
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": [
               "figure_id",
               "label",
-              "kind",
-              "status",
-              "reason_code"
+              "kind"
             ],
             "properties": {
               "figure_id": {
@@ -643,25 +1098,8 @@
                   "residual_vs_predicted",
                   "residual_distribution"
                 ]
-              },
-              "status": {
-                "type": "string",
-                "enum": [
-                  "VERIFIED",
-                  "UNAVAILABLE",
-                  "PLANNED",
-                  "MOCK",
-                  "ERROR"
-                ]
-              },
-              "reason_code": {
-                "type": [
-                  "string",
-                  "null"
-                ]
               }
-            },
-            "additionalProperties": false
+            }
           }
         },
         "metric_order": {
@@ -671,136 +1109,8 @@
             "r2"
           ]
         },
-        "interval": {
-          "type": "object",
-          "required": [
-            "figure_id",
-            "int_f",
-            "int_s"
-          ],
-          "properties": {
-            "figure_id": {
-              "const": "FIG-P5-04"
-            },
-            "int_f": {
-              "type": "object",
-              "required": [
-                "status",
-                "reason_code",
-                "method",
-                "assumptions_ref"
-              ],
-              "properties": {
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "VERIFIED",
-                    "UNAVAILABLE",
-                    "PLANNED",
-                    "MOCK",
-                    "ERROR"
-                  ]
-                },
-                "reason_code": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "method": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "assumptions_ref": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                }
-              },
-              "additionalProperties": false
-            },
-            "int_s": {
-              "type": "object",
-              "required": [
-                "status",
-                "reason_code",
-                "interval_type",
-                "method",
-                "nominal_level",
-                "population",
-                "asset_ref",
-                "coverage_evidence",
-                "review_url"
-              ],
-              "properties": {
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "VERIFIED",
-                    "UNAVAILABLE",
-                    "PLANNED",
-                    "MOCK",
-                    "ERROR"
-                  ]
-                },
-                "reason_code": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "interval_type": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "method": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "nominal_level": {
-                  "type": [
-                    "number",
-                    "null"
-                  ],
-                  "minimum": 0,
-                  "maximum": 1
-                },
-                "population": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "asset_ref": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "coverage_evidence": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "review_url": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                }
-              },
-              "additionalProperties": false
-            }
-          },
-          "additionalProperties": false
+        "interval_figure_id": {
+          "const": "FIG-P5-04"
         }
       }
     }
@@ -824,6 +1134,58 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "VERIFIED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "evaluations": {
+            "minItems": 1
+          },
+          "publication_review": {
+            "const": "APPROVED"
+          },
+          "release_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
     }
-  ]
+  ],
+  "$defs": {
+    "axis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "label",
+        "unit"
+      ],
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
 }
