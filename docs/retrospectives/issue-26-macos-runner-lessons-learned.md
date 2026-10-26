@@ -1,8 +1,8 @@
 # Issue #26 工程回顧：保留經驗，簡化下一輪
 
-**結案分類（Owner 指示）：** `CLOSED / NOT PLANNED`，原因 `SUPERSEDED BY HOMEWORK 2 RECOVERY STRATEGY`。這是優先順序與範圍調整，**不是 macOS Supervisor 技術驗收 PASS，也不是 launchd／Watchdog 已被證明不可行**。Issue 會在最終結案留言後依授權關閉。
+**結案分類（Owner 指示）：** `CLOSED / NOT PLANNED`，原因 `SUPERSEDED BY HOMEWORK 2 RECOVERY STRATEGY`。Issue #26 已於 2026-10-26 關閉。這是優先順序與範圍調整，**不是 macOS Supervisor 技術驗收 PASS，也不是 launchd／Watchdog 已被證明不可行**。
 
-本回顧由 W1P1、W1P2、Independent High QA 各自獨立起草後彙整。標記意義：**OBSERVED** 為有紀錄支持的事實；**INFERRED** 為根據事實的解讀；**UNKNOWN** 為尚未驗證；**RECOMMENDATION** 為下一輪建議。這份文件不重啟 #26，也不授權 Single-Worker 實作或研究執行。
+本回顧由 W1P1、W1P2、Independent High QA 各自獨立起草後彙整。標記意義：**OBSERVED** 為有紀錄支持的事實；**INFERRED** 為根據事實的解讀；**UNKNOWN** 為尚未驗證；**RECOMMENDATION** 為下一輪建議。這份文件不重啟 #26，也不授權實作或研究執行。當時結案提到的 Single Worker 是歷史決策；目前後續計畫入口為 [Recovery Issue #28](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/28)，其核准範圍與停止條件優先，本回顧不取代該 Issue。
 
 ## 1. 原始目標與實際範圍
 
@@ -10,7 +10,7 @@
 - **OBSERVED：** Windows A2 已由 [PR #25](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/25) 合併，merge commit 為 `3ea596d5f1a449015fd2816619405f23574a6923`。PR 描述記錄 bounded synthetic suite 27/27 PASS 與獨立 QA PASS。這是 Windows 路徑證據，不能當作 macOS Runner 或 macOS PoC PASS。
 - **OBSERVED：** M2 首次可行性工作遇到 process-only Probe 的身分競態，未完成 READY；後續恢復紀錄保存了對該特定 Worker／Child 的身分核驗與清理結果。此歷史 Probe 不等同後來設計的 launchd PoC。
 - **OBSERVED：** M2 先後涵蓋原生 macOS 合約、Watchdog-first、launchd 補充研究，以及 launchd + Watchdog + Runner + Worker 架構 PoC。Watchdog 設計 QA BLOCKED；launchd 補充審查 NEEDS PROOF；PoC v1 事前 QA BLOCKED；v2 將 P03/P04 撤回為 NOT RUN，P07 縮小為循序 replay。P01–P08 均未實測，未建立或啟動 launchd Job。[Watchdog Gate](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/26#issuecomment-6405116786)、[PoC 結果](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/26#issuecomment-6405759167)
-- **OBSERVED：** Owner 最後依 Homework 2 時程停止 macOS Supervisor 研究，指定新方向為 Single Worker、五種新版 Feature Selection、3-fold CV 與一次性 sealed Holdout。[Owner 結案交接](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/26#issuecomment-6406077095)
+- **OBSERVED（當時決策）：** Owner 依 Homework 2 時程停止 macOS Supervisor 研究，當時記錄的方向為 Single Worker、五種新版 Feature Selection、3-fold CV 與一次性 sealed Holdout。[Owner 結案交接](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/26#issuecomment-6406077095)。後續已建立 [Recovery Issue #28](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/28) 作為目前新計畫入口；本段 Single Worker 內容保留作歷史脈絡，不代表目前最終執行規格或實驗授權。
 
 ## 2. 重要技術決策時間線
 
@@ -67,15 +67,17 @@
 
 **RECOMMENDATION：** 每個 Gate 的標籤應精確反映驗收種類；`DESIGN PASS`、`QA-REVIEWED`、`QA-EXECUTED`、`RUNTIME PASS` 和 `PRODUCTION READY` 必須各自分開記錄。
 
-## 6. Homework 2 Single-Worker 交接建議
+## 6. #26 結案時的 Single-Worker 方向（歷史記錄；後續以 #28 為準）
 
-- **OBSERVED：** Owner 結案策略指定 Single Worker 串行研究；新版五種方法為 Pearson、Mutual Information、Lasso、ElasticNet、Ridge RFE；採 3-fold CV，最後對 sealed Holdout 一次性評估。原始候選輸入特徵至少 14 的要求指可用原始特徵，不是最終選出的 feature 數；編碼後欄位另行計數。[Owner 結案交接](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/26#issuecomment-6406077095)
-- **RECOMMENDATION：** 新 Issue 先凍結小型 synthetic acceptance，再由 Owner/PM 凍結正式研究協定。Single Worker 一次只處理一個 fold/task；輸出保存在私有位置，記錄 run ID、輸入摘要、程式與環境版本、seed、fold assignment、方法參數、結果、失敗狀態及 checkpoint；不需要透過 Agent/LLM 執行每次模型 fit。
+本節的方向與建議只記錄 #26 結案時的決策脈絡，不是 Recovery #28 的最終執行規格；目前所有方案與授權以 #28 的正式文件及後續 Owner 決定為準。
+
+- **OBSERVED（當時決策）：** Owner 結案交接曾指定 Single Worker 串行研究；當時記錄的五種方法為 Pearson、Mutual Information、Lasso、ElasticNet、Ridge RFE，採 3-fold CV，最後對 sealed Holdout 一次性評估。原始候選輸入特徵至少 14 的要求指可用原始特徵，不是最終選出的 feature 數；編碼後欄位另行計數。[Owner 結案交接](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/26#issuecomment-6406077095)。這些內容是 #26 關閉時的歷史方向；**目前計畫與授權應以 Recovery Issue #28 為準**，不得把本段當作更新後的執行規格。
+- **RECOMMENDATION（當時建議）：** 先凍結小型 synthetic acceptance，再由 Owner/PM 凍結正式研究協定；當時假設 Single Worker 一次只處理一個 fold/task，並記錄 run ID、輸入摘要、程式與環境版本、seed、fold assignment、方法參數、結果、失敗狀態及 checkpoint。後續已由 [Recovery #28](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/28) 啟動重新規劃；這項歷史建議不構成 #28 的驗收規格或執行授權。
 - **RECOMMENDATION：** Leakage Prevention：每個 fold 的 imputation、encoding、scaling、feature selection 和 tuning 只能在該 fold training partition fit；validation 僅用來評估。ID 與 target 不作 predictor。不同 fold 的 encoded schema 應以 fold-local 規則記錄，不能先在全資料 fit transform。
 - **RECOMMENDATION：** Reproducibility：固定並記錄 3-fold 切分、seed、依賴版本、方法設定及 code/data digest；checkpoint 僅能對完全相符的 run resume；每個結果可追溯到單一 fold 與設定。
 - **RECOMMENDATION：** Holdout 保持密封，不能參與方法、特徵數或超參數選擇；所有 CV 決策完成後才一次性評估，報告清楚區分 CV 分數與一次性 Holdout 結果。
-- **UNKNOWN：** 新五方法的確切 API、特徵選擇單位與 K 規則、比較估計器、3-fold protocol 細節與 Holdout 報告格式尚待新 Issue/Owner/Cloud PM 正式決定。不得把 #22 舊 protocol 當成新版規格，也不得在本回顧中更新 #21/#22/#23。
-- **RECOMMENDATION：** 本輪只完成流程經驗交接；任何資料讀取、真實模型實驗、Single-Worker 開發都須依新 Issue 及獨立授權啟動。
+- **UNKNOWN：** 五方法的確切 API、特徵選擇單位與 K 規則、比較估計器、3-fold protocol 細節與 Holdout 報告格式尚未正式凍結；Recovery #28 將這些列為待決事項，目前僅授權治理盤點。不得把 #22 舊 protocol 當成新版規格，也不得在本回顧中更新 #21/#22/#23。
+- **RECOMMENDATION：** 本回顧只完成流程經驗交接；任何資料讀取、真實模型實驗或 Runner 開發，都須等待 Recovery #28 後續正式規格及獨立 Owner 授權。
 
 ## 7. 值得保留與應簡化的成果
 
@@ -96,7 +98,7 @@
 - **UNKNOWN：** 這次有限目錄盤點未找到 Owner 所提 P4-A 私有 archive；未刪除或移動任何相關內容。PR #25 與 Git remote branch refs 保留，但它們不能證明私有 archive 的位置或完整性。後續使用任何 P4-A archive 前，需先由 Owner/Cloud PM 指明其所在地並確認完整性。
 - **UNKNOWN：** 本次未查詢全主機程序表；歷史回復紀錄只證明那次特定 synthetic probe 的兩個程序已被核驗清理。launchd PoC 沒有建立 Job 或啟動程序；不宣稱未知的無關主機程序狀態。
 - **OBSERVED：** 唯讀 Worktree inventory 只列出 main Checkout 一個工作樹；本地分支只有 `main`，多個 `origin/*` refs 保持不變；沒有符合 CLEANABLE 條件的工作樹。此次無 Worktree 或 Branch 被移除。
-- **RECOMMENDATION：** 下一個 Homework 2 專案另開 Owner 指定的新 Issue；只攜帶本回顧的簡化原則、Windows A2 已合併能力與必要的研究正確性契約，不帶入 #26 的 Supervisor 實作任務。任何後續 macOS Supervisor 研究另需明確的新授權。
+- **RECOMMENDATION：** 後續 Homework 2 規劃以已建立的 [Recovery Issue #28](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/28) 為入口；在其規格與授權更新前，不另開新 Issue、不啟動工程或研究執行。沿用本回顧的簡化原則、Windows A2 已合併證據與必要研究正確性契約，不帶入 #26 的 Supervisor 實作任務。
 
 ## 9. Next Project Guardrails
 
