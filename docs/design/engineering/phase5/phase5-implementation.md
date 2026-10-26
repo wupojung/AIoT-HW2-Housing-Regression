@@ -87,14 +87,16 @@ The planned reviewer returns PASS/PARTIAL/BLOCKED for each row with exact eviden
 
 ## 3. Input manifest and provenance contract (proposed)
 
-The future CLI accepts an explicit manifest path; it never scans disks, guesses aliases, downloads inputs, or infers permissions. The exact file schema and flag names require a later code PR, but that PR must preserve this field classification:
+The future CLI accepts an explicit request envelope; it never scans disks, guesses aliases, downloads inputs, or infers permissions. The exact manifest schema and flag names require a later code PR, but that PR must preserve this source split:
 
 | Class | Proposed fields | Rule when absent or inconsistent |
 |---|---|---|
-| **REQUIRED** | `case_id`, target column/unit, requested operation (`preflight`, `validate`, or `export`), output root, explicit input allowlist, owner gate record reference, selected host identity/OS family, repository HEAD, and required CLI arguments | Missing field, absent permission, invalid path, host mismatch, or missing gate is nonzero STOP with checkpoint; never convert to a successful empty result. |
-| **REQUIRED for each source** | Source artifact identifier, authorized source reference, SHA-256, read permission level, verification status, and source-to-canonical key mapping | Hash mismatch or insufficient access is nonzero STOP. Do not open row content to discover metadata when only metadata permission exists. |
+| **REQUIRED — CLI request envelope** | Operation is the subcommand (`preflight`, `validate`, or `export`); `--manifest <path>`; `--gate <gate-record-path>`; `--output-root <approved-root>` | Missing argument or unrecognized operation is nonzero STOP. These values are command inputs, not required manifest keys. The manifest's `output.case_root_relative_path` combines with `--output-root`; the gate's output allowlist must permit the resolved destination. |
+| **REQUIRED — input manifest** | `case_id`, target column/unit, explicit source artifact identifiers/references, source digests, requested source permission level, verification status, source-to-canonical key mapping, and applicable execution/configuration/protocol identity | Missing target/source metadata or a manifest request outside the gate's allowlist is nonzero STOP. Do not open row content to discover metadata when only metadata permission exists. |
+| **REQUIRED — gate record** | Gate ID and authorization reference/class, allowed operation(s), explicit input/read allowlist, output/write allowlist, selected host identity/OS family, repository HEAD, and Python environment identity | Missing authorization, disallowed path/action, hash mismatch, or host/HEAD/env mismatch is nonzero STOP with checkpoint; never convert it to a successful empty result. The CLI's `--gate` argument selects this record. |
+| **REQUIRED for each source** | Source artifact identifier, authorized source reference, SHA-256, read permission level, verification status, and source-to-canonical key mapping | Hash mismatch or insufficient gate permission is nonzero STOP. |
 | **REQUIRED for P5-B** | Explicit prediction/metric source, evaluation population, execution/configuration/protocol identity where verifiable, expected target and units, fold membership/provenance when fold metrics are requested, source files and digests, and row-processing authorization | Unknown identifiers that would create an unsafe join remain UNKNOWN and block that join. Missing legal rows means UNAVAILABLE only if authorized preflight was otherwise valid. |
-| **REQUIRED for figure export** | Figure identity, owning `evaluation_id`, axes/units, residual convention, source evaluation, asset output allowlist, source digest, and publication review state | Missing source or publication review leaves figure UNAVAILABLE/PENDING; no fabricated asset or public reference. |
+| **REQUIRED for figure export** | Figure identity, owning `evaluation_id`, axes/units, residual convention, source evaluation, asset destination within the gate's output allowlist, source digest, and publication review state | Missing source or publication review leaves figure UNAVAILABLE/PENDING; no fabricated asset or public reference. |
 | **OPTIONAL** | Approved existing Case root, `package.json`, `case.json`, Phase 4 catalog, already-approved figure/table inputs, report metadata | Omission may allow a Phase 5 fragment only; it cannot imply full Case Package integration. |
 | **DERIVED** | Canonical Phase 5 output paths, metric values from authorized predictions, residual=`actual - predicted`, fold means and sample SD from per-fold values, artifact SHA-256 and byte counts | Derive only from explicitly authorized, validated inputs; record exact parents/versions. Derived identity must not invent a Phase 4 run/config/model ID. |
 | **UNKNOWN until upstream owner confirms** | Phase 4 JSON field paths, registry model IDs, final-fit ID, legacy `run_id` mapping, unavailable source artifact keys, unapproved Phase 4 JSON examples | Preserve UNKNOWN/null with reason. A guessed alias cannot be joined or marked VERIFIED. |
@@ -109,13 +111,6 @@ The following is a **PROPOSED Phase 5 adapter-contract example** for a synthetic
 {
   "adapter_contract": "PROPOSED-phase5-synthetic-v0",
   "status": "MOCK",
-  "gate": {
-    "gate_id": "mock-gate-synthetic-only",
-    "authorization_class": "SYNTHETIC_FIXTURE_ONLY",
-    "allowed_operations": ["preflight", "validate", "export_mock"],
-    "real_data_access": false
-  },
-  "host": {"os_family": "MOCK_TEST_MATRIX", "repo_head": "MOCK_FIXTURE_REVISION"},
   "case": {
     "case_id": "synthetic-evaluation-demo",
     "target": {"column": "SyntheticTarget", "unit": "synthetic_units"}
@@ -128,8 +123,14 @@ The following is a **PROPOSED Phase 5 adapter-contract example** for a synthetic
   "source": {
     "source_artifact_id": "synthetic-predictions-01",
     "source_kind": "inline_synthetic_prediction_pairs",
+    "source_ref": "inline://synthetic-predictions-01",
     "source_sha256": "MOCK_DIGEST_COMPUTED_BY_FIXTURE_HARNESS",
     "read_permission": "SYNTHETIC_FIXTURE_ONLY",
+    "source_key_mappings": [
+      {"source_key_path": "rows[].actual", "canonical_destination_field": "actual", "normalization_rule": "identity"},
+      {"source_key_path": "rows[].predicted", "canonical_destination_field": "predicted", "normalization_rule": "identity"},
+      {"source_key_path": "rows[].fold_id", "canonical_destination_field": "fold_id", "normalization_rule": "identity"}
+    ],
     "rows": [
       {"row_id": "mock-row-01", "fold_id": "mock-fold-1", "actual": 10, "predicted": 12},
       {"row_id": "mock-row-02", "fold_id": "mock-fold-1", "actual": 20, "predicted": 18},
@@ -145,14 +146,48 @@ The following is a **PROPOSED Phase 5 adapter-contract example** for a synthetic
 }
 ```
 
+The request envelope sources for this example are explicit and separate:
+
+| Value | Supplied by | Mock example |
+|---|---|---|
+| Operation | CLI subcommand | `export` |
+| Input manifest | CLI `--manifest` argument | `tests/fixtures/phase5/mock-input.json` (proposed path; fixture not implemented) |
+| Authorization, host/HEAD, allowed operations, input/read allowlist, output/write allowlist | Separate gate record selected by CLI `--gate` | `tests/fixtures/phase5/mock-gate.json` (proposed synthetic-only record below; not an Owner gate for real data) |
+| Output root | CLI `--output-root` argument | `<mock-staging-root>` |
+| Case ID, target, source IDs/digest/data, canonical Case-root-relative output path | Input manifest | The JSON above; all values are MOCK |
+
+```text
+PROPOSED / NOT IMPLEMENTED (repository-root working directory)
+python -m housing_regression.phase5_cli export --manifest tests/fixtures/phase5/mock-input.json --gate tests/fixtures/phase5/mock-gate.json --output-root <mock-staging-root>
+```
+
+The matching gate-record shape is also only a fixture proposal:
+
+```json
+{
+  "status": "MOCK",
+  "gate_id": "mock-gate-synthetic-only",
+  "authorization_class": "SYNTHETIC_FIXTURE_ONLY",
+  "allowed_operations": ["export"],
+  "host": {"identity": "MOCK_TEST_HOST", "os_family": "MOCK_TEST_MATRIX", "repo_head": "MOCK_FIXTURE_REVISION", "python_env": "MOCK_LOCKED_ENV"},
+  "input_read_allowlist": ["synthetic-predictions-01"],
+  "output_write_allowlist": ["<mock-staging-root>"],
+  "real_data_access": false
+}
+```
+
+The future harness computes a real SHA-256 for the synthetic fixture before preflight; the placeholder in the illustrative manifest is not a valid digest and cannot pass validation as written. Neither the input manifest nor this fixture gate defines Phase 4's schema or grants permission to read any real source.
+
 Field-to-output mapping for this adapter proposal:
 
 | Synthetic input | Derived accepted-output field | Rule for this MOCK only |
 |---|---|---|
 | `case.case_id`, `case.target` | Root `case_id`; each record's `target` | Carry the synthetic Case/target labels only; output has `release_id:null`, `generated_at:null`, root `status:"MOCK"`, and `publication_review:"PENDING"`. |
 | `execution.execution_run_id`, `execution.configuration_id` | Both records' `execution_run_id` and `configuration_id` | Preserve the fixture aliases verbatim. Never join them to Phase 4 or use them outside this mock fixture. |
+| CLI subcommand `export`, `--output-root <mock-staging-root>`; manifest `output.case_root_relative_path` | Resolved private output path | Combine the CLI root with the manifest's Case-root-relative `phases/phase-05/evaluations.json`; reject if that destination is outside the gate record's write allowlist. |
+| `--gate <mock-gate.json>` | Preflight permission/host decision | Supplies the gate ID, synthetic-only authorization, host/HEAD/env, operation and input/output allowlists; it is not Phase 4 metadata or real-data permission. |
 | `output.contract_ref`, `output.case_root_relative_path`, `output.publish` | Canonical `evaluations.json` output path and root/UI fields | Use the pinned v1.2 contract/schema and complete sample shape; fixture is not published and does not claim a Phase 6 release. |
-| One `source.rows[]` list and its fold IDs | Two `evaluations[]` records with distinct IDs and `metric_source` values | Compute each fold's MAE/RMSE/R², average the two fold metrics for `cv_fold_mean`, and compute pooled metrics once from all four pairs for `pooled_oof`. These are two estimands, even when a metric happens to match. |
+| One `source.rows[]` list and its fold IDs | The adapter maps `actual` → `y_true`, `predicted` → `y_pred`, and `fold_id` → fold partition; then it creates two `evaluations[]` records with distinct IDs and `metric_source` values. | Compute each fold's MAE/RMSE/R², average the two fold metrics for `cv_fold_mean`, and compute pooled metrics once from all four pairs for `pooled_oof`. These are two estimands, even when a metric happens to match. |
 | The same synthetic source digest and fixture permission | Each record's `evidence.source_artifact_sha256` / `source_ref`; `limitations`; per-metric `status:"MOCK"` | Keep source and values visibly MOCK. A test-only permission is not publication approval. |
 | CV evaluation ID and pooled evaluation ID | Reciprocal `linked_evaluation_ids[]` | `synthetic-foldmean-01` links to `synthetic-oof-01`; `synthetic-oof-01` links back. Each figure, if present, belongs to the pooled OOF record's own ID. |
 | Fold IDs and per-fold metric values | CV record `fold_summary` | `fold_count:2`, `aggregation:"fold_mean"`, `ddof:1`, and sample SD across the two fold metrics. The pooled OOF record uses `fold_summary:null`. |
