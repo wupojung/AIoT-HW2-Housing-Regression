@@ -39,3 +39,17 @@ The above are *document changes*, not claims of completed empirical experiments,
 - **ENGINEERING TBD:** actual dataset 2, available methods and encoded K, run comparability and provenance inventory, live CSV processing/SSRF and size limits, secure cancellation support, real prediction/confidence interval methodology, breakpoints and implementation semantics.
 - **P6-A independent review pending:** Nex must verify that proposed controls, states and schema are sufficiently precise. No acceptance assumed from our own edits.
 - **Gate unchanged:** no P6-B, experimental Worker/OS/holdout, Merge or Deploy.
+
+## Phase 2 EDA research narrative amendment — 2026-10-26 (v0.3)
+
+Nex supplementary review: https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35#issuecomment-6413470789
+
+- **Scope:** only Phase 2 Data Understanding teaching panel and evidence/storytelling contract. Original CRISP-DM-first Home, six-step row, independent Dashboard, Phase 4/CV contracts and P6-A PASS architecture preserved.
+- **Empirical source:** https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/main/docs/crisp-dm/02-data-understanding.md ; source reports **empirical descriptive profiling + independent QA PASS**, PM Review and Epic Closeout PENDING.
+- **Wireframe:** one selected insight/one principal figure, key verified findings, source/denominator and finding → interpretation+caveat → Phase 3/4 candidate hypothesis, with linked downstream evidence only if later verified.
+- **Only four published QA-reviewed figure items:** FIG-01 profile; FIG-03 price distribution; FIG-02 missingness semantics; FIG-06 correlation/collinearity. Their PNG/SVG counterparts are public. The remaining 83 figure items (166 files) and raw row data remain private ignored `local/`, not UI/download assets.
+- **Evidence labeling:** verified observation ≠ candidate hypothesis ≠ accepted downstream decision. No EDA finding alone licenses deleting outliers, forcing log1p, blindly imputing facility absences, or declaring Phase 4 selected features.
+- **Design data contract:** additive EDA finding id/figure id, case/source/version, observation/unit/population/denominator, evidence URL, statement kind, linked phase/decision status, limitation and UI availability. Shared seven UI statuses and accessible alternative table apply.
+- **Pending:** availability of reviewed downstream Phase 3/4 decision links, responsive breakpoint and precise visual implementation (ENGINEERING TBD). Not a fresh Owner decision; do not invent a downstream adoption claim.
+- **Gate:** docs-only amendment for Nex re-review; P6-B, Runner, raw dataset access, Merge, Preview and Production remain NOT AUTHORIZED.
+
