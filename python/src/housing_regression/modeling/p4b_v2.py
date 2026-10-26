@@ -820,6 +820,7 @@ def aggregate_candidates(
             "status": "INVALID",
         })
 
+    blocked_methods: list[str] = []
     for method in METHOD_ORDER:
         eligible = [row for row in aggregates if row["method"] == method and row["winner_eligible"]]
         if eligible:
@@ -835,8 +836,15 @@ def aggregate_candidates(
                 row["candidate"].get("candidate_order", 0),
             ))
             tied[0]["method_winner"] = True
+        else:
+            blocked_methods.append(method)
+    for row in aggregates:
+        if row["method"] in METHOD_ORDER:
+            row["method_status"] = "METHOD_BLOCKED" if row["method"] in blocked_methods else "METHOD_COMPLETE"
+        row["blocked_methods"] = list(blocked_methods)
+        row["overall_method_status"] = "METHOD_BLOCKED" if blocked_methods else "ALL_METHODS_COMPLETE"
     method_winners = [row for row in aggregates if row.get("method_winner") and row["winner_eligible"]]
-    if method_winners:
+    if method_winners and not blocked_methods:
         method_winners.sort(key=lambda row: (
             row["selection_primary_cv_rmse"],
             row["mean_selected_encoded_count"],

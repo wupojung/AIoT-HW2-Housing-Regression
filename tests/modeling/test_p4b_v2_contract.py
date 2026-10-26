@@ -274,6 +274,35 @@ class P4BV2ContractTests(unittest.TestCase):
         self.assertFalse(baseline_result["coverage_complete"])
         self.assertFalse(baseline_result["winner_eligible"])
 
+    def test_blocked_method_prevents_five_method_winner(self):
+        config, identity, rows = self.aggregation_config_and_rows()
+        blocked_rows = [
+            {**row, "status": "INVALID", "primary_valid": False}
+            if row["method"] == "lasso" else row
+            for row in rows
+        ]
+        aggregates = P4BRunner.aggregate_task_results(blocked_rows, config, expected_identity=identity)
+        lasso_aggregates = [row for row in aggregates if row["method"] == "lasso"]
+        self.assertTrue(lasso_aggregates)
+        self.assertTrue(all(row["method_status"] == "METHOD_BLOCKED" for row in lasso_aggregates))
+        self.assertTrue(all(row["overall_method_status"] == "METHOD_BLOCKED" for row in aggregates))
+        self.assertTrue(all("lasso" in row["blocked_methods"] for row in aggregates))
+        self.assertFalse(any(row.get("five_method_winner") for row in aggregates))
+
+    def test_production_configuration_requires_full_protocol_pair_set(self):
+        with self.assertRaisesRegex(ValueError, "all five protocol methods"):
+            P4BConfig(code_head_commit="a" * 40, active_methods=["pearson"]).validate_positive()
+        with self.assertRaisesRegex(ValueError, "OLS baseline"):
+            P4BConfig(
+                code_head_commit="a" * 40,
+                active_pairs=[("pearson", "primary")],
+            ).validate_positive()
+        P4BConfig(
+            code_head_commit="synthetic",
+            active_methods=["pearson"],
+            synthetic_test_mode=True,
+        ).validate_positive()
+
     def test_score_invalid_is_recorded_and_ranked_last(self):
         ranked, evidence = rank_features_by_score(
             [0.2, float("nan"), 0.8], ["feature_b", "feature_a", "feature_c"],
@@ -411,6 +440,9 @@ class P4BV2ContractTests(unittest.TestCase):
             "fold": 1,
             "task_id": "task_fixture",
             "method": "pearson",
+            "track": "primary",
+            "actual": 123.0,
+            "predicted": 120.0,
         }]
         checkpoint = create_task_checkpoint(
             result, oof, run_id="run_1", code_sha="a" * 40,
@@ -457,6 +489,38 @@ class P4BV2ContractTests(unittest.TestCase):
         with self.assertRaises(CheckpointVerificationError):
             verify_task_checkpoint_for_resume(corrupted, **args)
 
+        invalid_result = {**result, "status": "INVALID"}
+        invalid_oof = [{**oof[0], "predicted": None}]
+        invalid_checkpoint = create_task_checkpoint(
+            invalid_result, invalid_oof, run_id="run_1", code_sha="a" * 40,
+            data_digest="d" * 64, fold_digest="f" * 64,
+        )
+        verify_task_checkpoint_for_resume(invalid_checkpoint, **args)
+
+        invalid_schema_cases = (
+            {**oof[0], "track": "diagnostic"},
+            {key: value for key, value in oof[0].items() if key != "track"},
+            {key: value for key, value in oof[0].items() if key != "actual"},
+            {**oof[0], "actual": float("nan")},
+            {key: value for key, value in oof[0].items() if key != "predicted"},
+            {**oof[0], "predicted": float("inf")},
+        )
+        for malformed_oof in invalid_schema_cases:
+            malformed = create_task_checkpoint(
+                result, [malformed_oof], run_id="run_1", code_sha="a" * 40,
+                data_digest="d" * 64, fold_digest="f" * 64,
+            )
+            with self.subTest(oof=malformed_oof):
+                with self.assertRaises(CheckpointVerificationError):
+                    verify_task_checkpoint_for_resume(malformed, **args)
+        malformed_invalid_oof = create_task_checkpoint(
+            invalid_result, [{**oof[0], "predicted": float("nan")}],
+            run_id="run_1", code_sha="a" * 40,
+            data_digest="d" * 64, fold_digest="f" * 64,
+        )
+        with self.assertRaises(CheckpointVerificationError):
+            verify_task_checkpoint_for_resume(malformed_invalid_oof, **args)
+
     def test_restored_checkpoints_use_same_complete_coverage_gate(self):
         config, identity, rows = self.aggregation_config_and_rows()
         restored = []
@@ -467,6 +531,9 @@ class P4BV2ContractTests(unittest.TestCase):
                     "fold": row["fold"],
                     "task_id": row["task_id"],
                     "method": row["method"],
+                    "track": row["track"],
+                    "actual": 100.0 + number,
+                    "predicted": 99.0 + number if row["status"] == "COMPLETED" else None,
                 }
                 for number in (0, 1)
             ]

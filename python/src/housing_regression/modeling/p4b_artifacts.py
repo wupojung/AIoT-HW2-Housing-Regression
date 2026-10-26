@@ -13,6 +13,7 @@ import csv
 import datetime
 import hashlib
 import json
+import math
 import os
 import platform
 import re
@@ -371,9 +372,18 @@ def verify_task_checkpoint_for_resume(
         not isinstance(row, Mapping) for row in oof_records
     ):
         raise CheckpointVerificationError("Task checkpoint payload shape is invalid.")
-    if result.get("task_id") != expected_task_id or result.get("config_hash") != expected_config_hash:
+    if (
+        result.get("task_id") != expected_task_id
+        or result.get("config_hash") != expected_config_hash
+        or result.get("status") != checkpoint.get("status")
+    ):
         raise CheckpointVerificationError("Task checkpoint result identity mismatch.")
     actual_ids = [str(row.get("Id")) for row in oof_records]
+    expected_track = "baseline" if expected_method == "ols_baseline" else "primary"
+    task_status = checkpoint.get("status")
+    def finite_number(value: Any) -> bool:
+        return not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value)
+
     if (
         len(actual_ids) != len(expected_oof_ids)
         or len(set(actual_ids)) != len(actual_ids)
@@ -382,10 +392,16 @@ def verify_task_checkpoint_for_resume(
             row.get("task_id") != expected_task_id
             or row.get("fold") != expected_fold
             or row.get("method") != expected_method
+            or row.get("track") != expected_track
+            or not finite_number(row.get("actual"))
+            or (
+                task_status == "COMPLETED" and not finite_number(row.get("predicted"))
+            )
+            or (task_status == "INVALID" and row.get("predicted") is not None)
             for row in oof_records
         )
     ):
-        raise CheckpointVerificationError("Task checkpoint OOF identity coverage mismatch.")
+        raise CheckpointVerificationError("Task checkpoint OOF identity/schema coverage mismatch.")
     payload = {
         "result": dict(result),
         "oof_records": [dict(row) for row in oof_records],

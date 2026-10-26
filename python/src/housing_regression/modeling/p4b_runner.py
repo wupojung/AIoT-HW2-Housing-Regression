@@ -365,6 +365,12 @@ class P4BConfig:
                 selected_tracks = {track for pair_method, track in pair_tuples if pair_method == method}
                 if selected_tracks and selected_tracks != {"primary", "diagnostic"}:
                     raise ValueError("active_pairs must include primary and diagnostic tracks for each penalty method.")
+        if not self.synthetic_test_mode:
+            required_methods = {"pearson", "mutual_information", "lasso", "elastic_net", "ridge_rfe"}
+            if self.active_methods is not None and set(self.active_methods) != required_methods:
+                raise ValueError("Production runs require all five protocol methods.")
+            if self.active_pairs is not None and set(map(tuple, self.active_pairs)) != set(SUPPORTED_PAIRS):
+                raise ValueError("Production runs require all five methods, both penalty tracks, and the OLS baseline.")
 
 
 def estimate_preflight_budget(config: P4BConfig) -> Tuple[int, int]:
