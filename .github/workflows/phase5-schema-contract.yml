@@ -19,5 +19,7 @@ jobs:
           python-version: '3.11'
       - name: Install pinned JSON Schema validator
         run: python -m pip install 'jsonschema[format]==4.26.0'
+      - name: Validate Phase 5 sample schema (simple local entrypoint)
+        run: python docs/ui-ux/case-package/phase-05/validate_schema.py
       - name: Validate positive and negative Phase 5 synthetic fixtures
         run: python docs/ui-ux/case-package/phase-05/test_schema.py
