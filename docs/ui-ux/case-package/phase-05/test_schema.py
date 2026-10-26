@@ -5,7 +5,7 @@ import json
 import pathlib
 import sys
 
-import jsonschema
+from importlib.metadata import version
 from jsonschema import Draft202012Validator, FormatChecker
 
 BASE = pathlib.Path(__file__).resolve().parent
@@ -35,7 +35,7 @@ def main():
         if passed != expected_pass:
             raise AssertionError(label)
 
-    print("jsonschema=" + jsonschema.__version__ + " draft=2020-12 format_checker=ENABLED")
+    print("jsonschema=" + version('jsonschema') + " draft=2020-12 format_checker=ENABLED")
     check("empty staging", empty, True)
     check("nonempty synthetic", mock, True)
     variant = copy.deepcopy(mock)
