@@ -4,6 +4,8 @@
 
 This repository is an independent home for the HW2 Housing Regression Lab. RegScope M0 provides a responsive, static showcase for the project scope and CRISP-DM workflow. Housing regression models, feature selection, and evaluated results are future work and are not represented as completed.
 
+**研究規劃入口：** [Recovery #28（公開版）](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/28)；[P4-B 三折五方法協定（R2 Docs PR 待審）](docs/crisp-dm/04-modeling-p4b-experiment-protocol.md)。歷史 P4-A 五折 OLS 不可直接與未來三折比較；292 Holdout 仍封存。
+
 ## Project method: CRISP-DM
 
 The project adopts CRISP-DM as its end-to-end data-mining process:

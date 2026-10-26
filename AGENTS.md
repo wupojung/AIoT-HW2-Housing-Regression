@@ -2,6 +2,12 @@
 
 This repository is the NCHU AIoT 2026 HW2 Housing Regression Lab. This file is the standing operational policy for local Codex/AGY agents. Read the current Issue and actual Git state before work. **A specification is not permission to execute.** When instructions conflict, explicit newer Owner decisions take priority; report the conflict rather than guessing.
 
+## RegScope Recovery 文件階段注意事項（Issue #28）
+
+- RegScope 的三角色：Coordinator 控制授權與任務範圍；Implementer 有界交付；Independent QA 審實際 SHA 和證據。重要任務須收件者身分確認、明確接受 ACK 才能開工；僅投遞訊息不是開始許可。
+- Recovery #28 的 Owner 授權目前限定 Docs-only 文件與 Review；不授權 Merge、Ames 資料實驗、四個計算 Workers、Holdout、部署或破壞性清理。生效研究協定以後續 Owner 授權 Merge 的版本為準。
+- 原本 Herdr/Windows/WSL/Worker 範例不代表當前機器已驗證，也不能用已停止的 #26 macOS Watchdog/launchd PoC 充當 R4 成果；不重啟該工程。
+
 ## Agent reading route (project-local; selective)
 
 - **Always** follow this root `AGENTS.md` and the specifically assigned GitHub Issue. Existing Owner and security gates remain controlling; reading a document is never task or runtime permission.

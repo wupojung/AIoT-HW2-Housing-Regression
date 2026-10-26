@@ -11,7 +11,7 @@ Scope: local development agents only. This document refines, but never overrides
 ## One-shot native notification
 - Sender first writes a private, ignored, receiver-accessible handoff with handoff ID, sender/receiver, verified worktree, Issue and authorization, BASE/HEAD, scope, tests and stop conditions. Include Team/Task IDs only when real and verified.
 - Send one short `herdr agent prompt <verified-pane> "<handoff-ID> <path> <scope>"` using syntax supported by installed help. Do not include private datasets, secrets or transcript dumps.
-- `agent_prompted` means delivery submitted, not receipt, acceptance or completion. Receipt ACK is optional; no ACK-of-ACK and no forced read or task launch.
+- `agent_prompted` means delivery submitted, not receipt, acceptance or completion. Receipt ACK is optional for read-only notification only. **For any authorized engineering, resource-affecting or critical task, verify recipient identity and obtain explicit task-acceptance ACK before work starts**; `agent_prompted` never suffices. No ACK-of-ACK and no forced read or task launch.
 - On ambiguity or timeout: one bounded supported diagnostic, record DELIVERY_UNKNOWN/ACK_PENDING as appropriate and stop. No blind resend, polling, timers or watchdogs.
 - Receiver reads/accepts/works on handoff **only under its separate task authorization** and checks source freshness and scope before proceeding.
 
@@ -21,6 +21,12 @@ Scope: local development agents only. This document refines, but never overrides
 - When GitHub reporting is not explicitly permitted or confirmed, keep a private local handoff and visibly report `GitHub Support: LOCAL_ONLY`. Uncertain comment writes must not be blindly retried.
 - No Herdr transport or Git operations from data-processing/modeling execution paths.
 - No merge, deployment, worktree removal, or next task is implied by delivery, commit, review or this file.
+
+## 三角色最小協作與異常停止（RegScope 專案）
+
+- Coordinator 負責 Owner 任務授權與範圍、身分/Worktree 核對及唯一對外進度回報；Implementer 只做一項被接受的授權工作、留下交付 SHA/測試；Independent QA 對同一最終 SHA 及證據獨立驗收，不自行 Merge。
+- 一份有界 Handoff → 明確接受 ACK（關鍵任務必須）→ 成果與限制 → 獨立 QA → 精簡 Checkpoint；收到投遞≠接受、完成或 Review PASS。失聯/逾時一次唯讀核查後標 UNKNOWN 並 STOP，嚴禁循環輪詢、猜測身分或擅自終止其他工作。
+- 同一根因反覆 QA BLOCKED 時，Coordinator 停止無界修補並交 PM/Owner 判斷縮小範圍或中止。文件審查通過不代表模型、Worker 或跨平台 Supervisor 已實測安全。具體 Host 啟停只能依另外取得授權的工程工作指示。
 
 ## Runtime validation
 Static doc checks are not proof of live Windows Herdr communication. Until Owner-authorized runtime verification completes, pane identities, worktree mapping and native messaging remain UNKNOWN / NOT RUN.
