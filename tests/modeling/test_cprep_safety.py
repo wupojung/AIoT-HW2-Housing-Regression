@@ -198,6 +198,15 @@ class BudgetTests(unittest.TestCase):
             evaluate_budget(self.good, state=ControlState.RUNNING, elapsed_seconds=100.0, policy=self.policy),
             BudgetDecision.STOP_REQUEST,
         )
+        self.assertEqual(
+            evaluate_budget(
+                self.good,
+                state=ControlState.STOP_REQUESTED,
+                elapsed_seconds=1.0,
+                policy=self.policy,
+            ),
+            BudgetDecision.STOP_REQUEST,
+        )
         unknown = MonitorAssessment(False, "LOST", None, None, None, None)
         self.assertEqual(
             evaluate_budget(unknown, state=ControlState.RUNNING, elapsed_seconds=1.0, policy=self.policy),
@@ -335,6 +344,46 @@ class BudgetTests(unittest.TestCase):
                 ),
                 BudgetDecision.DENY,
             )
+
+    def test_stop_conditions_precede_warning_and_critical_freeze(self):
+        cases = (
+            (300, 1.0, BudgetDecision.STOP_REQUEST),  # RSS exactly at stop threshold
+            (301, 1.0, BudgetDecision.STOP_REQUEST),  # RSS above stop threshold
+            (100, 100.0, BudgetDecision.STOP_REQUEST),  # elapsed exactly at timeout
+            (100, 99.0, BudgetDecision.FREEZE),  # below both stop boundaries
+        )
+        for pressure in (PressureLevel.WARNING, PressureLevel.CRITICAL):
+            for rss_bytes, elapsed_seconds, expected in cases:
+                with self.subTest(
+                    pressure=pressure,
+                    rss_bytes=rss_bytes,
+                    elapsed_seconds=elapsed_seconds,
+                ):
+                    assessment = MonitorAssessment(
+                        True,
+                        None,
+                        1.0,
+                        rss_bytes,
+                        10.0,
+                        pressure,
+                    )
+                    decision = evaluate_budget(
+                        assessment,
+                        state=ControlState.RUNNING,
+                        elapsed_seconds=elapsed_seconds,
+                        policy=self.policy,
+                    )
+                    self.assertEqual(decision, expected)
+                    admission = decide_admission(
+                        current_workers=1,
+                        requested_workers=2,
+                        state=ControlState.RUNNING,
+                        assessment=assessment,
+                        elapsed_seconds=elapsed_seconds,
+                        policy=self.policy,
+                    )
+                    self.assertFalse(admission.allowed)
+                    self.assertEqual(admission.reason, expected.value.upper())
 
 
 if __name__ == "__main__":

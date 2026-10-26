@@ -103,14 +103,15 @@ def evaluate_budget(
         return BudgetDecision.DENY
     if not isinstance(assessment.pressure, PressureLevel) or assessment.pressure is PressureLevel.UNKNOWN:
         return BudgetDecision.DENY
-    # A WARNING freezes worker admission; CRITICAL does the same even below
-    # the RSS thresholds. Neither decision claims that a running worker stopped.
-    if assessment.pressure in (PressureLevel.WARNING, PressureLevel.CRITICAL):
-        return BudgetDecision.FREEZE
     if elapsed_seconds >= policy.max_runtime_seconds:
         return BudgetDecision.STOP_REQUEST
     if assessment.aggregate_worker_rss_bytes >= policy.stop_aggregate_rss_bytes:
         return BudgetDecision.STOP_REQUEST
+    # Stop boundaries take precedence. Below them, WARNING freezes worker
+    # admission and CRITICAL does the same regardless of low RSS. Neither
+    # decision claims that a running worker stopped.
+    if assessment.pressure in (PressureLevel.WARNING, PressureLevel.CRITICAL):
+        return BudgetDecision.FREEZE
     if assessment.aggregate_worker_rss_bytes >= policy.warning_aggregate_rss_bytes:
         return BudgetDecision.FREEZE
     if not admission_is_open(state):
