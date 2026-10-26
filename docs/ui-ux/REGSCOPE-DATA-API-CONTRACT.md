@@ -1,3 +1,5 @@
+> **CANONICAL CONTRACT CORRECTION (2026-10-26):** Read [REGSCOPE-CONTRACT-REVIEW-DELTA.md](./REGSCOPE-CONTRACT-REVIEW-DELTA.md) **before implementing any JSON/endpoint**; its identity model, source-to-export feasibility, Phase 5 fields, publication protocol and endpoint names **supersede incompatible v0.1 examples below**. Start at [REGSCOPE-RECONSTRUCTION-INDEX.md](./REGSCOPE-RECONSTRUCTION-INDEX.md). Docs-only, no API/tooling authorization.
+
 # RegScope — Data Products, Visualization Assets & Prediction API Contract v0.1
 
 **Status:** P6-A **DESIGN PROPOSAL / docs-only**, 2026-10-26. Companion to [REGSCOPE-UX-SPEC.md](./REGSCOPE-UX-SPEC.md); PR #35, Issue #34. This file is the authoritative **production/export and integration proposal**, not a claim that any file, model, image or endpoint has been generated/deployed. Phase 5 detailed UI and evaluation gate await Nex/Owner decision. **No runner, ETL, CI, model training, holdout evaluation, deployment, repository secret, raw dataset publishing or merge authorized.**
