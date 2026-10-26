@@ -69,6 +69,22 @@ flowchart TD
 
 The CLI engineering gate is an engineering prerequisite inserted between P5-A and actual P5-B row processing. It is not an additional research Gate and does not change P5-A/B/C/D terminology in Issue #37. Documentation readiness never means runtime readiness.
 
+### P5-A independent review handoff for G09 R01–R07
+
+This matrix is a **planned review handoff artifact**, not a completed P5-A inventory, evidence audit, independent QA result, or Owner closeout. The R01–R07 topic labels below are a planning crosswalk over Issue #37's existing requirements; they do not add acceptance criteria. The “Verifiable Evidence” column names what a future independent Reviewer should inspect and its governing design source; no underlying private or row-level evidence was collected for this planning PR.
+
+| Review item | Design Correctness | Verifiable Evidence (to inspect; not collected here) | Unknown or New Authorization |
+|---|---|---|---|
+| R01 — Identity and joins | One Case/run/configuration/evaluation identity per record; `cv_fold_mean` and `pooled_oof` use distinct `evaluation_id`s and only reviewed links. | Compare source identity mapping to [Issue #37 checklist H01–H02](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/37#issuecomment-6419852505) and [PR #35 Phase 5 contract §3](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/8d2bc4405e08e1a1b982204984f681d90975956a/docs/ui-ux/case-package/phase-05/PHASE-05-DATA-CONTRACT-v1.md). | Phase 4's canonical catalog and any legacy `run_id` mapping remain UNKNOWN until an upstream owner accepts the contract. |
+| R02 — Population and prediction provenance | Keep fold-specific Development OOF, pooled OOF, training, and Holdout aggregate populations distinct; never infer row-level Holdout evidence. | Check source digests, population labels, fold membership metadata, and permission inventory against [Issue #37 checklist G/H](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/37#issuecomment-6419852505). | Actual OOF artifact existence, row membership, and any row-read permission require their own evidence and Owner Gate. |
+| R03 — Metrics and aggregation | Use only canonical MAE/RMSE/R²; fold means and NumPy sample SD (`ddof=1`) remain separate from pooled OOF metrics. | Inspect per-fold source values and the approved P4 protocol aggregation rule in [`04-modeling-p4b-experiment-protocol.md`](../../../crisp-dm/04-modeling-p4b-experiment-protocol.md); compare each source/value to evaluation IDs. | Real predictions and row-level arithmetic are UNKNOWN until P5-B data authorization. |
+| R04 — Figure provenance and residual convention | FIG-P5-02 uses predicted on X, `actual - predicted` on Y, and `y=0`; each figure belongs to its owning evaluation. | Inspect figure manifest axes, `n`, evaluation/population IDs, source digest, alt/table refs against [PR #35 contract §4.2](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/8d2bc4405e08e1a1b982204984f681d90975956a/docs/ui-ux/case-package/phase-05/PHASE-05-DATA-CONTRACT-v1.md) and checklist H07. | Approved figure bytes, public-safety decision, and any real OOF point plot require separate source and publication review. |
+| R05 — Interval gates | INT-F (feasibility) and INT-S (actual CI/PI evidence) are separate; INT-F PASS cannot imply INT-S PASS. | Inspect feasibility memo, method assumptions, and any actual figure/evidence against checklist H03–H04 and Issue #37 §5. | Calibration, refit, or any new population needs a separate method/data/compute Owner Gate. |
+| R06 — P5-A permissions and provenance | P5-A checks only authorized metadata; `source_key_mappings[]`, digests, permission, and row-verification plan stay explicit. | Inspect `evidence-inventory.json`, `gap-permission-matrix.json`, and `checkpoint.json` against checklist K04/K07 and PM D-01 Option A. | Source file existence, host/path access, private artifact metadata, and any row-level access remain unverified/permission-bound. |
+| R07 — Package boundary, independent QA, and publication | Phase 5 owns only its namespace/private proof; Producer cannot self-approve; Phase 6 owns release sealing/publication. | Inspect Phase 5 fragment/root ownership, a Reviewer-authored gate report, and Phase 6's separate release decision against checklist D05–D07 and [PR #35 contract §1](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/8d2bc4405e08e1a1b982204984f681d90975956a/docs/ui-ux/case-package/phase-05/PHASE-05-DATA-CONTRACT-v1.md). | Upstream package roots, reviewer assignment, publication rights, and release ID remain UNKNOWN until independently supplied and authorized. |
+
+The planned reviewer returns PASS/PARTIAL/BLOCKED for each row with exact evidence links, date, reviewer identity, and reason/next action. A completed design table cannot stand in for the later P5-A evidence audit.
+
 ## 3. Input manifest and provenance contract (proposed)
 
 The future CLI accepts an explicit manifest path; it never scans disks, guesses aliases, downloads inputs, or infers permissions. The exact file schema and flag names require a later code PR, but that PR must preserve this field classification:
@@ -84,6 +100,74 @@ The future CLI accepts an explicit manifest path; it never scans disks, guesses 
 | **UNKNOWN until upstream owner confirms** | Phase 4 JSON field paths, registry model IDs, final-fit ID, legacy `run_id` mapping, unavailable source artifact keys, unapproved Phase 4 JSON examples | Preserve UNKNOWN/null with reason. A guessed alias cannot be joined or marked VERIFIED. |
 
 The P5-A `source_key_mappings[]` embedded in `evidence-inventory.json` is the one authority for source-to-canonical mapping, per PM D-01 Option A. A separate mapping file is not a required artifact and may only be a derived view with `parent_inventory_sha256` if a later approved consumer needs it. Phase 4 schema/sample fields in PR #35 are illustrative/unapproved unless an upstream Owner accepts them. Do not claim private CSV/JSON summaries form a stable Case Package contract.
+
+### Proposed synthetic adapter manifest (not a Phase 4 schema)
+
+The following is a **PROPOSED Phase 5 adapter-contract example** for a synthetic-only test. Every ID and value is MOCK. The future test harness allowlists only these inline synthetic prediction pairs; this fixture permission conveys no Owner authorization for Ames, private files, Phase 4 artifacts, OOF/Holdout data, or real processing. `execution_run_id` and `configuration_id` below are fixture aliases required to exercise the accepted Phase 5 output shape; they are not Phase 4 IDs and do not define a Phase 4 JSON schema. The digest placeholder is calculated by a future fixture harness; this block is illustrative and is not a runnable manifest or evidence record.
+
+```json
+{
+  "adapter_contract": "PROPOSED-phase5-synthetic-v0",
+  "status": "MOCK",
+  "gate": {
+    "gate_id": "mock-gate-synthetic-only",
+    "authorization_class": "SYNTHETIC_FIXTURE_ONLY",
+    "allowed_operations": ["preflight", "validate", "export_mock"],
+    "real_data_access": false
+  },
+  "host": {"os_family": "MOCK_TEST_MATRIX", "repo_head": "MOCK_FIXTURE_REVISION"},
+  "case": {
+    "case_id": "synthetic-evaluation-demo",
+    "target": {"column": "SyntheticTarget", "unit": "synthetic_units"}
+  },
+  "execution": {
+    "execution_run_id": "synthetic-execution-01",
+    "configuration_id": "synthetic-config-01",
+    "protocol_ref": "MOCK_PROTOCOL_ONLY"
+  },
+  "source": {
+    "source_artifact_id": "synthetic-predictions-01",
+    "source_kind": "inline_synthetic_prediction_pairs",
+    "source_sha256": "MOCK_DIGEST_COMPUTED_BY_FIXTURE_HARNESS",
+    "read_permission": "SYNTHETIC_FIXTURE_ONLY",
+    "rows": [
+      {"row_id": "mock-row-01", "fold_id": "mock-fold-1", "actual": 10, "predicted": 12},
+      {"row_id": "mock-row-02", "fold_id": "mock-fold-1", "actual": 20, "predicted": 18},
+      {"row_id": "mock-row-03", "fold_id": "mock-fold-2", "actual": 30, "predicted": 27},
+      {"row_id": "mock-row-04", "fold_id": "mock-fold-2", "actual": 40, "predicted": 44}
+    ]
+  },
+  "output": {
+    "contract_ref": "PR #35 Phase 5 v1.2 at 8d2bc4405e08e1a1b982204984f681d90975956a",
+    "case_root_relative_path": "phases/phase-05/evaluations.json",
+    "publish": false
+  }
+}
+```
+
+Field-to-output mapping for this adapter proposal:
+
+| Synthetic input | Derived accepted-output field | Rule for this MOCK only |
+|---|---|---|
+| `case.case_id`, `case.target` | Root `case_id`; each record's `target` | Carry the synthetic Case/target labels only; output has `release_id:null`, `generated_at:null`, root `status:"MOCK"`, and `publication_review:"PENDING"`. |
+| `execution.execution_run_id`, `execution.configuration_id` | Both records' `execution_run_id` and `configuration_id` | Preserve the fixture aliases verbatim. Never join them to Phase 4 or use them outside this mock fixture. |
+| `output.contract_ref`, `output.case_root_relative_path`, `output.publish` | Canonical `evaluations.json` output path and root/UI fields | Use the pinned v1.2 contract/schema and complete sample shape; fixture is not published and does not claim a Phase 6 release. |
+| One `source.rows[]` list and its fold IDs | Two `evaluations[]` records with distinct IDs and `metric_source` values | Compute each fold's MAE/RMSE/R², average the two fold metrics for `cv_fold_mean`, and compute pooled metrics once from all four pairs for `pooled_oof`. These are two estimands, even when a metric happens to match. |
+| The same synthetic source digest and fixture permission | Each record's `evidence.source_artifact_sha256` / `source_ref`; `limitations`; per-metric `status:"MOCK"` | Keep source and values visibly MOCK. A test-only permission is not publication approval. |
+| CV evaluation ID and pooled evaluation ID | Reciprocal `linked_evaluation_ids[]` | `synthetic-foldmean-01` links to `synthetic-oof-01`; `synthetic-oof-01` links back. Each figure, if present, belongs to the pooled OOF record's own ID. |
+| Fold IDs and per-fold metric values | CV record `fold_summary` | `fold_count:2`, `aggregation:"fold_mean"`, `ddof:1`, and sample SD across the two fold metrics. The pooled OOF record uses `fold_summary:null`. |
+| No approved image files in this fixture | Pooled OOF `figures[]` slots | Match the pinned nonempty sample's figure object shape; use `UNAVAILABLE`/null asset fields until a separate synthetic figure test creates an image. No fake asset or public URL. |
+
+For arithmetic illustration only, the fold-1 residuals are `[-2, 2]`, fold-2 residuals are `[3, -4]`, and all four pooled residuals are `[-2, 2, 3, -4]` (`actual - predicted`). Fold-mean metrics are MAE `2.75`, RMSE `2.767767`, R² `0.67`; their sample SDs are MAE `1.060660`, RMSE `1.085786`, and R² `0.240416`. Pooled OOF metrics are MAE `2.75`, RMSE `2.872281`, R² `0.934`. Every number remains **MOCK**, not Ames/Phase 4 evidence. In a complete canonical index, each metric still uses the v1.2 object shape (`value`, `status`, `reason_code`, `evidence_ref`); `metrics` contains exactly `mae`, `rmse`, `r2`. A concise record excerpt—not a complete schema-valid index—is:
+
+```json
+[
+  {"evaluation_id":"synthetic-foldmean-01","metric_source":"cv_fold_mean","n":4,"metrics":{"mae":{"value":2.75,"status":"MOCK"},"rmse":{"value":2.767767,"status":"MOCK"},"r2":{"value":0.67,"status":"MOCK"}},"linked_evaluation_ids":["synthetic-oof-01"]},
+  {"evaluation_id":"synthetic-oof-01","metric_source":"pooled_oof","n":4,"metrics":{"mae":{"value":2.75,"status":"MOCK"},"rmse":{"value":2.872281,"status":"MOCK"},"r2":{"value":0.934,"status":"MOCK"}},"linked_evaluation_ids":["synthetic-foldmean-01"]}
+]
+```
+
+The complete output must populate every required top-level and evaluation field from the pinned [v1.2 sample](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/8d2bc4405e08e1a1b982204984f681d90975956a/docs/ui-ux/case-package/phase-05/sample/evaluations.nonempty.mock.json) and pass the pinned [schema](https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/8d2bc4405e08e1a1b982204984f681d90975956a/docs/ui-ux/case-package/phase-05/evaluation-index.schema.json). These references define the output; the proposed adapter example above does not define an accepted Phase 4 or Case input schema.
 
 ### Identity and joins
 
@@ -150,7 +234,7 @@ The first complete bundle may only be called a `Phase5 fragment` unless validate
 
 ### Locked API and P4 compatibility
 
-`requirements.lock` fixes NumPy 2.5.4 and scikit-learn 1.9.1. The planning venv has been reported to import these versions and expose the needed metric functions; this is local environment evidence only, not cross-platform QA and not an evaluation of real data. Do not install, upgrade, or infer portability from that observation.
+`requirements.lock` fixes NumPy 2.5.4 and scikit-learn 1.9.1. The plan relies on these pinned versions and versioned official API references; no local runtime verification is asserted. Do not install or upgrade dependencies as part of this docs revision.
 
 Keep the existing P4 [`_metric_values`](../../../../python/src/housing_regression/modeling/p4b_v2.py) semantics without changing P4:
 
@@ -238,16 +322,19 @@ Resume only when the gate ID, complete input hashes, protocol, host/environment,
 
 ## 9. Test and QA plan (all proposed; NOT IMPLEMENTED)
 
-No tests are run by this planning document. Once separately authorized, implementation work should use synthetic fixtures and these bounded categories:
+No tests are run by this planning document. The following five cases map directly to Issue #37 checklist K06 and use synthetic-only fixtures. Commands are proposed focused pytest node selectors from the repository root after the future packaging/test harness exists. Every named test module, node, fixture, and CLI is currently **NOT IMPLEMENTED**; these commands are not claimed runnable today.
 
-| Layer | Required cases | Proposed command / acceptance |
-|---|---|---|
-| Unit | Validated argument parsing; root containment; hashes; IDs; `actual-predicted`; finite inputs; constant-target / `n < 2` / non-finite R² UNAVAILABLE; MAE/RMSE/R² expected values; fold mean/sample SD `ddof=1`; fewer than two valid folds means sample SD unavailable | `python -m pytest -q tests/phase5/test_metrics.py tests/phase5/test_preflight.py` (proposed test modules; not present) |
-| Schema | Empty UNAVAILABLE index; nonempty synthetic MOCK; only three allowed metric keys; reject extra `mape`/`medae`; null+reason; safe refs; INT-F/INT-S split | `python -m pytest -q tests/phase5/test_schema.py` and proposed CLI `python -m housing_regression.phase5_cli validate --manifest tests/fixtures/phase5/empty.json --schema <pinned-v1.2-schema>` (test/module/fixture not present; CLI invocation depends on future packaging setup) |
-| Integration | Authorized synthetic manifest to Phase 5 fragment; JSON/schema plus asset paths/SHA and identity joins; reject mismatch and missing upstream package roots with `PACKAGE_INTEGRATION_PENDING` | `python -m pytest -q tests/phase5/test_export_integration.py` (proposed test module; not present) |
-| Scientific QA | Metric definitions, target units/scale, fold mean vs pooled OOF separation, residual sign, one evaluation per source/population, no OOF-as-Holdout labeling, interval claims | Reviewer uses fixed synthetic values and evidence table; never uses Ames or private data in this test layer. |
-| Portability | Same synthetic preflight/JSON/path/UTF-8 fixture on Linux, Windows and macOS; `--help`; no platform-specific required shell or path assumption | After future package setup, from repository-root working directory: `python -m housing_regression.phase5_cli --help`, then focused pytest commands on each authorized test host (proposed; CLI absent). Linux+Windows CI and sourced macOS smoke may be sufficient; no 96-task matrix. |
-| Release QA | No release action in this engineering gate; verify manifest references, file hashes, rights, same-release IDs and public/private separation against synthetic package | `python -m pytest -q tests/phase5/test_release_manifest.py` (proposed test module; not present); publication remains a separate #34 gate. |
+| K06 check | Correct QA layer | Proposed focused command | Expected assertion / boundary |
+|---|---|---|---|
+| 1. Clean-checkout preflight | Integration + Portability | `python -m pytest -q tests/phase5/test_preflight.py::test_clean_checkout_preflight` | A clean checkout with no `local/` tree uses only the explicit synthetic fixture; preflight never scans/downloads research data. Missing real inputs stay BLOCKED/UNAVAILABLE according to gate state. |
+| 2. Synthetic schema + JOIN with two linked evaluations | Schema + Integration | `python -m pytest -q tests/phase5/test_schema_join.py::test_two_linked_mock_evaluations` | Validate the complete output against the pinned PR #35 v1.2 Schema; assert one `cv_fold_mean` and one `pooled_oof` record, distinct evaluation IDs, reciprocal reviewed links, and no extra `metrics` keys. Test uses the proposed adapter fixture only; it does not define Phase 4 input JSON. |
+| 3. Known metrics + residual sign | Unit + Scientific QA | `python -m pytest -q tests/phase5/test_metrics.py::test_known_metrics_and_residual_sign` | On fixed synthetic pairs, assert MAE/RMSE/R² expected values and `residual == actual - predicted`; positive is underprediction and negative is overprediction. Include constant-target/nonfinite R² UNAVAILABLE behavior. |
+| 4. FIG-P5-02 positive/negative points + zero line | Figure unit + Scientific QA | `python -m pytest -q tests/phase5/test_figures.py::test_fig_p5_02_signs_and_zero_line` | Synthetic fixture includes at least one positive and one negative residual; assert X=`predicted`, Y=`actual - predicted`, and reference `y=0`. No real rows or published asset are used. |
+| 5. Cross-OS paths + public-static URL resolution | Portability + static-reference Integration | `python -m pytest -q tests/phase5/test_portability.py::test_case_paths_and_mock_static_url_resolution` | Run the same fixture on Linux, Windows, and macOS; assert Case-root-relative paths, traversal rejection, UTF-8, and deterministic mock resolution of `/data/releases/{release_id}/cases/{case_id}/package.json` plus its `phases/phase-05/evaluations.json` data reference. This checks reference construction only; no network/deployment/release is tested. |
+
+Additional focused QA layers remain proposed: `python -m pytest -q tests/phase5/test_preflight.py tests/phase5/test_metrics.py` for unit/preflight errors; `python -m pytest -q tests/phase5/test_schema_join.py` for empty state, MOCK state, null/reason fields, and INT-F/INT-S structure; and `python -m pytest -q tests/phase5/test_export_integration.py` for `PACKAGE_INTEGRATION_PENDING` and safe staged output. These modules and fixtures are also **NOT IMPLEMENTED**.
+
+**Phase 6 release/publication QA is separate.** No Phase 5 CLI test certifies actual release sealing, public rights approval, deployed URL availability, same-release production assets, Vercel behavior, or publication. K06's URL check is limited to resolving a synthetic static reference in a local fixture. Actual release manifest, deployed URL, publication permission, and deployment checks belong to the separately authorized Phase 6 Publisher/QA gate; the former proposed `test_release_manifest.py` is removed from the Phase 5 suite.
 
 Do not add broad CI triggers or run the full repository suite by default. The repo's owner-controlled CI rule keeps PRs to `main` from automatically running the full Security/pytest workflow; only the authorized `deploy` release path or explicit `workflow_dispatch` may do so. Never silently rerun a failed/historical check. A schema-only pass cannot establish exporter, bundle, scientific, or publication correctness.
 
