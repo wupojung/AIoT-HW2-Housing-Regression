@@ -39,7 +39,7 @@
 ## Test invocation to use once implementation authorized
 
 ```bash
-python -m pip install 'jsonschema==4.26.0'
+python -m pip install 'jsonschema[format]==4.26.0'
 python - <<'PY'
 import json, pathlib
 from jsonschema import Draft202012Validator, FormatChecker
@@ -55,7 +55,7 @@ for path in ('sample/evaluations.json','sample/evaluations.nonempty.mock.json'):
 PY
 ```
 
-**Verification disclaimer:** During the doc update, a separate network-isolated Python environment had `jsonschema 4.26.0`, but could **not retrieve the GitHub source files** (DNS resolution failed). Therefore no actual Draft 2020-12 runtime PASS has been recorded. Schema file is committed, but release validation/negative tests remain **NOT_IMPLEMENTED / NOT_RUN**; never report schema runtime PASS from these changes.
+**Historical note (superseded by R3 evidence below):** Earlier local DNS failures prevented checkout. GitHub Actions later executed the pinned Draft 2020-12 validator successfully; see R3 Actual Runtime Evidence. Bundle validation remains NOT_IMPLEMENTED.
 
 ## F01–F12 disposition
 
@@ -64,7 +64,7 @@ F01 ACCEPT docs; F02 ACCEPT approach A docs; F03 ACCEPT synthetic data file; F04
 
 ## R3 schema execution handoff (2026-10-27)
 
-Executable [test_schema.py](./test_schema.py) was committed with synthetic positive branch (nonnegative MAE/RMSE and negative R² with evidence markers) and **10 runtime negative mutations**. It uses [GitHub Actions workflow](../../../../.github/workflows/phase5-schema-contract.yml) (workflow path from repository root: `.github/workflows/phase5-schema-contract.yml`) with `python3.11` and pinned `jsonschema==4.26.0`; `Draft202012Validator.check_schema` plus `FormatChecker()`. Run locally from checked-out PR branch with `python -m pip install jsonschema==4.26.0 && python docs/ui-ux/case-package/phase-05/test_schema.py`.
+Executable [test_schema.py](./test_schema.py) was committed with synthetic positive branch (nonnegative MAE/RMSE and negative R² with evidence markers) and **10 runtime negative mutations**. It uses [GitHub Actions workflow](../../../../.github/workflows/phase5-schema-contract.yml) (workflow path from repository root: `.github/workflows/phase5-schema-contract.yml`) with `python3.11` and pinned `jsonschema==4.26.0`; `Draft202012Validator.check_schema` plus `FormatChecker()`. Run locally from checked-out PR branch with `python -m pip install 'jsonschema[format]==4.26.0' && python docs/ui-ux/case-package/phase-05/test_schema.py`.
 
 **Runtime PASS remains UNVERIFIED until an actual workflow/job log or local stdout is captured.** Source tests are a small **Schema-only** harness; they do not implement a Bundle Validator. Cross-file JOIN, duplicate identity, provenance permission, path traversal, SHA/bytes/MIME, asset approval, target-vs-Case and release atomicity remain **NOT_IMPLEMENTED / OWNER GATE**. Do not merge/deploy from structural Schema PASS alone.
 
