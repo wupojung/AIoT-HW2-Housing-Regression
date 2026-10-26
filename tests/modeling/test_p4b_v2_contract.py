@@ -59,7 +59,7 @@ class P4BV2ContractTests(unittest.TestCase):
     def aggregation_config_and_rows(self):
         config = P4BConfig(
             code_head_commit="a" * 40,
-            active_methods=["pearson"],
+            active_methods=["pearson", "mutual_information", "lasso", "elastic_net", "ridge_rfe"],
             k_candidates=(2, 3),
         )
         identity = {
@@ -76,7 +76,18 @@ class P4BV2ContractTests(unittest.TestCase):
         for method, candidate in task_specs(config):
             for fold in (0, 1, 2):
                 primary_track = "all_features_ols" if method == "ols_baseline" else "selected_to_ols"
-                metric = 900.0 + fold if method == "ols_baseline" else float(candidate.get("k", 2) * 100 + fold)
+                if method == "ols_baseline":
+                    metric = 900.0 + fold
+                elif method == "pearson":
+                    metric = float(candidate["k"] * 100 + fold)
+                elif method == "mutual_information":
+                    metric = float(candidate["k"] * 100 + 50 + fold)
+                elif method == "ridge_rfe":
+                    metric = float(candidate["k"] * 100 + 75 + fold)
+                elif method == "lasso":
+                    metric = {0.1: 600.0, 1.0: 300.0, 10.0: 400.0, 100.0: 500.0}[candidate["alpha"]] + fold
+                else:
+                    metric = float(250 + candidate["candidate_order"] * 10 + fold)
                 row = {
                     **identity,
                     "task_id": make_task_id(identity["run_id"], method, candidate, fold),
@@ -93,7 +104,7 @@ class P4BV2ContractTests(unittest.TestCase):
                     "r2": 0.8,
                     "encoded_count": int(candidate.get("k", 8)) if method != "ols_baseline" else 35,
                 }
-                if method == "pearson" and candidate.get("k") == 3:
+                if method == "lasso" and candidate.get("alpha") == 0.1:
                     row["native_diagnostic"] = {"rmse": 0.001, "mae": 0.001, "r2": 1.0}
                 rows.append(row)
         return config, identity, rows
@@ -149,16 +160,37 @@ class P4BV2ContractTests(unittest.TestCase):
         baseline = self.find_aggregate(aggregates, "ols_baseline", {"features": "all"})
         first = self.find_aggregate(aggregates, "pearson", {"k": 2, "candidate_order": 0})
         second = self.find_aggregate(aggregates, "pearson", {"k": 3, "candidate_order": 1})
+        self.assertEqual(
+            {row["method"] for row in aggregates},
+            {"ols_baseline", "pearson", "mutual_information", "ridge_rfe", "lasso", "elastic_net"},
+        )
+        self.assertEqual(len(aggregates), len(task_specs(config)))
+        for aggregate in aggregates:
+            self.assertTrue(aggregate["coverage_complete"])
+            self.assertEqual(aggregate["expected_folds"], [0, 1, 2])
+            self.assertEqual(aggregate["observed_folds"], [0, 1, 2])
+            self.assertEqual(aggregate["valid_folds"], [0, 1, 2])
+            self.assertEqual(aggregate["expected_fold_count"], 3)
+            self.assertEqual(aggregate["observed_fold_count"], 3)
+            self.assertEqual(aggregate["valid_fold_count"], 3)
+            self.assertEqual(aggregate["winner_eligible"], aggregate["method"] != "ols_baseline")
         self.assertTrue(baseline["coverage_complete"])
-        self.assertEqual(baseline["expected_fold_count"], 3)
-        self.assertEqual(baseline["observed_fold_count"], 3)
-        self.assertEqual(baseline["valid_fold_count"], 3)
         self.assertFalse(baseline["winner_eligible"])
         self.assertTrue(first["method_winner"])
         self.assertTrue(second["winner_eligible"])
         self.assertGreater(second["selection_primary_cv_rmse"], first["selection_primary_cv_rmse"])
-        self.assertLess(second["native_diagnostic_cv_rmse"], first["selection_primary_cv_rmse"])
         self.assertNotIn("method_winner", second)
+
+        attractive_lasso_diagnostic = self.find_aggregate(
+            aggregates, "lasso", {"alpha": 0.1, "candidate_order": 0}
+        )
+        selected_lasso_winner = self.find_aggregate(
+            aggregates, "lasso", {"alpha": 1.0, "candidate_order": 1}
+        )
+        self.assertLess(attractive_lasso_diagnostic["native_diagnostic_cv_rmse"], selected_lasso_winner["selection_primary_cv_rmse"])
+        self.assertGreater(attractive_lasso_diagnostic["selection_primary_cv_rmse"], selected_lasso_winner["selection_primary_cv_rmse"])
+        self.assertNotIn("method_winner", attractive_lasso_diagnostic)
+        self.assertTrue(selected_lasso_winner["method_winner"])
 
         absent_candidate = [
             row for row in rows
