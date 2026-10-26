@@ -188,18 +188,90 @@ Method selector: only methods supported by the actual research. K selector: only
 ~~~
 Interaction: optional switch between approved evaluated candidates. No premature holdout, fake uncertainty or leakage.
 
-### Phase 6 — Deployment / 成果部署
+### Phase 6 — Deployment / 模型部署與房價預測實驗室 (Owner-approved direction)
+
+**OWNER CONFIRMED (2026-10-26):** Phase 6 primary purpose is an actual *inference experience*: select a documented dataset/model, enter housing attributes and ask a Prediction API for a price estimate. Download/reproducibility links remain secondary. This supersedes the earlier downloads-only emphasis but does **not** authorize creation or public release of an API. Design for a **PC 1920 × 1080 Full HD reference viewport**; mobile/RWD implementation is **DEFERRED**, not a current acceptance gate. Maintain keyboard operation/readability on desktop.
+
 ~~~text
-+------------------------------------------------------------------+
-| PHASE 6: What can be inspected, downloaded, reproduced?          |
-| [Reviewed downloadable aggregate/chart/report artifacts]        |
-| [GitHub] [Reproduction instructions / source versions]           |
-| [NotebookLM >=100-word summary] [GPT-assisted record / PDF]      |
-| [Licensing, citations, public-safety and availability notices]   |
-| [< Previous]                                         [Next >]     |
-+------------------------------------------------------------------+
++--------------------------------------------------------------------------------------------------+
+| RegScope                                                          Home  [Dashboard]              |
++--------------------------------------------------------------------------------------------------+
+| CRISP-DM  1 -- 2 -- 3 -- 4 -- 5 -- [6 Deployment selected]                                      |
+|                                                                                                  |
+| PHASE 6 / 房價預測實驗室  | Prediction API [NOT DEPLOYED until verified]                         |
+| Select study dataset: [ Ames Housing v ]   Selection: [ eligible run / method+config v ]         |
+| Model version: [ currently unavailable / approved model_id ]  [Model metadata / evidence]       |
+| NOTE: CV experiments are not automatically deployable models.                                   |
+|                                                                                                  |
+| +--------------------------------------------+ +----------------------------------------------+  |
+| | 房屋條件輸入                               | | 預測結果                                     |  |
+| | GrLivArea (sq ft)   [            ]          | | [UNAVAILABLE until approved API/model]      |  |
+| | OverallQual (1-10) [            ]          | | Predicted SalePrice: -- USD                 |  |
+| | GarageCars          [            ]          | | Prediction interval: unavailable           |  |
+| | YearBuilt           [            ]          | | Model version / input schema / timestamp   |  |
+| | [More required raw input fields / defaults] | | Evidence / limitations / non-appraisal     |  |
+| | [Validate inputs] [Predict (disabled TBD)]  | | [error/loading/invalid input details]      |  |
+| +--------------------------------------------+ +----------------------------------------------+  |
+| [Reproducibility, source/license, reviewed model card, GitHub, approved safe downloads v]       |
+| [< Previous]                                                                                   |
++--------------------------------------------------------------------------------------------------+
 ~~~
-Interaction: download only reviewed public-safe material; otherwise show unavailable and link original source.
+
+**DESIGN PROPOSAL:** The named raw-input fields above are *illustrative only*. The 97 selected **encoded** features cannot be equated to 97 human input widgets or safely reconstructed from only these four example fields. Schema determines required raw columns, defaults, allowable category values, missing indicators, encoders, scaling, feature names and order. **Never fabricate absent inputs or arbitrary defaults.**
+
+#### Variable hierarchy and read-only research dataset selection
+
+| Layer | Frontend role | Backing identity / constraint |
+|---|---|---|
+| Study case / dataset | First dropdown: case with available studies | stable \`case_id\`; changing case clears downstream experiment/model/prediction/results |
+| Feature-selection experimental run | Second dependent dropdown, human label = method + config + applicable K/alpha + track/protocol | unique \`run_id\` in reviewed experiment manifest; **only measured** options, no Cartesian product generated on client |
+| Evaluated model | read-only result for selected run or an additional selector only when multiple *explicitly approved and comparable* model artifacts exist | \`model_id\`, \`model_version\`, \`artifact_digest\`, \`eval_status\`, approved scope; a run may lack deployed model |
+| Raw housing input | dynamically generated from **the chosen model's input schema**, not the selected encoded feature count | fields of numeric/ordinal/nominal types, units, bounds, required/optional, allowed values, imputation policy, validation |
+| Prediction result | output from a single approved inference service/model | input validation, price unit, requested model, model version, status, provenance and interval only if separately validated |
+
+**Important conceptual split:** Selection in Phases 2–5 primarily switches precomputed study **views**; no retraining. Phase 2's insight tabs aren't model-selection controls. Phase 4 can compare recorded Methods/K; Phase 5 displays *approved evaluation evidence* without turning Development CV into Holdout. Phase 6 performs **new inference on a user-supplied sample** only when a complete deployable pipeline exists; inference is not model training or candidate selection.
+
+**Package B boundary:** The Development three-fold Lasso alpha=100 selected→OLS record and final Development fit metadata (97 encoded features; 1,168 Development rows) do not alone establish a portable trained inference model, complete preprocessing/input schema or authorized/verified Holdout performance. The handoff contains no loadable Joblib model. Thus the present UI stays **PLANNED / UNAVAILABLE** and cannot make a real prediction until explicitly approved artifacts and service are present. Never label all CV candidates as deployable; visible selector may show a candidate as **“研究結果可查，推論不可用”**.
+
+#### Frontend catalog contract (DESIGN PROPOSAL)
+
+Do **not** construct arbitrary method × K combinations. Use a single **versioned manifest JSON** as a catalog of *explicitly recorded* combinations, referring to artifact URLs and per-case evidence. This may be split into smaller JSON files without changing meaning. Identifiers are stable; labels are for display and may change.
+
+~~~json
+{
+  "schema_version": "proposal-v1",
+  "cases": [
+    {"case_id": "ames-housing", "label": "Ames Housing", "status": "research_available"}
+  ],
+  "experiments": [
+    {
+      "run_id": "EXAMPLE-NOT-REAL",
+      "case_id": "ames-housing",
+      "method_id": "lasso",
+      "method_label": "Lasso",
+      "config": {"alpha": 100},
+      "requested_encoded_k": null,
+      "actual_encoded_k": null,
+      "cv_protocol_id": "UNSPECIFIED",
+      "track": "selected_to_ols",
+      "evidence_status": "PLANNED",
+      "deployable_model_id": null
+    }
+  ],
+  "models": [],
+  "note": "Illustrative schema only; the run ID and null values are NOT empirical records."
+}
+~~~
+
+A real manifest must use **actual experiment IDs, measured K, source SHAs, protocol IDs and validation states** from reviewed evidence; the example above is intentionally nonempirical. Do not expose private file paths or embed 97-feature raw metadata without review. Dropdowns should be *dependent*: choose case → load recorded runs → display only eligible models or show unavailable. When switching case/run/model, invalidate old data, form, validation, forecast and any in-flight response. Errors and provenance must be visible.
+
+**Prediction API concept only:** \`GET /api/models\` returns the eligible published model catalog and public input schemas; \`POST /api/predict\` receives a **registered model ID and validated raw input**. The server *selects only an allowlisted model*, performs the exact training-time preprocessing and feature-order mapping, infers with loaded coefficients/artifact, and returns predicted price + model version + scope. Never accept arbitrary file paths, unrestricted URLs or deserialization names as model choices. Small model size alone does not guarantee deployability; preprocessing pipeline, compatibility/security, runtime and model QA matter. Interval is optional only when specifically validated; never turn CV RMSE into a prediction interval.
+
+**Phase 6 UI state:** if no approved artifact/API → PLANNED / UNAVAILABLE with explanation, disabled Predict and browsable research evidence. With an approved artifact: LOADING model/catalog, EMPTY if case has no model, ERROR on incompatible schema/inference, VERIFIED only for approved artifact provenance (not a guarantee of future forecast accuracy); predictions are explicitly labeled **model estimates**, not verified actual sales prices or appraisal.
+
+#### Desktop specification amendment
+
+**OWNER CONFIRMED:** PC-first layout with **1920×1080 Full HD reference**. Do not set fixed 1920px body width or assume browser viewport height equals 1080px; allow vertical scrolling. Preserve desktop usability in smaller browser windows without promising phone support. Mobile and specific responsive breakpoints remain **DEFERRED/ENGINEERING TBD**; prior small-screen horizontal-step scrolling is a nonbinding future proposal, not present P6-A/P6-B requirement.
 
 ## Future review acceptance checks (not engineering authorization)
 - [ ] Every page/view has an ASCII wireframe and corresponding behavior/data rules.
