@@ -53,3 +53,17 @@ Nex supplementary review: https://github.com/wupojung/AIoT-HW2-Housing-Regressio
 - **Pending:** availability of reviewed downstream Phase 3/4 decision links, responsive breakpoint and precise visual implementation (ENGINEERING TBD). Not a fresh Owner decision; do not invent a downstream adoption claim.
 - **Gate:** docs-only amendment for Nex re-review; P6-B, Runner, raw dataset access, Merge, Preview and Production remain NOT AUTHORIZED.
 
+
+## Owner design amendment — Phase 6 inference lab / Desktop-first
+
+**OWNER CONFIRMED (2026-10-26):**
+- Phase 6 primary interaction = real housing-price prediction by selecting a **previously trained and approved** model, entering housing attributes, and invoking a model inference API. Research downloads are secondary.
+- Design priority = **PC Desktop, 1920×1080 Full HD reference**; phone/mobile support deferred. Keyboard access/readable desktop content retained.
+- First selection dimension = studied dataset/case. Second = **recorded feature-selection run/method+configuration** (e.g. exact measured K or alpha), not every theoretical method×K permutation.
+- Phases 2–5 show precomputed research findings/evaluation only; Phase 6 can perform *new inference*, **not retraining**, contingent on deployment authorization.
+
+**DESIGN PROPOSAL:** versioned public-safe JSON catalog with stable `case_id`, `run_id`, `model_id`, experiment config/track/protocol/status and model input schemas. Dependent selectors; case/model switch invalidates prior results. Multiple CV experiment results can share one manifest but do not imply each has a deployable inference artifact.
+
+**ENGINEERING TBD / evidence dependencies:** exact registered model artifacts, training-time preprocessing and raw input schema, serialization/loading strategy, runtime/API, prediction interval method, inference tests/security, deployment gate. Package B contains 97-encoded-feature final model *metadata*, not a directly loadable model. Do not expose active Predict until these are validated.
+
+**Gate:** design documents only in PR #35; no P6-B engineering, Merge or Deploy approval implied.
