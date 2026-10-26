@@ -81,11 +81,11 @@ Executable [test_schema.py](./test_schema.py) was committed with synthetic posit
 
 ## Local quick validator (engineer-provided simplified entry)
 
-The stable file is [validate_schema.py](./validate_schema.py), based on the engineer's provided `Draft202012Validator + FormatChecker` example. From repository root:
+The stable file is [validate_schema.py](../../../design/tools/validate_schema.py), based on the engineer's provided `Draft202012Validator + FormatChecker` example. From repository root:
 
 ```bash
 python -m pip install "jsonschema[format]==4.26.0"
-python docs/ui-ux/case-package/phase-05/validate_schema.py
+python docs/design/tools/validate_schema.py --schema docs/ui-ux/case-package/phase-05/evaluation-index.schema.json docs/ui-ux/case-package/phase-05/sample/evaluations.json docs/ui-ux/case-package/phase-05/sample/evaluations.nonempty.mock.json
 ```
 
 It prints PASS/FAIL per supplied sample and exits nonzero on schema errors. Unlike `test_schema.py`, this tool does not deliberately mutate samples into negative test cases. Neither tool validates full package hashes/authorization. Design entry: [docs/design/README.md](../../../design/README.md).
