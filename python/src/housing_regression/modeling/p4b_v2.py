@@ -380,6 +380,9 @@ def evaluate_fold(
 
     def admit_candidate(method: str, candidate: Mapping[str, Any]) -> bool:
         task_id = make_task_id(config.current_run_id, method, candidate, fold)
+        selected = getattr(config, "selected_task_ids", None)
+        if selected is not None and task_id not in selected:
+            return False
         if task_id in completed:
             return False
         if control_state is not None and not control_state.admit_task(task_id):

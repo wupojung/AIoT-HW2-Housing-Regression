@@ -1,10 +1,10 @@
 """P4-B-A modeling runner: feature selection and regularization experiment protocol.
 
 Data isolation & execution contract:
-- Nested 5-fold outer / 3-fold inner cross-validation.
+- Fixed three-fold protocol-v2 cross-validation.
 - Fold-local AmesDataPreparationPipeline fitted exclusively on current training partitions.
 - Conservative preflight fit budget calculation before any fitting begins.
-- Strict timeout deadline enforcement and killable worker process boundary on timeout.
+- Strict timeout deadline enforcement and isolated worker process boundary on timeout.
 - Single worker / single-thread execution via threadpoolctl.
 - Containment enforcement: private research outputs strictly under local/research/phase4-p4b/<run-id>.
 - Bounded checkpoint resume: reads and validates state before executing remaining folds.
@@ -15,6 +15,7 @@ Data isolation & execution contract:
 from __future__ import annotations
 
 import csv
+import ctypes
 import datetime
 import hashlib
 import io
@@ -74,6 +75,43 @@ DEFAULT_WORKER_MEMORY_LIMIT_BYTES: int = 2 * 1024 * 1024 * 1024
 EXPECTED_DEVELOPMENT_ROWS: int = 1168
 EXPECTED_DEVELOPMENT_INDEX_DIGEST: str = "3981ebb16dde1b26400a431ef7c5d318b970f7ede50f42390d8221300eb299f4"
 EXPECTED_OUTER_FOLD_DIGEST: str = fold_assignment_digest(kfold_assignments(1168, 3, 42))
+
+
+def _macos_process_identity(pid: int) -> Dict[str, int]:
+    """Read PID, parent PID and kernel process start time through macOS libproc."""
+    if platform.system() != "Darwin":
+        raise RuntimeError("macOS process identity is available only on Darwin.")
+
+    class _ProcBsdInfo(ctypes.Structure):
+        _fields_ = [
+            ("pbi_flags", ctypes.c_uint32), ("pbi_status", ctypes.c_uint32),
+            ("pbi_xstatus", ctypes.c_uint32), ("pbi_pid", ctypes.c_uint32),
+            ("pbi_ppid", ctypes.c_uint32), ("pbi_uid", ctypes.c_uint32),
+            ("pbi_gid", ctypes.c_uint32), ("pbi_ruid", ctypes.c_uint32),
+            ("pbi_rgid", ctypes.c_uint32), ("pbi_svuid", ctypes.c_uint32),
+            ("pbi_svgid", ctypes.c_uint32), ("rfu_1", ctypes.c_uint32),
+            ("pbi_comm", ctypes.c_char * 16), ("pbi_name", ctypes.c_char * 32),
+            ("pbi_nfiles", ctypes.c_uint32), ("pbi_pgid", ctypes.c_uint32),
+            ("pbi_pjobc", ctypes.c_uint32), ("e_tdev", ctypes.c_uint32),
+            ("e_tpgid", ctypes.c_uint32), ("pbi_nice", ctypes.c_int32),
+            ("pbi_start_tvsec", ctypes.c_uint64), ("pbi_start_tvusec", ctypes.c_uint64),
+        ]
+
+    libproc = ctypes.CDLL("/usr/lib/libproc.dylib", use_errno=True)
+    proc_pidinfo = libproc.proc_pidinfo
+    proc_pidinfo.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_uint64,
+                             ctypes.c_void_p, ctypes.c_int]
+    proc_pidinfo.restype = ctypes.c_int
+    info = _ProcBsdInfo()
+    size = proc_pidinfo(pid, 3, 0, ctypes.byref(info), ctypes.sizeof(info))
+    if size != ctypes.sizeof(info) or info.pbi_pid != pid:
+        raise RuntimeError(f"Unable to verify macOS process identity for PID {pid}.")
+    return {
+        "pid": int(info.pbi_pid),
+        "ppid": int(info.pbi_ppid),
+        "creation_time_ns": int(info.pbi_start_tvsec) * 1_000_000_000
+        + int(info.pbi_start_tvusec) * 1_000,
+    }
 
 # 80-column canonical schema definitions
 SCHEMA_STRING_COLUMNS: Set[str] = set(NOMINAL_COLUMNS + ORDINAL_COLUMNS)
@@ -325,6 +363,9 @@ class P4BConfig:
     current_checkpoint_dir: Optional[str] = None
     max_workers: int = 1
     blas_threads: int = 1
+    # Explicit opt-in; default platforms retain their existing fail-closed policy.
+    macos_single_worker: bool = False
+    selected_task_ids: Optional[Tuple[str, ...]] = None
 
     def validate_positive(self) -> None:
         if self.outer_splits != 3 or self.outer_seed != 42:
@@ -351,6 +392,16 @@ class P4BConfig:
             raise ValueError("max_workers must be an integer from 1 through 4.")
         if self.blas_threads != 1:
             raise ValueError("Protocol v2 requires BLAS/OpenMP thread limit 1 per worker.")
+        if self.macos_single_worker and (
+            platform.system() != "Darwin" or self.max_workers != 1
+            or self.single_thread is not True or self.use_isolated_worker_process is not True
+        ):
+            raise ValueError("macOS production mode requires Darwin, exactly one isolated worker, and single_thread=True.")
+        if self.selected_task_ids is not None and (
+            not self.macos_single_worker or len(self.selected_task_ids) != 1
+            or not all(isinstance(item, str) and item.startswith("task_") for item in self.selected_task_ids)
+        ):
+            raise ValueError("Task selection is restricted to one explicitly enabled macOS smoke task.")
         valid_methods = {"pearson", "mutual_information", "lasso", "elastic_net", "ridge_rfe"}
         if self.active_methods is not None and (not self.active_methods or not set(self.active_methods) <= valid_methods):
             raise ValueError("active_methods must contain only supported methods.")
@@ -417,6 +468,16 @@ def get_canonical_column_order() -> List[str]:
 def encode_canonical_cell(val: Optional[str], col_name: str) -> bytes:
     """Encode a raw CSV string cell into canonical binary packet format."""
     if val is None or val == "" or val.isspace():
+        return struct.pack(">BI", 0x00, 0)
+
+    # Phase 3 treats the literal CSV token "NA" as missing. For numeric
+    # columns, normalize that token to the existing null packet before parsing;
+    # this preserves the canonical packet format used for blanks and NaN.
+    if (
+        isinstance(val, str)
+        and val.strip() == "NA"
+        and (col_name in SCHEMA_INT_COLUMNS or col_name in SCHEMA_FLOAT_COLUMNS)
+    ):
         return struct.pack(">BI", 0x00, 0)
 
     if col_name in SCHEMA_STRING_COLUMNS:
@@ -652,6 +713,9 @@ def _mp_worker_target(
     shared_admission_gate: Optional[Any] = None,
 ) -> None:
     try:
+        worker_identity = _macos_process_identity(os.getpid()) if config.macos_single_worker else {
+            "pid": os.getpid(), "ppid": os.getppid(), "creation_time_ns": time.time_ns(),
+        }
         if timing_ns is not None:
             timing_ns[0] = time.perf_counter_ns()  # Worker target entry.
         if config.single_thread is not True:
@@ -690,7 +754,11 @@ def _mp_worker_target(
                         timing_ns[3] = ready_sent_ns
                     ready_queue.put({
                         "status": "READY",
-                        "worker_pid": os.getpid(),
+                        "worker_pid": worker_identity["pid"],
+                        "worker_ppid": worker_identity["ppid"],
+                        "creation_time_ns": worker_identity["creation_time_ns"],
+                        "run_id": config.current_run_id,
+                        "worker_id": f"{config.current_run_id}:fold:{outer_fold_idx}",
                         "descendant_pid": descendant_pid,
                         "thread_limits": [pool["num_threads"] for pool in tp_info],
                         "stall_entered_ns": stall_entered_ns,
@@ -700,7 +768,11 @@ def _mp_worker_target(
             elif ready_queue is not None:
                 ready_queue.put({
                     "status": "READY",
-                    "worker_pid": os.getpid(),
+                    "worker_pid": worker_identity["pid"],
+                    "worker_ppid": worker_identity["ppid"],
+                    "creation_time_ns": worker_identity["creation_time_ns"],
+                    "run_id": config.current_run_id,
+                    "worker_id": f"{config.current_run_id}:fold:{outer_fold_idx}",
                     "descendant_pid": descendant_pid,
                     "thread_limits": [pool["num_threads"] for pool in tp_info],
                     "ready_sent_ns": time.perf_counter_ns(),
@@ -811,9 +883,11 @@ class P4BRunner:
         outer_val_rows: List[Dict[str, str]],
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
     ) -> Dict[str, Any]:
-        """Evaluate one protocol-v2 fold; reject platforms lacking the protected runtime."""
-        if os.name != "nt":
+        """Evaluate one fold through Windows isolation or explicit macOS single-worker mode."""
+        if os.name != "nt" and not self.config.macos_single_worker:
             raise RuntimeError("FAIL_CLOSED: Win32 Job Object process isolation is required.")
+        if self.config.macos_single_worker and mp.current_process().name == "MainProcess":
+            raise RuntimeError("FAIL_CLOSED: macOS fold evaluation must run inside the spawned Worker.")
         self._require_production_mode()
         return self._evaluate_fold(
             outer_fold_idx, outer_train_rows, outer_val_rows, pipeline_factory
@@ -978,8 +1052,10 @@ class P4BRunner:
         self._require_production_mode()
         self._failure_stage = "PREFLIGHT"
         # 0. Enforce B03 Fail-Closed: timeout must be positive, single_thread=True, and isolated worker enabled
-        if os.name != "nt":
+        if os.name != "nt" and not self.config.macos_single_worker:
             raise RuntimeError("FAIL_CLOSED: Win32 Job Object process isolation is required.")
+        if os.name != "nt" and self.config.macos_single_worker and self.config.max_workers != 1:
+            raise RuntimeError("FAIL_CLOSED: macOS production execution is restricted to one worker.")
         if self.config.timeout_seconds is None:
             raise ValueError("FAIL_CLOSED: timeout_seconds must be explicitly provided (cannot be None).")
         if isinstance(self.config.timeout_seconds, bool) or not math.isfinite(self.config.timeout_seconds) or self.config.timeout_seconds <= 0:
@@ -1073,6 +1149,9 @@ class P4BRunner:
             for fold in range(self.config.outer_splits)
             for method, candidate in task_specs(self.config)
         }
+        selected_task_ids = set(self.config.selected_task_ids or task_specs_by_id)
+        if not selected_task_ids or not selected_task_ids <= set(task_specs_by_id):
+            raise ValueError("Selected task identity is not part of the frozen protocol task plan.")
         if task_output_dir is not None:
             task_output_dir.mkdir(parents=True, exist_ok=True)
             existing = list(task_output_dir.glob("checkpoint_task_*.json"))
@@ -1139,8 +1218,12 @@ class P4BRunner:
                     ]
                     expected_for_fold = [
                         task_id for task_id, identity in task_specs_by_id.items()
-                        if identity[0] == k
+                        if identity[0] == k and task_id in selected_task_ids
                     ]
+                    if not expected_for_fold:
+                        continue
+                    cached_for_fold = [checkpoint for checkpoint in cached_for_fold
+                                       if checkpoint["task_id"] in selected_task_ids]
                     all_fold_results.extend(checkpoint["result"] for checkpoint in cached_for_fold)
                     all_oof_records.extend(
                         row for checkpoint in cached_for_fold for row in checkpoint["oof_records"]
@@ -1184,6 +1267,29 @@ class P4BRunner:
                         proc.start()
                         self.last_worker_timing["parent_start_return_ns"] = time.perf_counter_ns()
                         self.last_worker_timing["worker_pid"] = proc.pid
+                        self.last_worker_timing["worker_parent_pid"] = os.getpid()
+                        self.last_worker_timing["worker_exitcode"] = None
+                        self.last_worker_timing["worker_status"] = "RUNNING"
+                        macos_worker_identity = None
+                        if self.config.macos_single_worker:
+                            try:
+                                macos_worker_identity = _macos_process_identity(proc.pid)
+                                if macos_worker_identity["ppid"] != os.getpid():
+                                    raise RuntimeError("spawned Worker parent identity mismatch")
+                            except Exception:
+                                # Let the owned child leave its gate and report its own startup failure.
+                                start_event.set()
+                                proc.join(timeout=WORKER_STARTUP_TIMEOUT_SECONDS)
+                                if proc.is_alive():
+                                    raise RuntimeError("FAIL_CLOSED: macOS Worker identity unavailable and process exit unverified.") from None
+                                self.last_worker_timing["worker_exitcode"] = proc.exitcode
+                                self.last_worker_timing["worker_status"] = "IDENTITY_STARTUP_FAILED"
+                                raise RuntimeError("FAIL_CLOSED: macOS Worker process identity could not be verified.") from None
+                            self.last_worker_timing["worker_identity"] = {
+                                **macos_worker_identity,
+                                "run_id": run_id,
+                                "worker_id": f"{run_id}:fold:{k}",
+                            }
 
                         # Windows: Enclose worker process in kill-on-close Job Object before releasing start_event
                         worker_job = None
@@ -1236,6 +1342,26 @@ class P4BRunner:
                                 if not isinstance(ready_msg, Mapping) or ready_msg.get("status") != "READY":
                                     raise RuntimeError("Worker failed the readiness contract.")
                                 self.last_ready_msg = ready_msg
+                                if (ready_msg.get("worker_pid") != proc.pid
+                                    or ready_msg.get("worker_ppid") != os.getpid()
+                                    or ready_msg.get("run_id") != run_id
+                                    or ready_msg.get("worker_id") != f"{run_id}:fold:{k}"
+                                    or not isinstance(ready_msg.get("creation_time_ns"), int)
+                                    or ready_msg["creation_time_ns"] <= 0):
+                                    raise RuntimeError("Worker process identity did not match this run.")
+                                if self.config.macos_single_worker and {
+                                    "pid": ready_msg["worker_pid"],
+                                    "ppid": ready_msg["worker_ppid"],
+                                    "creation_time_ns": ready_msg["creation_time_ns"],
+                                } != macos_worker_identity:
+                                    raise RuntimeError("Worker kernel process identity changed during startup.")
+                                self.last_worker_timing["worker_identity"] = {
+                                    "pid": ready_msg["worker_pid"],
+                                    "ppid": ready_msg["worker_ppid"],
+                                    "creation_time_ns": ready_msg["creation_time_ns"],
+                                    "run_id": ready_msg["run_id"],
+                                    "worker_id": ready_msg["worker_id"],
+                                }
                                 self.last_worker_timing["parent_ready_received_ns"] = time.perf_counter_ns()
                                 worker_deadline = min(
                                     self.deadline,
@@ -1248,27 +1374,45 @@ class P4BRunner:
                                 self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
                                 raise TimeoutExceededError("Worker readiness exceeded the configured deadline.") from None
 
-                            remaining_timeout = worker_deadline - time.perf_counter()
-                            if remaining_timeout <= 0:
-                                self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
-                                raise TimeoutExceededError("Worker startup exceeded the configured deadline.")
-                            proc.join(timeout=remaining_timeout)
-
-                            if proc.is_alive():
-                                self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
-                                raise TimeoutExceededError("Worker exceeded the configured deadline.")
+                            # Drain the result pipe while the Worker is alive. Joining first can
+                            # deadlock when its Queue feeder is blocked writing a large OOF payload.
+                            msg = None
+                            while msg is None:
+                                result_remaining = worker_deadline - time.perf_counter()
+                                if result_remaining <= 0:
+                                    self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
+                                    raise TimeoutExceededError("Worker result exceeded the configured deadline.")
+                                try:
+                                    msg = queue.get(timeout=min(result_remaining, 0.1))
+                                except queue_module.Empty:
+                                    proc.join(timeout=0)
+                                    if proc.exitcode is not None:
+                                        # Allow a short bounded drain for a result already flushed at exit.
+                                        result_remaining = worker_deadline - time.perf_counter()
+                                        if result_remaining <= 0:
+                                            self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
+                                            raise TimeoutExceededError("Worker result exceeded the configured deadline.")
+                                        try:
+                                            msg = queue.get(timeout=min(result_remaining, 0.1))
+                                        except queue_module.Empty:
+                                            raise RuntimeError("Worker exited without returning output.") from None
 
                             result_remaining = worker_deadline - time.perf_counter()
                             if result_remaining <= 0:
                                 self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
                                 raise TimeoutExceededError("Worker result exceeded the configured deadline.")
-                            try:
-                                msg = queue.get(timeout=result_remaining)
-                            except queue_module.Empty:
-                                raise RuntimeError("Worker exited without returning output.") from None
+                            proc.join(timeout=result_remaining)
+                            if proc.is_alive():
+                                self.last_worker_timing["parent_timeout_ns"] = time.perf_counter_ns()
+                                raise TimeoutExceededError("Worker exceeded the configured deadline after returning output.")
+                            if proc.exitcode != 0:
+                                self.last_worker_timing["worker_status"] = "FAILED_EXIT"
+                                raise RuntimeError(f"Worker exited abnormally with exit code {proc.exitcode}.")
+                            self.last_worker_timing["parent_result_received_ns"] = time.perf_counter_ns()
                             if not isinstance(msg, tuple) or not msg:
                                 raise RuntimeError("Worker returned an invalid result envelope.")
                             if msg[0] == "EXCEPTION" and len(msg) == 3:
+                                self.last_worker_timing["worker_status"] = "WORKER_EXCEPTION"
                                 raise RuntimeError(f"Worker process error ({msg[1]}): {msg[2]}")
                             if not isinstance(msg, tuple) or len(msg) != 4 or msg[0] != "SUCCESS":
                                 raise RuntimeError("Worker returned an invalid result envelope.")
@@ -1304,6 +1448,10 @@ class P4BRunner:
                                 worker_alive = True
                             if worker_alive:
                                 try:
+                                    if proc.pid != self.last_worker_timing.get("worker_pid") or run_id != self.config.current_run_id:
+                                        raise RuntimeError("FAIL_CLOSED: refusing to stop a worker not owned by this run.")
+                                    if self.config.macos_single_worker and _macos_process_identity(proc.pid) != macos_worker_identity:
+                                        raise RuntimeError("FAIL_CLOSED: macOS worker identity changed; refusing to stop it.")
                                     self.last_worker_timing["terminate_requested_ns"] = time.perf_counter_ns()
                                     proc.terminate()
                                     proc.join(timeout=1.0)
@@ -1316,6 +1464,10 @@ class P4BRunner:
                                     worker_alive = True
                             if worker_alive:
                                 try:
+                                    if proc.pid != self.last_worker_timing.get("worker_pid") or run_id != self.config.current_run_id:
+                                        raise RuntimeError("FAIL_CLOSED: refusing to kill a worker not owned by this run.")
+                                    if self.config.macos_single_worker and _macos_process_identity(proc.pid) != macos_worker_identity:
+                                        raise RuntimeError("FAIL_CLOSED: macOS worker identity changed; refusing to kill it.")
                                     self.last_worker_timing["kill_requested_ns"] = time.perf_counter_ns()
                                     proc.kill()
                                     proc.join(timeout=1.0)
@@ -1328,6 +1480,8 @@ class P4BRunner:
                                     worker_alive = True
                             if worker_alive or not cleanup_verified:
                                 raise RuntimeError("FAIL_CLOSED: worker process-tree termination could not be verified.") from None
+                            self.last_worker_timing["worker_exitcode"] = proc.exitcode
+                            self.last_worker_timing["worker_status"] = "EXITED" if proc.exitcode == 0 else "FAILED_EXIT"
                             self.last_worker_timing["parent_worker_exit_verified_ns"] = time.perf_counter_ns()
                             self.last_worker_timing["worker_target_entry_ns"] = worker_timing_ns[0] or None
                             self.last_worker_timing["worker_gate_release_ns"] = worker_timing_ns[1] or None
@@ -1357,6 +1511,25 @@ class P4BRunner:
 
             if run_status == "SUCCESS":
                 self.control_state.status = "COMPLETED"
+
+            if self.config.selected_task_ids is not None:
+                summary = {
+                    "run_id": run_id,
+                    "status": "SMOKE_PARTIAL",
+                    "input_provenance": input_provenance,
+                    "fit_accounting": {
+                        "total_estimator_fits": self.accounting.estimator_fits,
+                        "total_preprocessor_fits": self.accounting.preprocessor_fits,
+                        "elapsed_seconds": elapsed_total,
+                    },
+                    "completed_tasks": len(all_fold_results),
+                    "per_outer_fold_results": all_fold_results,
+                    "worker": dict(self.last_worker_timing),
+                }
+                if output_dir is not None:
+                    from housing_regression.modeling.p4b_artifacts import atomic_write_json as write_smoke_status_json
+                    write_smoke_status_json(summary, Path(output_dir) / "production-smoke-status.json")
+                return {"summary": summary, "oof_records": all_oof_records}
 
             aggregate_results = self.aggregate_task_results(
                 all_fold_results,

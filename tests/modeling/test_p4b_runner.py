@@ -9,6 +9,7 @@ import os
 import platform
 import random
 import shutil
+import struct
 import sys
 import tempfile
 import time
@@ -279,6 +280,10 @@ class P4BContractTests(unittest.TestCase):
             encode_canonical_cell("abc", "YearBuilt")
 
         self.assertEqual(encode_canonical_cell("123.45", "LotArea")[0], 0x03)
+        self.assertEqual(
+            encode_canonical_cell("123.45", "LotArea"),
+            struct.pack(">BId", 0x03, 8, 123.45),
+        )
         with self.assertRaises(InvalidDataFormatError):
             encode_canonical_cell("inf", "LotArea")
         with self.assertRaises(InvalidDataFormatError):
@@ -294,6 +299,29 @@ class P4BContractTests(unittest.TestCase):
         fp2 = compute_canonical_fingerprint(rows)
         self.assertEqual(fp1, fp2)
         self.assertEqual(len(fp1), 64)
+
+    def test_canonical_fingerprint_treats_phase3_numeric_na_as_missing(self):
+        """Phase 3's numeric NA sentinel uses the existing canonical null packet."""
+        null_packet = encode_canonical_cell(None, "LotFrontage")
+        self.assertEqual(encode_canonical_cell("NA", "LotFrontage"), null_packet)
+        self.assertEqual(encode_canonical_cell(" NA ", "LotFrontage"), null_packet)
+        self.assertEqual(encode_canonical_cell("NA", "YearBuilt"), encode_canonical_cell("", "YearBuilt"))
+        self.assertEqual(
+            compute_canonical_fingerprint([{"LotFrontage": "NA"}]),
+            compute_canonical_fingerprint([{"LotFrontage": ""}]),
+        )
+
+    def test_canonical_fingerprint_preserves_existing_numeric_missing_forms(self):
+        """Existing blank, whitespace, and IEEE NaN encodings remain canonical nulls."""
+        expected = encode_canonical_cell(None, "LotArea")
+        for value in ("", "   ", "NaN"):
+            with self.subTest(value=value):
+                self.assertEqual(encode_canonical_cell(value, "LotArea"), expected)
+
+    def test_canonical_fingerprint_still_rejects_invalid_numeric_text(self):
+        for value in ("abc", "N/A"):
+            with self.subTest(value=value), self.assertRaises(InvalidDataFormatError):
+                encode_canonical_cell(value, "LotFrontage")
 
     def test_preflight_budget_estimation_and_rejection_spy(self):
         """Blocker 2: Preflight budget estimate rejects over-budget config before any fitting."""
