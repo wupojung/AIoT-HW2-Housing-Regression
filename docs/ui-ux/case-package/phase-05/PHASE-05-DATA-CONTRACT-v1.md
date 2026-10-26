@@ -4,7 +4,7 @@
 
 ## v1.1 Review resolution — Phase 5 is a STATIC DATA CONTRACT (controlling)
 
-**P5-UI-01 ACCEPT — private source mapping:** P5-A's ONLY required files are `evidence-inventory.json`, `gap-permission-matrix.json`, `checkpoint.json`. Mapping lives in `evidence-inventory.json.source_key_mappings[]`; minimum keys: `source_artifact_id,source_sha256,source_key_path_or_csv_column,canonical_destination_field,normalization_rule,read_permission,verification_status,reason_code`. An optional *derived* `source-key-mapping.json` requires `parent_inventory_sha256` and is NEVER a second authority. Earlier §6 and parent Case Package text calling it required are **SUPERSEDED**.
+**P5-UI-01 ACCEPT — private source mapping:** P5-A's ONLY required files are `evidence-inventory.json`, `gap-permission-matrix.json`, `checkpoint.json`. Mapping lives in `evidence-inventory.json.source_key_mappings[]`; minimum keys: `source_artifact_id,source_sha256,source_key_path_or_csv_column,canonical_destination_field,normalization_rule,read_permission,verification_status,reason_code`. An optional *derived* `optional-derived-source-map.json` requires `parent_inventory_sha256` and is NEVER a second authority. Earlier §6 and parent Case Package text calling it required are **SUPERSEDED**.
 
 **P5-UI-02 ACCEPT — distinct measurement identities, approach A:** CV fold-mean KPIs and pooled OOF charts are **two evaluations**, each with a distinct nonnull `evaluation_id` and one `metric_source`. Join only via explicitly reviewed `linked_evaluation_ids[]`, sharing `case_id/execution_run_id/configuration_id/evaluation_population/prediction_origin/protocol/evidence mapping`. The page displays the selected KPI evaluation and an individually labeled linked OOF diagnostic evaluation, **never falsely identifies both as one evaluation_id**. Without approved link, diagnostic panel UNAVAILABLE. Holdout aggregate can never link to OOF as its row-level chart. The old requirement every figure share the KPI evaluation_id is **SUPERSEDED**: figures share their own linked evaluation identity.
 
@@ -73,7 +73,7 @@
 - `evaluation_population`: `development_oof` / `holdout` / `training_in_sample`. The UI may show "Holdout 聚合" only if an approved holdout evaluation exists; **never expose row-level Holdout scatter automatically**.
 - `metric_source`: `cv_fold_mean` / `pooled_oof` / `holdout_aggregate` / `training_in_sample`. One evaluation = one metric_source. A fold mean CV score is not the same value as pooled OOF performance even if both refer to Development OOF.
 - `prediction_origin`: semantic string from verified source (`fold_specific_selected_to_ols` when truly evidenced, `final_fit_holdout_aggregate` for historic approved Holdout aggregates). No automatic `final_fit` claim from OOF.
-- All metrics and figures use identical case, execution, configuration, evaluation and release identity; `model_id` may be null while legitimate research evaluation is available.
+- All metrics and figures are scoped to the same case, execution, configuration, protocol and pinned release. Each figure belongs to its **own** evaluation_id; approved linked OOF figures may be presented next to CV-fold-mean KPI only by explicit linked_evaluation_ids[], clearly labeled with a separate source and evaluation ID. No cross-population or Holdout-to-OOF linking.null while legitimate research evaluation is available.
 - Null numeric = **unknown/not eligible**, never 0. Reject NaN/Infinity/string numbers. Status `VERIFIED` research requires separate `publication_review=APPROVED`, `asset_status=AVAILABLE` and integrity checks before a published figure can render.
 
 ## 4. `evaluations.json` — REQUIRED root fields
@@ -123,7 +123,7 @@ The machine-readable concrete example is [`sample/evaluations.json`](./sample/ev
 | Field | Purpose |
 |---|---|
 | `figure_id` | Stable: `FIG-P5-01` actual-vs-predicted; `FIG-P5-02` residual-vs-predicted; `FIG-P5-03` residual-distribution |
-| `evaluation_id,configuration_id,evaluation_population,prediction_origin` | must equal parent evaluation; prevents mixing models, Holdout and OOF |
+| `evaluation_id,configuration_id,evaluation_population,prediction_origin` | must equal its own owning evaluation; prevents mixing models, Holdout and OOF |
 | `n` | same evaluated population sample; if nonidentical, must be separately justified and not silently treated as same record |
 | `status`, `publication_review` | figure's own evidence / rights; only VERIFIED+APPROVED may link image |
 | `asset_ref`, `sha256`, `accessible_table_ref` | all nullable if unavailable; approved refs case-root relative and hashed in package manifest |
@@ -155,7 +155,7 @@ The machine-readable concrete example is [`sample/evaluations.json`](./sample/ev
 
 | Private source from Issue #37 | Public product | Restrictions |
 |---|---|---|
-| `evidence-inventory.json`, `gap-permission-matrix.json`, `source-key-mapping.json` | safe `evidence` refs / unavailable reasons | metadata-only gate, never expose private paths/row keys |
+| `evidence-inventory.json`, `gap-permission-matrix.json` | safe `evidence` refs / unavailable reasons | metadata-only gate, never expose private paths/row keys |
 | `evaluation-metrics.json` | per-evaluation `metrics`, `fold_summary` | distinguish CV fold means from pooled OOF, all source SHA and n verified |
 | `figure-manifest.json` plus reviewed SVG/PNG | `figures[]`, optional asset refs | authorized public-safe conversion; no Holdout row access without separate approval |
 | `evaluation-report.md` | `limitations`, narrative findings | reviewed and sourced, not LLM-invented |
@@ -170,3 +170,25 @@ No real source key path has been confirmed for the ignored local artifacts; **mu
 - Any future **success** example must be marked `MOCK` with synthetic non-Ames identifiers, never `VERIFIED`, and NEVER published. No sample with null `evaluation_id` inside `evaluations[]`.
 - QA matrix: parse UTF-8; schema; unresolved IDs; duplicate ID; cross-population; wrong version; mixed metric source; missing n; R² display; figure residual sign/axes; FIG-P5-02 priority; stale async result; no interval figure; no secrets/local data; source permission; immutable release hash.
 - This contract defines **static read-only Phase5 API** only; private offline export and runtime validator remain future authorized implementation. Phase5 #37 reviewer/Owner must approve research evidence before website displays genuine values.
+
+## F01–F12 Review freeze rules — canonical v1.2 (2026-10-27)
+
+**P5-UI follow-up #6421939874:** ACCEPT F01–F12, with code-level release validation **DEFER / NOT_IMPLEMENTED** until authorization. This section is normative; resolve any old §3/§4 wording using the explicitly corrected replacements in their paragraphs; do not reintroduce a second source-mapping authority.
+
+**Producer:** P5-A minimum only `evidence-inventory.json`, `gap-permission-matrix.json`, `checkpoint.json`. The **only** authoritative mapping is `evidence-inventory.json.source_key_mappings[]`; each row has `source_artifact_id,source_sha256,source_key_path_or_csv_column,canonical_destination_field,normalization_rule,read_permission,verification_status,reason_code`. Any optional derived map must contain `parent_inventory_sha256`, and never become a required source or competing truth.
+
+**Linked evaluation A — exact UI lookup:** First resolve KPI evaluation by `case_id+execution_run_id+configuration_id+evaluation_population+metric_source=cv_fold_mean`. Follow **only** `linked_evaluation_ids[]`; each reference must resolve within the same case and pinned release. The linked evaluation must be `metric_source=pooled_oof`, `evaluation_population=development_oof`, same execution/config, protocol/version and approved evidence; it owns **its own** FIG-P5-01/02/03. Check reciprocal compatibility and explicit permission; do not require the KPI evaluation_id to equal the linked graph evaluation_id. If link missing, invalid, or not approved, graph is UNAVAILABLE. Holdout aggregate cannot borrow OOF graphs, directly or transitively. When a pooled OOF evaluation is selected, its own figures may display; never transfer figures between populations.
+
+**Schema versus release validator:** JSON Schema 2020-12 checks nested types and local conditional values (and `date-time` only when FormatChecker/format assertion enabled). A **separate bundle validator** must check ID uniqueness, default IDs, link membership/type/protocol, target mapping, eligible figure scope, publication permission, file SHA/size/MIME, relative path traversal, same-release refs and license. See [VALIDATION-MATRIX.md](./VALIDATION-MATRIX.md). Bundle validator runtime: **NOT_IMPLEMENTED**, and therefore real release PASS cannot be claimed.
+
+**Figure tokens and units:** FIG-P5-01 axes `x.field=actual`, `y.field=predicted`, `reference_line=y_equals_x`; FIG-P5-02 `x.field=predicted`, `y.field=actual_minus_predicted`, `reference_line=y_equals_0`; FIG-P5-03 `x.field=actual_minus_predicted`, `y.field=count`, `reference_line=x_equals_0`, `histogram.bin_count>=1`, `histogram.n=n` and verified bin edges. All target-valued axes have `unit=target.unit`, count is dimensionless `count`. Histogram and plot asset only after approved paired predictions and publication QA.
+
+**Metrics/scope:** VERIFIED MAE/RMSE require finite number >=0 and nonempty evidence_ref. VERIFIED R² is finite, dimensionless and may be negative. UNAVAILABLE must be null with a reason. For `cv_fold_mean`, `metrics.*.value` is source-backed mean across explicitly scored folds and `fold_summary.sample_sd.{mae,rmse,r2}` separately stores per-metric sample SD with `ddof=1`; not a pooled OOF value. Pooled OOF must have its own evaluation ID and metrics; no implicit averaging or synthetic folds.
+
+**Intervals:** `int_f.status=PASS` does **not** complete `int_s`; INT-S PASS requires reviewed method/type/level/population/figure asset/coverage evidence. Unavailable INT-S keeps the homework interval requirement outstanding. Historical Holdout 292 aggregate has no row-level plotting permission.
+
+**Target join:** public P5 `target.column = case.json.target.raw_field_id`, `target.unit = case.json.target.unit`; source `case.json.target.value_type=number` is checked. The frontend never infers SalePrice/USD from case name, nor displays R² as a percentage.
+
+**Render authority:** `ui.*` holds only ordering/labels/figure slot IDs, not availability status. An evaluation is eligible only if its own review/source evidence passes and its parent release is approved. Metric display requires own VERIFIED value/evidence; figure display additionally requires its own VERIFIED, APPROVED publication, asset_status AVAILABLE, case-root asset_ref + correct SHA + public allowlist. An EMPTY/PLANNED/MOCK/PENDING/REJECTED context never displays empirical data. A published EMPTY (evaluations:[]) is legitimate with `status=UNAVAILABLE` and reason, but must be sealed and approved at **package publication layer**.
+
+**Lifecycle:** staging may have release_id/generated_at=null, PENDING, files=[]. Publication mode must require real pinned release_id, valid UTC timestamp, independent APPROVED review, sealed all-files manifest, digest and link integrity, no unauthorized private data and atomic release pointer switch. Schema validation alone is insufficient and does not authorize publication.
