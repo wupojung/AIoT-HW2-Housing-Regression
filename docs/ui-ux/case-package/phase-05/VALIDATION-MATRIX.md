@@ -6,7 +6,7 @@
 
 | Check | Intended result | Enforcer | Current evidence |
 |---|---|---|---|
-| Empty staging sample `evaluations.json` | PASS | JSON Schema 2020-12 + FormatChecker | JSON parse and basic shape only; **CI execution pending; see test_schema.py and workflow** |
+| Empty staging sample `evaluations.json` | PASS | JSON Schema 2020-12 + FormatChecker | JSON parse and basic shape only; **PASS GitHub Actions run 40365743511; see evidence section** |
 | Nonempty synthetic `evaluations.nonempty.mock.json` | PASS | JSON Schema 2020-12 + FormatChecker | Created; **CI execution pending; see test_schema.py and workflow** |
 | VERIFIED MAE/RMSE/R² has null `value` | REJECT | JSON Schema | conditional enforced |
 | Negative VERIFIED MAE/RMSE | REJECT | JSON Schema | minimum 0 |
@@ -67,3 +67,13 @@ F01 ACCEPT docs; F02 ACCEPT approach A docs; F03 ACCEPT synthetic data file; F04
 Executable [test_schema.py](./test_schema.py) was committed with synthetic positive branch (nonnegative MAE/RMSE and negative R² with evidence markers) and **10 runtime negative mutations**. It uses [GitHub Actions workflow](../../../../.github/workflows/phase5-schema-contract.yml) (workflow path from repository root: `.github/workflows/phase5-schema-contract.yml`) with `python3.11` and pinned `jsonschema==4.26.0`; `Draft202012Validator.check_schema` plus `FormatChecker()`. Run locally from checked-out PR branch with `python -m pip install jsonschema==4.26.0 && python docs/ui-ux/case-package/phase-05/test_schema.py`.
 
 **Runtime PASS remains UNVERIFIED until an actual workflow/job log or local stdout is captured.** Source tests are a small **Schema-only** harness; they do not implement a Bundle Validator. Cross-file JOIN, duplicate identity, provenance permission, path traversal, SHA/bytes/MIME, asset approval, target-vs-Case and release atomicity remain **NOT_IMPLEMENTED / OWNER GATE**. Do not merge/deploy from structural Schema PASS alone.
+
+## R3 ACTUAL Runtime Evidence — 2026-10-27
+
+**Schema validation PASS (only the schema scope)**: [GitHub Actions run #40365743511](https://github.com/wupojung/AIoT-HW2-Housing-Regression/actions/runs/40365743511), job #121722824612, branch PR #35; trigger commit `e2e8a17bd8d42ba220464c9bc9a5ae9785973638` (subsequent documentation commits do not change schema/test inputs). Python 3.11.17, `jsonschema[format]==4.26.0`, `Draft202012Validator.check_schema` and `FormatChecker` enabled. Exact command: `python docs/ui-ux/case-package/phase-05/test_schema.py` (see `.github/workflows/phase5-schema-contract.yml`).
+
+**Observed stdout:** `empty staging PASS`, `nonempty synthetic PASS`, `synthetic numeric verified metrics / negative R2 PASS`; ten negative mutations all PASS by **actual=REJECTED**: verified MAE null, negative MAE, negative RMSE, unavailable metric with number, wrong residual X, wrong residual sign, wrong histogram reference line, interval PASS without method, root VERIFIED with empty evaluations, invalid UTC time when VERIFIED. Ends `SCHEMA STRUCTURAL TESTS PASS. Bundle JOIN/rights/hash validation NOT_IMPLEMENTED.`
+
+**Failed run retained for causal audit:** Run [#40365535300](https://github.com/wupojung/AIoT-HW2-Housing-Regression/actions/runs/40365535300) found 9 expected negative rejections passed but `invalid UTC time` was erroneously VALID because only `jsonschema==4.26.0` core package was installed and the optional RFC3339 format validator was absent. Fixed install to **`jsonschema[format]==4.26.0`** and reran with all tests PASS. The fixture did not provide real empirical data. Do not promote MOCK to approved results.
+
+**Separate remaining gate:** Cross-file config joins, linked population/metric-source compatibility, duplicate IDs, Case target, root manifest SHA/bytes/MIME, public asset rights, path traversal, pinned release references and actual publication remain **Bundle Validator NOT_IMPLEMENTED / Release NOT_AUTHORIZED**. Passing JSON Schema cannot certify any of those. The sample has `publication_review:PENDING` and `release_id:null` and is **staging only**.
