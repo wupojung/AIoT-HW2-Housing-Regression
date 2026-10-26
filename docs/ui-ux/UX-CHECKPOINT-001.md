@@ -67,3 +67,19 @@ Nex supplementary review: https://github.com/wupojung/AIoT-HW2-Housing-Regressio
 **ENGINEERING TBD / evidence dependencies:** exact registered model artifacts, training-time preprocessing and raw input schema, serialization/loading strategy, runtime/API, prediction interval method, inference tests/security, deployment gate. Package B contains 97-encoded-feature final model *metadata*, not a directly loadable model. Do not expose active Predict until these are validated.
 
 **Gate:** design documents only in PR #35; no P6-B engineering, Merge or Deploy approval implied.
+
+## Nex v0.4 delta checkpoint — generic model prediction (2026-10-26)
+
+Reviewed request: https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35#issuecomment-6417360873
+
+**P0-1:** General case-driven Model Prediction Lab; "房價預測實驗室" stays Ames label. Used Car is **PLANNED** candidate, not a verified case.
+**P0-2:** Research Run, approved deployable Model and new Prediction separated. Every selector change invalidates old inputs and outputs; no derived method×K models.
+**P0-3:** Raw input schema required/optional, provenance/type/unit/range/category/dependency/imputer; structural facility absence vs genuinely unknown value vs omitted required fields distinguished and unsafe defaults forbidden.
+**P1-1:** Dashboard custom CSV/URL **Train/Evaluate (future authorized)** distinct from Phase 6 single-sample **Predict with approved existing model**.
+**P1-2:** Ames reviewed EDA/Development research ≠ verified deployable API; Used Car remains planned and cannot appear as having experiments.
+**P1-3:** Minimal conceptual API request/response plus explicit error codes; no real prediction or fabricated uncertainty interval.
+**P1-4:** >13 original candidate predictors (>=14), no formal <40 cap; audit CSV original fields, eligible raw fields, encoded and selected fields separately.
+
+**Authority:** OWNER CONFIRMED remains Desktop 1920×1080, CRISP-DM-first six steps, case switching, separate Dashboard, Phase 4 progressive disclosure, Phase 6 inference concept. Added contract rules are DESIGN PROPOSAL. Used Car research, deployable registry/pipeline/API, custom training limits and actual evaluation all ENGINEERING TBD.
+
+**Review status:** amended for Nex independent re-review, not self-certified PASS. Only the two UI/UX Markdown files changed on PR #35; P6-B, Runner, Holdout, Merge and Deploy remain NOT AUTHORIZED.
