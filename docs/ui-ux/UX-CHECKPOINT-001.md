@@ -21,3 +21,21 @@ Draft documentation does not initiate implementation, CI run, worker/OS use, Pha
 
 ## Next
 Independent reviewer checks legibility and consistency; PM/Nex reviews the design against research evidence; Owner must separately authorize engineering.
+
+
+## Nex PARTIAL remediation delta — 2026-10-26
+
+Source: https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35#issuecomment-6412376101
+
+- **BLOCKER 1 addressed in document (pending Nex verification):** Phase 4 three-question selector matrix, method/K reset and failure states, observed-point-only encoded-K CV curve, fold/mean/SD/track and incomparable baseline policy.
+- **BLOCKER 2 addressed in document (pending Nex verification):** Dashboard separates read-only Verified Research from experimental Custom Dataset; loading, parsing, validation, safe-URL constraints, Run disabled until authorized, running/cancel/stale invalidation behaviors.
+- **BLOCKER 3 addressed in document (pending Nex verification):** minimal Case/Run/Feature-map/Metric/Visual/Download schema and LOADING/EMPTY/ERROR/PLANNED/MOCK/UNAVAILABLE/VERIFIED per-component display with visible watermark and evidence.
+- **Supplement 1:** mobile horizontal-scroll proposal, focus/semantic/keyboard/charts alternative table/contrast/touch expectations (reviewed design proposal only).
+- **Supplement 2:** OWNER CONFIRMED / DESIGN PROPOSAL / ENGINEERING TBD classification applied to decision matrix, preserving Owner's core design.
+
+The above are *document changes*, not claims of completed empirical experiments, working uploads, functioning user interface or Nex PASS.
+
+## Unresolved (explicit)
+- **ENGINEERING TBD:** actual dataset 2, available methods and encoded K, run comparability and provenance inventory, live CSV processing/SSRF and size limits, secure cancellation support, real prediction/confidence interval methodology, breakpoints and implementation semantics.
+- **P6-A independent review pending:** Nex must verify that proposed controls, states and schema are sufficiently precise. No acceptance assumed from our own edits.
+- **Gate unchanged:** no P6-B, experimental Worker/OS/holdout, Merge or Deploy.
