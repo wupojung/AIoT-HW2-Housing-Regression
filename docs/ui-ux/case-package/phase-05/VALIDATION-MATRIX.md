@@ -77,3 +77,15 @@ Executable [test_schema.py](./test_schema.py) was committed with synthetic posit
 **Failed run retained for causal audit:** Run [#40365535300](https://github.com/wupojung/AIoT-HW2-Housing-Regression/actions/runs/40365535300) found 9 expected negative rejections passed but `invalid UTC time` was erroneously VALID because only `jsonschema==4.26.0` core package was installed and the optional RFC3339 format validator was absent. Fixed install to **`jsonschema[format]==4.26.0`** and reran with all tests PASS. The fixture did not provide real empirical data. Do not promote MOCK to approved results.
 
 **Separate remaining gate:** Cross-file config joins, linked population/metric-source compatibility, duplicate IDs, Case target, root manifest SHA/bytes/MIME, public asset rights, path traversal, pinned release references and actual publication remain **Bundle Validator NOT_IMPLEMENTED / Release NOT_AUTHORIZED**. Passing JSON Schema cannot certify any of those. The sample has `publication_review:PENDING` and `release_id:null` and is **staging only**.
+
+
+## Local quick validator (engineer-provided simplified entry)
+
+The stable file is [validate_schema.py](./validate_schema.py), based on the engineer's provided `Draft202012Validator + FormatChecker` example. From repository root:
+
+```bash
+python -m pip install "jsonschema[format]==4.26.0"
+python docs/ui-ux/case-package/phase-05/validate_schema.py
+```
+
+It prints PASS/FAIL per supplied sample and exits nonzero on schema errors. Unlike `test_schema.py`, this tool does not deliberately mutate samples into negative test cases. Neither tool validates full package hashes/authorization. Design entry: [docs/design/README.md](../../../design/README.md).
