@@ -1,0 +1,301 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "synthetic-evaluation-demo",
+  "release_id": null,
+  "generated_at": null,
+  "status": "MOCK",
+  "reason_code": "SYNTHETIC_FIXTURE_ONLY",
+  "publication_review": "PENDING",
+  "default_evaluation_id": "synthetic-foldmean-01",
+  "evaluations": [
+    {
+      "evaluation_id": "synthetic-foldmean-01",
+      "execution_run_id": "synthetic-execution-01",
+      "configuration_id": "synthetic-config-01",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "synthetic_fold_specific_models",
+      "metric_source": "cv_fold_mean",
+      "n": 30,
+      "target": {
+        "column": "SyntheticTarget",
+        "unit": "synthetic_units"
+      },
+      "metrics": {
+        "mae": {
+          "value": null,
+          "status": "UNAVAILABLE",
+          "reason_code": "SYNTHETIC_NO_EMPIRICAL_EVIDENCE",
+          "evidence_ref": null
+        },
+        "rmse": {
+          "value": null,
+          "status": "UNAVAILABLE",
+          "reason_code": "SYNTHETIC_NO_EMPIRICAL_EVIDENCE",
+          "evidence_ref": null
+        },
+        "r2": {
+          "value": null,
+          "status": "UNAVAILABLE",
+          "reason_code": "SYNTHETIC_NO_EMPIRICAL_EVIDENCE",
+          "evidence_ref": null
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": null,
+          "rmse": null,
+          "r2": null
+        },
+        "fold_values_ref": null
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "MOCK_NO_METHOD",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "MOCK_NO_INTERVAL",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": null,
+        "source_ref": null,
+        "protocol_version": null,
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "SYNTHETIC MOCK FOR SCHEMA TEST ONLY; NOT A REAL RESULT"
+      ],
+      "linked_evaluation_ids": [
+        "synthetic-oof-01"
+      ]
+    },
+    {
+      "evaluation_id": "synthetic-oof-01",
+      "execution_run_id": "synthetic-execution-01",
+      "configuration_id": "synthetic-config-01",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "synthetic_fold_specific_models",
+      "metric_source": "pooled_oof",
+      "n": 30,
+      "target": {
+        "column": "SyntheticTarget",
+        "unit": "synthetic_units"
+      },
+      "metrics": {
+        "mae": {
+          "value": null,
+          "status": "UNAVAILABLE",
+          "reason_code": "SYNTHETIC_NO_EMPIRICAL_EVIDENCE",
+          "evidence_ref": null
+        },
+        "rmse": {
+          "value": null,
+          "status": "UNAVAILABLE",
+          "reason_code": "SYNTHETIC_NO_EMPIRICAL_EVIDENCE",
+          "evidence_ref": null
+        },
+        "r2": {
+          "value": null,
+          "status": "UNAVAILABLE",
+          "reason_code": "SYNTHETIC_NO_EMPIRICAL_EVIDENCE",
+          "evidence_ref": null
+        }
+      },
+      "fold_summary": null,
+      "figures": [
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "synthetic-oof-01",
+          "configuration_id": "synthetic-config-01",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "synthetic_fold_specific_models",
+          "n": 30,
+          "status": "UNAVAILABLE",
+          "publication_review": "PENDING",
+          "asset_ref": null,
+          "sha256": null,
+          "accessible_table_ref": null,
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "actual",
+              "unit": "synthetic_units"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "predicted",
+              "unit": "synthetic_units"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [],
+          "source_digest": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "synthetic-oof-01",
+          "configuration_id": "synthetic-config-01",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "synthetic_fold_specific_models",
+          "n": 30,
+          "status": "UNAVAILABLE",
+          "publication_review": "PENDING",
+          "asset_ref": null,
+          "sha256": null,
+          "accessible_table_ref": null,
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "predicted",
+              "unit": "synthetic_units"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "actual_minus_predicted",
+              "unit": "synthetic_units"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "alt": null,
+          "finding": null,
+          "limitations": [],
+          "source_digest": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "synthetic-oof-01",
+          "configuration_id": "synthetic-config-01",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "synthetic_fold_specific_models",
+          "n": 30,
+          "status": "UNAVAILABLE",
+          "publication_review": "PENDING",
+          "asset_ref": null,
+          "sha256": null,
+          "accessible_table_ref": null,
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "actual_minus_predicted",
+              "unit": "synthetic_units"
+            },
+            "y": {
+              "field": "count",
+              "label": "count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "alt": null,
+          "finding": null,
+          "limitations": [],
+          "source_digest": null,
+          "histogram": {
+            "bin_count": 5,
+            "bin_edges_ref": "synthetic-only-bin-metadata",
+            "n": 30
+          }
+        }
+      ],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "MOCK_NO_METHOD",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "MOCK_NO_INTERVAL",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": null,
+        "source_ref": null,
+        "protocol_version": null,
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "SYNTHETIC MOCK FOR SCHEMA TEST ONLY; NOT A REAL RESULT"
+      ],
+      "linked_evaluation_ids": [
+        "synthetic-foldmean-01"
+      ]
+    }
+  ],
+  "ui": {
+    "default_population": "development_oof",
+    "population_options": [
+      {
+        "id": "development_oof",
+        "label": "Development OOF"
+      },
+      {
+        "id": "holdout",
+        "label": "Holdout 聚合"
+      }
+    ],
+    "figure_tabs": [
+      {
+        "figure_id": "FIG-P5-02",
+        "label": "Residual vs Predicted",
+        "kind": "residual_vs_predicted"
+      },
+      {
+        "figure_id": "FIG-P5-01",
+        "label": "Actual vs Predicted",
+        "kind": "actual_vs_predicted"
+      },
+      {
+        "figure_id": "FIG-P5-03",
+        "label": "Residual Distribution",
+        "kind": "residual_distribution"
+      }
+    ],
+    "metric_order": [
+      "mae",
+      "rmse",
+      "r2"
+    ],
+    "interval_figure_id": "FIG-P5-04"
+  }
+}
