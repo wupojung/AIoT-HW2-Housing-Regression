@@ -34,3 +34,8 @@ Prior composite content is preserved verbatim in [archive/REGSCOPE-UX-SPEC-HISTO
 **NOT completed or certified:** renderable screenshot parity, uniform pixel/token design system, complete Dashboard modes, runnable schema-valid fixture package and real source key-path audit. `Phase 5` has a proposal only; no approved final UI/data. Frontend P6-B is **NOT AUTHORIZED**. No historical synthetic example is published empirical truth.
 
 **Next acceptance:** fresh agent reconstructs each page from this index and canonical page file, and PM/Nex record a **per-page** PASS/PARTIAL/BLOCKED with evidence. Never interpret file existence as implementation-ready acceptance.
+
+
+## Case Package v1.0 — Required backend/frontend handoff
+
+**Start here for all uploads and generated JSON:** [CASE-PACKAGE-SPEC-v1.md](./case-package/CASE-PACKAGE-SPEC-v1.md), with executable-format but deliberately unapproved [MOCK Ames sample](./case-package/sample/ames-housing/package.json) and [planned-case switch sample](./case-package/sample/planned-case/package.json). This spec governs folder placement, per-JSON semantics, the Phase 5 Issue #37 projection, publication SHA/release flow and frontend binding. **Do not treat sample as production data or a sealed/published artifact.**
