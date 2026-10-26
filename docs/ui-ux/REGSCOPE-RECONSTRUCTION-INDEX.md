@@ -39,6 +39,8 @@ PHASE 6: [No approved model] [NOT READY, reason] [Choose another eligible model]
 DASHBOARD: Verified Research / Custom Dataset are MUTUALLY EXCLUSIVE; Custom Run disabled absent authorization.
 ```
 
+For the exact response to all 15 second-round review findings, see [REGSCOPE-R2-REVIEW-TRACKER.md](./REGSCOPE-R2-REVIEW-TRACKER.md). This matrix identifies both amended artifacts and still-blocking evidence; it is not a PASS certificate.
+
 ## Cold-start independent review gates
 - **Structural and navigation parity:** original Phase 1–4 and Phase 6 detailed sections retained as separate pages; no silent research claims.
 - **Not yet achieved:** proposed design tokens and 1920×1080 images, fully developed Dashboard modes, syntactically valid JSON Schema and usable MOCK fixture loader, exact source-to-export key mapping, fully decided Phase 5 UX, independent blind screenshot/interaction QA.
