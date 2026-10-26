@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "title": "Ames Housing — MOCK UI Sample",
+  "case_status": "MOCK",
+  "methodology_id": "mlr-feature-selection-v1",
+  "source": {
+    "label": "Kaggle House Prices",
+    "url": "https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data",
+    "license_review": "PENDING"
+  },
+  "target": {
+    "raw_field_id": "SalePrice",
+    "label": "售價",
+    "unit": "USD",
+    "value_type": "number"
+  },
+  "language": "zh-Hant",
+  "disclaimer": "僅供 UI 測試，非已核准研究成果"
+}
