@@ -51,3 +51,8 @@ For the exact response to all 15 second-round review findings, see [REGSCOPE-R2-
 ## Case Package v1.0 — Required backend/frontend handoff
 
 **Start here for all uploads and generated JSON:** [CASE-PACKAGE-SPEC-v1.md](./case-package/CASE-PACKAGE-SPEC-v1.md), with executable-format but deliberately unapproved [MOCK Ames sample](./case-package/sample/ames-housing/package.json) and [planned-case switch sample](./case-package/sample/planned-case/package.json). This spec governs folder placement, per-JSON semantics, the Phase 5 Issue #37 projection, publication SHA/release flow and frontend binding. **Do not treat sample as production data or a sealed/published artifact.**
+
+
+## Phase 5 API/JSON handoff (canonical)
+
+[Evaluation API Contract v1](./case-package/phase-05/EVALUATION-API-CONTRACT-v1.md) · [Sample JSON](./case-package/phase-05/sample/evaluations.json) · [JSON Schema](./case-package/phase-05/evaluation-index.schema.json). Phase 5 uses static GET reads from an immutable published Case Package; not a live POST evaluation service. The visual layout remains [PHASE-05.md](./pages/PHASE-05.md), with three tabs in one figure region. Evidence and Phase 5 scientific execution gates remain in Issue #37.
