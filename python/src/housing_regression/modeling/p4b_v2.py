@@ -11,8 +11,9 @@ import hashlib
 import json
 import math
 import re
+import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Sequence
 
 import numpy as np
@@ -174,30 +175,87 @@ def require_matching_process_identity(
 
 @dataclass
 class RunControlState:
-    """Run-scoped, in-memory status/freeze/stop intent; no OS process actions."""
+    """Run-scoped cooperative task admission; no OS process actions."""
 
     run_id: str
     status: str = "CREATED"
     frozen: bool = False
     stop_requested: bool = False
+    shared_admission_flag: Any = None
+    _lock: Any = field(default_factory=threading.RLock, repr=False, compare=False)
+    _admitted_task_ids: set[str] = field(default_factory=set, init=False, repr=False, compare=False)
+
+    def _shared_frozen(self) -> bool:
+        flag = self.shared_admission_flag
+        if flag is None:
+            return False
+        with flag.get_lock():
+            return bool(flag.value)
+
+    def admit_task(self, task_id: str) -> bool:
+        """Atomically admit one not-yet-started task unless freeze/stop already won."""
+        if not isinstance(task_id, str) or not task_id:
+            raise ValueError("Task admission requires a nonempty task_id.")
+        with self._lock:
+            if self.frozen or task_id in self._admitted_task_ids:
+                return False
+            flag = self.shared_admission_flag
+            if flag is None:
+                self._admitted_task_ids.add(task_id)
+                return True
+            with flag.get_lock():
+                if flag.value:
+                    self.frozen = True
+                    return False
+                self._admitted_task_ids.add(task_id)
+                return True
+
+    def begin_run(self, run_id: str, shared_admission_flag: Any) -> bool:
+        """Bind a shared worker gate atomically with respect to freeze/stop requests."""
+        if not isinstance(run_id, str) or not run_id:
+            raise ValueError("Run admission requires a nonempty run_id.")
+        with self._lock:
+            if self.frozen or self._shared_frozen():
+                return False
+            self.run_id = run_id
+            self.status = "RUNNING"
+            self.shared_admission_flag = shared_admission_flag
+            self._admitted_task_ids.clear()
+            return True
 
     def status_snapshot(self) -> dict[str, Any]:
+        shared_frozen = self._shared_frozen()
         return {"run_id": self.run_id, "status": self.status,
-                "frozen": self.frozen, "stop_requested": self.stop_requested}
+                "frozen": self.frozen or shared_frozen,
+                "stop_requested": self.stop_requested}
 
     def freeze(self) -> dict[str, Any]:
-        self.frozen = True
-        if self.status not in {"COMPLETED", "FAILED", "STOPPED"}:
-            self.status = "FROZEN"
-        return self.status_snapshot()
+        with self._lock:
+            flag = self.shared_admission_flag
+            if flag is None:
+                self.frozen = True
+            else:
+                with flag.get_lock():
+                    flag.value = 1
+                    self.frozen = True
+            if self.status not in {"COMPLETED", "FAILED", "STOPPED"}:
+                self.status = "FROZEN"
+            return self.status_snapshot()
 
     def stop_all(self) -> dict[str, Any]:
         """Freeze admissions and record stop intent for Phase C to implement safely."""
-        self.frozen = True
-        self.stop_requested = True
-        if self.status not in {"COMPLETED", "FAILED", "STOPPED"}:
-            self.status = "STOP_REQUESTED"
-        return self.status_snapshot()
+        with self._lock:
+            flag = self.shared_admission_flag
+            if flag is None:
+                self.frozen = True
+            else:
+                with flag.get_lock():
+                    flag.value = 1
+                    self.frozen = True
+            self.stop_requested = True
+            if self.status not in {"COMPLETED", "FAILED", "STOPPED"}:
+                self.status = "STOP_REQUESTED"
+            return self.status_snapshot()
 
 
 def _metric_values(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
@@ -213,21 +271,30 @@ def _metric_values(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
 
 
 def rank_features_by_score(
-    scores: Sequence[float], feature_names: Sequence[str], *, evidence_limit: int = 20,
+    scores: Sequence[float], feature_names: Sequence[str], *,
+    score_kind: str,
+    constant_feature_mask: Sequence[bool] | None = None,
+    evidence_limit: int = 20,
 ) -> tuple[list[int], dict[str, Any]]:
-    """Rank finite scores first, with deterministic name ties and bounded invalid evidence."""
+    """Rank usable scores first; record nonfinite and constant Pearson features compactly."""
     values = np.asarray(scores, dtype=np.float64)
     if values.ndim != 1 or len(values) != len(feature_names):
         raise ValueError("Feature score vector must align with feature names.")
+    if score_kind not in {"pearson", "mutual_information"}:
+        raise ValueError("score_kind must be pearson or mutual_information.")
     if isinstance(evidence_limit, bool) or not isinstance(evidence_limit, int) or evidence_limit < 0:
         raise ValueError("evidence_limit must be a nonnegative integer.")
 
     finite_mask = np.isfinite(values)
-    finite_values = values[finite_mask]
-    constant = bool(finite_values.size > 0 and np.all(finite_values == finite_values[0]))
     invalid_mask = ~finite_mask
-    if constant:
-        invalid_mask = np.ones(len(values), dtype=bool)
+    if constant_feature_mask is None:
+        constant_mask = np.zeros(len(values), dtype=bool)
+    else:
+        constant_mask = np.asarray(constant_feature_mask, dtype=bool)
+        if constant_mask.ndim != 1 or len(constant_mask) != len(values):
+            raise ValueError("Constant-feature mask must align with feature names.")
+    if score_kind == "pearson":
+        invalid_mask |= constant_mask
 
     valid_indices = [i for i in range(len(values)) if not invalid_mask[i]]
     invalid_indices = [i for i in range(len(values)) if invalid_mask[i]]
@@ -235,19 +302,18 @@ def rank_features_by_score(
     ranked.extend(sorted(invalid_indices, key=lambda i: str(feature_names[i])))
 
     invalid_names = sorted(str(feature_names[i]) for i in invalid_indices)
-    if constant and not invalid_names:
-        # Constant scores invalidate the complete vector, including all features.
-        invalid_names = sorted(map(str, feature_names))
     reasons = []
     if bool((~finite_mask).any()):
         reasons.append("NONFINITE")
-    if constant:
-        reasons.append("CONSTANT")
+    if score_kind == "pearson" and bool(constant_mask.any()):
+        reasons.append("CONSTANT_FEATURE")
     return ranked, {
         "score_invalid": bool(reasons),
         "score_invalid_reason": "+".join(reasons) if reasons else None,
+        "score_kind": score_kind,
         "score_count": len(values),
         "finite_score_count": int(finite_mask.sum()),
+        "constant_feature_count": int(constant_mask.sum()) if score_kind == "pearson" else 0,
         "invalid_score_count": len(invalid_names),
         "invalid_score_features": invalid_names[:evidence_limit],
         "invalid_score_features_truncated": len(invalid_names) > evidence_limit,
@@ -291,6 +357,7 @@ def evaluate_fold(
     pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
     accounting: Any = None,
     check_deadline: Callable[[], None] | None = None,
+    control_state: RunControlState | None = None,
 ) -> dict[str, Any]:
     """Evaluate one fixed development fold with a single training-only fit."""
     if check_deadline:
@@ -311,8 +378,13 @@ def evaluate_fold(
     oof: list[dict[str, Any]] = []
     completed = set(getattr(config, "completed_task_ids", ()) or ())
 
-    def already_done(method: str, candidate: Mapping[str, Any]) -> bool:
-        return make_task_id(config.current_run_id, method, candidate, fold) in completed
+    def admit_candidate(method: str, candidate: Mapping[str, Any]) -> bool:
+        task_id = make_task_id(config.current_run_id, method, candidate, fold)
+        if task_id in completed:
+            return False
+        if control_state is not None and not control_state.admit_task(task_id):
+            raise RuntimeError("TASK_ADMISSION_CLOSED: candidate task was not admitted.")
+        return True
 
     def record(method: str, candidate: Mapping[str, Any], selected_idx: Sequence[int],
                pred: np.ndarray, valid: bool = True, invalid_reason: str | None = None,
@@ -439,7 +511,7 @@ def evaluate_fold(
                score_evidence=score_evidence, ols_diagnostics=diagnostics)
 
     baseline_candidate = {"features": "all"}
-    if not already_done("ols_baseline", baseline_candidate):
+    if admit_candidate("ols_baseline", baseline_candidate):
         fit_ols(list(range(len(names))), "ols_baseline", baseline_candidate)
 
     k_grid = tuple(config.k_candidates)
@@ -453,7 +525,7 @@ def evaluate_fold(
             continue
         for order, k in enumerate(k_grid):
             candidate = {"k": k, "candidate_order": order}
-            if already_done(method, candidate):
+            if not admit_candidate(method, candidate):
                 continue
             started = time.perf_counter()
             if method == "pearson":
@@ -467,7 +539,11 @@ def evaluate_fold(
                 ], dtype=bool)
                 scores = mutual_info_regression(Xtr, ytr, discrete_features=discrete,
                                                 n_neighbors=3, random_state=42)
-            ranked, score_evidence = rank_features_by_score(scores, names)
+            constant_features = np.all(Xtr == Xtr[0:1, :], axis=0) if method == "pearson" else None
+            ranked, score_evidence = rank_features_by_score(
+                scores, names, score_kind=method,
+                constant_feature_mask=constant_features,
+            )
             if k > len(names):
                 fit_ols([], method, candidate, False, "K_EXCEEDS_FEATURE_COUNT",
                         started_at=started, score_evidence=score_evidence)
@@ -478,7 +554,7 @@ def evaluate_fold(
 
     for order, k in (enumerate(k_grid) if "ridge_rfe" in active_methods else ()):
         candidate = {"k": k, "candidate_order": order}
-        if already_done("ridge_rfe", candidate):
+        if not admit_candidate("ridge_rfe", candidate):
             continue
         if k > len(names):
             fit_ols([], "ridge_rfe", candidate, False, "K_EXCEEDS_FEATURE_COUNT")
@@ -496,7 +572,7 @@ def evaluate_fold(
 
     for order, alpha in (enumerate(PENALTY_ALPHAS) if "lasso" in active_methods else ()):
         candidate = {"alpha": alpha, "candidate_order": order}
-        if already_done("lasso", candidate):
+        if not admit_candidate("lasso", candidate):
             continue
         started = time.perf_counter()
         if accounting:
@@ -516,7 +592,7 @@ def evaluate_fold(
     for alpha in (PENALTY_ALPHAS if "elastic_net" in active_methods else ()):
         for l1_ratio in ELASTIC_NET_L1_RATIOS:
             candidate = {"alpha": alpha, "l1_ratio": l1_ratio, "candidate_order": en_order}
-            if already_done("elastic_net", candidate):
+            if not admit_candidate("elastic_net", candidate):
                 en_order += 1
                 continue
             started = time.perf_counter()

@@ -641,6 +641,7 @@ def _mp_worker_target(
     pipeline_factory: Optional[Callable[[], AmesDataPreparationPipeline]] = None,
     start_event: Optional[Any] = None,
     timing_ns: Optional[Any] = None,
+    shared_admission_gate: Optional[Any] = None,
 ) -> None:
     try:
         if timing_ns is not None:
@@ -697,7 +698,7 @@ def _mp_worker_target(
                     "ready_sent_ns": time.perf_counter_ns(),
                 })
 
-            runner = P4BRunner(config)
+            runner = P4BRunner(config, shared_admission_gate=shared_admission_gate)
             kwargs = {}
             if pipeline_factory is not None:
                 kwargs["pipeline_factory"] = pipeline_factory
@@ -718,7 +719,7 @@ def _descendant_worker_target() -> None:
 class P4BRunner:
     """Complete, leakage-safe Nested CV experiment runner for Phase 4-B-A."""
 
-    def __init__(self, config: P4BConfig):
+    def __init__(self, config: P4BConfig, shared_admission_gate: Optional[Any] = None):
         self.config = config
         self.accounting = FitAccounting(
             estimator_fit_cap=config.estimator_fit_cap,
@@ -747,8 +748,11 @@ class P4BRunner:
         self.last_ready_msg: Optional[Dict[str, Any]] = None
         self.last_worker_timing: Dict[str, Any] = {}
         self.spawn_descendant: bool = False
+        self._shared_admission_gate = shared_admission_gate
         from housing_regression.modeling.p4b_v2 import RunControlState
-        self.control_state = RunControlState(config.current_run_id)
+        self.control_state = RunControlState(
+            config.current_run_id, shared_admission_flag=shared_admission_gate
+        )
 
     def _check_deadline(self) -> None:
         """Enforce wall-clock timeout between units of work."""
@@ -831,12 +835,12 @@ class P4BRunner:
         """Shared in-process fold evaluator; only the explicit test seam bypasses OS gating."""
         from housing_regression.modeling.p4b_v2 import evaluate_fold
 
-        if self.control_state.frozen:
+        if self.control_state.status_snapshot()["frozen"]:
             raise RuntimeError("Run admission is frozen; no additional fold task may start.")
         result = evaluate_fold(
             self.config, outer_fold_idx, outer_train_rows, outer_val_rows,
             pipeline_factory=pipeline_factory, accounting=self.accounting,
-            check_deadline=self._check_deadline,
+            check_deadline=self._check_deadline, control_state=self.control_state,
         )
         return {"outer_fold": outer_fold_idx, "results": result["results"],
                 "oof_records": result["oof_records"]}
@@ -995,8 +999,10 @@ class P4BRunner:
         if not isinstance(run_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", run_id):
             raise ValueError("run_id must be a canonical identifier.")
         self.config.current_run_id = run_id
-        from housing_regression.modeling.p4b_v2 import RunControlState
-        self.control_state = RunControlState(run_id, status="RUNNING")
+        shared_gate = mp.get_context("spawn").Value("b", 0, lock=True)
+        if not self.control_state.begin_run(run_id, shared_gate):
+            raise RuntimeError("Run admission is frozen; this runner cannot start another run.")
+        self._shared_admission_gate = shared_gate
 
         if output_dir is not None:
             self._failure_stage = "PATH_VALIDATION"
@@ -1089,6 +1095,8 @@ class P4BRunner:
                     current_stage = f"OUTER_FOLD_{k}"
                     self._failure_stage = current_stage
                     self._check_deadline()
+                    if not self.control_state.admit_task(f"outer-fold:{k}"):
+                        raise RuntimeError("TASK_ADMISSION_CLOSED: outer fold was not admitted.")
 
                     cached_for_fold = [
                         checkpoint for checkpoint in completed_tasks.values()
@@ -1135,6 +1143,7 @@ class P4BRunner:
                                 pipeline_factory if pipeline_factory is not AmesDataPreparationPipeline else None,
                                 start_event,
                                 worker_timing_ns,
+                                self._shared_admission_gate,
                             ),
                         )
                         proc.start()

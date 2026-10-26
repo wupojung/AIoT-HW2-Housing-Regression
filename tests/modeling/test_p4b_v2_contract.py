@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 import sys
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -87,7 +88,8 @@ class P4BV2ContractTests(unittest.TestCase):
 
     def test_score_invalid_is_recorded_and_ranked_last(self):
         ranked, evidence = rank_features_by_score(
-            [0.2, float("nan"), 0.8], ["feature_b", "feature_a", "feature_c"]
+            [0.2, float("nan"), 0.8], ["feature_b", "feature_a", "feature_c"],
+            score_kind="pearson",
         )
         self.assertEqual(ranked, [2, 0, 1])
         self.assertTrue(evidence["score_invalid"])
@@ -95,13 +97,22 @@ class P4BV2ContractTests(unittest.TestCase):
         self.assertEqual(evidence["invalid_score_features"], ["feature_a"])
         self.assertEqual(evidence["invalid_score_count"], 1)
 
-        constant_ranked, constant_evidence = rank_features_by_score(
-            [0.5, 0.5, 0.5], ["feature_z", "feature_a", "feature_m"]
+        pearson_ranked, pearson_evidence = rank_features_by_score(
+            [0.0, 0.0, 0.0], ["feature_z", "feature_a", "feature_m"],
+            score_kind="pearson", constant_feature_mask=[False, True, False],
         )
-        self.assertEqual(constant_ranked, [1, 2, 0])
-        self.assertTrue(constant_evidence["score_invalid"])
-        self.assertEqual(constant_evidence["score_invalid_reason"], "CONSTANT")
-        self.assertEqual(constant_evidence["invalid_score_count"], 3)
+        self.assertEqual(pearson_ranked, [2, 0, 1])
+        self.assertTrue(pearson_evidence["score_invalid"])
+        self.assertEqual(pearson_evidence["score_invalid_reason"], "CONSTANT_FEATURE")
+        self.assertEqual(pearson_evidence["invalid_score_features"], ["feature_a"])
+
+        mi_ranked, mi_evidence = rank_features_by_score(
+            [0.5, 0.5, 0.5], ["feature_z", "feature_a", "feature_m"],
+            score_kind="mutual_information",
+        )
+        self.assertEqual(mi_ranked, [1, 2, 0])
+        self.assertFalse(mi_evidence["score_invalid"])
+        self.assertIsNone(mi_evidence["score_invalid_reason"])
 
     def test_public_runner_fails_closed_on_macos_and_synthetic_seam_rejects_real_ids(self):
         runner = P4BRunner(P4BConfig(code_head_commit="synthetic-code-sha", synthetic_test_mode=True))
@@ -133,11 +144,37 @@ class P4BV2ContractTests(unittest.TestCase):
     def test_control_contract_is_run_scoped_and_never_signals_processes(self):
         state = RunControlState("run_1", status="RUNNING")
         self.assertEqual(state.status_snapshot()["status"], "RUNNING")
+        self.assertTrue(state.admit_task("candidate-1"))
         frozen = state.freeze()
         self.assertTrue(frozen["frozen"])
+        self.assertFalse(state.admit_task("candidate-2"))
         stopped = state.stop_all()
         self.assertEqual(stopped["status"], "STOP_REQUESTED")
         self.assertTrue(stopped["stop_requested"])
+        self.assertFalse(state.admit_task("candidate-3"))
+
+    def test_freeze_and_stop_gate_is_shared_atomically_with_worker_state(self):
+        class SharedGate:
+            def __init__(self):
+                self.value = 0
+                self._lock = threading.RLock()
+
+            def get_lock(self):
+                return self._lock
+
+        gate = SharedGate()
+        coordinator_state = RunControlState("run_shared", shared_admission_flag=gate)
+        worker_state = RunControlState("run_shared", shared_admission_flag=gate)
+        self.assertTrue(worker_state.admit_task("candidate-admitted-before-freeze"))
+        coordinator_state.freeze()
+        self.assertFalse(worker_state.admit_task("candidate-after-freeze"))
+        self.assertFalse(coordinator_state.begin_run("run_shared_again", SharedGate()))
+
+        stopped_gate = SharedGate()
+        coordinator_stop = RunControlState("run_stopped", shared_admission_flag=stopped_gate)
+        worker_stop = RunControlState("run_stopped", shared_admission_flag=stopped_gate)
+        coordinator_stop.stop_all()
+        self.assertFalse(worker_stop.admit_task("candidate-after-stop"))
 
     def test_creation_identity_must_match_before_later_control(self):
         identity = {"pid": 10, "ppid": 5, "creation_time_ns": 123456}
