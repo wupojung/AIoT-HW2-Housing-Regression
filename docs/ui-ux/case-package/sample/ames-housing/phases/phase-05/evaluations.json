@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "status": "UNAVAILABLE",
+  "evaluations": [],
+  "required_figures": [
+    {
+      "figure_id": "FIG-P5-01",
+      "status": "UNAVAILABLE",
+      "asset_ref": null
+    },
+    {
+      "figure_id": "FIG-P5-02",
+      "status": "UNAVAILABLE",
+      "asset_ref": null
+    },
+    {
+      "figure_id": "FIG-P5-03",
+      "status": "UNAVAILABLE",
+      "asset_ref": null
+    }
+  ],
+  "interval": {
+    "figure_id": "FIG-P5-04",
+    "feasibility_status": "UNAVAILABLE",
+    "submission_status": "UNAVAILABLE",
+    "asset_ref": null
+  }
+}
