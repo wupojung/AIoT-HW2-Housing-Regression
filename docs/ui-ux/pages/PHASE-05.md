@@ -89,3 +89,8 @@ Population: [Development OOF]  Evaluation: [UNAVAILABLE]
 - [ ] INT-F memo status separated from INT-S actual interval fulfillment.
 - [ ] Unavailable state usable before any Phase 5 empirical publication.
 - [ ] This draft stays docs-only and is NOT implicitly an Issue #37 execution gate.
+
+
+## Canonical Phase 5 JSON + Static API Contract (Owner-selected direction)
+
+**The normative Phase 5 field list and concrete no-results sample now live separately:** [EVALUATION-API-CONTRACT-v1.md](../case-package/phase-05/EVALUATION-API-CONTRACT-v1.md) · [Sample evaluations.json](../case-package/phase-05/sample/evaluations.json) · [JSON Schema](../case-package/phase-05/evaluation-index.schema.json). The selected Phase 5 UX is **three figure choices with exactly ONE main visualization visible**; FIG-P5-02 Residual vs Predicted has first visual priority. Issue #37 §15.4 remains conceptual, not a publishable fixture. This UI document governs layout; the linked contract governs data fields and static GETs. No new Phase5 computation API is required.
