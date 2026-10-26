@@ -453,7 +453,7 @@ def compute_canonical_fingerprint(rows: Sequence[Mapping[str, str]]) -> str:
 
 
 def compute_pearson_correlations(X: np.ndarray, y: np.ndarray) -> np.ndarray:
-    """Compute Pearson correlation absolute value |r| for each feature against y."""
+    """Compute |r|, retaining NaN for feature columns whose input is nonfinite."""
     n_features = X.shape[1]
     y_mean = np.mean(y)
     y_diff = y - y_mean
@@ -466,7 +466,7 @@ def compute_pearson_correlations(X: np.ndarray, y: np.ndarray) -> np.ndarray:
     for j in range(n_features):
         xj = X[:, j]
         if not np.all(np.isfinite(xj)):
-            corrs[j] = -1.0
+            corrs[j] = np.nan
             continue
         x_mean = np.mean(xj)
         x_diff = xj - x_mean
@@ -498,8 +498,10 @@ def select_features_filter(
 
     def compare_key(item):
         idx, name, score = item
+        if not math.isfinite(score):
+            return (1, 0.0, name)
         bin_score = round(score / eps) * eps
-        return (-bin_score, name)
+        return (0, -bin_score, name)
 
     sorted_items = sorted(items, key=compare_key)
     selected = sorted_items[:k]

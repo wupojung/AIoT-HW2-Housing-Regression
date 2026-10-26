@@ -9,12 +9,18 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = REPO_ROOT / "python" / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from housing_regression.modeling.p4b_runner import P4BConfig, P4BRunner
+from housing_regression.modeling.p4b_runner import (
+    P4BConfig,
+    P4BRunner,
+    compute_pearson_correlations,
+)
 from housing_regression.modeling.p4b_v2 import (
     LineageResolutionError,
     RunControlState,
@@ -113,6 +119,29 @@ class P4BV2ContractTests(unittest.TestCase):
         self.assertEqual(mi_ranked, [1, 2, 0])
         self.assertFalse(mi_evidence["score_invalid"])
         self.assertIsNone(mi_evidence["score_invalid_reason"])
+
+    def test_pearson_nonfinite_scorer_value_stays_invalid_through_ranking(self):
+        X = np.asarray([
+            [1.0, np.nan, 7.0],
+            [2.0, 1.0, 7.0],
+            [3.0, 2.0, 7.0],
+            [4.0, 3.0, 7.0],
+        ])
+        y = np.asarray([1.0, 2.0, 3.0, 4.0])
+        names = ["finite_signal", "nonfinite_z", "constant_a"]
+        scores = np.abs(compute_pearson_correlations(X, y))
+        constant_mask = np.all(X == X[0:1, :], axis=0)
+        ranked, evidence = rank_features_by_score(
+            scores, names, score_kind="pearson", constant_feature_mask=constant_mask,
+        )
+
+        self.assertTrue(np.isfinite(scores[0]))
+        self.assertTrue(np.isnan(scores[1]))
+        self.assertEqual(ranked, [0, 2, 1])
+        self.assertTrue(evidence["score_invalid"])
+        self.assertEqual(evidence["score_invalid_reason"], "NONFINITE+CONSTANT_FEATURE")
+        self.assertEqual(evidence["invalid_score_features"], ["constant_a", "nonfinite_z"])
+        self.assertEqual(evidence["invalid_score_features"][-1], names[ranked[-1]])
 
     def test_public_runner_fails_closed_on_macos_and_synthetic_seam_rejects_real_ids(self):
         runner = P4BRunner(P4BConfig(code_head_commit="synthetic-code-sha", synthetic_test_mode=True))
