@@ -7,6 +7,7 @@ revalidate identity before each control request and pass the observation in.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,8 @@ class ProcessIdentity:
     creation_time_ns: int
     run_id: str
     worker_id: str
+    # Local monotonic seconds when this identity observation was made.
+    observed_monotonic: float | None
 
 
 @dataclass(frozen=True)
@@ -30,8 +33,15 @@ def check_process_identity(
     *,
     authorized_run_id: str,
     authorized_worker_ids: frozenset[str],
+    now_monotonic: float,
+    max_age_seconds: float,
 ) -> IdentityCheck:
-    """Fail closed on missing, reused, stale, or unowned process identity."""
+    """Fail closed unless identity is owned and freshly observed.
+
+    ``observed_monotonic`` and ``now_monotonic`` use the same injected
+    monotonic clock in seconds. The caller must obtain a fresh observation for
+    each control request; this function does not inspect the operating system.
+    """
 
     if expected is None or observed is None:
         return IdentityCheck(False, "IDENTITY_MISSING")
@@ -39,6 +49,24 @@ def check_process_identity(
         return IdentityCheck(False, "EXPECTED_IDENTITY_INVALID")
     if not _valid_identity_fields(observed):
         return IdentityCheck(False, "OBSERVED_IDENTITY_INVALID")
+    if not _finite_number(now_monotonic) or not _finite_number(max_age_seconds) or max_age_seconds <= 0:
+        return IdentityCheck(False, "INVALID_FRESHNESS_POLICY")
+    expected_at = expected.observed_monotonic
+    if expected_at is None:
+        return IdentityCheck(False, "EXPECTED_OBSERVATION_TIME_MISSING")
+    if not _finite_number(expected_at):
+        return IdentityCheck(False, "EXPECTED_OBSERVATION_TIME_INVALID")
+    if expected_at > now_monotonic:
+        return IdentityCheck(False, "EXPECTED_OBSERVATION_TIME_IN_FUTURE")
+    observed_at = observed.observed_monotonic
+    if observed_at is None:
+        return IdentityCheck(False, "OBSERVATION_TIME_MISSING")
+    if not _finite_number(observed_at):
+        return IdentityCheck(False, "OBSERVATION_TIME_INVALID")
+    if observed_at > now_monotonic:
+        return IdentityCheck(False, "OBSERVATION_TIME_IN_FUTURE")
+    if now_monotonic - observed_at > max_age_seconds:
+        return IdentityCheck(False, "OBSERVATION_STALE")
     if not expected.run_id or not expected.worker_id or not observed.run_id or not observed.worker_id:
         return IdentityCheck(False, "IDENTITY_OWNERSHIP_MISSING")
     if expected.run_id != authorized_run_id or expected.worker_id not in authorized_worker_ids:
@@ -66,3 +94,12 @@ def _valid_identity_fields(identity: ProcessIdentity) -> bool:
         and identity.ppid >= 0
         and identity.creation_time_ns > 0
     )
+
+
+def _finite_number(value: object) -> bool:
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value)
+    except (OverflowError, TypeError):
+        return False

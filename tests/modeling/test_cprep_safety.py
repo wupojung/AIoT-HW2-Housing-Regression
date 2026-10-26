@@ -93,30 +93,54 @@ class MonitorTests(unittest.TestCase):
 
 class ProcessIdentityTests(unittest.TestCase):
     def setUp(self):
-        self.expected = ProcessIdentity(42, 7, 1000, "run-a", "worker-1")
+        self.expected = ProcessIdentity(42, 7, 1000, "run-a", "worker-1", 50.0)
         self.authorized = frozenset({"worker-1"})
+        self.now_monotonic = 100.0
 
-    def check(self, observed, expected=None, run_id="run-a", workers=None):
+    def identity(self, *, pid=42, ppid=7, created=1000, run="run-a", worker="worker-1", observed_at=100.0):
+        return ProcessIdentity(pid, ppid, created, run, worker, observed_at)
+
+    def check(self, observed, expected=None, run_id="run-a", workers=None, now=None, max_age=5.0):
         return check_process_identity(
             expected or self.expected,
             observed,
             authorized_run_id=run_id,
             authorized_worker_ids=workers or self.authorized,
+            now_monotonic=self.now_monotonic if now is None else now,
+            max_age_seconds=max_age,
         )
 
-    def test_matching_identity_is_authorized(self):
-        self.assertTrue(self.check(self.expected).authorized)
+    def test_fresh_identity_is_authorized_including_budget_boundary(self):
+        self.assertTrue(self.check(self.identity()).authorized)
+        boundary = self.identity(observed_at=95.0)
+        self.assertTrue(self.check(boundary).authorized)
+
+    def test_stale_missing_invalid_and_clock_skew_observations_are_denied(self):
+        stale = self.identity(observed_at=94.9)
+        self.assertEqual(self.check(stale).reason, "OBSERVATION_STALE")
+        self.assertEqual(self.check(self.identity(observed_at=None)).reason, "OBSERVATION_TIME_MISSING")
+        self.assertEqual(self.check(self.identity(observed_at=float("nan"))).reason, "OBSERVATION_TIME_INVALID")
+        self.assertEqual(self.check(self.identity(observed_at=float("inf"))).reason, "OBSERVATION_TIME_INVALID")
+        self.assertEqual(self.check(self.identity(observed_at="bad")).reason, "OBSERVATION_TIME_INVALID")
+        self.assertEqual(self.check(self.identity(observed_at=100.1)).reason, "OBSERVATION_TIME_IN_FUTURE")
+        self.assertEqual(self.check(self.identity(), now=float("nan")).reason, "INVALID_FRESHNESS_POLICY")
+        self.assertEqual(self.check(self.identity(), max_age=0).reason, "INVALID_FRESHNESS_POLICY")
+        self.assertEqual(
+            self.check(self.identity(), expected=self.identity(observed_at=None)).reason,
+            "EXPECTED_OBSERVATION_TIME_MISSING",
+        )
 
     def test_pid_reuse_mismatch_and_missing_identity_are_denied(self):
-        reused = ProcessIdentity(42, 7, 1001, "run-a", "worker-1")
+        reused = self.identity(created=1001)
         self.assertEqual(self.check(reused).reason, "CREATION_IDENTITY_MISMATCH")
-        wrong_pid = ProcessIdentity(43, 7, 1000, "run-a", "worker-1")
+        wrong_pid = self.identity(pid=43)
         self.assertEqual(self.check(wrong_pid).reason, "PID_MISMATCH")
         self.assertEqual(self.check(None).reason, "IDENTITY_MISSING")
 
     def test_unowned_run_or_worker_is_denied(self):
-        self.assertEqual(self.check(self.expected, run_id="run-b").reason, "TARGET_NOT_AUTHORIZED")
-        stranger = ProcessIdentity(42, 7, 1000, "run-a", "worker-2")
+        fresh = self.identity()
+        self.assertEqual(self.check(fresh, run_id="run-b").reason, "TARGET_NOT_AUTHORIZED")
+        stranger = self.identity(worker="worker-2")
         self.assertEqual(self.check(stranger).reason, "OBSERVED_OWNER_NOT_AUTHORIZED")
 
 
@@ -153,19 +177,19 @@ class BudgetTests(unittest.TestCase):
             max_snapshot_age_seconds=5.0,
             max_workers=4,
         )
-        self.good = MonitorAssessment(True, None, 1.0, 100, 20.0)
+        self.good = MonitorAssessment(True, None, 1.0, 100, 20.0, PressureLevel.NORMAL)
 
     def test_budget_warning_stop_timeout_and_unknown_monitor(self):
         self.assertEqual(
             evaluate_budget(self.good, state=ControlState.RUNNING, elapsed_seconds=1.0, policy=self.policy),
             BudgetDecision.ADMIT,
         )
-        warning = MonitorAssessment(True, None, 1.0, 200, 20.0)
+        warning = MonitorAssessment(True, None, 1.0, 200, 20.0, PressureLevel.NORMAL)
         self.assertEqual(
             evaluate_budget(warning, state=ControlState.RUNNING, elapsed_seconds=1.0, policy=self.policy),
             BudgetDecision.FREEZE,
         )
-        stopped = MonitorAssessment(True, None, 1.0, 300, 20.0)
+        stopped = MonitorAssessment(True, None, 1.0, 300, 20.0, PressureLevel.NORMAL)
         self.assertEqual(
             evaluate_budget(stopped, state=ControlState.RUNNING, elapsed_seconds=1.0, policy=self.policy),
             BudgetDecision.STOP_REQUEST,
@@ -174,7 +198,7 @@ class BudgetTests(unittest.TestCase):
             evaluate_budget(self.good, state=ControlState.RUNNING, elapsed_seconds=100.0, policy=self.policy),
             BudgetDecision.STOP_REQUEST,
         )
-        unknown = MonitorAssessment(False, "LOST", None, None, None)
+        unknown = MonitorAssessment(False, "LOST", None, None, None, None)
         self.assertEqual(
             evaluate_budget(unknown, state=ControlState.RUNNING, elapsed_seconds=1.0, policy=self.policy),
             BudgetDecision.DENY,
@@ -213,6 +237,104 @@ class BudgetTests(unittest.TestCase):
             policy=self.policy,
         )
         self.assertFalse(frozen.allowed)
+
+    def test_pressure_reaches_budget_and_blocks_expansion_conservatively(self):
+        for pressure, expected_decision in (
+            (PressureLevel.WARNING, BudgetDecision.FREEZE),
+            (PressureLevel.CRITICAL, BudgetDecision.FREEZE),
+        ):
+            snapshot = MonitorSnapshot(
+                10.0,
+                10.0,
+                1.0,
+                100,
+                1000,
+                0,
+                pressure,
+                (WorkerResources("w1", 1.0, 10, 10),),
+            )
+            assessment = assess_snapshot(snapshot, now_monotonic=10.0, max_age_seconds=2.0)
+            self.assertTrue(assessment.valid)
+            self.assertEqual(assessment.pressure, pressure)
+            self.assertEqual(
+                evaluate_budget(
+                    assessment,
+                    state=ControlState.RUNNING,
+                    elapsed_seconds=1.0,
+                    policy=self.policy,
+                ),
+                expected_decision,
+            )
+            admission = decide_admission(
+                current_workers=1,
+                requested_workers=2,
+                state=ControlState.RUNNING,
+                assessment=assessment,
+                elapsed_seconds=1.0,
+                policy=self.policy,
+            )
+            self.assertFalse(admission.allowed)
+            self.assertEqual(admission.reason, "FREEZE")
+
+        for pressure in (None, PressureLevel.UNKNOWN, "critical"):
+            assessment = MonitorAssessment(True, None, 1.0, 10, 1.0, pressure)
+            self.assertEqual(
+                evaluate_budget(
+                    assessment,
+                    state=ControlState.RUNNING,
+                    elapsed_seconds=1.0,
+                    policy=self.policy,
+                ),
+                BudgetDecision.DENY,
+            )
+
+    def test_pressure_thresholds_are_inclusive_and_missing_metrics_deny(self):
+        at_warning = MonitorAssessment(True, None, 1.0, 200, 1.0, PressureLevel.NORMAL)
+        at_stop = MonitorAssessment(True, None, 1.0, 300, 1.0, PressureLevel.NORMAL)
+        self.assertEqual(
+            evaluate_budget(at_warning, state=ControlState.RUNNING, elapsed_seconds=1.0, policy=self.policy),
+            BudgetDecision.FREEZE,
+        )
+        self.assertEqual(
+            evaluate_budget(at_stop, state=ControlState.RUNNING, elapsed_seconds=1.0, policy=self.policy),
+            BudgetDecision.STOP_REQUEST,
+        )
+
+        stale = assess_snapshot(
+            MonitorSnapshot(1.0, 1.0, 10.0, 10, 100, 0, PressureLevel.NORMAL),
+            now_monotonic=10.0,
+            max_age_seconds=2.0,
+        )
+        missing = assess_snapshot(None, now_monotonic=10.0, max_age_seconds=2.0)
+        invalid_pressure = assess_snapshot(
+            MonitorSnapshot(10.0, 10.0, 10.0, 10, 100, 0, "not-a-level"),
+            now_monotonic=10.0,
+            max_age_seconds=2.0,
+        )
+        invalid_units = assess_snapshot(
+            MonitorSnapshot(
+                10.0,
+                10.0,
+                10.0,
+                10,
+                100,
+                0,
+                PressureLevel.NORMAL,
+                (WorkerResources("w1", 1.0, 1.5, 2),),
+            ),
+            now_monotonic=10.0,
+            max_age_seconds=2.0,
+        )
+        for assessment in (stale, missing, invalid_pressure, invalid_units):
+            self.assertEqual(
+                evaluate_budget(
+                    assessment,
+                    state=ControlState.RUNNING,
+                    elapsed_seconds=1.0,
+                    policy=self.policy,
+                ),
+                BudgetDecision.DENY,
+            )
 
 
 if __name__ == "__main__":

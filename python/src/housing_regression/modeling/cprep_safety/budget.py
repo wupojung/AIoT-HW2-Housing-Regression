@@ -7,7 +7,7 @@ from enum import Enum
 import math
 
 from .control import ControlState, admission_is_open
-from .monitor import MonitorAssessment
+from .monitor import MonitorAssessment, PressureLevel
 
 
 @dataclass(frozen=True)
@@ -101,6 +101,12 @@ def evaluate_budget(
         or assessment.age_seconds > policy.max_snapshot_age_seconds
     ):
         return BudgetDecision.DENY
+    if not isinstance(assessment.pressure, PressureLevel) or assessment.pressure is PressureLevel.UNKNOWN:
+        return BudgetDecision.DENY
+    # A WARNING freezes worker admission; CRITICAL does the same even below
+    # the RSS thresholds. Neither decision claims that a running worker stopped.
+    if assessment.pressure in (PressureLevel.WARNING, PressureLevel.CRITICAL):
+        return BudgetDecision.FREEZE
     if elapsed_seconds >= policy.max_runtime_seconds:
         return BudgetDecision.STOP_REQUEST
     if assessment.aggregate_worker_rss_bytes >= policy.stop_aggregate_rss_bytes:

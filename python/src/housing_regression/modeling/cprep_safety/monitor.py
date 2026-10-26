@@ -49,6 +49,7 @@ class MonitorAssessment:
     age_seconds: float | None
     aggregate_worker_rss_bytes: int | None
     aggregate_worker_cpu_percent: float | None
+    pressure: PressureLevel | None = None
 
 
 def _valid_percent(value: float | None) -> bool:
@@ -65,7 +66,12 @@ def _valid_nonnegative_int(value: int | None) -> bool:
 
 
 def _finite_number(value: object) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value)
+    except (OverflowError, TypeError):
+        return False
 
 
 def assess_snapshot(
@@ -131,4 +137,4 @@ def assess_snapshot(
         worker_rss += worker.rss_bytes
         worker_cpu += worker.cpu_percent
 
-    return MonitorAssessment(True, None, age, worker_rss, worker_cpu)
+    return MonitorAssessment(True, None, age, worker_rss, worker_cpu, snapshot.pressure)
