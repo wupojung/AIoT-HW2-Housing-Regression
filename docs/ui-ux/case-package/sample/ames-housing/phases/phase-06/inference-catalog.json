@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "status": "UNAVAILABLE",
+  "models": [],
+  "readiness": {
+    "predict_enabled": false,
+    "reason_code": "NO_APPROVED_MODEL",
+    "message": "此模型尚未準備好；請返回 Phase 4 或選擇已核准模型。"
+  }
+}
