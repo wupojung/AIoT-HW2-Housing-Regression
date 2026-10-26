@@ -1,4 +1,4 @@
-# RegScope — UI/UX Design Specification v0.1
+# RegScope — UI/UX Design Specification v0.2
 
 Status: Owner-confirmed concept, **P6-A docs-only / no engineering authorization**.
 Date: 2026-10-26. Tracking: https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/34
@@ -167,3 +167,125 @@ Second case identity, exact available methods/Top-K experiments, chart payloads,
 
 ## Gate
 Issue #34 currently authorizes planning only. This documentation does NOT authorize backend/frontend changes, Preview, production, OS/worker experiments, sealed holdout access, Merge or Deploy.
+
+
+## P6-A Nex PARTIAL review remediation (design contract v0.2)
+
+Review source: [Nex comment 6412376101](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35#issuecomment-6412376101).
+Authority tags: **OWNER CONFIRMED** = previously approved concept; **DESIGN PROPOSAL** = testable UI recommendation, pending independent review; **ENGINEERING TBD** = capability or value requiring new authorization and evidence. No statement here certifies availability of a run.
+
+### Authority and route matrix
+
+| Item | Classification | Scope |
+|---|---|---|
+| CRISP-DM-first Home; numbered single-row desktop steps; one selected content panel | OWNER CONFIRMED | Must preserve |
+| Global selector for documented research cases; separate secondary Dashboard | OWNER CONFIRMED | Must preserve |
+| Phase 4 progressive disclosure, feature methods and evidence-backed Top K / performance curve | OWNER CONFIRMED | Must preserve |
+| Phase 6 reviewed public-safe links/downloads | OWNER CONFIRMED | Must preserve |
+| Conditional control reset rules, status labels, fallback displays, keyboard/scroll proposal | DESIGN PROPOSAL | Nex acceptance review |
+| Second research case identity and completion, supported method/K values, derived chart points | ENGINEERING TBD | Verify against evidence; don't invent |
+| Arbitrary CSV execution, secure URL fetching, limits, backend, interval construction | ENGINEERING TBD | Only design the guardrails; no implementation |
+
+### BLOCKER 1 — Phase 4 interaction state machine
+
+**DESIGN PROPOSAL** — One active question at a time. Use precomputed reviewed experiment artifacts only.
+
+| Research question | Visible controls | Option source | Change rule | Main display |
+|---|---|---|---|---|
+| Methods (initial candidate) | method comparison selector if several comparable methods; protocol/track read-only | manifest of evaluated methods within same case + protocol + track | Changing question keeps case, clears incompatible method/K, selects first explicitly available comparable view; never silently picks a winner | method descriptions/comparable experiment table, one graph or table |
+| Selected Features | method; K only where method supports **measured exact K**; protocol/track read-only | valid case+run+method+track+CV protocol entries with selected-feature artifact | Method changes reset K if unsupported; otherwise retain K only if exact measured tuple exists. Changing case resets question/method/K and unloads old output | selected raw/encoded feature mapping and recorded list for exact tuple |
+| K vs CV | method; metric selector among stored CV metrics; encoded K as x-axis; protocol/track read-only | distinct observed K and CV folds in **one comparable protocol** | K may highlight existing point but does not create a point; method/protocol/case changes clear highlight/series until matching data exists | sparse observed-point chart; explicit missing K gaps and optional error bars |
+
+The three questions are **tabs/choices**, not three simultaneous large plots. A display header must show selected case, protocol version, fold count, track and whether evidence is verified. Default question is a **DESIGN PROPOSAL**, not Owner-declared.
+
+| Situation | UX response | Allowed action |
+|---|---|---|
+| Method supports no exact K (e.g., Lasso natural nonzero subset) | hide/disable K with “K 不適用（方法不保證固定 K）”; show actual nonzero count with raw vs encoded units | view native method diagnostics if verified; never synthesize Top K |
+| Requested method+K not run | option disabled or absent, explain “尚無此組合實測” | no metrics/selected list |
+| Run failed | ERROR with failure type, run ID and evidence link; cannot rank it | return to valid combination |
+| Requested metric lacks point / fold missing | point omitted, table row “UNAVAILABLE — missing result”; line **breaks across gaps** | show only observed points, do not interpolate or join across missing K |
+| Case/protocol changed | invalidate previous charts and tuple-based selections; show LOADING then EMPTY/VERIFIED as applicable | prevent stale metrics |
+| Different protocol, folds, track or target transform | “不可直接比較” and separate chart/table facet | no merged ranking, no common winner |
+
+**Curve contract — DESIGN PROPOSAL:** X = **number of encoded model-input columns selected (encoded K)** for the selected→OLS track, **not original raw feature count**. Display “encoded K” in axis, tooltip and table; raw-source feature count is a separate field/tooltip derived from mapping, never treated as equivalent. Y = one stored out-of-fold/CV metric (default CV RMSE, **lower is better**, in target units, transform/back-transform labeled). Optionally R² (**higher is better**) only if same compatible CV protocol produces it. Every plotted sample must identify method, experimental run ID, fold count, seed, protocol ID/version, track, mean and SD if valid; when SD unavailable show “SD unavailable”, not a fabricated band. Display fold-level count and uncertainty meaning; no generic CI shading. Only measured K points; noncontiguous K must not imply measured intermediate values. Evidence/provenance linked near chart and each table row.
+
+**Track separation:** primary **selected feature set → OLS** comparison series; any method's **native estimator diagnostic** series is a distinct view/track (e.g., native Lasso coefficients), never overlaid as interchangeable OLS outcomes. Baseline OLS uses a separate explicitly labeled reference line/table entry only **if same case/target preprocessing/split/folds/metric/protocol**; historic five-fold baseline vs later three-fold research must be separated with a “non-comparable protocol” explanation. Never infer best-performing method from incompatible runs. No final holdout values without Phase 5 approval.
+
+### BLOCKER 2 — Dashboard: source modes, state and security proposal
+
+**OWNER CONFIRMED:** Dashboard is separate from CRISP-DM Home. **DESIGN PROPOSAL:** mutually exclusive source modes; fixed study evidence is read-only and cannot be modified by uploaded data.
+
+~~~text
++-----------------------------------------------------------------------+
+| DASHBOARD                                                              |
+| Mode: [ Verified Research ] [ Custom Dataset (experimental) ]         |
+|                                                                       |
+| VERIFIED RESEARCH                                                     |
+| Case [ documented case v ] | Run [reviewed run v] | [View evidence]    |
+| [Dataset/feature/metric panels + provenance + fixed verified status]  |
+|                                                                       |
+| CUSTOM DATASET (experimental; capability TBD)                         |
+| Source: ( ) Local CSV  ( ) Direct CSV URL [not Kaggle webpage]        |
+| [Choose file / paste URL]   [Load]  [LOADING / ERROR / EMPTY]          |
+| [Rows/columns/type preview] Target [v] Features [multi-select]        |
+| [Validation report]  [Validate]  [Run — disabled until supported]     |
+| [RUNNING / Cancel if supported / UNSUPPORTED]                          |
+| [Session-only output; never “Verified Research”]                     |
++-----------------------------------------------------------------------+
+~~~
+
+| Event/state | Required UI behavior (DESIGN PROPOSAL) |
+|---|---|
+| Enter verified research | load only reviewed manifests; original case/run metadata read-only; never reuse custom-run results |
+| Enter custom source | clear verified metric/result cards, show experimental disclaimer, source picker and requirements |
+| Local CSV selected | validate file extension **and contents**, parseability, UTF-8/encoding handling policy, size/row/column budget (specific limits ENGINEERING TBD), headers/duplicate columns, blank or malformed rows and nonfinite values; show actionable errors |
+| Direct URL submitted | accept only reviewed allowed HTTP(S) scheme plus URL security rules; reject private/loopback/metadata hosts, credentials, redirects to disallowed locations and untrusted content; do not promise browser CORS or network fetch works. Exact allowlist, redirects and proxy design ENGINEERING TBD |
+| Preview loaded | show source provenance and preview only, not fitted model. Target must be numeric/convertible continuous; Features exclude target, have nonempty supported columns, and require an explicit missing/categorical encoding strategy; check leakage risk, sufficient rows versus encoded columns and invalid/missing target |
+| Validate | separate **loaded** from **validated**. On invalid schema or unsupported preprocessing: ERROR/UNSUPPORTED with per-field reasons and repair instructions. No Run |
+| Run | enabled **only if later engineered, authorized, secure and supported**; show RUNNING/progress if available, cancel request only if backend supports it, and explicit cancellation/failure result. Until then, button disabled with ENGINEERING TBD |
+| Switch problem/case/file/URL/target/features/mode | immediately invalidate prior validation token, derived previews, cached model, selected-feature graph and metrics (no stale verified output); cancel in-flight task when supported, else mark stale and ignore late result |
+| Network/CORS/memory/unsupported size | ERROR or UNAVAILABLE (not success); safe, non-sensitive reason, retry after correction only |
+| Custom result shown | label “exploratory/unverified”, scope and exact current input/session; never record it as a completed CRISP-DM case or public certified run |
+
+**ENGINEERING TBD:** whether custom data *can* run regression at all; accepted file types beyond CSV; upload byte/row/feature thresholds; server upload/retention, SSRF mitigation and cancellation backend. UX documents required safety checks without authorizing implementation.
+
+### BLOCKER 3 — Minimal shared data contract (design only)
+
+**DESIGN PROPOSAL** — manifest + per-run/visual/asset references. No real data values are asserted. Keys below are illustrative field names, not a Runner modification request.
+
+| Entity | Minimum fields | Rule |
+|---|---|---|
+| Case | case_id, source_url, version, license, target, status, evidence_url | case identity and rights; source URL not arbitrary download URL |
+| Run | run_id, digest/SHA, case_id, config_id, config_version, seed, split_id, protocol_id, fold_count, track, method_id, status, evidence_url | immutable lookup for experiment; distinguish selected_to_ols / native_diagnostic / holdout |
+| Feature map | run_id, encoded_feature_id, raw_source_feature_id(s), encoded_selected_k, raw_distinct_count, feature_mapping_version | counts cannot be interchanged; trace back to original columns |
+| Metric | run_id, metric_name, value, units, direction (min/max), fold_values if available, mean, sd if available, availability, evaluation_scope | unavailable fields are null/labelled, not zero; fold count and comparability explicit |
+| Visual | visual_id, case_id, run_id(s), artifact_digest, chart_type, axis_definitions, interval_type + provenance if any, status, evidence_url | chart shows only points in its compatible experimental scope |
+| Download | asset_id, sha, source_url, license, publication_review, sensitivity_review, mime/type, status, evidence_url | links enabled only for reviewed public-safe files |
+
+Illustrative **state** is independent of method/result availability. Every component including step content, card, metric, chart, table and download must use the same state semantics:
+
+| State | UX display / behavior | Evidence / watermark |
+|---|---|---|
+| LOADING | neutral skeleton/indicator; no old run visible; disable incompatible actions | run/source context shown, never fake numbers |
+| EMPTY | no relevant records or zero rows; explain how to select a populated case | “No evidence/data” |
+| ERROR | safe reason, remediation, retry if meaningful; no stale content | error type and run ID where safe, evidence link if any |
+| PLANNED | specified concept not implemented or not yet studied; control disabled | “PLANNED — not empirical” |
+| MOCK | sample illustration only; never ranked/merged with research | persistent obvious **MOCK / 示意資料** watermark on every affected graph/table/metric/export; accessible text, not color alone |
+| UNAVAILABLE | source exists but required result, approval, compatible protocol or license is absent | “UNAVAILABLE” plus reason and nearest trustworthy source |
+| VERIFIED | reviewed evidence exactly matches selected case/run/protocol and approved publication scope | visible VERIFIED label + source URL, run ID/digest and method; verified does not itself imply holdout approval |
+
+**Component rules:** every phase panel has status and citation near its content; chart axes/legend/caption show units and provenance; table rows that are incomplete use cell-level UNAVAILABLE; metric cards state evaluation scope; downloads render disabled with reason unless status VERIFIED **and** publication_review/sensitivity_review/license allow sharing. A MOCK visualization must carry in-plot watermark and adjacent text; downloads of MOCK are either disabled or visibly marked non-empirical. Source links are safe/public links only.
+
+**Cross-case comparison:** no shared leaderboard without compatible target, preprocessing, split, metric, CV protocol and track. Dashboard verified read-only runs can be compared only when this contract permits; custom runs cannot be promoted to VERIFIED via UI actions.
+
+### Non-blocking mobile/accessibility proposal and review gate
+
+**DESIGN PROPOSAL:** one row of six steps at desktop, and **horizontal scroll with visible overflow cue** for narrow screens (not six steps wrapped into two rows); breakpoint in px is **ENGINEERING TBD** after responsive inspection. Use native tablist/tab/tabpanel semantics *or* accessible equivalent navigation links, with numbered readable names, aria-selected/current, keyboard Left/Right to switch steps, Home/End and visible focus; clicking Previous/Next retains a meaningful focus position. Contrast meets WCAG AA target (4.5:1 normal text, 3:1 meaningful UI), no meaning by color alone. Every chart has a textual takeaway and **accessible alternative data table**; all error/watermark labels are screen-reader-readable. Touch target proposal >= 44×44 CSS px and no horizontal overflow of the whole page. Exact breakpoints, role choice and mobile behavior require independent QA before engineering.
+
+### Review checklist for Nex
+
+- [ ] Three Phase 4 research questions have state/selector/reset rules and unsupported cases.
+- [ ] Curve explicitly uses encoded K and CV mean/SD or documented absence, with fold/protocol/track and non-comparability.
+- [ ] Dashboard has isolated research vs custom source modes and validation/run/cancel/stale-result states.
+- [ ] Minimal manifest/run/metrics/visual/download contract supports all seven statuses with visible source/Mock watermark.
+- [ ] Mobile and accessibility rules are labeled as proposals; Owner/engineering boundaries clear.
