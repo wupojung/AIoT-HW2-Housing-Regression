@@ -1,4 +1,4 @@
-# RegScope P4-B｜五種特徵選取與三折交叉驗證研究協定 v2.0（R2 候選凍結）
+# RegScope P4-B｜五種特徵選取與三折交叉驗證研究協定 v2.0（R3 Nex Delta 修訂）
 
 > 狀態：**文件候選規格，待獨立 QA 與 Owner Merge 授權後生效**。本文件不代表程式已完成、資源限制已實測、或可讀取 Holdout。依據 [Recovery #28 v4](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/28)、Epic #4、#21–#23。舊 5×3 Nested CV／Forward SFS 規格由 Git 歷史保存，**此版於合併後才正式取代其未來執行契約**。
 
@@ -13,7 +13,7 @@
 
 1. 以 **同一份已核實的 1,168 列 Development 排序**產生 `KFold(n_splits=3,shuffle=True,random_state=42)`；固定儲存 fold membership digest、實際各折行數、資料指紋、Git SHA 與 Python/sklearn/numpy 版本。行數預期為 390/389/389；實作必須從確定的開發資料順序重算並驗證，不重用舊 5-fold digest。
 2. 每個 `method × config × fold` 均從**原始 training rows**建新的 Phase 3 前處理器，僅使用該 fold train 做 imputation、encoding、scaling、selection、estimator fit；validation 僅 `transform/predict/score`。One-hot vocab 可隨 fold 改變。**嚴禁事先於整份 Development fit encoder/scaler/selectKBest 再 CV。**
-3. 每個預先登記的候選配置在相同三折評分。以 `mean(RMSE)` 越小越好為主要選擇目標；差異 ≤ `1e-8` 時依「選中 encoded 數較少→候選順序→方法順序」決勝。附 mean/sample SD RMSE、MAE、R²；每折 RMSE 先分別計算，不能先合併全部 OOF 再誤稱 mean-fold RMSE。
+3. 每個預先登記的候選配置在相同三折評分。**Pearson／MI／Ridge RFE 僅有 selected→OLS 主軌；Lasso／ElasticNet 的 primary track 明訂為 selected→OLS**，以其三折 `mean(RMSE)` 選定各方法之 alpha／l1_ratio，然後才比較五種方法的共同 OLS 主軌。**Native Lasso／ElasticNet 僅是 diagnostic secondary track：套用 primary 選中的同一組超參數，在同一三折分開報 native 預測分數，不能用 native 分數另選參數或取代 primary winner。** 以主軌 `mean(RMSE)` 越小越好為主要選擇目標；差異 ≤ `1e-8` 時依「選中 encoded 數較少→候選順序→方法順序」決勝。附 mean/sample SD RMSE、MAE、R²；每折 RMSE 先分別計算，不能先合併全部 OOF 再誤稱 mean-fold RMSE。
 4. **不使用在整份 Development 預先 fit preprocessing 後的 `LassoCV` / `ElasticNetCV` 內建 CV。** 使用對每折 training rows 重建完整 pipeline 的明確有限 grid 候選。沒有第二層 inner-CV；最佳三折分數受選擇樂觀偏差影響，報告必須註明 `Development CV selection score; not independent generalization`。
 5. 各方法設定凍結於 Development 評分前；不得看結果之後改 alpha/grid/K/tie 再假裝同一輪預先註冊。真正需要改規格則開**新 Run ID 與明示 amendment**。最後依已鎖定的 method/config 在**全 1,168 Development** 重新 fit，保留版本與選中欄位。僅在 Phase 5 Owner 另授權後開 **292 Holdout 一次**，絕不把 Holdout 作調參回饋。
 6. **同折 OLS baseline**：在完全相同 3-fold、training-only Phase 3 preprocessing 上，用所有該 fold encoded 欄位及截距進行 `numpy.linalg.lstsq`（與 P4-A 一致的 SVD 最小範數策略），記錄秩、nullity、condition、tolerance。其三折輸出是**新的**研究數據，不得先填寫歷史 P4-A 數字。
@@ -21,6 +21,26 @@
 ## 3. 特徵單位、五方法及固定有界候選
 
 **選取單位決議（本文件提議採用）：** 一個 feature = 一個**該折轉換後 encoded column**。K grid = **[2,3,5,10,20]** 僅用於 Pearson / MI / Ridge RFE。Lasso/ElasticNet 以非零 encoded 係數數為自然選取數，**不強制 K**。每折記錄 `encoded_name → raw_source_column` 及不同的 raw-variable 數。例如原始類別 `Neighborhood` 分成八個 one-hot，是**1 raw field / 8 encoded fields**，不能以編碼後數目宣稱符合教師原始特徵規則。若某折有效 encoded 數少於 K，該候選標 `INVALID`，不可默默縮小 K。
+
+### 原始來源與衍生指標的正式歸屬（Nex Delta #2）
+
+選中每個 encoded 欄位都必須記錄 `encoding_type`、`is_derived`、`raw_source_columns: list[str]`（可多個）、`provenance_status`。**不得僅相信現有 `feature_manifest.source_column` 字串**：目前 Phase 3 對 `Has*` 使用 `ind.replace("Has","")`，其中 `HasGarage→Garage` 不是原始 CSV 欄名。以 `constants.py` 的 79 原始輸入欄位白名單驗證每個來源；未知、無法證實或指向非輸入欄者標 `UNRESOLVED`，**不得計入 raw count 或將之宣稱為新的原始特徵**，並阻擋發布完整的原始特徵來源統計。
+
+**由 Phase 3 `pipeline.py` 的衍生公式確認的結構指標對應（文件規格，不修改來源程式）：**
+
+| 衍生 encoded 欄位 | 實際原始輸入來源 |
+|---|---|
+| `HasGarage` | `GarageType` |
+| `HasBasement` | `BsmtQual`, `TotalBsmtSF` |
+| `HasFireplace` | `Fireplaces`, `FireplaceQu` |
+| `HasPool` | `PoolArea`, `PoolQC` |
+| `HasFence` | `Fence` |
+| `HasAlley` | `Alley` |
+| `HasMiscFeature` | `MiscFeature` |
+
+`MasVnrType_is_missing`／`MasVnrArea_is_missing` 分別源自 `MasVnrType`／`MasVnrArea`；其他 ordinary one-hot、numeric、ordinal 的來源應從 Phase 3 manifest 對照真實欄位驗證。**raw_count = 所有已選 encoded 欄位之 `raw_source_columns` 的唯一聯集數量**，多輸入衍生指標可能貢獻 2 個已存在的 raw input，衍生本身貢獻 **0 個新的 raw input**。若報告「原始特徵選取頻率」，多輸入欄位只表示*參與衍生計算*，不得冒稱模型直接獨立選了所有上游欄位；須另外列 `direct_raw_sources` 與 `derived_dependencies`。老師「≥14」的 eligible 候選數仍只以原始 79 欄為基礎。
+
+**R4 合成契約必測：** ① `HasGarage` 必須歸屬 `GarageType` 而非 `Garage`；② `HasBasement` 必須對應兩個真實來源且 unique union 不重複計數；③ 來源含未知標籤時 fail-closed、不得多算；④ 每折 one-hot 所屬 raw 欄正確；⑤ 開發集資料／CV 及選取輸出不可包含 `Id`／`SalePrice`。所有 synthetic tests **NOT RUN**，需取得後續工程授權才測試。
 
 **共用前處理：** 沿用 Phase 3；針對需按係數大小比較的 Lasso/ElasticNet/Ridge RFE，對該折 training transformation **所有非二元連續／序位 encoded 欄**再用 `StandardScaler` fit/transform，one-hot indicators 保持 0/1，相關的懲罰與重要性差異作為明示限制。Pearson/MI 基於該折 training encoded 資料評分。有限/NaN 常數欄不能無聲略過，必須記 `score_invalid`，確保每一候選可以安全選 K。
 
@@ -32,13 +52,13 @@
 | **ElasticNet** | `ElasticNet(max_iter=10000,tol=1e-4,selection='cyclic')` | `alpha` 同上；`l1_ratio=[0.2,0.5,0.8]`；非零判定同上；收斂警告、全部零不得算選特徵 OLS 有效 | 選中→OLS 和 native ElasticNet |
 | **Ridge RFE** | training-scaled `Ridge(alpha=1.0)` 作 `RFE` base estimator，按 `abs(coef_)` 排除，`step=0.2` | K 同上；同分時用穩定輸入欄名排序建立的欄序，scikit-learn RFE 對完全 ties 的行為需以 synthetic 固定驗證 | 選中→OLS |
 
-**模型細節：** OLS 用訓練設計矩陣與 intercept 求解，可容忍 rank deficiency 但必須紀錄條件數、nullity；選取後 OLS 與 native penalty score 絕不混成單一排名。若 selection 出現零有效特徵、nonfinite y/pred、convergence warning、無足夠特徵或 library API 不相容，該 task 記 `FAILED/INVALID` 並阻擋依其結果選 Winner；不應在後續折無聲替換演算法。完整所有方法至少列 selection-only 統一 OLS 比較，native Lasso/ElasticNet 另列；報告 one-hot 相依、相關性不等於因果、penalty scaling 與 non-nested selection optimism。
+**雙軌有效性（Nex Delta #1）：** Lasso／ElasticNet 各候選的 `selected→OLS` 是唯一 tuning 與五方法 winner selection 依據。若該候選在任何折出現 `EMPTY_SELECTION`、未收斂、nonfinite、OLS 失敗或其它 invalid，該候選 **INVALID、不可參與主軌選優**；但仍保留 native 的可計算診斷結果並明示 `secondary_only`，不得以 native 成績救回 invalid primary 配置。若某方法所有候選皆 INVALID，該方法為 `METHOD_BLOCKED`，不得默默借用其它軌／其它方法補勝者；必須以新明示 amendment 與 Run ID 重新評審。本次所有方法的最終報告將 `selection_primary_cv_rmse` 與 `native_diagnostic_cv_rmse` 分列，native track 不另設獨立 winner。\n\n**模型細節：** OLS 用訓練設計矩陣與 intercept 求解，可容忍 rank deficiency 但必須紀錄條件數、nullity；選取後 OLS 與 native penalty score 絕不混成單一排名。若 selection 出現零有效特徵、nonfinite y/pred、convergence warning、無足夠特徵或 library API 不相容，該 task 記 `FAILED/INVALID` 並阻擋依其結果選 Winner；不應在後續折無聲替換演算法。完整所有方法至少列 selection-only 統一 OLS 比較，native Lasso/ElasticNet 另列；報告 one-hot 相依、相關性不等於因果、penalty scaling 與 non-nested selection optimism。
 
 **候選成本上界（概念最小 fit 次數，不含 RFE 內部消去 fit）：** Pearson 5×3=15；MI 15；Lasso 4×3=12（+選後 OLS）；ElasticNet 4×3×3=36（+選後 OLS）；Ridge RFE 5×3=15 **RFE 呼叫但每次含多次 Ridge fits**；baseline 3。若算力不符預算，先 STOP 並回報有界結果；不得換回 SFS 或擅自打開 Holdout。
 
 ## 4. 結果、品質驗收與版本記錄
 
-最小 schema：`run_id,task_id,method,track,fold,seed,git_sha,package_versions,data_digest,fold_digest,config_hash,encoded_count,raw_count,selected_encoded_names,selected_raw_sources,rank_or_score,coef_or_importance,rmse,mae,r2,ols_rank,ols_nullity,duration_seconds,fit_count,warning,status`。全量保留的中間預測和實體 CSV 僅存 ignored 私有工作區；只將經隱私審查的 aggregate tables/charts 送上 GitHub。
+最小 schema：`run_id,task_id,method,track,fold,seed,git_sha,package_versions,data_digest,fold_digest,config_hash,encoded_count,raw_count,selected_encoded_names,selected_raw_sources,raw_source_columns,encoding_type,is_derived,provenance_status,derived_dependencies,primary_track,primary_valid,rank_or_score,coef_or_importance,rmse,mae,r2,ols_rank,ols_nullity,duration_seconds,fit_count,warning,status`。全量保留的中間預測和實體 CSV 僅存 ignored 私有工作區；只將經隱私審查的 aggregate tables/charts 送上 GitHub。
 
 - **重現性**：K/alpha/grid/seed/版本/digest 完整；按方法候選折次保存結果；輸出 unique `task_id`，以 temp→完成檔原子寫入；僅 `COMPLETED` 且 digest 匹配者可進 aggregate。
 - **特徵穩定性**：同方法及選中 K/config，依 encoded names 與 raw source 分別計算被選取折數 0–3、比例與每折名單；各折 schema 不同須說明。
