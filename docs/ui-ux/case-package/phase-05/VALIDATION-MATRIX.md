@@ -6,8 +6,8 @@
 
 | Check | Intended result | Enforcer | Current evidence |
 |---|---|---|---|
-| Empty staging sample `evaluations.json` | PASS | JSON Schema 2020-12 + FormatChecker | JSON parse and basic shape only; **FULL SCHEMA RUNTIME NOT RUN** |
-| Nonempty synthetic `evaluations.nonempty.mock.json` | PASS | JSON Schema 2020-12 + FormatChecker | Created; **FULL SCHEMA RUNTIME NOT RUN** |
+| Empty staging sample `evaluations.json` | PASS | JSON Schema 2020-12 + FormatChecker | JSON parse and basic shape only; **CI execution pending; see test_schema.py and workflow** |
+| Nonempty synthetic `evaluations.nonempty.mock.json` | PASS | JSON Schema 2020-12 + FormatChecker | Created; **CI execution pending; see test_schema.py and workflow** |
 | VERIFIED MAE/RMSE/R² has null `value` | REJECT | JSON Schema | conditional enforced |
 | Negative VERIFIED MAE/RMSE | REJECT | JSON Schema | minimum 0 |
 | UNAVAILABLE metric has nonnull value | REJECT | JSON Schema | conditional enforced |
@@ -60,3 +60,10 @@ PY
 ## F01–F12 disposition
 
 F01 ACCEPT docs; F02 ACCEPT approach A docs; F03 ACCEPT synthetic data file; F04 DEFER negative fixtures beyond matrix until validator implementation; F05 DEFER actual schema test evidence (NOT_RUN); F06 DEFER bundle validator (NOT_IMPLEMENTED); F07 ACCEPT figure token schema; F08 ACCEPT authority decision table; F09 ACCEPT publication rules but runtime gate NOT_IMPLEMENTED; F10 ACCEPT scope/SD/INT gates; F11 ACCEPT deterministic target mapping; F12 ACCEPT canonical entry cleanup, follow-up source audit needed.
+
+
+## R3 schema execution handoff (2026-10-27)
+
+Executable [test_schema.py](./test_schema.py) was committed with synthetic positive branch (nonnegative MAE/RMSE and negative R² with evidence markers) and **10 runtime negative mutations**. It uses [GitHub Actions workflow](../../../../.github/workflows/phase5-schema-contract.yml) (workflow path from repository root: `.github/workflows/phase5-schema-contract.yml`) with `python3.11` and pinned `jsonschema==4.26.0`; `Draft202012Validator.check_schema` plus `FormatChecker()`. Run locally from checked-out PR branch with `python -m pip install jsonschema==4.26.0 && python docs/ui-ux/case-package/phase-05/test_schema.py`.
+
+**Runtime PASS remains UNVERIFIED until an actual workflow/job log or local stdout is captured.** Source tests are a small **Schema-only** harness; they do not implement a Bundle Validator. Cross-file JOIN, duplicate identity, provenance permission, path traversal, SHA/bytes/MIME, asset approval, target-vs-Case and release atomicity remain **NOT_IMPLEMENTED / OWNER GATE**. Do not merge/deploy from structural Schema PASS alone.
