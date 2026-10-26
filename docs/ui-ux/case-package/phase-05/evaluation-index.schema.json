@@ -1,0 +1,829 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wupojung/AIoT-HW2-Housing-Regression/docs/ui-ux/case-package/phase-05/evaluation-index.schema.json",
+  "title": "RegScope Phase5 Evaluation Index v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "release_id",
+    "generated_at",
+    "status",
+    "reason_code",
+    "publication_review",
+    "default_evaluation_id",
+    "evaluations",
+    "ui"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "case_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "release_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "generated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "VERIFIED",
+        "UNAVAILABLE",
+        "PLANNED",
+        "MOCK",
+        "ERROR"
+      ]
+    },
+    "reason_code": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "publication_review": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED"
+      ]
+    },
+    "default_evaluation_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "evaluations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evaluation_id",
+          "execution_run_id",
+          "configuration_id",
+          "final_fit_id",
+          "model_id",
+          "model_version",
+          "evaluation_population",
+          "prediction_origin",
+          "metric_source",
+          "n",
+          "target",
+          "metrics",
+          "fold_summary",
+          "figures",
+          "interval",
+          "evidence",
+          "asset_status",
+          "review_status",
+          "limitations"
+        ],
+        "properties": {
+          "evaluation_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "execution_run_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "configuration_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "final_fit_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evaluation_population": {
+            "enum": [
+              "development_oof",
+              "holdout",
+              "training_in_sample"
+            ]
+          },
+          "prediction_origin": {
+            "type": "string",
+            "minLength": 1
+          },
+          "metric_source": {
+            "enum": [
+              "cv_fold_mean",
+              "pooled_oof",
+              "holdout_aggregate",
+              "training_in_sample"
+            ]
+          },
+          "n": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "target": {
+            "type": "object",
+            "required": [
+              "column",
+              "unit"
+            ],
+            "properties": {
+              "column": {
+                "type": "string",
+                "minLength": 1
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          },
+          "metrics": {
+            "type": "object",
+            "required": [
+              "mae",
+              "rmse",
+              "r2"
+            ],
+            "properties": {
+              "mae": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "value",
+                  "status",
+                  "reason_code",
+                  "evidence_ref"
+                ],
+                "properties": {
+                  "value": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "VERIFIED",
+                      "UNAVAILABLE",
+                      "PLANNED",
+                      "MOCK",
+                      "ERROR"
+                    ]
+                  },
+                  "reason_code": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "rmse": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "value",
+                  "status",
+                  "reason_code",
+                  "evidence_ref"
+                ],
+                "properties": {
+                  "value": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "VERIFIED",
+                      "UNAVAILABLE",
+                      "PLANNED",
+                      "MOCK",
+                      "ERROR"
+                    ]
+                  },
+                  "reason_code": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "r2": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "value",
+                  "status",
+                  "reason_code",
+                  "evidence_ref"
+                ],
+                "properties": {
+                  "value": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "VERIFIED",
+                      "UNAVAILABLE",
+                      "PLANNED",
+                      "MOCK",
+                      "ERROR"
+                    ]
+                  },
+                  "reason_code": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "fold_summary": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "fold_count",
+                  "aggregation",
+                  "sample_sd",
+                  "fold_values_ref"
+                ],
+                "properties": {
+                  "fold_count": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "aggregation": {
+                    "type": "string"
+                  },
+                  "sample_sd": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "fold_values_ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          },
+          "figures": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "figure_id",
+                "evaluation_id",
+                "configuration_id",
+                "evaluation_population",
+                "prediction_origin",
+                "n",
+                "status",
+                "publication_review",
+                "asset_ref",
+                "sha256",
+                "accessible_table_ref",
+                "axes",
+                "residual_sign",
+                "alt",
+                "finding",
+                "limitations",
+                "source_digest"
+              ],
+              "properties": {
+                "figure_id": {
+                  "type": "string",
+                  "enum": [
+                    "FIG-P5-01",
+                    "FIG-P5-02",
+                    "FIG-P5-03"
+                  ]
+                },
+                "evaluation_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "configuration_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "evaluation_population": {
+                  "type": "string",
+                  "enum": [
+                    "development_oof",
+                    "holdout",
+                    "training_in_sample"
+                  ]
+                },
+                "prediction_origin": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "n": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "VERIFIED",
+                    "UNAVAILABLE",
+                    "PLANNED",
+                    "MOCK",
+                    "ERROR"
+                  ]
+                },
+                "publication_review": {
+                  "type": "string",
+                  "enum": [
+                    "PENDING",
+                    "APPROVED",
+                    "REJECTED"
+                  ]
+                },
+                "asset_ref": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "sha256": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "accessible_table_ref": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "axes": {
+                  "type": "object",
+                  "required": [
+                    "x",
+                    "y",
+                    "reference_line"
+                  ],
+                  "properties": {
+                    "x": {
+                      "type": "object"
+                    },
+                    "y": {
+                      "type": "object"
+                    },
+                    "reference_line": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "residual_sign": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "actual_minus_predicted",
+                    null
+                  ]
+                },
+                "alt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "finding": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "source_digest": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "maxItems": 3
+          },
+          "interval": {
+            "type": "object",
+            "required": [
+              "int_f",
+              "int_s"
+            ],
+            "properties": {
+              "int_f": {
+                "type": "object"
+              },
+              "int_s": {
+                "type": "object"
+              }
+            },
+            "additionalProperties": false
+          },
+          "evidence": {
+            "type": "object",
+            "required": [
+              "source_artifact_sha256",
+              "source_ref",
+              "protocol_version",
+              "review_url"
+            ],
+            "properties": {
+              "source_artifact_sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source_ref": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "protocol_version": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "review_url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "asset_status": {
+            "enum": [
+              "AVAILABLE",
+              "UNAVAILABLE",
+              "PENDING_REVIEW"
+            ]
+          },
+          "review_status": {
+            "enum": [
+              "APPROVED",
+              "AWAITING_REVIEW",
+              "REJECTED"
+            ]
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default_population",
+        "population_options",
+        "figure_tabs",
+        "metric_order",
+        "interval"
+      ],
+      "properties": {
+        "default_population": {
+          "enum": [
+            "development_oof",
+            "holdout",
+            "training_in_sample"
+          ]
+        },
+        "population_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "label",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "enum": [
+                  "development_oof",
+                  "holdout",
+                  "training_in_sample"
+                ]
+              },
+              "label": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "VERIFIED",
+                  "UNAVAILABLE",
+                  "PLANNED",
+                  "MOCK",
+                  "ERROR"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "figure_tabs": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": [
+              "figure_id",
+              "label",
+              "kind",
+              "status",
+              "reason_code"
+            ],
+            "properties": {
+              "figure_id": {
+                "enum": [
+                  "FIG-P5-01",
+                  "FIG-P5-02",
+                  "FIG-P5-03"
+                ]
+              },
+              "label": {
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "actual_vs_predicted",
+                  "residual_vs_predicted",
+                  "residual_distribution"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "VERIFIED",
+                  "UNAVAILABLE",
+                  "PLANNED",
+                  "MOCK",
+                  "ERROR"
+                ]
+              },
+              "reason_code": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "metric_order": {
+          "const": [
+            "mae",
+            "rmse",
+            "r2"
+          ]
+        },
+        "interval": {
+          "type": "object",
+          "required": [
+            "figure_id",
+            "int_f",
+            "int_s"
+          ],
+          "properties": {
+            "figure_id": {
+              "const": "FIG-P5-04"
+            },
+            "int_f": {
+              "type": "object",
+              "required": [
+                "status",
+                "reason_code",
+                "method",
+                "assumptions_ref"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "VERIFIED",
+                    "UNAVAILABLE",
+                    "PLANNED",
+                    "MOCK",
+                    "ERROR"
+                  ]
+                },
+                "reason_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "method": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "assumptions_ref": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            "int_s": {
+              "type": "object",
+              "required": [
+                "status",
+                "reason_code",
+                "interval_type",
+                "method",
+                "nominal_level",
+                "population",
+                "asset_ref",
+                "coverage_evidence",
+                "review_url"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "VERIFIED",
+                    "UNAVAILABLE",
+                    "PLANNED",
+                    "MOCK",
+                    "ERROR"
+                  ]
+                },
+                "reason_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "interval_type": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "method": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "nominal_level": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "population": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "asset_ref": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "coverage_evidence": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "review_url": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "evaluations": {
+            "maxItems": 0
+          }
+        },
+        "required": [
+          "evaluations"
+        ]
+      },
+      "then": {
+        "properties": {
+          "default_evaluation_id": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}
