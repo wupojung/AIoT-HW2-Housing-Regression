@@ -46,3 +46,8 @@ For the exact response to all 15 second-round review findings, see [REGSCOPE-R2-
 - **Not yet achieved:** proposed design tokens and 1920×1080 images, fully developed Dashboard modes, syntactically valid JSON Schema and usable MOCK fixture loader, exact source-to-export key mapping, fully decided Phase 5 UX, independent blind screenshot/interaction QA.
 - **R2 status:** [Independent Round 2 Review](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35#issuecomment-6420552696) remains PARTIAL. Page-file extraction resolves historical text volume, **not** R2-02 through R2-15 by itself.
 - **No authorization** for reading restricted data, fitting/evaluation scripts, CLI, API, code build, merging or deploying.
+
+
+## Case Package v1.0 — Required backend/frontend handoff
+
+**Start here for all uploads and generated JSON:** [CASE-PACKAGE-SPEC-v1.md](./case-package/CASE-PACKAGE-SPEC-v1.md), with executable-format but deliberately unapproved [MOCK Ames sample](./case-package/sample/ames-housing/package.json) and [planned-case switch sample](./case-package/sample/planned-case/package.json). This spec governs folder placement, per-JSON semantics, the Phase 5 Issue #37 projection, publication SHA/release flow and frontend binding. **Do not treat sample as production data or a sealed/published artifact.**
