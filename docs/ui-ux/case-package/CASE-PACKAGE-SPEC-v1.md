@@ -145,7 +145,7 @@ PUBLIC (publisher 產生、URL，只讀)
 - **區間**：`interval.int_f` 表示方法 feasibility；`interval.int_s` 表示符合作業要求的真正 CI/PI 圖與解釋，彼此獨立，需 `status,reason_code`；INT-S 若完成還需 method/type/nominal_level/population/asset_ref/coverage_evidence。**INT-F PASS 不等於 HW2 完成**。
 - **證據**：`evidence{source_artifact_sha256,source_ref,protocol_version,review_url}`、`asset_status`、`review_status`；研究驗證、公開核准、圖檔存在是三道不同關卡。
 
-私人 Phase 5 原始產物 **不進此公開包**，維持 Issue #37 提案 `local/research/phase5/<gate_id>/artifacts/`：`evidence-inventory.json`, `gap-permission-matrix.json`, `source-key-mapping.json`, `evaluation-metrics.json`, `figure-manifest.json`, `evaluation-report.md`, `qa-report.json`, `checkpoint.json`。Exporter 需將已核准的指標和圖衍生為上述公開 projection。不能讓前端讀 `p4b_oof_predictions.csv` 或封存 Holdout。任何 source key path UNKNOWN，保持 UNKNOWN 直到獲准 audit。
+私人 Phase 5 原始產物 **不進此公開包**，維持 Issue #37 提案 `local/research/phase5/<gate_id>/artifacts/`：`evidence-inventory.json`, `gap-permission-matrix.json`, `evaluation-metrics.json`, `figure-manifest.json`, `evaluation-report.md`, `qa-report.json`, `checkpoint.json`。Exporter 需將已核准的指標和圖衍生為上述公開 projection。不能讓前端讀 `p4b_oof_predictions.csv` 或封存 Holdout。任何 source key path UNKNOWN，保持 UNKNOWN 直到獲准 audit。
 
 ## 8. Phase 6：模型索引與動態輸入 Schema
 
@@ -208,3 +208,25 @@ Open technical followups: Draft 2020-12 JSON Schema files and real strict valida
 ## Phase 5 normative child contract — v1.0
 
 The precise fields, enums, figure/publication rules and static-read API for `phases/phase-05/evaluations.json` are defined **only** in [phase-05/PHASE-05-DATA-CONTRACT-v1.md](./phase-05/PHASE-05-DATA-CONTRACT-v1.md), with [JSON Schema](./phase-05/evaluation-index.schema.json) and [sample](./phase-05/sample/evaluations.json). Earlier prose in §7 is background; on conflicting shapes the child contract wins. This release requires exactly one `phases.phase5.data_ref` in the Case Package root. An empty evaluations array is valid and safer than the conceptual null-identified item from Issue #37 §15.4.
+
+## F01–F12 Review freeze rules — canonical v1.2 (2026-10-27)
+
+**P5-UI follow-up #6421939874:** ACCEPT F01–F12, with code-level release validation **DEFER / NOT_IMPLEMENTED** until authorization. This section is normative; resolve any old §3/§4 wording using the explicitly corrected replacements in their paragraphs; do not reintroduce a second source-mapping authority.
+
+**Producer:** P5-A minimum only `evidence-inventory.json`, `gap-permission-matrix.json`, `checkpoint.json`. The **only** authoritative mapping is `evidence-inventory.json.source_key_mappings[]`; each row has `source_artifact_id,source_sha256,source_key_path_or_csv_column,canonical_destination_field,normalization_rule,read_permission,verification_status,reason_code`. Any optional derived map must contain `parent_inventory_sha256`, and never become a required source or competing truth.
+
+**Linked evaluation A — exact UI lookup:** First resolve KPI evaluation by `case_id+execution_run_id+configuration_id+evaluation_population+metric_source=cv_fold_mean`. Follow **only** `linked_evaluation_ids[]`; each reference must resolve within the same case and pinned release. The linked evaluation must be `metric_source=pooled_oof`, `evaluation_population=development_oof`, same execution/config, protocol/version and approved evidence; it owns **its own** FIG-P5-01/02/03. Check reciprocal compatibility and explicit permission; do not require the KPI evaluation_id to equal the linked graph evaluation_id. If link missing, invalid, or not approved, graph is UNAVAILABLE. Holdout aggregate cannot borrow OOF graphs, directly or transitively. When a pooled OOF evaluation is selected, its own figures may display; never transfer figures between populations.
+
+**Schema versus release validator:** JSON Schema 2020-12 checks nested types and local conditional values (and `date-time` only when FormatChecker/format assertion enabled). A **separate bundle validator** must check ID uniqueness, default IDs, link membership/type/protocol, target mapping, eligible figure scope, publication permission, file SHA/size/MIME, relative path traversal, same-release refs and license. See [VALIDATION-MATRIX.md](./VALIDATION-MATRIX.md). Bundle validator runtime: **NOT_IMPLEMENTED**, and therefore real release PASS cannot be claimed.
+
+**Figure tokens and units:** FIG-P5-01 axes `x.field=actual`, `y.field=predicted`, `reference_line=y_equals_x`; FIG-P5-02 `x.field=predicted`, `y.field=actual_minus_predicted`, `reference_line=y_equals_0`; FIG-P5-03 `x.field=actual_minus_predicted`, `y.field=count`, `reference_line=x_equals_0`, `histogram.bin_count>=1`, `histogram.n=n` and verified bin edges. All target-valued axes have `unit=target.unit`, count is dimensionless `count`. Histogram and plot asset only after approved paired predictions and publication QA.
+
+**Metrics/scope:** VERIFIED MAE/RMSE require finite number >=0 and nonempty evidence_ref. VERIFIED R² is finite, dimensionless and may be negative. UNAVAILABLE must be null with a reason. For `cv_fold_mean`, `metrics.*.value` is source-backed mean across explicitly scored folds and `fold_summary.sample_sd.{mae,rmse,r2}` separately stores per-metric sample SD with `ddof=1`; not a pooled OOF value. Pooled OOF must have its own evaluation ID and metrics; no implicit averaging or synthetic folds.
+
+**Intervals:** `int_f.status=PASS` does **not** complete `int_s`; INT-S PASS requires reviewed method/type/level/population/figure asset/coverage evidence. Unavailable INT-S keeps the homework interval requirement outstanding. Historical Holdout 292 aggregate has no row-level plotting permission.
+
+**Target join:** public P5 `target.column = case.json.target.raw_field_id`, `target.unit = case.json.target.unit`; source `case.json.target.value_type=number` is checked. The frontend never infers SalePrice/USD from case name, nor displays R² as a percentage.
+
+**Render authority:** `ui.*` holds only ordering/labels/figure slot IDs, not availability status. An evaluation is eligible only if its own review/source evidence passes and its parent release is approved. Metric display requires own VERIFIED value/evidence; figure display additionally requires its own VERIFIED, APPROVED publication, asset_status AVAILABLE, case-root asset_ref + correct SHA + public allowlist. An EMPTY/PLANNED/MOCK/PENDING/REJECTED context never displays empirical data. A published EMPTY (evaluations:[]) is legitimate with `status=UNAVAILABLE` and reason, but must be sealed and approved at **package publication layer**.
+
+**Lifecycle:** staging may have release_id/generated_at=null, PENDING, files=[]. Publication mode must require real pinned release_id, valid UTC timestamp, independent APPROVED review, sealed all-files manifest, digest and link integrity, no unauthorized private data and atomic release pointer switch. Schema validation alone is insufficient and does not authorize publication.
