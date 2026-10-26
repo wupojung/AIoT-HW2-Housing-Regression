@@ -203,3 +203,8 @@ Each action idempotent, bounded IO, emits `coverage-report` and `checkpoint`; no
 Open technical followups: Draft 2020-12 JSON Schema files and real strict validator are **not yet implemented**; source-key mapping for `p4b_public_summary.json`, `p4b_private_details.json`, 96 task checkpoints, Mac/Windows Final Fit artifact and Phase 5 OOF are UNKNOWN until separately permitted audit. Public Phase2 current asset URLs/SHA/license, Phase3 248 fit scope, actual eligible configuration IDs, Phase5 legal figures and deployable models all need evidence. **Do not infer them from this spec or Sample.**
 
 **Change policy**: backward-compatible optional field may add a minor schema version after review; deleting/renaming required keys, changing ID semantics or accepted status requires major version and a deterministic adapter, not silent drift. Every new Case Package must declare schema version and be rejected with actionable error if unsupported. This contract is the backbone of frontend/backend separation; **no research data is invented to make a demo appear complete**.
+
+
+## Phase 5 normative child contract — v1.0
+
+The precise fields, enums, figure/publication rules and static-read API for `phases/phase-05/evaluations.json` are defined **only** in [phase-05/EVALUATION-API-CONTRACT-v1.md](./phase-05/EVALUATION-API-CONTRACT-v1.md), with [JSON Schema](./phase-05/evaluation-index.schema.json) and [sample](./phase-05/sample/evaluations.json). Earlier prose in §7 is background; on conflicting shapes the child contract wins. This release requires exactly one `phases.phase5.data_ref` in the Case Package root. An empty evaluations array is valid and safer than the conceptual null-identified item from Issue #37 §15.4.
