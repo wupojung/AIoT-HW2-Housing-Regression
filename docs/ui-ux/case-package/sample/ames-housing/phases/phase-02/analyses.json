@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "status": "UNAVAILABLE",
+  "default_analysis_id": "overview",
+  "analyses": [
+    {
+      "id": "overview",
+      "figure_id": "FIG-01",
+      "title": "資料集概覽",
+      "status": "UNAVAILABLE",
+      "image_ref": null,
+      "table_ref": null,
+      "description": "待綁定已核准圖資",
+      "finding": null,
+      "limitations": "圖資尚未通過此 Sample 的發布審查",
+      "provenance_ref": null
+    },
+    {
+      "id": "missingness",
+      "figure_id": "FIG-02",
+      "title": "缺失值分析",
+      "status": "UNAVAILABLE",
+      "image_ref": null,
+      "table_ref": null,
+      "description": "待綁定已核准圖資",
+      "finding": null,
+      "limitations": "圖資尚未通過此 Sample 的發布審查",
+      "provenance_ref": null
+    },
+    {
+      "id": "saleprice",
+      "figure_id": "FIG-03",
+      "title": "售價分布",
+      "status": "UNAVAILABLE",
+      "image_ref": null,
+      "table_ref": null,
+      "description": "待綁定已核准圖資",
+      "finding": null,
+      "limitations": "圖資尚未通過此 Sample 的發布審查",
+      "provenance_ref": null
+    },
+    {
+      "id": "correlation",
+      "figure_id": "FIG-06",
+      "title": "數值相關分析",
+      "status": "UNAVAILABLE",
+      "image_ref": null,
+      "table_ref": null,
+      "description": "待綁定已核准圖資",
+      "finding": null,
+      "limitations": "圖資尚未通過此 Sample 的發布審查",
+      "provenance_ref": null
+    }
+  ]
+}
