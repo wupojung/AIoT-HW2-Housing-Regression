@@ -59,3 +59,8 @@ For the exact response to all 15 second-round review findings, see [REGSCOPE-R2-
 
 
 For a responsibility-first index rather than the historical `ui-ux` folder name, see [docs/design/README.md](../design/README.md). Existing normative file paths remain unchanged pending separately reviewed migration; Phase 5 simple validation entry is [validate_schema.py](../design/tools/validate_schema.py).
+
+
+## Canonical Phase 1–6 JSON handoff (2026-10-27)
+
+For every phase's static JSON location, field definitions, and Sample/Schema pair, start at [Phase 1–6 Data Contract Index](../design/data-contracts/README.md). Phase 5's independently approved contract remains its authoritative child spec. No live API is required for Phase 1–5.
