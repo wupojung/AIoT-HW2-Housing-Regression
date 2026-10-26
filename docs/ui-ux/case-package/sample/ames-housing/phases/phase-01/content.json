@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "status": "MOCK",
+  "sections": [
+    {
+      "section_id": "problem",
+      "title": "研究問題",
+      "body": "示意：探索住宅條件與售價的關係。"
+    },
+    {
+      "section_id": "objective",
+      "title": "研究目標",
+      "body": "示意：展示多元線性迴歸與特徵選擇流程。"
+    },
+    {
+      "section_id": "limitations",
+      "title": "限制",
+      "body": "本內容僅供 UI 渲染測試，不代表已驗證結果。"
+    }
+  ]
+}
