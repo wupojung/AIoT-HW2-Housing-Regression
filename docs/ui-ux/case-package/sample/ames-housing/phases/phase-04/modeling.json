@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "status": "UNAVAILABLE",
+  "cv": {
+    "training_rows": 1168,
+    "fold_count": 3,
+    "protocol_id": null,
+    "status": "SOURCE_REPORTED_NOT_VERIFIED"
+  },
+  "methods": [
+    {
+      "method_id": "pearson",
+      "label": "Pearson",
+      "parameters": [
+        {
+          "parameter_id": "top_k",
+          "label": "Top K",
+          "data_type": "integer"
+        }
+      ]
+    },
+    {
+      "method_id": "lasso",
+      "label": "Lasso",
+      "parameters": [
+        {
+          "parameter_id": "alpha",
+          "label": "Alpha",
+          "data_type": "number"
+        }
+      ]
+    },
+    {
+      "method_id": "elastic_net",
+      "label": "Elastic Net",
+      "parameters": [
+        {
+          "parameter_id": "alpha",
+          "label": "Alpha",
+          "data_type": "number"
+        },
+        {
+          "parameter_id": "l1_ratio",
+          "label": "L1 Ratio",
+          "data_type": "number"
+        }
+      ]
+    }
+  ],
+  "execution_runs": [],
+  "configurations": [],
+  "default_configuration_id": null,
+  "charts": []
+}
