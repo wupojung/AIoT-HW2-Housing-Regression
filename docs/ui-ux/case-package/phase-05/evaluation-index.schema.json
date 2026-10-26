@@ -28,7 +28,8 @@
       "type": [
         "string",
         "null"
-      ]
+      ],
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
     },
     "generated_at": {
       "type": [
@@ -65,7 +66,8 @@
       "type": [
         "string",
         "null"
-      ]
+      ],
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
     },
     "evaluations": {
       "type": "array",
@@ -98,6 +100,7 @@
           "evaluation_id": {
             "type": "string",
             "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "minLength": 1,
             "maxLength": 128
           },
           "execution_run_id": {
@@ -787,6 +790,117 @@
                       },
                       "axes": {
                         "properties": {
+                          "reference_line": {
+                            "const": "x_equals_0"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "figure_id": {
+                        "const": "FIG-P5-01"
+                      }
+                    },
+                    "required": [
+                      "figure_id"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "axes": {
+                        "properties": {
+                          "x": {
+                            "properties": {
+                              "field": {
+                                "const": "actual"
+                              }
+                            }
+                          },
+                          "y": {
+                            "properties": {
+                              "field": {
+                                "const": "predicted"
+                              }
+                            }
+                          },
+                          "reference_line": {
+                            "const": "y_equals_x"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "figure_id": {
+                        "const": "FIG-P5-02"
+                      }
+                    },
+                    "required": [
+                      "figure_id"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "axes": {
+                        "properties": {
+                          "x": {
+                            "properties": {
+                              "field": {
+                                "const": "predicted"
+                              }
+                            }
+                          },
+                          "y": {
+                            "properties": {
+                              "field": {
+                                "const": "actual_minus_predicted"
+                              }
+                            }
+                          },
+                          "reference_line": {
+                            "const": "y_equals_0"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "figure_id": {
+                        "const": "FIG-P5-03"
+                      }
+                    },
+                    "required": [
+                      "figure_id"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "axes": {
+                        "properties": {
+                          "x": {
+                            "properties": {
+                              "field": {
+                                "const": "actual_minus_predicted"
+                              }
+                            }
+                          },
+                          "y": {
+                            "properties": {
+                              "field": {
+                                "const": "count"
+                              }
+                            }
+                          },
                           "reference_line": {
                             "const": "x_equals_0"
                           }
