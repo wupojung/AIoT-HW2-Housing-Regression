@@ -1,0 +1,62 @@
+# Phase 5 — F01–F12 Validation Matrix / Checkpoint
+
+**Scope:** [Review #6421939874](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35#issuecomment-6421939874). Draft document and synthetic fixtures, NOT empirical approval.
+
+## Canonical checks and ownership
+
+| Check | Intended result | Enforcer | Current evidence |
+|---|---|---|---|
+| Empty staging sample `evaluations.json` | PASS | JSON Schema 2020-12 + FormatChecker | JSON parse and basic shape only; **FULL SCHEMA RUNTIME NOT RUN** |
+| Nonempty synthetic `evaluations.nonempty.mock.json` | PASS | JSON Schema 2020-12 + FormatChecker | Created; **FULL SCHEMA RUNTIME NOT RUN** |
+| VERIFIED MAE/RMSE/R² has null `value` | REJECT | JSON Schema | conditional enforced |
+| Negative VERIFIED MAE/RMSE | REJECT | JSON Schema | minimum 0 |
+| UNAVAILABLE metric has nonnull value | REJECT | JSON Schema | conditional enforced |
+| Wrong axis field or reference line by figure ID | REJECT | JSON Schema | FIG-P5-01/02/03 field-token constraints |
+| Invalid residual sign, missing histogram metadata | REJECT | JSON Schema | figure conditional |
+| INT-S PASS missing method/interval type/level/asset/ref | REJECT | JSON Schema | conditional on INT-S status; coverage evidence must also be checked for publication |
+| default_evaluation_id absent from record IDs | REJECT | Bundle Validator | **NOT_IMPLEMENTED** |
+| linked evaluation points missing, mismatched config/protocol/population | REJECT | Bundle Validator | **NOT_IMPLEMENTED** |
+| duplicate evaluation_id, figure_id | REJECT | Bundle Validator | **NOT_IMPLEMENTED** |
+| fake SHA or image path traversal | REJECT | Bundle Validator | **NOT_IMPLEMENTED** |
+| asset publication review missing, MIME/size/hash mismatched | REJECT | Bundle Validator | **NOT_IMPLEMENTED** |
+| different package_revision/release_id, cross-case ref | REJECT | Bundle Validator | **NOT_IMPLEMENTED** |
+| root VERIFIED but no evaluations | REJECT | JSON Schema | conditional minItems=1 |
+| staging release_id=null, timestamp=null, review=PENDING | ACCEPT staging only | JSON Schema | intended safe staging |
+| published EMPTY evaluations=[] with proper release approval | ACCEPT after sealing and approval | Bundle Validator | **NOT_IMPLEMENTED** |
+| Case target raw_field_id/unit vs Evaluation target column/unit mismatch | REJECT | Bundle Validator | **NOT_IMPLEMENTED** |
+
+## Deterministic package-validator requirements (future permitted work)
+
+1. Resolve `case.json` from `package.json.case_ref`; check `target.raw_field_id == evaluation.target.column`, `target.unit == evaluation.target.unit`, `target.value_type=number`; no guessed defaults.
+2. Build unique IDs: `evaluation_id` for all records, `configuration_id` from Phase4; reject duplicate IDs, missing/default ID, source key mapping without SHA, unknown execution/config/metric_source.
+3. Validate `linked_evaluation_ids[]` only to same case/release/execution/config/prediction origin and reviewed compatible protocol, distinct `cv_fold_mean` and `pooled_oof` records. **Never cross Holdout population**, even by transitive links.
+4. Figure selected by its *own* owning evaluation ID; check image's source config/population, residual zero line, source paired rows approval, figure-manifest IDs and review rights. No Holdout scatter from aggregate-only.
+5. Whitelist all `asset_ref`, `source_ref` and `fold_values_ref` as Case-root relative, no absolute paths, backslashes, schemes, `..` segments or symlink escape.
+6. Enumerate all non-root package files, compare `package.json.files[]` one-for-one with SHA256, byte count and MIME/magic; reject unsafe SVG or unapproved private metadata/OOF/holdout rows; verify same immutable release revision.
+7. Published mode: actual release ID, generated UTC timestamp (format assertion enabled), QA-approved release/reviewer, absence of MOCK empirical records, hashes complete and atomic index promotion last. Staging mode permits null/empty refs but is unpublishable.
+8. Render gating: `ui` is layout-only; selected evaluation controls source/scope, review controls visibility, each metric/figure has independent VERIFIED state and asset QA. Clear stale context on case/config/population/evaluation switch.
+
+## Test invocation to use once implementation authorized
+
+```bash
+python -m pip install 'jsonschema==4.26.0'
+python - <<'PY'
+import json, pathlib
+from jsonschema import Draft202012Validator, FormatChecker
+root=pathlib.Path('docs/ui-ux/case-package/phase-05')
+schema=json.loads((root/'evaluation-index.schema.json').read_text(encoding='utf-8'))
+Draft202012Validator.check_schema(schema)
+v=Draft202012Validator(schema,format_checker=FormatChecker())
+for path in ('sample/evaluations.json','sample/evaluations.nonempty.mock.json'):
+    data=json.loads((root/path).read_text(encoding='utf-8'))
+    errors=list(v.iter_errors(data))
+    print(path, 'PASS' if not errors else 'FAIL',*[e.message for e in errors],sep=' | ')
+    assert not errors
+PY
+```
+
+**Verification disclaimer:** During the doc update, a separate network-isolated Python environment had `jsonschema 4.26.0`, but could **not retrieve the GitHub source files** (DNS resolution failed). Therefore no actual Draft 2020-12 runtime PASS has been recorded. Schema file is committed, but release validation/negative tests remain **NOT_IMPLEMENTED / NOT_RUN**; never report schema runtime PASS from these changes.
+
+## F01–F12 disposition
+
+F01 ACCEPT docs; F02 ACCEPT approach A docs; F03 ACCEPT synthetic data file; F04 DEFER negative fixtures beyond matrix until validator implementation; F05 DEFER actual schema test evidence (NOT_RUN); F06 DEFER bundle validator (NOT_IMPLEMENTED); F07 ACCEPT figure token schema; F08 ACCEPT authority decision table; F09 ACCEPT publication rules but runtime gate NOT_IMPLEMENTED; F10 ACCEPT scope/SD/INT gates; F11 ACCEPT deterministic target mapping; F12 ACCEPT canonical entry cleanup, follow-up source audit needed.
