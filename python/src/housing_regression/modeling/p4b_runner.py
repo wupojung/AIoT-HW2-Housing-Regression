@@ -847,6 +847,23 @@ class P4BRunner:
         return {"outer_fold": outer_fold_idx, "results": result["results"],
                 "oof_records": result["oof_records"]}
 
+    @staticmethod
+    def aggregate_task_results(
+        fold_results: Sequence[Mapping[str, Any]],
+        config: P4BConfig,
+        *,
+        expected_identity: Mapping[str, Any],
+    ) -> List[Dict[str, Any]]:
+        """Pure shared aggregation gate for fresh and checkpoint-restored task rows."""
+        from housing_regression.modeling.p4b_v2 import aggregate_candidates
+
+        return aggregate_candidates(
+            fold_results,
+            config,
+            expected_folds=tuple(range(config.outer_splits)),
+            expected_identity=expected_identity,
+        )
+
     def run_nested_cv_from_training_csv(
         self,
         train_csv: Path,
@@ -992,7 +1009,6 @@ class P4BRunner:
             write_durable_failure_json,
             checkpoint_run_config,
         )
-        from housing_regression.modeling.p4b_v2 import aggregate_candidates
 
         canonical_fp = compute_canonical_fingerprint(dev_rows)
 
@@ -1325,7 +1341,17 @@ class P4BRunner:
             if run_status == "SUCCESS":
                 self.control_state.status = "COMPLETED"
 
-            aggregate_results = aggregate_candidates(all_fold_results)
+            aggregate_results = self.aggregate_task_results(
+                all_fold_results,
+                self.config,
+                expected_identity={
+                    "run_id": run_id,
+                    "git_sha": self.config.code_head_commit,
+                    "data_digest": canonical_fp,
+                    "fold_digest": fold_plan_identity,
+                    "package_versions": _package_versions(),
+                },
+            )
 
             summary = {
                 "run_id": run_id,

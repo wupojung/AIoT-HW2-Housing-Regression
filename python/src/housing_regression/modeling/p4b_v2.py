@@ -615,53 +615,213 @@ def evaluate_fold(
             "data_digest": None, "fold_digest": None}
 
 
-def aggregate_candidates(fold_results: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    """Aggregate each method/config across folds and mark deterministic winners."""
+def aggregate_candidates(
+    fold_results: Sequence[Mapping[str, Any]],
+    config: Any,
+    *,
+    expected_folds: Sequence[int] = (0, 1, 2),
+    expected_identity: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Aggregate only exact, identity-consistent, complete three-fold task coverage."""
+    folds = tuple(expected_folds)
+    if (
+        len(folds) != 3
+        or any(isinstance(fold, bool) or not isinstance(fold, int) for fold in folds)
+        or folds != (0, 1, 2)
+    ):
+        raise ValueError("Protocol v2 aggregation requires exactly folds (0, 1, 2).")
+    required_identity = ("run_id", "git_sha", "data_digest", "fold_digest", "package_versions")
+    if any(key not in expected_identity or expected_identity[key] in (None, "") for key in required_identity):
+        raise ValueError("Aggregation requires run/code/data/fold/package identity.")
+
+    expected_specs = task_specs(config)
+    expected_by_key = {
+        (method, canonical_digest(candidate)): (method, dict(candidate))
+        for method, candidate in expected_specs
+    }
     grouped: dict[tuple[str, str], list[Mapping[str, Any]]] = {}
+    malformed: list[Mapping[str, Any]] = []
     for row in fold_results:
-        key = (str(row["method"]), canonical_digest(row["candidate"]))
+        method, candidate = row.get("method"), row.get("candidate")
+        if not isinstance(method, str) or not isinstance(candidate, Mapping):
+            malformed.append(row)
+            continue
+        key = (method, canonical_digest(dict(candidate)))
         grouped.setdefault(key, []).append(row)
+
+    all_keys = set(expected_by_key) | set(grouped)
+    ordered_keys = sorted(
+        all_keys,
+        key=lambda key: (0 if key in expected_by_key else 1,
+                         METHOD_ORDER.index(key[0]) if key[0] in METHOD_ORDER else -1,
+                         key[0], key[1]),
+    )
     aggregates: list[dict[str, Any]] = []
-    for (method, cfg_hash), rows in grouped.items():
-        valid = [row for row in rows if row.get("primary_valid") and row.get("rmse") is not None]
-        scores = [float(row["rmse"]) for row in valid]
-        maes = [float(row["mae"]) for row in valid]
-        r2s = [float(row["r2"]) for row in valid if row.get("r2") is not None and np.isfinite(row["r2"])]
-        selected_counts = [int(row["encoded_count"]) for row in rows]
-        native_rows = [
-            row["native_diagnostic"]
-            for row in rows
-            if isinstance(row.get("native_diagnostic"), Mapping)
-            and row["native_diagnostic"].get("rmse") is not None
-        ]
-        native_rmses = [float(row["rmse"]) for row in native_rows]
-        native_maes = [float(row["mae"]) for row in native_rows]
+    identity_keys = ("run_id", "git_sha", "data_digest", "fold_digest", "package_versions")
+
+    for key in ordered_keys:
+        expected = key in expected_by_key
+        method, candidate = expected_by_key[key] if expected else (key[0], dict(grouped[key][0]["candidate"]))
+        rows = grouped.get(key, [])
+        reasons: set[str] = set()
+        if not expected:
+            reasons.add("UNEXPECTED_METHOD_CANDIDATE")
+
+        expected_hash = task_config_hash(config, method, candidate) if expected else None
+        fold_rows: dict[int, list[Mapping[str, Any]]] = {}
+        observed_folds: set[int] = set()
+        group_identity: dict[str, str] = {}
+        row_issues: dict[int, set[str]] = {}
+
+        for index, row in enumerate(rows):
+            local: set[str] = set()
+            raw_fold = row.get("fold")
+            if isinstance(raw_fold, bool) or not isinstance(raw_fold, int):
+                local.add("INVALID_FOLD")
+            elif raw_fold not in folds:
+                local.add("OUT_OF_RANGE_FOLD")
+            else:
+                observed_folds.add(raw_fold)
+                fold_rows.setdefault(raw_fold, []).append(row)
+
+            if dict(row.get("candidate", {})) != candidate or row.get("method") != method:
+                local.add("CANDIDATE_IDENTITY_MISMATCH")
+            if expected and row.get("config_hash") != expected_hash:
+                local.add("CONFIG_HASH_MISMATCH")
+            for field_name in identity_keys:
+                value = row.get(field_name)
+                if value in (None, ""):
+                    local.add(f"MISSING_{field_name.upper()}")
+                    continue
+                digest = canonical_digest(value)
+                if field_name in group_identity and group_identity[field_name] != digest:
+                    local.add("MIXED_RUN_IDENTITY")
+                group_identity.setdefault(field_name, digest)
+                expected_value = expected_identity.get(field_name)
+                if expected_value is not None and value != expected_value:
+                    local.add(f"{field_name.upper()}_MISMATCH")
+
+            expected_track = "baseline" if method == "ols_baseline" else "primary"
+            expected_primary_track = "all_features_ols" if method == "ols_baseline" else "selected_to_ols"
+            if row.get("track") != expected_track or row.get("primary_track") != expected_primary_track:
+                local.add("PRIMARY_TRACK_MISMATCH")
+            if raw_fold in folds and not isinstance(raw_fold, bool):
+                expected_task_id = make_task_id(expected_identity["run_id"], method, candidate, raw_fold)
+                if row.get("task_id") != expected_task_id:
+                    local.add("TASK_IDENTITY_MISMATCH")
+            if row.get("status") != "COMPLETED" or row.get("primary_valid") is not True:
+                local.add("INVALID_TASK")
+            rmse = row.get("rmse")
+            if isinstance(rmse, bool) or not isinstance(rmse, (int, float)) or not math.isfinite(float(rmse)):
+                local.add("INVALID_PRIMARY_METRIC")
+            if local:
+                reasons.update(local)
+            row_issues[index] = local
+
+        duplicate_folds = sorted(fold for fold, items in fold_rows.items() if len(items) != 1)
+        if duplicate_folds:
+            reasons.add("DUPLICATE_FOLD")
+        missing_folds = sorted(set(folds) - observed_folds)
+        if missing_folds:
+            reasons.add("MISSING_FOLD")
+
+        valid_folds: list[int] = []
+        valid_rows: list[Mapping[str, Any]] = []
+        for fold in folds:
+            items = fold_rows.get(fold, [])
+            if len(items) != 1:
+                continue
+            row_index = rows.index(items[0])
+            if not row_issues.get(row_index):
+                valid_folds.append(fold)
+                valid_rows.append(items[0])
+        if len(valid_folds) != len(folds):
+            reasons.add("INCOMPLETE_OR_INVALID_COVERAGE")
+        complete = expected and len(valid_folds) == len(folds) and not reasons
+        primary_track = "all_features_ols" if method == "ols_baseline" else "selected_to_ols"
+        winner_eligible = complete and method in METHOD_ORDER and primary_track == "selected_to_ols"
+
+        scores = [float(row["rmse"]) for row in valid_rows] if complete else []
+        maes = [float(row["mae"]) for row in valid_rows
+                if complete and isinstance(row.get("mae"), (int, float)) and math.isfinite(float(row["mae"]))]
+        r2s = [float(row["r2"]) for row in valid_rows
+               if complete and isinstance(row.get("r2"), (int, float)) and math.isfinite(float(row["r2"]))]
+        selected_counts = [int(row["encoded_count"]) for row in valid_rows
+                           if complete and isinstance(row.get("encoded_count"), int)]
+        native_rows = [row["native_diagnostic"] for row in valid_rows
+                       if complete and isinstance(row.get("native_diagnostic"), Mapping)
+                       and row["native_diagnostic"].get("rmse") is not None]
+        native_rmses = [float(row["rmse"]) for row in native_rows
+                        if isinstance(row.get("rmse"), (int, float)) and math.isfinite(float(row["rmse"]))]
+        native_maes = [float(row["mae"]) for row in native_rows
+                       if isinstance(row.get("mae"), (int, float)) and math.isfinite(float(row["mae"]))]
         native_r2s = [float(row["r2"]) for row in native_rows
-                      if row.get("r2") is not None and np.isfinite(row["r2"])]
+                      if isinstance(row.get("r2"), (int, float)) and math.isfinite(float(row["r2"]))]
         aggregates.append({
             "method": method,
-            "candidate": dict(rows[0]["candidate"]),
-            "config_hash": cfg_hash,
-            "fold_count": len(rows),
-            "valid_fold_count": len(valid),
+            "candidate": candidate,
+            "config_hash": expected_hash,
+            "expected_fold_count": len(folds),
+            "observed_fold_count": len(observed_folds),
+            "valid_fold_count": len(valid_folds),
+            "expected_folds": list(folds),
+            "observed_folds": sorted(observed_folds),
+            "valid_folds": valid_folds,
+            "observed_row_count": len(rows),
+            "coverage_complete": complete,
+            "invalid_reasons": sorted(reasons),
             "selection_primary_cv_rmse": float(np.mean(scores)) if scores else None,
             "selection_primary_cv_rmse_sd": float(np.std(scores, ddof=1)) if len(scores) > 1 else None,
-            "selection_primary_cv_mae": float(np.mean(maes)) if maes else None,
-            "selection_primary_cv_mae_sd": float(np.std(maes, ddof=1)) if len(maes) > 1 else None,
-            "selection_primary_cv_r2": float(np.mean(r2s)) if r2s else None,
-            "selection_primary_cv_r2_sd": float(np.std(r2s, ddof=1)) if len(r2s) > 1 else None,
-            "mean_selected_encoded_count": float(np.mean(selected_counts)) if selected_counts else None,
-            "native_diagnostic_cv_rmse": float(np.mean(native_rmses)) if native_rmses else None,
-            "native_diagnostic_cv_rmse_sd": float(np.std(native_rmses, ddof=1)) if len(native_rmses) > 1 else None,
-            "native_diagnostic_cv_mae": float(np.mean(native_maes)) if native_maes else None,
-            "native_diagnostic_cv_mae_sd": float(np.std(native_maes, ddof=1)) if len(native_maes) > 1 else None,
-            "native_diagnostic_cv_r2": float(np.mean(native_r2s)) if native_r2s else None,
-            "native_diagnostic_cv_r2_sd": float(np.std(native_r2s, ddof=1)) if len(native_r2s) > 1 else None,
-            "primary_valid": len(valid) == len(rows),
-            "status": "COMPLETED" if len(valid) == len(rows) else "INVALID",
+            "selection_primary_cv_mae": float(np.mean(maes)) if len(maes) == len(folds) else None,
+            "selection_primary_cv_mae_sd": float(np.std(maes, ddof=1)) if len(maes) == len(folds) and len(maes) > 1 else None,
+            "selection_primary_cv_r2": float(np.mean(r2s)) if len(r2s) == len(folds) else None,
+            "selection_primary_cv_r2_sd": float(np.std(r2s, ddof=1)) if len(r2s) == len(folds) and len(r2s) > 1 else None,
+            "mean_selected_encoded_count": float(np.mean(selected_counts)) if len(selected_counts) == len(folds) else None,
+            "native_diagnostic_cv_rmse": float(np.mean(native_rmses)) if len(native_rmses) == len(folds) else None,
+            "native_diagnostic_cv_rmse_sd": float(np.std(native_rmses, ddof=1)) if len(native_rmses) == len(folds) and len(native_rmses) > 1 else None,
+            "native_diagnostic_cv_mae": float(np.mean(native_maes)) if len(native_maes) == len(folds) else None,
+            "native_diagnostic_cv_mae_sd": float(np.std(native_maes, ddof=1)) if len(native_maes) == len(folds) and len(native_maes) > 1 else None,
+            "native_diagnostic_cv_r2": float(np.mean(native_r2s)) if len(native_r2s) == len(folds) else None,
+            "native_diagnostic_cv_r2_sd": float(np.std(native_r2s, ddof=1)) if len(native_r2s) == len(folds) and len(native_r2s) > 1 else None,
+            "primary_valid": complete,
+            "winner_eligible": winner_eligible,
+            "status": "COMPLETED" if complete else "INVALID",
         })
+
+    for row in malformed:
+        aggregates.append({
+            "method": "UNKNOWN",
+            "candidate": {},
+            "config_hash": None,
+            "expected_fold_count": len(folds),
+            "observed_fold_count": 0,
+            "valid_fold_count": 0,
+            "expected_folds": list(folds),
+            "observed_folds": [],
+            "valid_folds": [],
+            "observed_row_count": 1,
+            "coverage_complete": False,
+            "invalid_reasons": ["MALFORMED_TASK_IDENTITY"],
+            "selection_primary_cv_rmse": None,
+            "selection_primary_cv_rmse_sd": None,
+            "selection_primary_cv_mae": None,
+            "selection_primary_cv_mae_sd": None,
+            "selection_primary_cv_r2": None,
+            "selection_primary_cv_r2_sd": None,
+            "mean_selected_encoded_count": None,
+            "native_diagnostic_cv_rmse": None,
+            "native_diagnostic_cv_rmse_sd": None,
+            "native_diagnostic_cv_mae": None,
+            "native_diagnostic_cv_mae_sd": None,
+            "native_diagnostic_cv_r2": None,
+            "native_diagnostic_cv_r2_sd": None,
+            "primary_valid": False,
+            "winner_eligible": False,
+            "status": "INVALID",
+        })
+
     for method in METHOD_ORDER:
-        eligible = [row for row in aggregates if row["method"] == method and row["primary_valid"]]
+        eligible = [row for row in aggregates if row["method"] == method and row["winner_eligible"]]
         if eligible:
             eligible.sort(key=lambda row: (
                 row["selection_primary_cv_rmse"],
@@ -675,7 +835,7 @@ def aggregate_candidates(fold_results: Sequence[Mapping[str, Any]]) -> list[dict
                 row["candidate"].get("candidate_order", 0),
             ))
             tied[0]["method_winner"] = True
-    method_winners = [row for row in aggregates if row.get("method_winner")]
+    method_winners = [row for row in aggregates if row.get("method_winner") and row["winner_eligible"]]
     if method_winners:
         method_winners.sort(key=lambda row: (
             row["selection_primary_cv_rmse"],

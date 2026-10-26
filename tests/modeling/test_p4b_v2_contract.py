@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import random
 import sys
 import threading
@@ -28,6 +29,7 @@ from housing_regression.modeling.p4b_v2 import (
     rank_features_by_score,
     require_matching_process_identity,
     resolve_feature_lineage,
+    task_config_hash,
     task_specs,
 )
 from housing_regression.modeling.p4b_artifacts import (
@@ -54,6 +56,55 @@ def synthetic_rows(count: int, offset: int = 0) -> list[dict[str, str]]:
 
 
 class P4BV2ContractTests(unittest.TestCase):
+    def aggregation_config_and_rows(self):
+        config = P4BConfig(
+            code_head_commit="a" * 40,
+            active_methods=["pearson"],
+            k_candidates=(2, 3),
+        )
+        identity = {
+            "run_id": "synthetic_aggregate_run",
+            "git_sha": config.code_head_commit,
+            "data_digest": "d" * 64,
+            "fold_digest": "f" * 64,
+            "package_versions": {
+                "python": "3.x", "sklearn": "1.x", "numpy": "2.x",
+                "pandas": "3.x", "scipy": "1.x",
+            },
+        }
+        rows = []
+        for method, candidate in task_specs(config):
+            for fold in (0, 1, 2):
+                primary_track = "all_features_ols" if method == "ols_baseline" else "selected_to_ols"
+                metric = 900.0 + fold if method == "ols_baseline" else float(candidate.get("k", 2) * 100 + fold)
+                row = {
+                    **identity,
+                    "task_id": make_task_id(identity["run_id"], method, candidate, fold),
+                    "method": method,
+                    "candidate": dict(candidate),
+                    "fold": fold,
+                    "config_hash": task_config_hash(config, method, candidate),
+                    "track": "baseline" if method == "ols_baseline" else "primary",
+                    "primary_track": primary_track,
+                    "status": "COMPLETED",
+                    "primary_valid": True,
+                    "rmse": metric,
+                    "mae": metric / 2,
+                    "r2": 0.8,
+                    "encoded_count": int(candidate.get("k", 8)) if method != "ols_baseline" else 35,
+                }
+                if method == "pearson" and candidate.get("k") == 3:
+                    row["native_diagnostic"] = {"rmse": 0.001, "mae": 0.001, "r2": 1.0}
+                rows.append(row)
+        return config, identity, rows
+
+    @staticmethod
+    def find_aggregate(aggregates, method, candidate):
+        return next(
+            row for row in aggregates
+            if row["method"] == method and row["candidate"] == candidate
+        )
+
     def test_one_layer_fold_has_ols_baseline_and_selected_methods_without_inner_fits(self):
         config = P4BConfig(
             code_head_commit="synthetic-code-sha",
@@ -91,6 +142,105 @@ class P4BV2ContractTests(unittest.TestCase):
         selector_rows = [row for row in result["results"] if row["method"] in {"pearson", "mutual_information"}]
         self.assertTrue(all(isinstance(row["score_evidence"]["score_invalid"], bool) for row in selector_rows))
         self.assertTrue(all(len(row["score_evidence"]["invalid_score_features"]) <= 20 for row in selector_rows))
+
+    def test_aggregation_requires_exact_valid_three_fold_coverage_for_each_expected_candidate(self):
+        config, identity, rows = self.aggregation_config_and_rows()
+        aggregates = P4BRunner.aggregate_task_results(rows, config, expected_identity=identity)
+        baseline = self.find_aggregate(aggregates, "ols_baseline", {"features": "all"})
+        first = self.find_aggregate(aggregates, "pearson", {"k": 2, "candidate_order": 0})
+        second = self.find_aggregate(aggregates, "pearson", {"k": 3, "candidate_order": 1})
+        self.assertTrue(baseline["coverage_complete"])
+        self.assertEqual(baseline["expected_fold_count"], 3)
+        self.assertEqual(baseline["observed_fold_count"], 3)
+        self.assertEqual(baseline["valid_fold_count"], 3)
+        self.assertFalse(baseline["winner_eligible"])
+        self.assertTrue(first["method_winner"])
+        self.assertTrue(second["winner_eligible"])
+        self.assertGreater(second["selection_primary_cv_rmse"], first["selection_primary_cv_rmse"])
+        self.assertLess(second["native_diagnostic_cv_rmse"], first["selection_primary_cv_rmse"])
+        self.assertNotIn("method_winner", second)
+
+        absent_candidate = [
+            row for row in rows
+            if not (row["method"] == "pearson" and row["candidate"].get("k") == 3)
+        ]
+        absent_result = self.find_aggregate(
+            P4BRunner.aggregate_task_results(absent_candidate, config, expected_identity=identity),
+            "pearson", {"k": 3, "candidate_order": 1},
+        )
+        self.assertEqual(absent_result["observed_fold_count"], 0)
+        self.assertFalse(absent_result["winner_eligible"])
+        self.assertIn("MISSING_FOLD", absent_result["invalid_reasons"])
+
+        pearson_first = lambda source: self.find_aggregate(
+            P4BRunner.aggregate_task_results(source, config, expected_identity=identity),
+            "pearson", {"k": 2, "candidate_order": 0},
+        )
+        target = lambda source: next(
+            row for row in source
+            if row["method"] == "pearson" and row["candidate"]["k"] == 2 and row["fold"] == 2
+        )
+
+        missing = [row for row in rows if not (row["method"] == "pearson" and row["candidate"].get("k") == 2 and row["fold"] == 2)]
+        self.assertFalse(pearson_first(missing)["coverage_complete"])
+        self.assertIn("MISSING_FOLD", pearson_first(missing)["invalid_reasons"])
+
+        duplicate = rows + [copy.deepcopy(next(
+            row for row in rows if row["method"] == "pearson" and row["candidate"].get("k") == 2 and row["fold"] == 0
+        ))]
+        self.assertFalse(pearson_first(duplicate)["coverage_complete"])
+        self.assertIn("DUPLICATE_FOLD", pearson_first(duplicate)["invalid_reasons"])
+
+        out_of_range = copy.deepcopy(rows)
+        target(out_of_range)["fold"] = 3
+        result = pearson_first(out_of_range)
+        self.assertFalse(result["coverage_complete"])
+        self.assertIn("OUT_OF_RANGE_FOLD", result["invalid_reasons"])
+        self.assertIn("MISSING_FOLD", result["invalid_reasons"])
+
+        invalid_fold = copy.deepcopy(rows)
+        target(invalid_fold)["fold"] = "2"
+        result = pearson_first(invalid_fold)
+        self.assertFalse(result["coverage_complete"])
+        self.assertIn("INVALID_FOLD", result["invalid_reasons"])
+
+        wrong_config = copy.deepcopy(rows)
+        target(wrong_config)["config_hash"] = "0" * 64
+        result = pearson_first(wrong_config)
+        self.assertFalse(result["coverage_complete"])
+        self.assertIn("CONFIG_HASH_MISMATCH", result["invalid_reasons"])
+
+        wrong_identity = copy.deepcopy(rows)
+        target(wrong_identity)["run_id"] = "another_run"
+        result = pearson_first(wrong_identity)
+        self.assertFalse(result["coverage_complete"])
+        self.assertTrue(any("RUN_ID_MISMATCH" in reason for reason in result["invalid_reasons"]))
+
+        wrong_candidate = copy.deepcopy(rows)
+        target(wrong_candidate)["candidate"] = {"k": 99, "candidate_order": 0}
+        result = pearson_first(wrong_candidate)
+        self.assertFalse(result["coverage_complete"])
+        self.assertIn("MISSING_FOLD", result["invalid_reasons"])
+        unexpected = self.find_aggregate(
+            P4BRunner.aggregate_task_results(wrong_candidate, config, expected_identity=identity),
+            "pearson", {"k": 99, "candidate_order": 0},
+        )
+        self.assertFalse(unexpected["winner_eligible"])
+        self.assertIn("UNEXPECTED_METHOD_CANDIDATE", unexpected["invalid_reasons"])
+
+        invalid_fold = copy.deepcopy(rows)
+        target(invalid_fold).update(status="INVALID", primary_valid=False)
+        result = pearson_first(invalid_fold)
+        self.assertFalse(result["coverage_complete"])
+        self.assertIn("INVALID_TASK", result["invalid_reasons"])
+
+        missing_baseline = [row for row in rows if not (row["method"] == "ols_baseline" and row["fold"] == 1)]
+        baseline_result = self.find_aggregate(
+            P4BRunner.aggregate_task_results(missing_baseline, config, expected_identity=identity),
+            "ols_baseline", {"features": "all"},
+        )
+        self.assertFalse(baseline_result["coverage_complete"])
+        self.assertFalse(baseline_result["winner_eligible"])
 
     def test_score_invalid_is_recorded_and_ranked_last(self):
         ranked, evidence = rank_features_by_score(
@@ -246,9 +396,98 @@ class P4BV2ContractTests(unittest.TestCase):
         verify_task_checkpoint_for_resume(checkpoint, **args)
         with self.assertRaises(CheckpointVerificationError):
             verify_task_checkpoint_for_resume(checkpoint, **{**args, "expected_run_id": "other_run"})
+        with self.assertRaises(CheckpointVerificationError):
+            verify_task_checkpoint_for_resume(checkpoint, **{**args, "expected_fold": 0})
+        with self.assertRaises(CheckpointVerificationError):
+            verify_task_checkpoint_for_resume(
+                checkpoint, **{**args, "expected_candidate": {"k": 3, "candidate_order": 0}}
+            )
+        with self.assertRaises(CheckpointVerificationError):
+            verify_task_checkpoint_for_resume(checkpoint, **{**args, "expected_data_digest": "e" * 64})
+        with self.assertRaises(CheckpointVerificationError):
+            verify_task_checkpoint_for_resume(
+                checkpoint, **{**args, "expected_oof_ids": ["synthetic-1", "synthetic-2"]}
+            )
+        duplicate_oof_checkpoint = create_task_checkpoint(
+            result, [oof[0], oof[0]], run_id="run_1", code_sha="a" * 40,
+            data_digest="d" * 64, fold_digest="f" * 64,
+        )
+        with self.assertRaises(CheckpointVerificationError):
+            verify_task_checkpoint_for_resume(
+                duplicate_oof_checkpoint,
+                **{**args, "expected_oof_ids": ["synthetic-1", "synthetic-2"]},
+            )
+        with self.assertRaises(CheckpointVerificationError):
+            verify_task_checkpoint_for_resume(checkpoint, **{**args, "expected_fold_digest": "e" * 64})
+        with self.assertRaises(CheckpointVerificationError):
+            verify_task_checkpoint_for_resume(checkpoint, **{**args, "expected_code_sha": "e" * 40})
         corrupted = {**checkpoint, "result": {**result, "status": "FAILED"}}
         with self.assertRaises(CheckpointVerificationError):
             verify_task_checkpoint_for_resume(corrupted, **args)
+
+    def test_restored_checkpoints_use_same_complete_coverage_gate(self):
+        config, identity, rows = self.aggregation_config_and_rows()
+        restored = []
+        for row in rows:
+            oof = [
+                {
+                    "Id": f"SYNTHETIC-{row['fold']}-{number}",
+                    "fold": row["fold"],
+                    "task_id": row["task_id"],
+                    "method": row["method"],
+                }
+                for number in (0, 1)
+            ]
+            checkpoint = create_task_checkpoint(
+                row, oof,
+                run_id=identity["run_id"], code_sha=identity["git_sha"],
+                data_digest=identity["data_digest"], fold_digest=identity["fold_digest"],
+            )
+            verify_task_checkpoint_for_resume(
+                checkpoint,
+                expected_run_id=identity["run_id"],
+                expected_task_id=row["task_id"],
+                expected_code_sha=identity["git_sha"],
+                expected_data_digest=identity["data_digest"],
+                expected_fold_digest=identity["fold_digest"],
+                expected_config_hash=row["config_hash"],
+                expected_method=row["method"],
+                expected_candidate=row["candidate"],
+                expected_fold=row["fold"],
+                expected_package_versions=identity["package_versions"],
+                expected_oof_ids=[f"SYNTHETIC-{row['fold']}-{n}" for n in (0, 1)],
+            )
+            restored.append(checkpoint["result"])
+
+        complete = P4BRunner.aggregate_task_results(restored, config, expected_identity=identity)
+        complete_candidate = self.find_aggregate(
+            complete, "pearson", {"k": 2, "candidate_order": 0}
+        )
+        self.assertTrue(complete_candidate["coverage_complete"])
+        self.assertTrue(complete_candidate["method_winner"])
+
+        partial = [
+            row for row in restored
+            if not (row["method"] == "pearson" and row["candidate"].get("k") == 2 and row["fold"] == 2)
+        ]
+        partial_candidate = self.find_aggregate(
+            P4BRunner.aggregate_task_results(partial, config, expected_identity=identity),
+            "pearson", {"k": 2, "candidate_order": 0},
+        )
+        self.assertFalse(partial_candidate["coverage_complete"])
+        self.assertNotIn("method_winner", partial_candidate)
+
+        repeated = restored + [copy.deepcopy(next(
+            row for row in restored
+            if row["method"] == "pearson" and row["candidate"].get("k") == 2 and row["fold"] == 0
+        ))]
+        repeated_candidate = self.find_aggregate(
+            P4BRunner.aggregate_task_results(repeated, config, expected_identity=identity),
+            "pearson", {"k": 2, "candidate_order": 0},
+        )
+        self.assertFalse(repeated_candidate["coverage_complete"])
+        self.assertIn("DUPLICATE_FOLD", repeated_candidate["invalid_reasons"])
+        self.assertNotIn("method_winner", repeated_candidate)
 
 
 if __name__ == "__main__":
