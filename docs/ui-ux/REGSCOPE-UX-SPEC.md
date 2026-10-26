@@ -1,3 +1,5 @@
+> **CANONICAL ENTRYPOINT (2026-10-26):** Start at [REGSCOPE-RECONSTRUCTION-INDEX.md](./REGSCOPE-RECONSTRUCTION-INDEX.md). Earlier sketches and phase 4 per-parameter “run_id” examples are **HISTORICAL / SUPERSEDED** where they conflict with [REGSCOPE-CONTRACT-REVIEW-DELTA.md](./REGSCOPE-CONTRACT-REVIEW-DELTA.md). Phase 5 final UI and Dashboard full UI are NOT reconstruction-approved. This remains docs-only.
+
 # RegScope — UI/UX Design Specification v0.3
 
 Status: Owner-confirmed concept, **P6-A docs-only / no engineering authorization**.
