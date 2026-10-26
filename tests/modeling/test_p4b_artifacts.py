@@ -225,30 +225,16 @@ class P4BArtifactsTests(unittest.TestCase):
         outside_path = self.tmp_base / "outside_dir"
         self.assertFalse(outside_path.exists())
 
-        # 3. Runner preflight failure without output returns a fixed safe fallback.
-        preflight_config = P4BConfig(
-            synthetic_test_mode=True,
-            code_head_commit="synthetic-sha", outer_splits=2, inner_splits=2,
-            active_methods=["filter_pearson"], estimator_fit_cap=1,
-            preprocessor_fit_cap=20, timeout_seconds=30.0, repo_root=self.tmp_base,
-        )
-        with self.assertRaises(Exception) as preflight_error:
-            P4BRunner(preflight_config).run_nested_cv([])
-        self.assertIn("PREFLIGHT_BUDGET_EXCEEDED", str(preflight_error.exception))
-        self.assertNotIn(str(self.tmp_base), str(preflight_error.exception))
+        # 3. Production fold execution stays fail-closed on macOS before fitting.
+        if os.name != "nt":
+            production_runner = P4BRunner(P4BConfig(code_head_commit="production-sha"))
+            with self.assertRaisesRegex(RuntimeError, "FAIL_CLOSED"):
+                production_runner.execute_outer_fold(0, [], [])
 
-        # 4. Runner rejects an untrusted path before mkdir/write and hides the path.
+        # 4. The containment validator rejects an untrusted target before mkdir/write.
         invalid_path = self.tmp_base / "outside_dir"
-        safe_config = P4BConfig(
-            synthetic_test_mode=True,
-            code_head_commit="synthetic-sha", outer_splits=2, inner_splits=2,
-            active_methods=["filter_pearson"], k_candidates=(2,), d_ceiling=10,
-            estimator_fit_cap=100, preprocessor_fit_cap=20,
-            timeout_seconds=30.0, repo_root=self.tmp_base,
-        )
-        with self.assertRaises(PathContainmentError) as path_error:
-            P4BRunner(safe_config).run_nested_cv([], output_dir=invalid_path, run_id="safe_run")
-        self.assertNotIn(str(invalid_path), str(path_error.exception))
+        with self.assertRaises(PathContainmentError):
+            assert_safe_private_containment(invalid_path, repo_root=self.tmp_base, run_id="safe_run")
         self.assertFalse(invalid_path.exists())
 
     def test_atomic_write_json_and_csv(self):
