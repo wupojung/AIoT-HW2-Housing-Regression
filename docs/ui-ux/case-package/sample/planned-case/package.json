@@ -1,0 +1,16 @@
+{
+  "package_schema_version": "1.0.0",
+  "package_id": "sample-planned-case",
+  "case_id": "planned-case",
+  "package_revision": "sample-r1",
+  "package_status": "PLANNED",
+  "publication": {
+    "approved": false,
+    "release_id": null,
+    "review_status": "NOT_REVIEWED"
+  },
+  "case_ref": "case.json",
+  "phases": {},
+  "asset_manifest_ref": null,
+  "files": []
+}
