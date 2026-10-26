@@ -154,6 +154,28 @@ class P4BV2ContractTests(unittest.TestCase):
         self.assertTrue(all(isinstance(row["score_evidence"]["score_invalid"], bool) for row in selector_rows))
         self.assertTrue(all(len(row["score_evidence"]["invalid_score_features"]) <= 20 for row in selector_rows))
 
+    def test_synthetic_mode_is_rejected_by_production_entrypoints_but_keeps_test_seam(self):
+        config = P4BConfig(code_head_commit="synthetic-code-sha", synthetic_test_mode=True)
+        runner = P4BRunner(config)
+        with patch("housing_regression.modeling.p4b_runner.load_development_rows") as load_rows:
+            with self.assertRaisesRegex(RuntimeError, "restricted to evaluate_synthetic_fold_for_test"):
+                runner.run_nested_cv_from_training_csv(Path("missing") / "train.csv")
+            load_rows.assert_not_called()
+
+        with patch.object(runner, "_run_nested_cv_with_provenance") as run_core:
+            with self.assertRaisesRegex(RuntimeError, "restricted to evaluate_synthetic_fold_for_test"):
+                runner.run_nested_cv(synthetic_rows(12))
+            run_core.assert_not_called()
+
+        with patch("housing_regression.modeling.p4b_runner.verify_development_provenance") as verify:
+            with self.assertRaisesRegex(RuntimeError, "restricted to evaluate_synthetic_fold_for_test"):
+                runner._run_nested_cv(synthetic_rows(12))
+            verify.assert_not_called()
+
+        result = runner.evaluate_synthetic_fold_for_test(0, synthetic_rows(12), synthetic_rows(4, 30))
+        self.assertEqual(result["outer_fold"], 0)
+        self.assertTrue(result["results"])
+
     def test_aggregation_requires_exact_valid_three_fold_coverage_for_each_expected_candidate(self):
         config, identity, rows = self.aggregation_config_and_rows()
         aggregates = P4BRunner.aggregate_task_results(rows, config, expected_identity=identity)

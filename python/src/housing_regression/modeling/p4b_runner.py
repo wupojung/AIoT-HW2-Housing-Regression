@@ -762,6 +762,12 @@ class P4BRunner:
             config.current_run_id, shared_admission_flag=shared_admission_gate
         )
 
+    def _require_production_mode(self) -> None:
+        if self.config.synthetic_test_mode:
+            raise RuntimeError(
+                "Synthetic test mode is restricted to evaluate_synthetic_fold_for_test."
+            )
+
     def _check_deadline(self) -> None:
         """Enforce wall-clock timeout between units of work."""
         if self.deadline is not None and time.perf_counter() > self.deadline:
@@ -808,6 +814,7 @@ class P4BRunner:
         """Evaluate one protocol-v2 fold; reject platforms lacking the protected runtime."""
         if os.name != "nt":
             raise RuntimeError("FAIL_CLOSED: Win32 Job Object process isolation is required.")
+        self._require_production_mode()
         return self._evaluate_fold(
             outer_fold_idx, outer_train_rows, outer_val_rows, pipeline_factory
         )
@@ -878,6 +885,7 @@ class P4BRunner:
         resume_checkpoint_dir: Optional[Path] = None,
     ) -> Dict[str, Any]:
         """Load only the frozen development membership from the labeled training CSV, then run."""
+        self._require_production_mode()
         path = Path(train_csv)
         if path.name.lower() != "train.csv":
             raise ValueError("Production runner accepts only the authorized labeled train.csv source.")
@@ -906,6 +914,7 @@ class P4BRunner:
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
         data_provenance: Optional[Mapping[str, Any]] = None,
     ) -> Dict[str, Any]:
+        self._require_production_mode()
         # Caller supplied mappings are assertions, not evidence of loader origin.
         # Only the CSV entrypoint may forward provenance to the internal runner.
         return self._run_nested_cv_with_provenance(
@@ -921,6 +930,7 @@ class P4BRunner:
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
         data_provenance: Optional[Mapping[str, Any]] = None,
     ) -> Dict[str, Any]:
+        self._require_production_mode()
         try:
             return self._run_nested_cv(
                 dev_rows, output_dir, run_id, resume_checkpoint_dir, pipeline_factory, data_provenance
@@ -965,6 +975,7 @@ class P4BRunner:
         data_provenance: Optional[Mapping[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Execute the fixed protocol-v2 three-fold run with preflight and private outputs."""
+        self._require_production_mode()
         self._failure_stage = "PREFLIGHT"
         # 0. Enforce B03 Fail-Closed: timeout must be positive, single_thread=True, and isolated worker enabled
         if os.name != "nt":
