@@ -26,7 +26,11 @@ from housing_regression.data_prep.constants import (
     ORDINAL_COLUMNS,
 )
 from housing_regression.data_prep.pipeline import AmesDataPreparationPipeline
-from housing_regression.modeling.ols_cv import fit_ols_svd, predict as predict_ols
+from housing_regression.modeling.ols_cv import (
+    compute_numerical_diagnostics,
+    fit_ols_svd,
+    predict as predict_ols,
+)
 
 METHOD_ORDER = ("pearson", "mutual_information", "lasso", "elastic_net", "ridge_rfe")
 K_GRID = (2, 3, 5, 10, 20)
@@ -208,6 +212,49 @@ def _metric_values(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
     }
 
 
+def rank_features_by_score(
+    scores: Sequence[float], feature_names: Sequence[str], *, evidence_limit: int = 20,
+) -> tuple[list[int], dict[str, Any]]:
+    """Rank finite scores first, with deterministic name ties and bounded invalid evidence."""
+    values = np.asarray(scores, dtype=np.float64)
+    if values.ndim != 1 or len(values) != len(feature_names):
+        raise ValueError("Feature score vector must align with feature names.")
+    if isinstance(evidence_limit, bool) or not isinstance(evidence_limit, int) or evidence_limit < 0:
+        raise ValueError("evidence_limit must be a nonnegative integer.")
+
+    finite_mask = np.isfinite(values)
+    finite_values = values[finite_mask]
+    constant = bool(finite_values.size > 0 and np.all(finite_values == finite_values[0]))
+    invalid_mask = ~finite_mask
+    if constant:
+        invalid_mask = np.ones(len(values), dtype=bool)
+
+    valid_indices = [i for i in range(len(values)) if not invalid_mask[i]]
+    invalid_indices = [i for i in range(len(values)) if invalid_mask[i]]
+    ranked = sorted(valid_indices, key=lambda i: (-float(values[i]), str(feature_names[i])))
+    ranked.extend(sorted(invalid_indices, key=lambda i: str(feature_names[i])))
+
+    invalid_names = sorted(str(feature_names[i]) for i in invalid_indices)
+    if constant and not invalid_names:
+        # Constant scores invalidate the complete vector, including all features.
+        invalid_names = sorted(map(str, feature_names))
+    reasons = []
+    if bool((~finite_mask).any()):
+        reasons.append("NONFINITE")
+    if constant:
+        reasons.append("CONSTANT")
+    return ranked, {
+        "score_invalid": bool(reasons),
+        "score_invalid_reason": "+".join(reasons) if reasons else None,
+        "score_count": len(values),
+        "finite_score_count": int(finite_mask.sum()),
+        "invalid_score_count": len(invalid_names),
+        "invalid_score_features": invalid_names[:evidence_limit],
+        "invalid_score_features_truncated": len(invalid_names) > evidence_limit,
+        "rank_tiebreak": "encoded_feature_name_ascending",
+    }
+
+
 def _package_versions() -> dict[str, str]:
     import pandas
     import scipy
@@ -270,7 +317,9 @@ def evaluate_fold(
     def record(method: str, candidate: Mapping[str, Any], selected_idx: Sequence[int],
                pred: np.ndarray, valid: bool = True, invalid_reason: str | None = None,
                native_pred: np.ndarray | None = None, convergence: str = "CONVERGED",
-               fit_count: int = 1, duration_seconds: float = 0.0) -> None:
+               fit_count: int = 1, duration_seconds: float = 0.0,
+               score_evidence: Mapping[str, Any] | None = None,
+               ols_diagnostics: Mapping[str, Any] | None = None) -> None:
         if check_deadline:
             check_deadline()
         selected_names = [names[i] for i in selected_idx]
@@ -303,6 +352,17 @@ def evaluate_fold(
             "duration_seconds": max(0.0, float(duration_seconds)),
             "rank_or_score": None,
             "coef_or_importance": None,
+            "score_evidence": dict(score_evidence) if score_evidence is not None else None,
+            "ols_diagnostics": dict(ols_diagnostics) if ols_diagnostics is not None else {
+                "status": "NOT_COMPUTED",
+                "reason": "PRIMARY_OLS_NOT_FIT",
+                "rank": None,
+                "nullity": None,
+                "condition_number": None,
+                "condition_number_effective": None,
+                "condition_number_full": None,
+                "tolerance": None,
+            },
         }
         row.update(_metric_values(yva, pred) if valid else {"rmse": None, "mae": None, "r2": None})
         if native_pred is not None:
@@ -343,18 +403,40 @@ def evaluate_fold(
                 native_pred: np.ndarray | None = None,
                 convergence: str = "CONVERGED",
                 fit_count: int | None = None,
-                started_at: float | None = None) -> None:
+                started_at: float | None = None,
+                score_evidence: Mapping[str, Any] | None = None) -> None:
         start = started_at if started_at is not None else time.perf_counter()
+        diagnostics: dict[str, Any] = {
+            "status": "NOT_COMPUTED",
+            "reason": "PRIMARY_OLS_NOT_FIT",
+            "rank": None,
+            "nullity": None,
+            "condition_number": None,
+            "condition_number_effective": None,
+            "condition_number_full": None,
+            "tolerance": None,
+        }
         if valid:
             if accounting:
                 accounting.record_estimator_fit()
             fit = fit_ols_svd(Xtr[:, indices], ytr, add_intercept=True)
             pred = predict_ols(fit, Xva[:, indices])
+            numerical = compute_numerical_diagnostics(fit["design_matrix"])
+            diagnostics = {
+                "status": "COMPUTED",
+                "rank": numerical["rank"],
+                "nullity": numerical["nullity"],
+                "condition_number": numerical["condition_number_effective"],
+                "condition_number_effective": numerical["condition_number_effective"],
+                "condition_number_full": numerical["condition_number_full"],
+                "tolerance": numerical["tolerance"],
+            }
         else:
             pred = np.full_like(yva, np.nan)
         elapsed = time.perf_counter() - start
         record(method, candidate, indices, pred, valid, reason, native_pred, convergence,
-               fit_count if fit_count is not None else (1 if valid else 0), elapsed)
+               fit_count if fit_count is not None else (1 if valid else 0), elapsed,
+               score_evidence=score_evidence, ols_diagnostics=diagnostics)
 
     baseline_candidate = {"features": "all"}
     if not already_done("ols_baseline", baseline_candidate):
@@ -373,9 +455,6 @@ def evaluate_fold(
             candidate = {"k": k, "candidate_order": order}
             if already_done(method, candidate):
                 continue
-            if k > len(names):
-                fit_ols([], method, candidate, False, "K_EXCEEDS_FEATURE_COUNT")
-                continue
             started = time.perf_counter()
             if method == "pearson":
                 from housing_regression.modeling.p4b_runner import compute_pearson_correlations
@@ -388,10 +467,14 @@ def evaluate_fold(
                 ], dtype=bool)
                 scores = mutual_info_regression(Xtr, ytr, discrete_features=discrete,
                                                 n_neighbors=3, random_state=42)
-            scores = np.asarray(scores, dtype=np.float64)
-            scores[~np.isfinite(scores)] = -np.inf
-            idx = sorted(range(len(names)), key=lambda i: (-scores[i], names[i]))[:k]
-            fit_ols(idx, method, candidate, started_at=started)
+            ranked, score_evidence = rank_features_by_score(scores, names)
+            if k > len(names):
+                fit_ols([], method, candidate, False, "K_EXCEEDS_FEATURE_COUNT",
+                        started_at=started, score_evidence=score_evidence)
+                continue
+            idx = ranked[:k]
+            fit_ols(idx, method, candidate, started_at=started,
+                    score_evidence=score_evidence)
 
     for order, k in (enumerate(k_grid) if "ridge_rfe" in active_methods else ()):
         candidate = {"k": k, "candidate_order": order}

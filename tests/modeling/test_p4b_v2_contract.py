@@ -6,6 +6,7 @@ import random
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = REPO_ROOT / "python" / "src"
@@ -17,6 +18,7 @@ from housing_regression.modeling.p4b_v2 import (
     LineageResolutionError,
     RunControlState,
     make_task_id,
+    rank_features_by_score,
     require_matching_process_identity,
     resolve_feature_lineage,
     task_specs,
@@ -35,7 +37,7 @@ def synthetic_rows(count: int, offset: int = 0) -> list[dict[str, str]]:
         area = 4000 + (i + offset) * 137
         quality = 2 + (i % 8)
         rows.append({
-            "Id": str(i + offset + 1),
+            "Id": f"SYNTHETIC-{i + offset + 1}",
             "LotArea": str(area),
             "OverallQual": str(quality),
             "Neighborhood": ("A", "B", "C")[i % 3],
@@ -49,14 +51,14 @@ class P4BV2ContractTests(unittest.TestCase):
         config = P4BConfig(
             code_head_commit="synthetic-code-sha",
             active_methods=["pearson", "mutual_information"],
-            k_candidates=(2,),
+            k_candidates=(2, 999),
             synthetic_test_mode=True,
             current_run_id="unit_run",
             current_data_digest="d" * 64,
             current_fold_digest="f" * 64,
         )
         runner = P4BRunner(config)
-        result = runner.execute_outer_fold(0, synthetic_rows(12), synthetic_rows(4, 30))
+        result = runner.evaluate_synthetic_fold_for_test(0, synthetic_rows(12), synthetic_rows(4, 30))
         methods = {item["method"] for item in result["results"]}
         self.assertEqual(methods, {"ols_baseline", "pearson", "mutual_information"})
         self.assertEqual(runner.accounting.preprocessor_fits, 1)
@@ -64,6 +66,54 @@ class P4BV2ContractTests(unittest.TestCase):
         self.assertTrue(all(item["data_digest"] == "d" * 64 for item in result["results"]))
         self.assertTrue(all(item["fold_digest"] == "f" * 64 for item in result["results"]))
         self.assertEqual(len(result["oof_records"]), len(result["results"]) * 4)
+        computed_diagnostics = [
+            row["ols_diagnostics"] for row in result["results"]
+            if row["primary_valid"]
+        ]
+        self.assertTrue(computed_diagnostics)
+        for diagnostics in computed_diagnostics:
+            self.assertEqual(diagnostics["status"], "COMPUTED")
+            self.assertIsInstance(diagnostics["rank"], int)
+            self.assertIsInstance(diagnostics["nullity"], int)
+            self.assertIn("condition_number", diagnostics)
+            self.assertIn("condition_number_effective", diagnostics)
+            self.assertIn("tolerance", diagnostics)
+        invalid_rows = [row for row in result["results"] if not row["primary_valid"]]
+        self.assertTrue(invalid_rows)
+        self.assertTrue(all(row["ols_diagnostics"]["status"] == "NOT_COMPUTED" for row in invalid_rows))
+        selector_rows = [row for row in result["results"] if row["method"] in {"pearson", "mutual_information"}]
+        self.assertTrue(all(isinstance(row["score_evidence"]["score_invalid"], bool) for row in selector_rows))
+        self.assertTrue(all(len(row["score_evidence"]["invalid_score_features"]) <= 20 for row in selector_rows))
+
+    def test_score_invalid_is_recorded_and_ranked_last(self):
+        ranked, evidence = rank_features_by_score(
+            [0.2, float("nan"), 0.8], ["feature_b", "feature_a", "feature_c"]
+        )
+        self.assertEqual(ranked, [2, 0, 1])
+        self.assertTrue(evidence["score_invalid"])
+        self.assertEqual(evidence["score_invalid_reason"], "NONFINITE")
+        self.assertEqual(evidence["invalid_score_features"], ["feature_a"])
+        self.assertEqual(evidence["invalid_score_count"], 1)
+
+        constant_ranked, constant_evidence = rank_features_by_score(
+            [0.5, 0.5, 0.5], ["feature_z", "feature_a", "feature_m"]
+        )
+        self.assertEqual(constant_ranked, [1, 2, 0])
+        self.assertTrue(constant_evidence["score_invalid"])
+        self.assertEqual(constant_evidence["score_invalid_reason"], "CONSTANT")
+        self.assertEqual(constant_evidence["invalid_score_count"], 3)
+
+    def test_public_runner_fails_closed_on_macos_and_synthetic_seam_rejects_real_ids(self):
+        runner = P4BRunner(P4BConfig(code_head_commit="synthetic-code-sha", synthetic_test_mode=True))
+        train, val = synthetic_rows(12), synthetic_rows(4, 30)
+        with patch("housing_regression.modeling.p4b_runner.os.name", "posix"):
+            with self.assertRaisesRegex(RuntimeError, "FAIL_CLOSED"):
+                runner.execute_outer_fold(0, train, val)
+        self.assertEqual(runner.accounting.preprocessor_fits, 0)
+        with self.assertRaisesRegex(ValueError, "SYNTHETIC-"):
+            runner.evaluate_synthetic_fold_for_test(
+                0, [{**train[0], "Id": "123"}], val
+            )
 
     def test_task_ids_are_stable_and_fold_scoped(self):
         candidate = {"alpha": 1.0, "candidate_order": 1}

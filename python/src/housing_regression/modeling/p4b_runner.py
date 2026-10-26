@@ -793,7 +793,42 @@ class P4BRunner:
         outer_val_rows: List[Dict[str, str]],
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
     ) -> Dict[str, Any]:
-        """Evaluate one protocol-v2 fold without nested CV or process control."""
+        """Evaluate one protocol-v2 fold; reject platforms lacking the protected runtime."""
+        if os.name != "nt":
+            raise RuntimeError("FAIL_CLOSED: Win32 Job Object process isolation is required.")
+        return self._evaluate_fold(
+            outer_fold_idx, outer_train_rows, outer_val_rows, pipeline_factory
+        )
+
+    def evaluate_synthetic_fold_for_test(
+        self,
+        outer_fold_idx: int,
+        outer_train_rows: List[Dict[str, str]],
+        outer_val_rows: List[Dict[str, str]],
+        pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
+    ) -> Dict[str, Any]:
+        """Pure test seam accepting only explicitly marked synthetic fixture IDs."""
+        if not self.config.synthetic_test_mode:
+            raise RuntimeError("Synthetic fold evaluation requires synthetic_test_mode=True.")
+        all_rows = [*outer_train_rows, *outer_val_rows]
+        if not all_rows or any(
+            not isinstance(row.get(ID_COLUMN), str)
+            or not row[ID_COLUMN].startswith("SYNTHETIC-")
+            for row in all_rows
+        ):
+            raise ValueError("Synthetic test rows must use SYNTHETIC- prefixed Id values.")
+        return self._evaluate_fold(
+            outer_fold_idx, outer_train_rows, outer_val_rows, pipeline_factory
+        )
+
+    def _evaluate_fold(
+        self,
+        outer_fold_idx: int,
+        outer_train_rows: List[Dict[str, str]],
+        outer_val_rows: List[Dict[str, str]],
+        pipeline_factory: Callable[[], AmesDataPreparationPipeline],
+    ) -> Dict[str, Any]:
+        """Shared in-process fold evaluator; only the explicit test seam bypasses OS gating."""
         from housing_regression.modeling.p4b_v2 import evaluate_fold
 
         if self.control_state.frozen:
