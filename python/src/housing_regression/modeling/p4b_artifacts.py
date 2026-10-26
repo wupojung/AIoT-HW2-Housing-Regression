@@ -293,21 +293,136 @@ def compute_checkpoint_payload_digest(results: Sequence[Mapping[str, Any]], oof_
     return h.hexdigest()
 
 
+def create_task_checkpoint(
+    result: Mapping[str, Any],
+    oof_records: Sequence[Mapping[str, Any]],
+    *,
+    run_id: str,
+    code_sha: str,
+    data_digest: str,
+    fold_digest: str,
+) -> Dict[str, Any]:
+    """Build one task-level checkpoint with immutable run/config identity."""
+    required = ("task_id", "method", "candidate", "fold", "config_hash", "status")
+    if any(key not in result for key in required):
+        raise CheckpointVerificationError("Task result is missing required identity fields.")
+    package_versions = dict(result.get("package_versions", {}))
+    payload = {
+        "result": dict(result),
+        "oof_records": [dict(row) for row in oof_records],
+        "package_versions": package_versions,
+    }
+    payload_digest = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+    return {
+        "run_id": run_id,
+        "task_id": result["task_id"],
+        "method": result["method"],
+        "candidate": dict(result["candidate"]),
+        "fold": result["fold"],
+        "code_sha": code_sha,
+        "data_digest": data_digest,
+        "fold_digest": fold_digest,
+        "config_hash": result["config_hash"],
+        "package_versions": package_versions,
+        "status": result["status"],
+        "result": dict(result),
+        "oof_records": [dict(row) for row in oof_records],
+        "payload_digest": payload_digest,
+    }
+
+
+def verify_task_checkpoint_for_resume(
+    checkpoint: Mapping[str, Any],
+    *,
+    expected_run_id: str,
+    expected_task_id: str,
+    expected_code_sha: str,
+    expected_data_digest: str,
+    expected_fold_digest: str,
+    expected_config_hash: str,
+    expected_method: str,
+    expected_candidate: Mapping[str, Any],
+    expected_fold: int,
+    expected_package_versions: Mapping[str, str],
+    expected_oof_ids: Sequence[str],
+) -> None:
+    """Fail closed unless a task checkpoint exactly matches the current run."""
+    if checkpoint.get("status") not in {"COMPLETED", "INVALID"}:
+        raise CheckpointVerificationError("Task checkpoint is not in a resumable terminal state.")
+    expected = {
+        "run_id": expected_run_id,
+        "task_id": expected_task_id,
+        "code_sha": expected_code_sha,
+        "data_digest": expected_data_digest,
+        "fold_digest": expected_fold_digest,
+        "config_hash": expected_config_hash,
+        "method": expected_method,
+        "candidate": dict(expected_candidate),
+        "fold": expected_fold,
+        "package_versions": dict(expected_package_versions),
+    }
+    if any(checkpoint.get(key) != value for key, value in expected.items()):
+        raise CheckpointVerificationError("Task checkpoint identity/config/data/fold mismatch.")
+    result = checkpoint.get("result")
+    oof_records = checkpoint.get("oof_records")
+    if not isinstance(result, Mapping) or not isinstance(oof_records, list) or any(
+        not isinstance(row, Mapping) for row in oof_records
+    ):
+        raise CheckpointVerificationError("Task checkpoint payload shape is invalid.")
+    if result.get("task_id") != expected_task_id or result.get("config_hash") != expected_config_hash:
+        raise CheckpointVerificationError("Task checkpoint result identity mismatch.")
+    actual_ids = [str(row.get("Id")) for row in oof_records]
+    if (
+        len(actual_ids) != len(expected_oof_ids)
+        or len(set(actual_ids)) != len(actual_ids)
+        or set(actual_ids) != set(map(str, expected_oof_ids))
+        or any(
+            row.get("task_id") != expected_task_id
+            or row.get("fold") != expected_fold
+            or row.get("method") != expected_method
+            for row in oof_records
+        )
+    ):
+        raise CheckpointVerificationError("Task checkpoint OOF identity coverage mismatch.")
+    payload = {
+        "result": dict(result),
+        "oof_records": [dict(row) for row in oof_records],
+        "package_versions": dict(checkpoint.get("package_versions", {})),
+    }
+    actual = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+    if checkpoint.get("payload_digest") != actual:
+        raise CheckpointVerificationError("Task checkpoint payload digest mismatch.")
+
+
 def checkpoint_run_config(config: P4BConfig) -> Dict[str, Any]:
     """Serialize every run-defining config field without local paths or execution controls."""
-    excluded = {"repo_root"}
+    excluded = {
+        "repo_root",
+        "current_run_id",
+        "current_data_digest",
+        "current_fold_digest",
+        "completed_task_ids",
+        "current_checkpoint_dir",
+    }
     result: Dict[str, Any] = {}
     for item in fields(config):
         if item.name in excluded:
             continue
         value = getattr(config, item.name)
         if item.name == "active_methods":
-            value = sorted({method for method, _track in config.active_pairs}) if config.active_pairs is not None else list(
-                value or ["filter_pearson", "forward_sfs", "rfe_ridge", "lasso_cv", "elastic_net_cv"]
+            value = sorted({method for method, _track in config.active_pairs if method != "ols_baseline"}) if config.active_pairs is not None else list(
+                value or ["pearson", "mutual_information", "lasso", "elastic_net", "ridge_rfe"]
             )
         elif item.name == "active_pairs":
-            selected_methods = set(config.active_methods or ("filter_pearson", "forward_sfs", "rfe_ridge", "lasso_cv", "elastic_net_cv"))
-            pairs = value if value is not None else [pair for pair in SUPPORTED_PAIRS if pair[0] in selected_methods]
+            selected_methods = set(config.active_methods or ("pearson", "mutual_information", "lasso", "elastic_net", "ridge_rfe"))
+            pairs = value if value is not None else (
+                [pair for pair in SUPPORTED_PAIRS if pair[0] in selected_methods]
+                + [("ols_baseline", "baseline")]
+            )
             value = [list(pair) for pair in pairs]
         elif isinstance(value, tuple):
             value = list(value)
@@ -359,7 +474,7 @@ def create_public_summary(
     return {
         "metadata": {
             "protocol_version": config.protocol_version,
-            "issue_reference": "Issue #21 / Issue #22",
+            "issue_reference": "Issue #30",
             "base_commit": "ee03a51978a0f615f39b656bee318946dcddd890",
             "historical_p4a_reference": {
                 "outer_mean_rmse": 36855.78,
@@ -378,23 +493,22 @@ def create_public_summary(
             "data_boundary": {
                 "development_rows": development_rows,
                 "outer_kfold": {"n_splits": config.outer_splits, "shuffle": True, "random_state": config.outer_seed},
-                "inner_kfold": {"n_splits": config.inner_splits, "shuffle": True, "random_state": config.inner_seed},
                 "outer_fold_digest_expected": outer_fold_digest,
                 "dataset_fingerprint_verified": dataset_fingerprint_verified,
                 "digest_provenance": digest_provenance,
             },
         },
         "method_contract": {
-            "filter_pearson": {"k_candidates": list(config.k_candidates)},
-            "forward_sfs": {"estimator": "SVD_OLS", "k_candidates": list(config.k_candidates)},
-            "rfe_ridge": {"estimator": "Ridge(alpha=1.0)", "k_candidates": list(config.k_candidates)},
-            "lasso_cv": {"alphas_count": config.lasso_alphas_count, "inner_cv": config.inner_splits, "adapter": "caller_managed_grid"},
-            "elastic_net_cv": {
-                "l1_ratios": list(config.elastic_net_l1_ratios),
-                "alphas_count": config.elastic_net_alphas_count,
-                "inner_cv": config.inner_splits,
-                "adapter": "caller_managed_grid",
-            },
+            "pearson": {"k_candidates": list(config.k_candidates), "primary_track": "selected_to_ols"},
+            "mutual_information": {"k_candidates": list(config.k_candidates), "primary_track": "selected_to_ols"},
+            "ridge_rfe": {"estimator": "Ridge(alpha=1.0)", "k_candidates": list(config.k_candidates),
+                          "primary_track": "selected_to_ols"},
+            "lasso": {"alphas": [0.1, 1.0, 10.0, 100.0], "primary_track": "selected_to_ols",
+                      "native_track": "diagnostic_only"},
+            "elastic_net": {"alphas": [0.1, 1.0, 10.0, 100.0],
+                            "l1_ratios": [0.2, 0.5, 0.8],
+                            "primary_track": "selected_to_ols", "native_track": "diagnostic_only"},
+            "ols_baseline": {"features": "all_encoded_columns", "fold_local": True},
         },
         "per_outer_fold_results": per_outer_fold_results,
         "aggregate_results": aggregate_results,

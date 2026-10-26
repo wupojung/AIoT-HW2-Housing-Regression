@@ -28,6 +28,7 @@ import re
 import struct
 import time
 import unicodedata
+import uuid
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -64,7 +65,7 @@ from housing_regression.modeling.ols_cv import (
     predict as predict_ols,
 )
 
-PROTOCOL_VERSION: str = "v1.0"
+PROTOCOL_VERSION: str = "v2.0"
 DEFAULT_D_CEILING: int = 300
 DEFAULT_ESTIMATOR_FIT_CAP: int = 150000
 DEFAULT_PREPROCESSOR_FIT_CAP: int = 200
@@ -72,7 +73,7 @@ WORKER_STARTUP_TIMEOUT_SECONDS: float = 10.0
 DEFAULT_WORKER_MEMORY_LIMIT_BYTES: int = 2 * 1024 * 1024 * 1024
 EXPECTED_DEVELOPMENT_ROWS: int = 1168
 EXPECTED_DEVELOPMENT_INDEX_DIGEST: str = "3981ebb16dde1b26400a431ef7c5d318b970f7ede50f42390d8221300eb299f4"
-EXPECTED_OUTER_FOLD_DIGEST: str = "7c9f1d00eb74d8a281ba41ed47d5ebbdbffa0513b4bb778b70d1571735ad6463"
+EXPECTED_OUTER_FOLD_DIGEST: str = fold_assignment_digest(kfold_assignments(1168, 3, 42))
 
 # 80-column canonical schema definitions
 SCHEMA_STRING_COLUMNS: Set[str] = set(NOMINAL_COLUMNS + ORDINAL_COLUMNS)
@@ -122,45 +123,45 @@ INT_REGEX = re.compile(r"^[+-]?[0-9]+$")
 # Supported candidate K set
 ALLOWED_K_CANDIDATES: Tuple[int, ...] = (2, 3, 5, 10, 20)
 
-# Supported 7 method-track pairs
+# Protocol v2 primary methods; native penalties are diagnostics, not winners.
 SUPPORTED_PAIRS: Tuple[Tuple[str, str], ...] = (
-    ("filter_pearson", "Track A"),
-    ("forward_sfs", "Track A"),
-    ("rfe_ridge", "Track A"),
-    ("lasso_cv", "Track A"),
-    ("lasso_cv", "Track B"),
-    ("elastic_net_cv", "Track A"),
-    ("elastic_net_cv", "Track B"),
+    ("pearson", "primary"),
+    ("mutual_information", "primary"),
+    ("lasso", "primary"),
+    ("elastic_net", "primary"),
+    ("ridge_rfe", "primary"),
+    ("lasso", "diagnostic"),
+    ("elastic_net", "diagnostic"),
+    ("ols_baseline", "baseline"),
 )
 
 
 def expected_method_pairs(config: "P4BConfig") -> List[Tuple[str, str]]:
     if config.active_pairs is not None:
         return sorted(tuple(pair) for pair in config.active_pairs)
-    methods = set(config.active_methods or ("filter_pearson", "forward_sfs", "rfe_ridge", "lasso_cv", "elastic_net_cv"))
-    return sorted(pair for pair in SUPPORTED_PAIRS if pair[0] in methods)
+    methods = set(config.active_methods or ("pearson", "mutual_information", "lasso", "elastic_net", "ridge_rfe"))
+    return sorted([pair for pair in SUPPORTED_PAIRS if pair[0] in methods] + [("ols_baseline", "baseline")])
 
 
 def active_methods_for_config(config: "P4BConfig") -> Set[str]:
     if config.active_pairs is not None:
         return {method for method, _track in expected_method_pairs(config)}
-    return set(config.active_methods or ("filter_pearson", "forward_sfs", "rfe_ridge", "lasso_cv", "elastic_net_cv"))
+    return set(config.active_methods or ("pearson", "mutual_information", "lasso", "elastic_net", "ridge_rfe"))
 
 
 def compute_fold_plan_digest(n_rows: int, config: "P4BConfig") -> str:
-    """Digest exact outer and nested inner row-index assignments for this run."""
-    outer = kfold_assignments(n_rows, config.outer_splits, config.outer_seed)
-    plan = {"outer": outer, "inner": {}}
-    for fold_idx in range(config.outer_splits):
-        train_indices = [index for index, assigned in enumerate(outer) if assigned != fold_idx]
-        inner_assignment = kfold_assignments(len(train_indices), config.inner_splits, config.inner_seed)
-        plan["inner"][str(fold_idx)] = [
-            {
-                "train": [train_indices[i] for i, assigned in enumerate(inner_assignment) if assigned != inner_idx],
-                "validation": [train_indices[i] for i, assigned in enumerate(inner_assignment) if assigned == inner_idx],
-            }
-            for inner_idx in range(config.inner_splits)
-        ]
+    """Digest the single, fixed three-fold Development assignment."""
+    assignments = kfold_assignments(n_rows, config.outer_splits, config.outer_seed)
+    plan = {
+        "n_splits": config.outer_splits,
+        "shuffle": True,
+        "random_state": config.outer_seed,
+        "folds": [
+            {"train": [i for i, value in enumerate(assignments) if value != fold],
+             "validation": [i for i, value in enumerate(assignments) if value == fold]}
+            for fold in range(config.outer_splits)
+        ],
+    }
     return hashlib.sha256(json.dumps(plan, separators=(",", ":"), sort_keys=True).encode("utf-8")).hexdigest()
 
 
@@ -191,12 +192,12 @@ def verify_development_provenance(
 
     if len(rows) != EXPECTED_DEVELOPMENT_ROWS:
         raise ValueError("Production input row count does not match frozen development membership.")
-    if config.inner_splits != 3 or config.inner_seed != 1042:
-        raise ValueError("Production inner-fold provenance must match the frozen P4-B protocol.")
+    if config.outer_splits != 3 or config.outer_seed != 42:
+        raise ValueError("Production outer-fold provenance must use the frozen three-fold seed-42 plan.")
     folds = kfold_assignments(len(rows), config.outer_splits, config.outer_seed)
     actual_fold_digest = fold_assignment_digest(folds)
-    if config.outer_splits != 5 or config.outer_seed != 42 or actual_fold_digest != EXPECTED_OUTER_FOLD_DIGEST:
-        raise ValueError("Production outer-fold provenance does not match the frozen P4-A assignment.")
+    if actual_fold_digest != EXPECTED_OUTER_FOLD_DIGEST:
+        raise ValueError("Development fold membership does not match the frozen 3-fold seed-42 assignment.")
     if not isinstance(provenance, Mapping):
         raise ValueError("Production input must come from the Phase-3 development loader.")
     required_provenance = {
@@ -294,34 +295,50 @@ class P4BConfig:
     d_ceiling: int = DEFAULT_D_CEILING
     estimator_fit_cap: int = DEFAULT_ESTIMATOR_FIT_CAP
     preprocessor_fit_cap: int = DEFAULT_PREPROCESSOR_FIT_CAP
-    outer_splits: int = 5
+    outer_splits: int = 3
     outer_seed: int = 42
-    inner_splits: int = 3
-    inner_seed: int = 1042
+    # Retained for old checkpoint parsing only; protocol v2 does not use inner CV.
+    inner_splits: int = 1
+    inner_seed: int = 42
     k_candidates: Tuple[int, ...] = ALLOWED_K_CANDIDATES
-    lasso_alphas_count: int = 50
+    lasso_alphas_count: int = 4
     lasso_alpha_min: float = 0.1
-    lasso_alpha_max: float = 1000.0
-    elastic_net_l1_ratios: Tuple[float, ...] = (0.1, 0.5, 0.7, 0.9, 0.95, 0.99)
-    elastic_net_alphas_count: int = 30
+    lasso_alpha_max: float = 100.0
+    elastic_net_l1_ratios: Tuple[float, ...] = (0.2, 0.5, 0.8)
+    elastic_net_alphas_count: int = 4
     elastic_net_alpha_min: float = 0.1
-    elastic_net_alpha_max: float = 1000.0
-    max_iter: int = 5000
+    elastic_net_alpha_max: float = 100.0
+    max_iter: int = 10000
     tol: float = 1e-4
     single_thread: bool = True
     timeout_seconds: Optional[float] = 300.0
     use_isolated_worker_process: bool = True
     repo_root: Optional[Path] = None
-    active_methods: Optional[List[str]] = None  # None means all 5 methods
-    active_pairs: Optional[List[Tuple[str, str]]] = None  # None means all 7 pairs
+    active_methods: Optional[List[str]] = None  # None means all five primary methods
+    active_pairs: Optional[List[Tuple[str, str]]] = None
     max_worker_memory_bytes: int = DEFAULT_WORKER_MEMORY_LIMIT_BYTES
     synthetic_test_mode: bool = False
+    current_run_id: str = "phase_b"
+    current_data_digest: Optional[str] = None
+    current_fold_digest: Optional[str] = None
+    completed_task_ids: Optional[List[str]] = None
+    current_checkpoint_dir: Optional[str] = None
+    max_workers: int = 1
+    blas_threads: int = 1
 
     def validate_positive(self) -> None:
-        if self.outer_splits < 2:
-            raise ValueError(f"outer_splits must be >= 2, got {self.outer_splits}")
-        if self.inner_splits < 2:
-            raise ValueError(f"inner_splits must be >= 2, got {self.inner_splits}")
+        if self.outer_splits != 3 or self.outer_seed != 42:
+            raise ValueError("Protocol v2 requires KFold(n_splits=3, shuffle=True, random_state=42).")
+        if self.inner_splits != 1:
+            raise ValueError("Protocol v2 does not permit nested inner CV.")
+        if tuple(self.k_candidates) != (2, 3, 5, 10, 20):
+            raise ValueError("Protocol v2 fixes K candidates to (2, 3, 5, 10, 20).")
+        if (self.lasso_alphas_count, self.lasso_alpha_min, self.lasso_alpha_max) != (4, 0.1, 100.0):
+            raise ValueError("Protocol v2 fixes the Lasso alpha grid to (0.1, 1, 10, 100).")
+        if (self.elastic_net_alphas_count, self.elastic_net_alpha_min, self.elastic_net_alpha_max) != (4, 0.1, 100.0):
+            raise ValueError("Protocol v2 fixes the ElasticNet alpha grid to (0.1, 1, 10, 100).")
+        if tuple(self.elastic_net_l1_ratios) != (0.2, 0.5, 0.8):
+            raise ValueError("Protocol v2 fixes ElasticNet l1_ratio to (0.2, 0.5, 0.8).")
         if self.d_ceiling <= 0:
             raise ValueError(f"d_ceiling must be positive, got {self.d_ceiling}")
         if self.estimator_fit_cap <= 0:
@@ -330,60 +347,56 @@ class P4BConfig:
             raise ValueError(f"preprocessor_fit_cap must be positive, got {self.preprocessor_fit_cap}")
         if isinstance(self.max_worker_memory_bytes, bool) or not isinstance(self.max_worker_memory_bytes, int) or self.max_worker_memory_bytes <= 0:
             raise ValueError("max_worker_memory_bytes must be a positive integer.")
-        valid_methods = {method for method, _track in SUPPORTED_PAIRS}
+        if isinstance(self.max_workers, bool) or not isinstance(self.max_workers, int) or not 1 <= self.max_workers <= 4:
+            raise ValueError("max_workers must be an integer from 1 through 4.")
+        if self.blas_threads != 1:
+            raise ValueError("Protocol v2 requires BLAS/OpenMP thread limit 1 per worker.")
+        valid_methods = {"pearson", "mutual_information", "lasso", "elastic_net", "ridge_rfe"}
         if self.active_methods is not None and (not self.active_methods or not set(self.active_methods) <= valid_methods):
             raise ValueError("active_methods must contain only supported methods.")
         if self.active_pairs is not None:
             pair_tuples = [tuple(pair) for pair in self.active_pairs]
             if not pair_tuples or len(set(pair_tuples)) != len(pair_tuples) or not set(pair_tuples) <= set(SUPPORTED_PAIRS):
                 raise ValueError("active_pairs must contain unique supported method-track pairs.")
-            pair_methods = {method for method, _track in pair_tuples}
+            pair_methods = {method for method, _track in pair_tuples if method != "ols_baseline"}
             if self.active_methods is not None and pair_methods != set(self.active_methods):
                 raise ValueError("active_methods must exactly match the methods selected by active_pairs.")
-            for method in ("lasso_cv", "elastic_net_cv"):
+            for method in ("lasso", "elastic_net"):
                 selected_tracks = {track for pair_method, track in pair_tuples if pair_method == method}
-                if selected_tracks and selected_tracks != {"Track A", "Track B"}:
-                    raise ValueError("active_pairs must include both tracks for each regularized method.")
+                if selected_tracks and selected_tracks != {"primary", "diagnostic"}:
+                    raise ValueError("active_pairs must include primary and diagnostic tracks for each penalty method.")
 
 
 def estimate_preflight_budget(config: P4BConfig) -> Tuple[int, int]:
     """Calculate conservative upper bound on estimator fits and preprocessor fits."""
     config.validate_positive()
     M = config.outer_splits
-    m = config.inner_splits
     d = config.d_ceiling
     k_count = len(config.k_candidates)
-    max_k = max(config.k_candidates) if config.k_candidates else 20
-    min_k = min(config.k_candidates) if config.k_candidates else 2
-
-    preprocessor_fits = M * (m + 1)
+    preprocessor_fits = M
 
     active_methods = active_methods_for_config(config)
 
-    total_estimator_fits = 0
+    total_estimator_fits = M
 
-    if "filter_pearson" in active_methods:
-        filter_per_outer = m * k_count + 1
-        total_estimator_fits += M * filter_per_outer
+    if "pearson" in active_methods:
+        total_estimator_fits += M * k_count
+    if "mutual_information" in active_methods:
+        total_estimator_fits += M * k_count
 
-    if "forward_sfs" in active_methods:
-        sfs_steps_fits = sum(d - i for i in range(max_k))
-        sfs_per_outer = m * (sfs_steps_fits + k_count) + sfs_steps_fits + 1
-        total_estimator_fits += M * sfs_per_outer
-
-    if "rfe_ridge" in active_methods:
-        rfe_elim_fits = d - min_k + 1
-        rfe_per_outer = m * (rfe_elim_fits + k_count) + rfe_elim_fits + 1
+    if "ridge_rfe" in active_methods:
+        rfe_elim_fits = k_count * max(1, d)
+        rfe_per_outer = rfe_elim_fits + k_count
         total_estimator_fits += M * rfe_per_outer
 
-    if "lasso_cv" in active_methods:
+    if "lasso" in active_methods:
         alphas = config.lasso_alphas_count
-        lasso_per_outer = m * alphas * 2 + 3
+        lasso_per_outer = alphas * 2
         total_estimator_fits += M * lasso_per_outer
 
-    if "elastic_net_cv" in active_methods:
+    if "elastic_net" in active_methods:
         en_grid_size = config.elastic_net_alphas_count * len(config.elastic_net_l1_ratios)
-        en_per_outer = m * en_grid_size * 2 + 3
+        en_per_outer = en_grid_size * 2
         total_estimator_fits += M * en_per_outer
 
     return total_estimator_fits, preprocessor_fits
@@ -734,6 +747,8 @@ class P4BRunner:
         self.last_ready_msg: Optional[Dict[str, Any]] = None
         self.last_worker_timing: Dict[str, Any] = {}
         self.spawn_descendant: bool = False
+        from housing_regression.modeling.p4b_v2 import RunControlState
+        self.control_state = RunControlState(config.current_run_id)
 
     def _check_deadline(self) -> None:
         """Enforce wall-clock timeout between units of work."""
@@ -778,573 +793,18 @@ class P4BRunner:
         outer_val_rows: List[Dict[str, str]],
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
     ) -> Dict[str, Any]:
-        """Execute one complete Outer Fold with Inner 3-fold tuning and Outer Refit/Evaluation."""
-        self._check_deadline()
-        inner_kf = KFold(
-            n_splits=self.config.inner_splits,
-            shuffle=True,
-            random_state=self.config.inner_seed,
+        """Evaluate one protocol-v2 fold without nested CV or process control."""
+        from housing_regression.modeling.p4b_v2 import evaluate_fold
+
+        if self.control_state.frozen:
+            raise RuntimeError("Run admission is frozen; no additional fold task may start.")
+        result = evaluate_fold(
+            self.config, outer_fold_idx, outer_train_rows, outer_val_rows,
+            pipeline_factory=pipeline_factory, accounting=self.accounting,
+            check_deadline=self._check_deadline,
         )
-        inner_splits_indices = list(inner_kf.split(range(len(outer_train_rows))))
-
-        # 1. Preprocess each of inner splits
-        inner_partitions = []
-        for inner_idx, (in_tr_idx, in_va_idx) in enumerate(inner_splits_indices):
-            self._check_deadline()
-            in_tr_rows = [outer_train_rows[i] for i in in_tr_idx]
-            in_va_rows = [outer_train_rows[i] for i in in_va_idx]
-
-            self.accounting.record_preprocessor_fit(1)
-            pipe = pipeline_factory()
-            tr_res = pipe.fit_transform(in_tr_rows, split_name=f"outer{outer_fold_idx}_inner{inner_idx}_train")
-            va_res = pipe.transform(in_va_rows, split_name=f"outer{outer_fold_idx}_inner{inner_idx}_val")
-
-            X_tr, X_va = self._apply_partition_scaling(
-                tr_res.to_numpy(), va_res.to_numpy(), tr_res.feature_names
-            )
-            y_tr = np.asarray(tr_res.y, dtype=np.float64)
-            y_va = np.asarray(va_res.y, dtype=np.float64)
-
-            inner_partitions.append({
-                "inner_idx": inner_idx,
-                "feature_names": tr_res.feature_names,
-                "X_tr": X_tr,
-                "y_tr": y_tr,
-                "X_va": X_va,
-                "y_va": y_va,
-            })
-
-        # 2. Outer Train preprocessing (1 fit)
-        self._check_deadline()
-        self.accounting.record_preprocessor_fit(1)
-        outer_pipe = pipeline_factory()
-        out_tr_res = outer_pipe.fit_transform(outer_train_rows, split_name=f"outer{outer_fold_idx}_train")
-        out_va_res = outer_pipe.transform(outer_val_rows, split_name=f"outer{outer_fold_idx}_val")
-
-        X_out_tr, X_out_va = self._apply_partition_scaling(
-            out_tr_res.to_numpy(), out_va_res.to_numpy(), out_tr_res.feature_names
-        )
-        y_out_tr = np.asarray(out_tr_res.y, dtype=np.float64)
-        y_out_va = np.asarray(out_va_res.y, dtype=np.float64)
-
-        outer_val_ids = list(out_va_res.ids)
-
-        fold_results: List[Dict[str, Any]] = []
-        oof_records: List[Dict[str, Any]] = []
-
-        active_methods = active_methods_for_config(self.config)
-
-        # --- A. Filter Pearson (Track A) ---
-        if "filter_pearson" in active_methods:
-            self._check_deadline()
-            k_val_scores: Dict[int, List[float]] = {k: [] for k in self.config.k_candidates}
-            for part in inner_partitions:
-                for k in self.config.k_candidates:
-                    self._check_deadline()
-                    sel_indices, _ = select_features_filter(part["X_tr"], part["y_tr"], part["feature_names"], k)
-                    self.accounting.record_estimator_fit(1)
-                    fit = fit_ols_svd(part["X_tr"][:, sel_indices], part["y_tr"], add_intercept=True)
-                    yhat = predict_ols(fit, part["X_va"][:, sel_indices])
-                    rmse = math.sqrt(float(np.mean((part["y_va"] - yhat) ** 2)))
-                    k_val_scores[k].append(rmse)
-
-            avg_k_scores = [(k, float(np.mean(k_val_scores[k]))) for k in self.config.k_candidates]
-            best_k = tie_break_subset_k(avg_k_scores)
-
-            out_sel_idx, out_sel_names = select_features_filter(
-                X_out_tr, y_out_tr, out_tr_res.feature_names, best_k
-            )
-            self.accounting.record_estimator_fit(1)
-            final_fit = fit_ols_svd(X_out_tr[:, out_sel_idx], y_out_tr, add_intercept=True)
-            yhat_va = predict_ols(final_fit, X_out_va[:, out_sel_idx])
-            rmse_va = math.sqrt(float(np.mean((y_out_va - yhat_va) ** 2)))
-            ss_tot = float(np.sum((y_out_va - y_out_va.mean()) ** 2))
-            r2_va = float(1.0 - np.sum((y_out_va - yhat_va) ** 2) / ss_tot) if ss_tot > 0 else float("nan")
-
-            diagnostics = compute_numerical_diagnostics(final_fit["design_matrix"])
-
-            fold_results.append({
-                "outer_fold": outer_fold_idx,
-                "method": "filter_pearson",
-                "track": "Track A",
-                "selected_hyperparameter": {"k": best_k},
-                "selected_feature_count": len(out_sel_names),
-                "selected_feature_names": out_sel_names,
-                "outer_val_rmse": rmse_va,
-                "outer_val_r2": r2_va,
-                "numerical_diagnostics": {
-                    "rank": diagnostics["rank"],
-                    "nullity": diagnostics["nullity"],
-                    "effective_condition_number": diagnostics["condition_number_effective"],
-                },
-                "fit_accounting": {
-                    "fold_estimator_fits": len(self.config.k_candidates) * self.config.inner_splits + 1,
-                    "fold_preprocessor_fits": self.config.inner_splits + 1,
-                },
-                "convergence_status": "CONVERGED",
-            })
-            for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va):
-                oof_records.append({
-                    "Id": row_id,
-                    "OuterFold": outer_fold_idx,
-                    "Method": "filter_pearson",
-                    "Track": "Track A",
-                    "ActualSalePrice": float(act),
-                    "PredictedSalePrice": float(pred),
-                })
-
-        # --- B. Forward SFS (Track A) ---
-        if "forward_sfs" in active_methods:
-            self._check_deadline()
-            max_cand_k = max(self.config.k_candidates)
-            k_val_scores = {k: [] for k in self.config.k_candidates}
-            for part in inner_partitions:
-                path = forward_sfs_greedy_path(
-                    part["X_tr"],
-                    part["y_tr"],
-                    part["feature_names"],
-                    max_k=max_cand_k,
-                    accounting=self.accounting,
-                    check_deadline=self._check_deadline,
-                )
-                for k in self.config.k_candidates:
-                    self._check_deadline()
-                    sel_indices = [idx for idx, _ in path[:k]]
-                    self.accounting.record_estimator_fit(1)
-                    fit = fit_ols_svd(part["X_tr"][:, sel_indices], part["y_tr"], add_intercept=True)
-                    yhat = predict_ols(fit, part["X_va"][:, sel_indices])
-                    rmse = math.sqrt(float(np.mean((part["y_va"] - yhat) ** 2)))
-                    k_val_scores[k].append(rmse)
-
-            avg_k_scores = [(k, float(np.mean(k_val_scores[k]))) for k in self.config.k_candidates]
-            best_k = tie_break_subset_k(avg_k_scores)
-
-            outer_path = forward_sfs_greedy_path(
-                X_out_tr,
-                y_out_tr,
-                out_tr_res.feature_names,
-                max_k=best_k,
-                accounting=self.accounting,
-                check_deadline=self._check_deadline,
-            )
-            out_sel_idx = [idx for idx, _ in outer_path]
-            out_sel_names = [name for _, name in outer_path]
-
-            self.accounting.record_estimator_fit(1)
-            final_fit = fit_ols_svd(X_out_tr[:, out_sel_idx], y_out_tr, add_intercept=True)
-            yhat_va = predict_ols(final_fit, X_out_va[:, out_sel_idx])
-            rmse_va = math.sqrt(float(np.mean((y_out_va - yhat_va) ** 2)))
-            ss_tot = float(np.sum((y_out_va - y_out_va.mean()) ** 2))
-            r2_va = float(1.0 - np.sum((y_out_va - yhat_va) ** 2) / ss_tot) if ss_tot > 0 else float("nan")
-
-            diagnostics = compute_numerical_diagnostics(final_fit["design_matrix"])
-
-            fold_results.append({
-                "outer_fold": outer_fold_idx,
-                "method": "forward_sfs",
-                "track": "Track A",
-                "selected_hyperparameter": {"k": best_k},
-                "selected_feature_count": len(out_sel_names),
-                "selected_feature_names": out_sel_names,
-                "outer_val_rmse": rmse_va,
-                "outer_val_r2": r2_va,
-                "numerical_diagnostics": {
-                    "rank": diagnostics["rank"],
-                    "nullity": diagnostics["nullity"],
-                    "effective_condition_number": diagnostics["condition_number_effective"],
-                },
-                "fit_accounting": {
-                    "fold_estimator_fits": None,
-                    "fold_preprocessor_fits": self.config.inner_splits + 1,
-                },
-                "convergence_status": "CONVERGED",
-            })
-            for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va):
-                oof_records.append({
-                    "Id": row_id,
-                    "OuterFold": outer_fold_idx,
-                    "Method": "forward_sfs",
-                    "Track": "Track A",
-                    "ActualSalePrice": float(act),
-                    "PredictedSalePrice": float(pred),
-                })
-
-        # --- C. RFE Ridge (Track A) ---
-        if "rfe_ridge" in active_methods:
-            self._check_deadline()
-            min_cand_k = min(self.config.k_candidates)
-            k_val_scores = {k: [] for k in self.config.k_candidates}
-            for part in inner_partitions:
-                k_map = rfe_ridge_path(
-                    part["X_tr"],
-                    part["y_tr"],
-                    part["feature_names"],
-                    min_k=min_cand_k,
-                    accounting=self.accounting,
-                    check_deadline=self._check_deadline,
-                )
-                for k in self.config.k_candidates:
-                    self._check_deadline()
-                    sel_indices, _ = k_map[k]
-                    self.accounting.record_estimator_fit(1)
-                    fit = fit_ols_svd(part["X_tr"][:, sel_indices], part["y_tr"], add_intercept=True)
-                    yhat = predict_ols(fit, part["X_va"][:, sel_indices])
-                    rmse = math.sqrt(float(np.mean((part["y_va"] - yhat) ** 2)))
-                    k_val_scores[k].append(rmse)
-
-            avg_k_scores = [(k, float(np.mean(k_val_scores[k]))) for k in self.config.k_candidates]
-            best_k = tie_break_subset_k(avg_k_scores)
-
-            outer_k_map = rfe_ridge_path(
-                X_out_tr,
-                y_out_tr,
-                out_tr_res.feature_names,
-                min_k=best_k,
-                accounting=self.accounting,
-                check_deadline=self._check_deadline,
-            )
-            out_sel_idx, out_sel_names = outer_k_map[best_k]
-
-            self.accounting.record_estimator_fit(1)
-            final_fit = fit_ols_svd(X_out_tr[:, out_sel_idx], y_out_tr, add_intercept=True)
-            yhat_va = predict_ols(final_fit, X_out_va[:, out_sel_idx])
-            rmse_va = math.sqrt(float(np.mean((y_out_va - yhat_va) ** 2)))
-            ss_tot = float(np.sum((y_out_va - y_out_va.mean()) ** 2))
-            r2_va = float(1.0 - np.sum((y_out_va - yhat_va) ** 2) / ss_tot) if ss_tot > 0 else float("nan")
-
-            diagnostics = compute_numerical_diagnostics(final_fit["design_matrix"])
-
-            fold_results.append({
-                "outer_fold": outer_fold_idx,
-                "method": "rfe_ridge",
-                "track": "Track A",
-                "selected_hyperparameter": {"k": best_k},
-                "selected_feature_count": len(out_sel_names),
-                "selected_feature_names": out_sel_names,
-                "outer_val_rmse": rmse_va,
-                "outer_val_r2": r2_va,
-                "numerical_diagnostics": {
-                    "rank": diagnostics["rank"],
-                    "nullity": diagnostics["nullity"],
-                    "effective_condition_number": diagnostics["condition_number_effective"],
-                },
-                "fit_accounting": {
-                    "fold_estimator_fits": None,
-                    "fold_preprocessor_fits": self.config.inner_splits + 1,
-                },
-                "convergence_status": "CONVERGED",
-            })
-            for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va):
-                oof_records.append({
-                    "Id": row_id,
-                    "OuterFold": outer_fold_idx,
-                    "Method": "rfe_ridge",
-                    "Track": "Track A",
-                    "ActualSalePrice": float(act),
-                    "PredictedSalePrice": float(pred),
-                })
-
-        # --- D. LassoCV (Track A & Track B) ---
-        if "lasso_cv" in active_methods:
-            self._check_deadline()
-            alpha_track_a_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.lasso_alphas))}
-            alpha_track_b_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.lasso_alphas))}
-            alpha_fit_convergence: Dict[int, List[Dict[str, Any]]] = {i: [] for i in range(len(self.lasso_alphas))}
-
-            for part in inner_partitions:
-                for idx, alpha in enumerate(self.lasso_alphas):
-                    self._check_deadline()
-                    self.accounting.record_estimator_fit(1)
-                    lasso = Lasso(alpha=alpha, max_iter=self.config.max_iter, tol=self.config.tol)
-                    alpha_fit_convergence[idx].append(fit_and_capture_convergence(lasso, part["X_tr"], part["y_tr"]))
-
-                    yhat_b = lasso.predict(part["X_va"])
-                    rmse_b = math.sqrt(float(np.mean((part["y_va"] - yhat_b) ** 2)))
-                    alpha_track_b_scores[idx].append(rmse_b)
-
-                    non_zero = np.where(np.abs(lasso.coef_) > 1e-9)[0]
-                    if len(non_zero) == 0:
-                        yhat_a = np.full_like(part["y_va"], np.mean(part["y_tr"]))
-                    else:
-                        self.accounting.record_estimator_fit(1)
-                        fit_a = fit_ols_svd(part["X_tr"][:, non_zero], part["y_tr"], add_intercept=True)
-                        yhat_a = predict_ols(fit_a, part["X_va"][:, non_zero])
-                    rmse_a = math.sqrt(float(np.mean((part["y_va"] - yhat_a) ** 2)))
-                    alpha_track_a_scores[idx].append(rmse_a)
-
-            cands_a = [
-                (float(self.lasso_alphas[i]), i, float(np.mean(alpha_track_a_scores[i])))
-                for i in range(len(self.lasso_alphas))
-            ]
-            cands_b = [
-                (float(self.lasso_alphas[i]), i, float(np.mean(alpha_track_b_scores[i])))
-                for i in range(len(self.lasso_alphas))
-            ]
-            best_alpha_a, best_idx_a = tie_break_lasso_alpha(cands_a)
-            best_alpha_b, best_idx_b = tie_break_lasso_alpha(cands_b)
-
-            # Track A Outer Refit
-            self._check_deadline()
-            self.accounting.record_estimator_fit(1)
-            lasso_out_a = Lasso(alpha=best_alpha_a, max_iter=self.config.max_iter, tol=self.config.tol)
-            lasso_outer_a_convergence = fit_and_capture_convergence(lasso_out_a, X_out_tr, y_out_tr)
-            non_zero_a = np.where(np.abs(lasso_out_a.coef_) > 1e-9)[0]
-            out_sel_names_a = [out_tr_res.feature_names[i] for i in non_zero_a]
-
-            if len(non_zero_a) == 0:
-                yhat_va_a = np.full_like(y_out_va, np.mean(y_out_tr))
-                diag_a = {"rank": 1, "nullity": 0, "effective_condition_number": 1.0}
-            else:
-                self.accounting.record_estimator_fit(1)
-                final_fit_a = fit_ols_svd(X_out_tr[:, non_zero_a], y_out_tr, add_intercept=True)
-                yhat_va_a = predict_ols(final_fit_a, X_out_va[:, non_zero_a])
-                diag_res = compute_numerical_diagnostics(final_fit_a["design_matrix"])
-                diag_a = {
-                    "rank": diag_res["rank"],
-                    "nullity": diag_res["nullity"],
-                    "effective_condition_number": diag_res["condition_number_effective"],
-                }
-
-            rmse_va_a = math.sqrt(float(np.mean((y_out_va - yhat_va_a) ** 2)))
-            ss_tot = float(np.sum((y_out_va - y_out_va.mean()) ** 2))
-            r2_va_a = float(1.0 - np.sum((y_out_va - yhat_va_a) ** 2) / ss_tot) if ss_tot > 0 else float("nan")
-
-            fold_results.append({
-                "outer_fold": outer_fold_idx,
-                "method": "lasso_cv",
-                "track": "Track A",
-                "selected_hyperparameter": {"alpha": best_alpha_a, "grid_index": best_idx_a},
-                "selected_feature_count": len(out_sel_names_a),
-                "selected_feature_names": out_sel_names_a,
-                "outer_val_rmse": rmse_va_a,
-                "outer_val_r2": r2_va_a,
-                "numerical_diagnostics": diag_a,
-                "fit_accounting": {
-                    "fold_estimator_fits": None,
-                    "fold_preprocessor_fits": self.config.inner_splits + 1,
-                },
-                "convergence_status": (
-                    "CONVERGENCE_WARNING"
-                    if lasso_outer_a_convergence["convergence_warning_count"]
-                    or any(item["convergence_warning_count"] for item in alpha_fit_convergence[best_idx_a])
-                    else "CONVERGED"
-                ),
-                "convergence_warning_count": lasso_outer_a_convergence["convergence_warning_count"]
-                + sum(item["convergence_warning_count"] for item in alpha_fit_convergence[best_idx_a]),
-                "outer_refit_n_iter": lasso_outer_a_convergence["n_iter"],
-            })
-            for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va_a):
-                oof_records.append({
-                    "Id": row_id,
-                    "OuterFold": outer_fold_idx,
-                    "Method": "lasso_cv",
-                    "Track": "Track A",
-                    "ActualSalePrice": float(act),
-                    "PredictedSalePrice": float(pred),
-                })
-
-            # Track B Outer Refit
-            self._check_deadline()
-            self.accounting.record_estimator_fit(1)
-            lasso_out_b = Lasso(alpha=best_alpha_b, max_iter=self.config.max_iter, tol=self.config.tol)
-            lasso_outer_b_convergence = fit_and_capture_convergence(lasso_out_b, X_out_tr, y_out_tr)
-            yhat_va_b = lasso_out_b.predict(X_out_va)
-            rmse_va_b = math.sqrt(float(np.mean((y_out_va - yhat_va_b) ** 2)))
-            r2_va_b = float(1.0 - np.sum((y_out_va - yhat_va_b) ** 2) / ss_tot) if ss_tot > 0 else float("nan")
-            non_zero_b = np.where(np.abs(lasso_out_b.coef_) > 1e-9)[0]
-            out_sel_names_b = [out_tr_res.feature_names[i] for i in non_zero_b]
-
-            fold_results.append({
-                "outer_fold": outer_fold_idx,
-                "method": "lasso_cv",
-                "track": "Track B",
-                "selected_hyperparameter": {"alpha": best_alpha_b, "grid_index": best_idx_b},
-                "selected_feature_count": len(out_sel_names_b),
-                "selected_feature_names": out_sel_names_b,
-                "outer_val_rmse": rmse_va_b,
-                "outer_val_r2": r2_va_b,
-                "numerical_diagnostics": {
-                    "rank": len(non_zero_b),
-                    "nullity": X_out_tr.shape[1] - len(non_zero_b),
-                    "effective_condition_number": None,
-                },
-                "fit_accounting": {
-                    "fold_estimator_fits": None,
-                    "fold_preprocessor_fits": self.config.inner_splits + 1,
-                },
-                "convergence_status": (
-                    "CONVERGENCE_WARNING"
-                    if lasso_outer_b_convergence["convergence_warning_count"]
-                    or any(item["convergence_warning_count"] for item in alpha_fit_convergence[best_idx_b])
-                    else "CONVERGED"
-                ),
-                "convergence_warning_count": lasso_outer_b_convergence["convergence_warning_count"]
-                + sum(item["convergence_warning_count"] for item in alpha_fit_convergence[best_idx_b]),
-                "outer_refit_n_iter": lasso_outer_b_convergence["n_iter"],
-            })
-            for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va_b):
-                oof_records.append({
-                    "Id": row_id,
-                    "OuterFold": outer_fold_idx,
-                    "Method": "lasso_cv",
-                    "Track": "Track B",
-                    "ActualSalePrice": float(act),
-                    "PredictedSalePrice": float(pred),
-                })
-
-        # --- E. ElasticNetCV (Track A & Track B) ---
-        if "elastic_net_cv" in active_methods:
-            self._check_deadline()
-            en_track_a_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.en_grid))}
-            en_track_b_scores: Dict[int, List[float]] = {i: [] for i in range(len(self.en_grid))}
-            en_fit_convergence: Dict[int, List[Dict[str, Any]]] = {i: [] for i in range(len(self.en_grid))}
-
-            for part in inner_partitions:
-                for alpha, l1_ratio, idx in self.en_grid:
-                    self._check_deadline()
-                    self.accounting.record_estimator_fit(1)
-                    en = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=self.config.max_iter, tol=self.config.tol)
-                    en_fit_convergence[idx].append(fit_and_capture_convergence(en, part["X_tr"], part["y_tr"]))
-
-                    yhat_b = en.predict(part["X_va"])
-                    rmse_b = math.sqrt(float(np.mean((part["y_va"] - yhat_b) ** 2)))
-                    en_track_b_scores[idx].append(rmse_b)
-
-                    non_zero = np.where(np.abs(en.coef_) > 1e-9)[0]
-                    if len(non_zero) == 0:
-                        yhat_a = np.full_like(part["y_va"], np.mean(part["y_tr"]))
-                    else:
-                        self.accounting.record_estimator_fit(1)
-                        fit_a = fit_ols_svd(part["X_tr"][:, non_zero], part["y_tr"], add_intercept=True)
-                        yhat_a = predict_ols(fit_a, part["X_va"][:, non_zero])
-                    rmse_a = math.sqrt(float(np.mean((part["y_va"] - yhat_a) ** 2)))
-                    en_track_a_scores[idx].append(rmse_a)
-
-            cands_a = [
-                (self.en_grid[i][0], self.en_grid[i][1], i, float(np.mean(en_track_a_scores[i])))
-                for i in range(len(self.en_grid))
-            ]
-            cands_b = [
-                (self.en_grid[i][0], self.en_grid[i][1], i, float(np.mean(en_track_b_scores[i])))
-                for i in range(len(self.en_grid))
-            ]
-            best_alpha_a, best_l1_a, best_idx_a = tie_break_elastic_net(cands_a)
-            best_alpha_b, best_l1_b, best_idx_b = tie_break_elastic_net(cands_b)
-
-            # Track A Outer Refit
-            self._check_deadline()
-            self.accounting.record_estimator_fit(1)
-            en_out_a = ElasticNet(alpha=best_alpha_a, l1_ratio=best_l1_a, max_iter=self.config.max_iter, tol=self.config.tol)
-            en_outer_a_convergence = fit_and_capture_convergence(en_out_a, X_out_tr, y_out_tr)
-            non_zero_a = np.where(np.abs(en_out_a.coef_) > 1e-9)[0]
-            out_sel_names_a = [out_tr_res.feature_names[i] for i in non_zero_a]
-
-            if len(non_zero_a) == 0:
-                yhat_va_a = np.full_like(y_out_va, np.mean(y_out_tr))
-                diag_a = {"rank": 1, "nullity": 0, "effective_condition_number": 1.0}
-            else:
-                self.accounting.record_estimator_fit(1)
-                final_fit_a = fit_ols_svd(X_out_tr[:, non_zero_a], y_out_tr, add_intercept=True)
-                yhat_va_a = predict_ols(final_fit_a, X_out_va[:, non_zero_a])
-                diag_res = compute_numerical_diagnostics(final_fit_a["design_matrix"])
-                diag_a = {
-                    "rank": diag_res["rank"],
-                    "nullity": diag_res["nullity"],
-                    "effective_condition_number": diag_res["condition_number_effective"],
-                }
-
-            rmse_va_a = math.sqrt(float(np.mean((y_out_va - yhat_va_a) ** 2)))
-            ss_tot = float(np.sum((y_out_va - y_out_va.mean()) ** 2))
-            r2_va_a = float(1.0 - np.sum((y_out_va - yhat_va_a) ** 2) / ss_tot) if ss_tot > 0 else float("nan")
-
-            fold_results.append({
-                "outer_fold": outer_fold_idx,
-                "method": "elastic_net_cv",
-                "track": "Track A",
-                "selected_hyperparameter": {"alpha": best_alpha_a, "l1_ratio": best_l1_a, "grid_index": best_idx_a},
-                "selected_feature_count": len(out_sel_names_a),
-                "selected_feature_names": out_sel_names_a,
-                "outer_val_rmse": rmse_va_a,
-                "outer_val_r2": r2_va_a,
-                "numerical_diagnostics": diag_a,
-                "fit_accounting": {
-                    "fold_estimator_fits": None,
-                    "fold_preprocessor_fits": self.config.inner_splits + 1,
-                },
-                "convergence_status": (
-                    "CONVERGENCE_WARNING"
-                    if en_outer_a_convergence["convergence_warning_count"]
-                    or any(item["convergence_warning_count"] for item in en_fit_convergence[best_idx_a])
-                    else "CONVERGED"
-                ),
-                "convergence_warning_count": en_outer_a_convergence["convergence_warning_count"]
-                + sum(item["convergence_warning_count"] for item in en_fit_convergence[best_idx_a]),
-                "outer_refit_n_iter": en_outer_a_convergence["n_iter"],
-            })
-            for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va_a):
-                oof_records.append({
-                    "Id": row_id,
-                    "OuterFold": outer_fold_idx,
-                    "Method": "elastic_net_cv",
-                    "Track": "Track A",
-                    "ActualSalePrice": float(act),
-                    "PredictedSalePrice": float(pred),
-                })
-
-            # Track B Outer Refit
-            self._check_deadline()
-            self.accounting.record_estimator_fit(1)
-            en_out_b = ElasticNet(alpha=best_alpha_b, l1_ratio=best_l1_b, max_iter=self.config.max_iter, tol=self.config.tol)
-            en_outer_b_convergence = fit_and_capture_convergence(en_out_b, X_out_tr, y_out_tr)
-            yhat_va_b = en_out_b.predict(X_out_va)
-            rmse_va_b = math.sqrt(float(np.mean((y_out_va - yhat_va_b) ** 2)))
-            r2_va_b = float(1.0 - np.sum((y_out_va - yhat_va_b) ** 2) / ss_tot) if ss_tot > 0 else float("nan")
-            non_zero_b = np.where(np.abs(en_out_b.coef_) > 1e-9)[0]
-            out_sel_names_b = [out_tr_res.feature_names[i] for i in non_zero_b]
-
-            fold_results.append({
-                "outer_fold": outer_fold_idx,
-                "method": "elastic_net_cv",
-                "track": "Track B",
-                "selected_hyperparameter": {"alpha": best_alpha_b, "l1_ratio": best_l1_b, "grid_index": best_idx_b},
-                "selected_feature_count": len(out_sel_names_b),
-                "selected_feature_names": out_sel_names_b,
-                "outer_val_rmse": rmse_va_b,
-                "outer_val_r2": r2_va_b,
-                "numerical_diagnostics": {
-                    "rank": len(non_zero_b),
-                    "nullity": X_out_tr.shape[1] - len(non_zero_b),
-                    "effective_condition_number": None,
-                },
-                "fit_accounting": {
-                    "fold_estimator_fits": None,
-                    "fold_preprocessor_fits": self.config.inner_splits + 1,
-                },
-                "convergence_status": (
-                    "CONVERGENCE_WARNING"
-                    if en_outer_b_convergence["convergence_warning_count"]
-                    or any(item["convergence_warning_count"] for item in en_fit_convergence[best_idx_b])
-                    else "CONVERGED"
-                ),
-                "convergence_warning_count": en_outer_b_convergence["convergence_warning_count"]
-                + sum(item["convergence_warning_count"] for item in en_fit_convergence[best_idx_b]),
-                "outer_refit_n_iter": en_outer_b_convergence["n_iter"],
-            })
-            for row_id, act, pred in zip(outer_val_ids, y_out_va, yhat_va_b):
-                oof_records.append({
-                    "Id": row_id,
-                    "OuterFold": outer_fold_idx,
-                    "Method": "elastic_net_cv",
-                    "Track": "Track B",
-                    "ActualSalePrice": float(act),
-                    "PredictedSalePrice": float(pred),
-                })
-
-        return {
-            "outer_fold": outer_fold_idx,
-            "results": fold_results,
-            "oof_records": oof_records,
-        }
+        return {"outer_fold": outer_fold_idx, "results": result["results"],
+                "oof_records": result["oof_records"]}
 
     def run_nested_cv_from_training_csv(
         self,
@@ -1440,7 +900,7 @@ class P4BRunner:
         pipeline_factory: Callable[[], AmesDataPreparationPipeline] = AmesDataPreparationPipeline,
         data_provenance: Optional[Mapping[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Execute full nested cross-validation across all outer folds with preflight checks and outputs."""
+        """Execute the fixed protocol-v2 three-fold run with preflight and private outputs."""
         self._failure_stage = "PREFLIGHT"
         # 0. Enforce B03 Fail-Closed: timeout must be positive, single_thread=True, and isolated worker enabled
         if os.name != "nt":
@@ -1491,8 +951,17 @@ class P4BRunner:
             write_durable_failure_json,
             checkpoint_run_config,
         )
+        from housing_regression.modeling.p4b_v2 import aggregate_candidates
 
         canonical_fp = compute_canonical_fingerprint(dev_rows)
+
+        if run_id is None:
+            run_id = "run_" + uuid.uuid4().hex
+        if not isinstance(run_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", run_id):
+            raise ValueError("run_id must be a canonical identifier.")
+        self.config.current_run_id = run_id
+        from housing_regression.modeling.p4b_v2 import RunControlState
+        self.control_state = RunControlState(run_id, status="RUNNING")
 
         if output_dir is not None:
             self._failure_stage = "PATH_VALIDATION"
@@ -1510,43 +979,65 @@ class P4BRunner:
 
         outer_folds_for_identity = kfold_assignments(len(dev_rows), self.config.outer_splits, self.config.outer_seed)
         fold_plan_identity = compute_fold_plan_digest(len(dev_rows), self.config)
+        self.config.current_data_digest = canonical_fp
+        self.config.current_fold_digest = fold_plan_identity
+        task_output_dir = resume_checkpoint_dir or output_dir
+        self.config.current_checkpoint_dir = str(task_output_dir) if task_output_dir is not None else None
 
-        # 5. Handle resume checkpoint reading if requested
-        completed_folds: Dict[int, Dict[str, Any]] = {}
+        # 5. Load only exact task-level checkpoints. Legacy fold checkpoints are
+        # not accepted as v2 task completion evidence.
+        from housing_regression.modeling.p4b_v2 import (
+            _package_versions, make_task_id, task_config_hash, task_specs,
+        )
+        from housing_regression.modeling.p4b_artifacts import verify_task_checkpoint_for_resume
+
+        completed_tasks: Dict[str, Dict[str, Any]] = {}
+        task_specs_by_id = {
+            make_task_id(run_id, method, candidate, fold): (fold, method, candidate)
+            for fold in range(self.config.outer_splits)
+            for method, candidate in task_specs(self.config)
+        }
+        if task_output_dir is not None:
+            task_output_dir.mkdir(parents=True, exist_ok=True)
+            existing = list(task_output_dir.glob("checkpoint_task_*.json"))
+            same_resume_dir = (
+                resume_checkpoint_dir is not None
+                and Path(task_output_dir).resolve() == Path(resume_checkpoint_dir).resolve()
+            )
+            if existing and not same_resume_dir:
+                raise CheckpointVerificationError(
+                    "Existing task checkpoints require an explicit matching resume_checkpoint_dir."
+                )
         if resume_checkpoint_dir is not None:
             resume_dir = Path(resume_checkpoint_dir)
-            import sklearn
-            import pandas as pd
-            import scipy
-            env_vers = {
-                "python": platform.python_version(),
-                "sklearn": sklearn.__version__,
-                "numpy": np.__version__,
-                "pandas": pd.__version__,
-                "scipy": scipy.__version__,
-            }
-            chk_files = list(sorted(resume_dir.glob("checkpoint_fold_*.json")))
+            chk_files = list(sorted(resume_dir.glob("checkpoint_task_*.json")))
             if not chk_files:
-                raise CheckpointVerificationError(f"No checkpoint files found in resume directory '{resume_dir}'.")
+                raise CheckpointVerificationError("No v2 task checkpoints found in resume directory.")
+            package_versions = _package_versions()
             for chk_file in chk_files:
-                # Extract expected fold idx from filename
-                fold_match = re.search(r"checkpoint_fold_(\d+)\.json$", chk_file.name)
-                expected_fold_idx = int(fold_match.group(1)) if fold_match else None
-                with open(chk_file, "r", encoding="utf-8") as f:
-                    chk_data = json.load(f)
-                verify_checkpoint_for_resume(
-                    chk_data,
-                    expected_fingerprint=canonical_fp,
-                    config=self.config,
-                    env_versions=env_vers,
+                with open(chk_file, "r", encoding="utf-8") as stream:
+                    checkpoint = json.load(stream)
+                task_id = checkpoint.get("task_id")
+                if task_id not in task_specs_by_id or chk_file.name != f"checkpoint_task_{task_id}.json":
+                    raise CheckpointVerificationError("Unknown task checkpoint identity or filename.")
+                fold_idx, method, candidate = task_specs_by_id[task_id]
+                expected_ids = [str(dev_rows[i][ID_COLUMN]) for i, assigned in enumerate(outer_folds_for_identity) if assigned == fold_idx]
+                verify_task_checkpoint_for_resume(
+                    checkpoint,
                     expected_run_id=run_id,
-                    expected_fold_idx=expected_fold_idx,
-                    expected_fold_plan_digest=fold_plan_identity,
-                    expected_oof_ids=[str(dev_rows[i][ID_COLUMN]) for i, assigned in enumerate(outer_folds_for_identity) if assigned == expected_fold_idx],
-                    expected_data_provenance=input_provenance,
+                    expected_task_id=task_id,
+                    expected_code_sha=self.config.code_head_commit,
+                    expected_data_digest=canonical_fp,
+                    expected_fold_digest=fold_plan_identity,
+                    expected_config_hash=task_config_hash(self.config, method, candidate),
+                    expected_method=method,
+                    expected_candidate=candidate,
+                    expected_fold=fold_idx,
+                    expected_package_versions=package_versions,
+                    expected_oof_ids=expected_ids,
                 )
-                k = chk_data["completed_outer_fold"]
-                completed_folds[k] = chk_data
+                completed_tasks[task_id] = checkpoint
+        self.config.completed_task_ids = list(completed_tasks)
 
         def _execute_loop() -> Dict[str, Any]:
             n_rows = len(dev_rows)
@@ -1564,11 +1055,19 @@ class P4BRunner:
                     self._failure_stage = current_stage
                     self._check_deadline()
 
-                    # Check if already completed from resume checkpoint
-                    if k in completed_folds:
-                        chk_data = completed_folds[k]
-                        all_fold_results.extend(chk_data["results"])
-                        all_oof_records.extend(chk_data["oof_records"])
+                    cached_for_fold = [
+                        checkpoint for checkpoint in completed_tasks.values()
+                        if checkpoint["fold"] == k
+                    ]
+                    expected_for_fold = [
+                        task_id for task_id, identity in task_specs_by_id.items()
+                        if identity[0] == k
+                    ]
+                    all_fold_results.extend(checkpoint["result"] for checkpoint in cached_for_fold)
+                    all_oof_records.extend(
+                        row for checkpoint in cached_for_fold for row in checkpoint["oof_records"]
+                    )
+                    if len(cached_for_fold) == len(expected_for_fold):
                         continue
 
                     tr_rows = [dict(dev_rows[i]) for i, f in enumerate(outer_folds) if f != k]
@@ -1767,73 +1266,20 @@ class P4BRunner:
                     all_fold_results.extend(fold_output["results"])
                     all_oof_records.extend(fold_output["oof_records"])
 
-                    # Intermediate fold checkpoint if output_dir is specified
-                    if output_dir is not None:
-                        import sklearn
-                        import pandas as pd
-                        import scipy
-                        payload_digest = compute_checkpoint_payload_digest(fold_output["results"], fold_output["oof_records"])
-                        fold_chk = {
-                            "run_id": run_id,
-                            "completed_outer_fold": k,
-                            "code_head_commit": self.config.code_head_commit,
-                            "dataset_fingerprint": canonical_fp,
-                            "payload_digest": payload_digest,
-                            "fold_plan_digest": fold_plan_identity,
-                            "results": fold_output["results"],
-                            "oof_records": fold_output["oof_records"],
-                            "run_config": checkpoint_run_config(self.config),
-                            "metadata": {
-                                "protocol_version": self.config.protocol_version,
-                                "environment": {
-                        "python_version": platform.python_version(),
-                                    "sklearn_version": sklearn.__version__,
-                                    "numpy_version": np.__version__,
-                                    "pandas_version": pd.__version__,
-                                    "scipy_version": scipy.__version__,
-                                },
-                                "data_boundary": {
-                                    "outer_kfold": {"n_splits": self.config.outer_splits, "random_state": self.config.outer_seed},
-                                    "inner_kfold": {"n_splits": self.config.inner_splits, "random_state": self.config.inner_seed},
-                                    **input_provenance,
-                                },
-                            },
-                        }
-                        chk_file = Path(output_dir) / f"checkpoint_fold_{k}.json"
-                        atomic_write_json(fold_chk, chk_file)
 
             except Exception as exc:
                 run_status = "FAILED"
+                self.control_state.status = "FAILED"
                 exception_info = f"{type(exc).__name__}: {str(exc)}"
                 raise
 
             finally:
                 elapsed_total = time.perf_counter() - start_time
 
-            pairs_seen: Set[Tuple[str, str]] = set()
-            for item in all_fold_results:
-                pair = (item["method"], item["track"])
-                pairs_seen.add(pair)
+            if run_status == "SUCCESS":
+                self.control_state.status = "COMPLETED"
 
-            aggregate_results: List[Dict[str, Any]] = []
-            for method, track in sorted(pairs_seen):
-                matches = [r for r in all_fold_results if r["method"] == method and r["track"] == track]
-                rmses = [r["outer_val_rmse"] for r in matches]
-                r2s = [r["outer_val_r2"] for r in matches]
-                mean_rmse = float(np.mean(rmses))
-                std_rmse = float(np.std(rmses, ddof=1)) if len(rmses) > 1 else 0.0
-                mean_r2 = float(np.mean(r2s))
-
-                aggregate_results.append({
-                    "method": method,
-                    "track": track,
-                    "mean_outer_rmse": mean_rmse,
-                    "std_outer_rmse": std_rmse,
-                    "mean_outer_r2": mean_r2,
-                    "total_estimator_fits": self.accounting.estimator_fits,
-                    "total_preprocessor_fits": self.accounting.preprocessor_fits,
-                    "fit_cap_status": "WITHIN_CAP" if run_status == "SUCCESS" else "FAILED",
-                })
+            aggregate_results = aggregate_candidates(all_fold_results)
 
             summary = {
                 "run_id": run_id,
@@ -1865,7 +1311,7 @@ class P4BRunner:
 
                 # 1. Private OOF CSV
                 oof_path = out_path / "p4b_oof_predictions.csv"
-                oof_fields = ["Id", "OuterFold", "Method", "Track", "ActualSalePrice", "PredictedSalePrice"]
+                oof_fields = ["Id", "fold", "task_id", "method", "track", "actual", "predicted"]
                 oof_sha, oof_size = atomic_write_csv(all_oof_records, oof_fields, oof_path)
 
                 # 2. Public summary JSON
@@ -1910,3 +1356,21 @@ class P4BRunner:
 
         with threadpoolctl.threadpool_limits(limits=thread_limit):
             return _execute_loop()
+
+    def status(self, run_id: str) -> Dict[str, Any]:
+        """Return run-scoped in-memory status without process inspection."""
+        if run_id != self.control_state.run_id:
+            raise ValueError("Requested run_id does not match this runner.")
+        return self.control_state.status_snapshot()
+
+    def freeze(self, run_id: str) -> Dict[str, Any]:
+        """Freeze future task admissions without controlling processes."""
+        if run_id != self.control_state.run_id:
+            raise ValueError("Requested run_id does not match this runner.")
+        return self.control_state.freeze()
+
+    def stop_all(self, run_id: str) -> Dict[str, Any]:
+        """Record stop intent only; process control remains a Phase C gate."""
+        if run_id != self.control_state.run_id:
+            raise ValueError("Requested run_id does not match this runner.")
+        return self.control_state.stop_all()
