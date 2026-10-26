@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "planned-case",
+  "title": "Planned Case — Placeholder",
+  "case_status": "PLANNED",
+  "methodology_id": null,
+  "source": {
+    "label": null,
+    "url": null,
+    "license_review": "PENDING"
+  },
+  "target": null,
+  "language": "zh-Hant",
+  "disclaimer": "沒有研究成果或可用模型；用於驗證 Case 切換清空狀態"
+}
