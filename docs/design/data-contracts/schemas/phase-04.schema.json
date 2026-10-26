@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "status",
+    "cv",
+    "methods",
+    "execution_runs",
+    "configurations",
+    "default_configuration_id",
+    "charts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "VERIFIED",
+        "MOCK",
+        "UNAVAILABLE",
+        "PLANNED",
+        "ERROR"
+      ]
+    },
+    "cv": {
+      "type": "object",
+      "required": [
+        "training_rows",
+        "fold_count",
+        "protocol_id",
+        "status"
+      ],
+      "properties": {
+        "training_rows": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "fold_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "protocol_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "VERIFIED",
+            "MOCK",
+            "UNAVAILABLE",
+            "SOURCE_REPORTED_NOT_VERIFIED"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "methods": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "method_id",
+          "label",
+          "parameters"
+        ],
+        "properties": {
+          "method_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "parameter_id",
+                "label",
+                "data_type"
+              ],
+              "properties": {
+                "parameter_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "data_type": {
+                  "enum": [
+                    "number",
+                    "integer",
+                    "string",
+                    "boolean"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "execution_runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "execution_run_id",
+          "status"
+        ],
+        "properties": {
+          "execution_run_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_manifest_sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "VERIFIED",
+              "MOCK",
+              "UNAVAILABLE",
+              "PLANNED",
+              "ERROR"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "configurations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "configuration_id",
+          "execution_run_id",
+          "method_id",
+          "track_id",
+          "params",
+          "protocol_id",
+          "status"
+        ],
+        "properties": {
+          "configuration_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "execution_run_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "method_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "track_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "params": {
+            "type": "object"
+          },
+          "protocol_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "VERIFIED",
+              "MOCK",
+              "UNAVAILABLE",
+              "PLANNED",
+              "ERROR"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "default_configuration_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "charts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}
