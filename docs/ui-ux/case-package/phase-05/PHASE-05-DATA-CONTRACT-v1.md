@@ -1,4 +1,4 @@
-# RegScope Phase 5 — Data Structure & Static Delivery Contract v1.1
+# RegScope Phase 5 — Data Structure & Static Delivery Contract v1.2
 
 > **Canonical Phase 5 frontend contract** (Draft / Owner-selected UX, subject to scientific/QA review). Located inside [Case Package v1](../CASE-PACKAGE-SPEC-v1.md). Based on [Issue #37 §15](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/37), whose §15.4 is a **conceptual example only**. This document deliberately **does not** authorize data reads, training, computation, publication, merge or deployment. Phase 5's owner-selected design uses **three figure tabs sharing one viewport**, residual first. The older JSON example in #37 does not supersede the contract here.
 
@@ -165,7 +165,7 @@ No real source key path has been confirmed for the ignored local artifacts; **mu
 
 ## 7. Sample, validation and acceptance
 
-- **Normative no-results sample** (complete root envelope): [`sample/evaluations.json`](./sample/evaluations.json), backed by [Case Package sample](../sample/ames-housing/phases/phase-05/evaluations.json). This sample is deliberately `UNAVAILABLE`, `evaluations:[]`, all three figure slots missing and both interval gates outstanding. Does not claim actual results.
+- **Normative no-results sample**: [sample/evaluations.json](./sample/evaluations.json). **Nonempty synthetic linked-evaluation fixture**: [sample/evaluations.nonempty.mock.json](./sample/evaluations.nonempty.mock.json); never use as empirical Ames evidence.nvelope): [`sample/evaluations.json`](./sample/evaluations.json), backed by [Case Package sample](../sample/ames-housing/phases/phase-05/evaluations.json). This sample is deliberately `UNAVAILABLE`, `evaluations:[]`, all three figure slots missing and both interval gates outstanding. Does not claim actual results.
 - **Schema source**: [`evaluation-index.schema.json`](./evaluation-index.schema.json), JSON Schema 2020-12. Validator must check base schema **and** cross-file referential and SHA/license/source assertions. JSON Schema alone cannot prove publication permission.
 - Any future **success** example must be marked `MOCK` with synthetic non-Ames identifiers, never `VERIFIED`, and NEVER published. No sample with null `evaluation_id` inside `evaluations[]`.
 - QA matrix: parse UTF-8; schema; unresolved IDs; duplicate ID; cross-population; wrong version; mixed metric source; missing n; R² display; figure residual sign/axes; FIG-P5-02 priority; stale async result; no interval figure; no secrets/local data; source permission; immutable release hash.
@@ -192,3 +192,9 @@ No real source key path has been confirmed for the ignored local artifacts; **mu
 **Render authority:** `ui.*` holds only ordering/labels/figure slot IDs, not availability status. An evaluation is eligible only if its own review/source evidence passes and its parent release is approved. Metric display requires own VERIFIED value/evidence; figure display additionally requires its own VERIFIED, APPROVED publication, asset_status AVAILABLE, case-root asset_ref + correct SHA + public allowlist. An EMPTY/PLANNED/MOCK/PENDING/REJECTED context never displays empirical data. A published EMPTY (evaluations:[]) is legitimate with `status=UNAVAILABLE` and reason, but must be sealed and approved at **package publication layer**.
 
 **Lifecycle:** staging may have release_id/generated_at=null, PENDING, files=[]. Publication mode must require real pinned release_id, valid UTC timestamp, independent APPROVED review, sealed all-files manifest, digest and link integrity, no unauthorized private data and atomic release pointer switch. Schema validation alone is insufficient and does not authorize publication.
+
+## Validation status and F01–F12 trace
+
+See [VALIDATION-MATRIX.md](./VALIDATION-MATRIX.md) for deterministic positive/negative assertions, exact schema-versus-bundle-validator responsibilities, prescribed cross-platform command and **NOT_RUN / NOT_IMPLEMENTED** statuses. The synthetic MOCK fixture contains two linked evaluations with distinct metric sources, plus three correctly typed unavailable figure records. 
+
+**Change log:** v1.0 static Phase5 contract; v1.1 P5 Producer review corrections; **v1.2 (2026-10-27)** F01/F02 stale wording corrected in place, source join/axis tokens/field authority standardized, synthetic linked fixture and separate validation matrix published. The existing filename retains `v1` to denote major compatibility rather than a new incompatible API version.
