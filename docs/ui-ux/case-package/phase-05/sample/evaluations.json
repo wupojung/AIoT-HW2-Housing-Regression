@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "release_id": null,
+  "generated_at": null,
+  "status": "UNAVAILABLE",
+  "reason_code": "NO_APPROVED_EVALUATIONS",
+  "publication_review": "PENDING",
+  "default_evaluation_id": null,
+  "evaluations": [],
+  "ui": {
+    "default_population": "development_oof",
+    "population_options": [
+      {
+        "id": "development_oof",
+        "label": "Development OOF",
+        "status": "UNAVAILABLE"
+      },
+      {
+        "id": "holdout",
+        "label": "Holdout 聚合",
+        "status": "UNAVAILABLE"
+      }
+    ],
+    "figure_tabs": [
+      {
+        "figure_id": "FIG-P5-02",
+        "label": "Residual vs Predicted",
+        "kind": "residual_vs_predicted",
+        "status": "UNAVAILABLE",
+        "reason_code": "NO_APPROVED_FIGURE"
+      },
+      {
+        "figure_id": "FIG-P5-01",
+        "label": "Actual vs Predicted",
+        "kind": "actual_vs_predicted",
+        "status": "UNAVAILABLE",
+        "reason_code": "NO_APPROVED_FIGURE"
+      },
+      {
+        "figure_id": "FIG-P5-03",
+        "label": "Residual Distribution",
+        "kind": "residual_distribution",
+        "status": "UNAVAILABLE",
+        "reason_code": "NO_APPROVED_FIGURE"
+      }
+    ],
+    "metric_order": [
+      "mae",
+      "rmse",
+      "r2"
+    ],
+    "interval": {
+      "figure_id": "FIG-P5-04",
+      "int_f": {
+        "status": "UNAVAILABLE",
+        "reason_code": "METHOD_REVIEW_PENDING",
+        "method": null,
+        "assumptions_ref": null
+      },
+      "int_s": {
+        "status": "UNAVAILABLE",
+        "reason_code": "NO_APPROVED_INTERVAL_FIGURE",
+        "interval_type": null,
+        "method": null,
+        "nominal_level": null,
+        "population": null,
+        "asset_ref": null,
+        "coverage_evidence": null,
+        "review_url": null
+      }
+    }
+  }
+}
