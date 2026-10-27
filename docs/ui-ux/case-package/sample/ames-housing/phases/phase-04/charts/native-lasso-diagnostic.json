@@ -40,7 +40,6 @@
       },
       "candidate_order": 2,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -56,7 +55,8 @@
       "mean_selected_encoded_count": 186.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/12",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
@@ -70,7 +70,6 @@
       },
       "candidate_order": 3,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -86,7 +85,8 @@
       "mean_selected_encoded_count": 103.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/14",
       "source_reported_method_winner": true,
-      "source_reported_five_method_winner": true
+      "source_reported_five_method_winner": true,
+      "source_reported_winner_eligible": true
     }
   ],
   "method_id": "lasso",

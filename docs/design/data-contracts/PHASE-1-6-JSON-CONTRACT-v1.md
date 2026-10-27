@@ -80,7 +80,7 @@ Verified 模式唯讀已有 Case Package `case.json` / Phase2–5 結果，並�
 3. **Assets**：FIG/JSON SHA+case-root refs 和公開權利需要實體驗證；Sample `files[]` 的完整雜湊只代表 staging 快照完整，不代表公開權利、研究驗證或發布核准；`files:[]` 仍是未封包 staging。
 4. **No fabricated numbers**：各 Phase 的缺欄填 null＋reason/status；不把示意值/交接值當真值，不把原始 row/OOF/holdout 對外公開。
 5. **Readiness vs design**：Schema PASS 是單檔結構 PASS，不是 source、Bundle、模型訓練、API、Release PASS。
-6. **Version control**：非 Phase5 新 Schema 提案皆 v1.0，實際下游 Producer 應先做 Schema/fixture/cross-Phase handshake，發現真正相容性缺口由 Owner/PM 核准升版；不能靜默改名或換 enum。
+6. **Version control**：目前 root schema 版本對照為 Phase 1/2/3/6 `1.0.0`、Phase 4 Modeling `1.1.0`（加入 optional configuration detail refs/source-candidate annotation/chart constraints）、Phase 5 Evaluation `1.0.0`（Phase 5 Data Contract 文件版 `v1.2`）。Phase 4 leaf-file schema 尚未定義。實際下游 Producer 應先做 Schema/fixture/cross-Phase handshake，發現真正相容性缺口由 Owner/PM 核准升版；不能靜默改名或換 enum。
 7. **No fake API**：純靜態頁面只從 pinned release 資料包讀已發布資源，不新增任何 `POST /api/evaluate`／Phase2 EDA API／Phase3 preprocessing API／Phase4 train API。
 
 ## 5. 還需要盤點什麼？（分層處理，不阻擋契約設計）

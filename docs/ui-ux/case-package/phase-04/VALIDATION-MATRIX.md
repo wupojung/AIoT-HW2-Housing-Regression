@@ -35,7 +35,8 @@
 ## Current implementation boundary
 
 - Phase 4 modeling root schema: implemented at the canonical shared schema path and versioned `1.1.0`.
+- Schema validation applies only to `modeling.json`; schemas/validators for configuration leaf files and chart JSON are **NOT_IMPLEMENTED**.
 - Positive empty and synthetic nonempty samples: provided in this folder.
 - Cross-file reference, uniqueness, task reconciliation, publication and privacy bundle validator: **NOT_IMPLEMENTED**.
-- Targeted local Phase 4 schema validation: **PASS** for the Ames package index and both samples using the existing shared `validate_schema.py` and the available Draft 2020-12 environment. Ordinary CI was not run.
+- Targeted local Phase 4 schema validation: **PASS** for the Ames `modeling.json` and both Phase 4 `modeling` samples using the existing shared `validate_schema.py` and the available Draft 2020-12 environment. This does not validate the package index or leaf files. Ordinary CI was not run.
 - No modeling or data-generation command is part of this contract.

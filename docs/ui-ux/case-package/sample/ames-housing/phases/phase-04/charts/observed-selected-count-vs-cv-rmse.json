@@ -40,7 +40,6 @@
       },
       "candidate_order": 2,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -56,7 +55,8 @@
       "mean_selected_encoded_count": 186.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/12",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
@@ -70,7 +70,6 @@
       },
       "candidate_order": 3,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -86,7 +85,8 @@
       "mean_selected_encoded_count": 103.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/14",
       "source_reported_method_winner": true,
-      "source_reported_five_method_winner": true
+      "source_reported_five_method_winner": true,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-d8d37e65bf4102eb0c9aea0edd336d66f0b8557d5f280634ff59ad0fd44f3e89",
@@ -101,7 +101,6 @@
       },
       "candidate_order": 0,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -117,7 +116,8 @@
       "mean_selected_encoded_count": 240.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/21",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-dd45a0b3f79edae79eaa99d9a592757df83e7874b21f1acaea413103928dbdc0",
@@ -132,7 +132,6 @@
       },
       "candidate_order": 1,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -148,7 +147,8 @@
       "mean_selected_encoded_count": 240.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/20",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-279a8a5b1c1fa1fa93991dc3691c7f22800aeeaa5633b8a4a21e60490cab2efb",
@@ -163,7 +163,6 @@
       },
       "candidate_order": 2,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -179,7 +178,8 @@
       "mean_selected_encoded_count": 239.66666666666666,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/15",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-9fa4d99608f14f862026ee988a079004de547e0d713a17b25c36f41a7ac225e3",
@@ -194,7 +194,6 @@
       },
       "candidate_order": 3,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -210,7 +209,8 @@
       "mean_selected_encoded_count": 239.66666666666666,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/19",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-2cc6e4b57a1018be232ca3b4836764386064679c764d0213a5bfaff33b899206",
@@ -225,7 +225,6 @@
       },
       "candidate_order": 4,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -241,7 +240,8 @@
       "mean_selected_encoded_count": 239.66666666666666,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/16",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-1c73870379fcd6a39c7137064f4cd21cc1b0b0424e5dc48fa0216806af0061db",
@@ -256,7 +256,6 @@
       },
       "candidate_order": 5,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -272,7 +271,8 @@
       "mean_selected_encoded_count": 239.33333333333334,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/22",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-52f2eeb3d7721d8f4b0ae42ab242efb5c5aa4ac12906532d932958c14c2f7ae8",
@@ -287,7 +287,6 @@
       },
       "candidate_order": 6,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -303,7 +302,8 @@
       "mean_selected_encoded_count": 239.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/24",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-d0247c0be6fbd0ab346b7d3d5c45583bf3d37d27c45e8d1d432a5cf88d569192",
@@ -318,7 +318,6 @@
       },
       "candidate_order": 7,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -334,7 +333,8 @@
       "mean_selected_encoded_count": 236.33333333333334,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/26",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-20363ce2a7f8d58f4e840e81b72590fe8de7d1b0dbf47a124fa71e5f3bcf02de",
@@ -349,7 +349,6 @@
       },
       "candidate_order": 8,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -365,7 +364,8 @@
       "mean_selected_encoded_count": 233.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/17",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-1098e27f34125c296e9331aae6fa1ffec6075f3986b7577cfa813850951d3b53",
@@ -380,7 +380,6 @@
       },
       "candidate_order": 9,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -396,7 +395,8 @@
       "mean_selected_encoded_count": 234.33333333333334,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/25",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-d29012556273bf48ab5997cb33861acd9454e5879dac80f885a7a721a2494460",
@@ -411,7 +411,6 @@
       },
       "candidate_order": 10,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -427,7 +426,8 @@
       "mean_selected_encoded_count": 227.33333333333334,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/23",
       "source_reported_method_winner": false,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     },
     {
       "configuration_id": "p4b-v2-d7202991dc8fee11e65aac3b0532ac68b63599a6b0ec87eec5544eb13ad8c0f3",
@@ -442,7 +442,6 @@
       },
       "candidate_order": 11,
       "status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
       "metrics": {
@@ -458,7 +457,8 @@
       "mean_selected_encoded_count": 207.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/18",
       "source_reported_method_winner": true,
-      "source_reported_five_method_winner": false
+      "source_reported_five_method_winner": false,
+      "source_reported_winner_eligible": true
     }
   ],
   "x_semantics": "Mean selected encoded count across the three CV folds; distinct from requested K and final-fit count.",

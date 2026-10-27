@@ -11,8 +11,6 @@
   "candidate_order": 0,
   "protocol_id": "p4b-v2.0-development-3fold-rs42",
   "status": "ERROR",
-  "winner_eligible": false,
-  "selection_basis": null,
   "coverage": {
     "expected_fold_count": 3,
     "observed_fold_count": 3,
@@ -40,5 +38,7 @@
   ],
   "source_reported_method_winner": false,
   "source_reported_five_method_winner": false,
-  "source_reported_selection_role": null
+  "source_reported_selection_role": null,
+  "source_reported_winner_eligible": false,
+  "source_reported_selection_basis": null
 }
