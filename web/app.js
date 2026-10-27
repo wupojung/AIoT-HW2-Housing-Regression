@@ -70,6 +70,7 @@ const state = {
 };
 const app = document.querySelector("#app");
 const phaseNav = document.querySelector("#phase-nav");
+const caseContext = document.querySelector("#case-context");
 const caseSelect = document.querySelector("#case-select");
 
 function esc(value) {
@@ -96,9 +97,11 @@ function banner(caseInfo = caseData()) {
 }
 function updateShell() {
   const phase = routePhase();
+  caseContext.hidden = !phase || state.route === "home" || state.route === "dashboard";
   phaseNav.hidden = !phase || state.route === "home" || state.route === "dashboard";
   phaseNav.innerHTML = PHASES.map(([n, en, zh]) => `<a class="phase-tab" href="#phase-${n}" ${phase === n ? 'aria-current="page"' : ""}><span class="num">0${n}</span><span>${esc(zh)}</span></a>`).join("");
   document.querySelector("[data-home-link]").setAttribute("aria-current", state.route === "home" ? "page" : "false");
+  document.querySelector("[data-crisp-link]").setAttribute("aria-current", phase ? "page" : "false");
   document.querySelector("[data-dashboard-link]").setAttribute("aria-current", state.route === "dashboard" ? "page" : "false");
   caseSelect.innerHTML = Object.values(CASES).map((c) => `<option value="${esc(c.id)}" ${c.id === state.caseId ? "selected" : ""}>${esc(c.title)} · ${esc(c.status)}</option>`).join("");
 }
