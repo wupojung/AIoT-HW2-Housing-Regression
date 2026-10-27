@@ -11,6 +11,7 @@ import math
 import os
 import statistics
 import socket
+import stat
 import sys
 import tempfile
 from pathlib import Path
@@ -383,7 +384,7 @@ def _histogram(values: list[float], bin_count: int = 30) -> tuple[list[float], l
     return edges, counts
 
 
-def _write_real_figures(output_root: Path, index: dict[str, Any], plot_data: dict[str, list[tuple[float, float]]]) -> None:
+def _write_real_figures(output_root: Path, index: dict[str, Any], plot_data: dict[str, list[tuple[float, float]]]) -> list[dict[str, Any]]:
     """Render all pooled diagnostics off-tree, then promote the set with rollback."""
     try:
         import matplotlib
@@ -466,20 +467,26 @@ def _write_real_figures(output_root: Path, index: dict[str, Any], plot_data: dic
             for _, destination in staged_to_final:
                 if destination.exists() or destination.is_symlink():
                     raise CliError("OUTPUT_EXISTS", f"refusing to overwrite asset: {destination}", 5)
-            promoted: list[Path] = []
+            receipts: list[dict[str, Any]] = []
+            rollback_errors: list[str] = []
             try:
                 for staged, destination in staged_to_final:
+                    staged_info = staged.lstat()
+                    expected_digest = _sha256(staged)
                     os.link(staged, destination)
-                    promoted.append(destination)
+                    info = destination.lstat()
+                    if (not stat.S_ISREG(info.st_mode)
+                            or (info.st_dev, info.st_ino) != (staged_info.st_dev, staged_info.st_ino)
+                            or _sha256(destination) != expected_digest):
+                        rollback_errors.append(f"ownership/integrity could not be verified; kept {destination.name}")
+                        raise OSError("promoted asset ownership/integrity verification failed")
+                    receipts.append({"path": destination, "device": info.st_dev, "inode": info.st_ino,
+                                     "sha256": expected_digest})
                 for figure, digest in staged_figure_digests:
                     figure["sha256"] = digest
+                return receipts
             except Exception as exc:
-                rollback_errors = []
-                for destination in reversed(promoted):
-                    try:
-                        destination.unlink()
-                    except OSError as rollback_exc:
-                        rollback_errors.append(str(rollback_exc))
+                rollback_errors.extend(_rollback_real_assets(receipts))
                 suffix = f"; rollback errors: {'; '.join(rollback_errors)}" if rollback_errors else ""
                 if isinstance(exc, FileExistsError):
                     raise CliError("OUTPUT_EXISTS", f"asset promotion collided: {exc}{suffix}", 5) from exc
@@ -488,6 +495,46 @@ def _write_real_figures(output_root: Path, index: dict[str, Any], plot_data: dic
             raise
         except OSError as exc:
             raise CliError("OUTPUT_WRITE_FAILED", f"asset staging failed: {exc}", 5) from exc
+
+
+def _rollback_real_assets(receipts: list[dict[str, Any]]) -> list[str]:
+    """Remove only files whose inode and bytes still match this export's receipt."""
+    problems = []
+    for receipt in reversed(receipts):
+        path = receipt["path"]
+        try:
+            before = path.lstat()
+            if (not stat.S_ISREG(before.st_mode) or before.st_dev != receipt["device"]
+                    or before.st_ino != receipt["inode"]):
+                problems.append(f"kept changed asset {path.name}")
+                continue
+            digest = _sha256(path)
+            after = path.lstat()
+            if ((after.st_dev, after.st_ino) != (before.st_dev, before.st_ino)
+                    or digest != receipt["sha256"]):
+                problems.append(f"kept modified asset {path.name}")
+                continue
+            path.unlink()
+        except FileNotFoundError:
+            continue
+        except (OSError, CliError) as exc:
+            problems.append(f"could not remove owned asset {path.name}: {exc}")
+    return problems
+
+
+def _finalize_phase4_output(index: dict[str, Any], plot_data: dict[str, list[tuple[float, float]]],
+                            output_root: Path) -> Path:
+    receipts = _write_real_figures(output_root, index, plot_data)
+    try:
+        return _write_index(index, output_root)
+    except Exception as exc:
+        rollback_problems = _rollback_real_assets(receipts)
+        index_path = output_root / "phases" / "phase-05" / "evaluations.json"
+        if index_path.exists() or index_path.is_symlink():
+            rollback_problems.append("index destination exists after failed atomic write; preserved")
+        if rollback_problems:
+            raise CliError("OUTPUT_WRITE_FAILED", f"index write failed; asset rollback incomplete: {'; '.join(rollback_problems)}", 5) from exc
+        raise
 
 
 def _validate_phase4_gate(gate: dict[str, Any], manifest: dict[str, Any]) -> None:
@@ -975,13 +1022,13 @@ def _export(args: argparse.Namespace) -> int:
         index, plot_data = _build_phase4(gate["case_id"], data)
         _validate_identity(index)
         _schema_validate(index)
-        _write_real_figures(output_root, index, plot_data)
     else:
         raise CliError("NOT_AUTHORIZED", "gate/manifest mode is not authorized")
 
     _validate_identity(index)
     _schema_validate(index)
-    output = _write_index(index, output_root)
+    output = (_finalize_phase4_output(index, plot_data, output_root)
+              if mode == "phase4_oof" else _write_index(index, output_root))
     print(f"EXPORTED {output}")
     return 0
 

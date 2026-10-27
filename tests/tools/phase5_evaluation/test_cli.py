@@ -404,6 +404,31 @@ class Phase5CliTests(unittest.TestCase):
             expected_count += sum(1 for evaluation in index["evaluations"] if evaluation["metric_source"] == "pooled_oof")
             self.assertEqual(len(list(assets.iterdir())), expected_count)
 
+    def test_phase4_index_failure_rolls_back_only_owned_assets_and_retry_succeeds(self):
+        data, _ = self._phase4_fixture()
+        index, plot_data = phase5_cli._build_phase4("synthetic-p4-case", data)
+        phase5_cli._validate_identity(index)
+        phase5_cli._schema_validate(index)
+        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-index-rollback-") as temp:
+            output_root = Path(temp).resolve()
+            assets = output_root / "assets"
+            assets.mkdir()
+            protected = assets / "pre-existing.bin"
+            protected.write_bytes(b"keep untouched")
+            index_path = output_root / "phases" / "phase-05" / "evaluations.json"
+            with mock.patch.object(phase5_cli, "_write_index", side_effect=phase5_cli.CliError("OUTPUT_WRITE_FAILED", "injected index failure", 5)):
+                with self.assertRaises(phase5_cli.CliError):
+                    phase5_cli._finalize_phase4_output(index, plot_data, output_root)
+            self.assertFalse(index_path.exists())
+            self.assertEqual(list(assets.iterdir()), [protected])
+            self.assertEqual(protected.read_bytes(), b"keep untouched")
+
+            written = phase5_cli._finalize_phase4_output(index, plot_data, output_root)
+            self.assertEqual(written, index_path)
+            self.assertTrue(index_path.is_file())
+            self.assertEqual(protected.read_bytes(), b"keep untouched")
+            self.assertGreater(len(list(assets.iterdir())), 1)
+
     def test_phase4_oof_rejects_invalid_task_join_and_missing_prediction(self):
         data, _ = self._phase4_fixture()
         with tempfile.TemporaryDirectory(prefix="phase5-p4oof-bad-") as temp:
