@@ -273,213 +273,122 @@ class Phase5CliTests(unittest.TestCase):
         self.assertFalse(new_target.exists())
         self.assertEqual(list(new_target.parent.glob(".phase5-*.tmp")), [])
 
-    def _phase4_fixture(self):
-        lasso_candidate = {"alpha": 100.0, "candidate_order": 3}
-        configs = [
-            {"method": "lasso", "track": "primary", "primary_track": "selected_to_ols",
-             "candidate": lasso_candidate, "config_hash": hashlib.sha256(b"valid-lasso-config").hexdigest(),
-             "winner_eligible": False},
-            {"method": "ols_baseline", "track": "baseline", "primary_track": "all_features_ols",
-             "candidate": {}, "config_hash": "67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298",
-             "winner_eligible": False},
-            {"method": "lasso", "track": "primary", "primary_track": "selected_to_ols",
-             "candidate": {"alpha": 0.1, "candidate_order": 0},
-             "config_hash": hashlib.sha256(b"invalid-lasso-config").hexdigest(), "winner_eligible": False,
-             "status": "INVALID", "primary_valid": False},
-        ]
-        tasks = []
-        rows = []
-        pairs_by_fold = (((10, 12), (20, 19)), ((30, 29), (40, 42)), ((50, 52), (60, 58)))
-        for config_index, config in enumerate(configs):
-            for fold, pairs in enumerate(pairs_by_fold):
-                task_id = f"task-{config_index}-{fold}"
-                task_status = config.get("status", "COMPLETED")
-                primary_valid = config.get("primary_valid", True)
-                tasks.append({"task_id": task_id, "method": config["method"], "track": config["track"],
-                              "primary_track": config["primary_track"], "fold": fold,
-                              "candidate": config["candidate"], "config_hash": config["config_hash"],
-                              "status": task_status, "primary_valid": primary_valid})
-                for index, (actual, predicted) in enumerate(pairs):
-                    rows.append({"Id": f"dev-{config_index}-{fold}-{index}", "fold": fold, "task_id": task_id,
-                                 "method": config["method"], "track": config["track"],
-                                 "actual": actual, "predicted": predicted if primary_valid else None})
-        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-") as temp:
-            root = Path(temp)
-            csv_path = root / "oof.csv"
-            with csv_path.open("w", newline="", encoding="utf-8") as stream:
-                writer = csv.DictWriter(stream, fieldnames=["Id", "fold", "task_id", "method", "track", "actual", "predicted"])
-                writer.writeheader(); writer.writerows(rows)
-            summary_path = self.write_json(root / "summary.json", {
-                "metadata": {"run_id": "p4-run-01", "protocol_version": "p4b-v2",
-                             "data_boundary": {"development_rows": sum(len(fold_pairs) for fold_pairs in pairs_by_fold)}},
-                "per_outer_fold_results": tasks,
-                "aggregate_results": [{"method": config["method"], "candidate": config["candidate"],
-                                       "config_hash": config["config_hash"], "status": config.get("status", "COMPLETED"),
-                                       "coverage_complete": config.get("status", "COMPLETED") == "COMPLETED",
-                                       "valid_fold_count": 3 if config.get("status", "COMPLETED") == "COMPLETED" else 0,
-                                       "winner_eligible": config["winner_eligible"],
-                                       "expected_fold_count": 3, "expected_folds": [0, 1, 2]}
-                                       for config in configs],
-            })
-            manifest = {"run_id": "p4-run-01", "phase3_contract_version": "p4b-v2"}
-            gate = {"run_id": "p4-run-01", "protocol_version": "p4b-v2", "target": {"column": "SalePrice", "unit": "USD"},
-                    "configurations": [{"configuration_id": "cfg-" + config["config_hash"], "method": config["method"],
-                                        "track": config["track"], "candidate": config["candidate"]}
-                                       for config in configs if config.get("status", "COMPLETED") == "COMPLETED"]}
-            data = phase5_cli._read_phase4_oof(summary_path, csv_path, manifest, gate,
-                                               hashlib.sha256(summary_path.read_bytes()).hexdigest(),
-                                               hashlib.sha256(csv_path.read_bytes()).hexdigest())
-            return data, ["cfg-" + config["config_hash"] for config in configs]
+    def _handoff_fixture(self):
+        package_root = self.root / "case-package"
+        (package_root / "phases/phase-04").mkdir(parents=True)
+        (package_root / "phases/phase-05").mkdir()
+        case_id, run_id, protocol_id = "synthetic-case", "synthetic-run", "protocol-v1"
+        config_hash = hashlib.sha256(b"synthetic-config").hexdigest()
+        config_id = "cfg-" + config_hash
+        case_doc = {"schema_version": "1.0.0", "case_id": case_id}
+        modeling = {"schema_version": "1.0.0", "case_id": case_id, "status": "UNAVAILABLE",
+                    "cv": {"training_rows": 4, "fold_count": 2, "protocol_id": protocol_id,
+                           "status": "SOURCE_REPORTED_NOT_VERIFIED"},
+                    "methods": [{"method_id": "lasso", "label": "Lasso", "parameters": []}],
+                    "execution_runs": [{"execution_run_id": run_id, "source_manifest_sha256": "a" * 64,
+                                         "status": "UNAVAILABLE"}],
+                    "configurations": [{"configuration_id": config_id, "execution_run_id": run_id,
+                                        "method_id": "lasso", "track_id": "primary", "params": {},
+                                        "protocol_id": protocol_id, "status": "VERIFIED"}],
+                    "default_configuration_id": None, "charts": []}
+        empty = phase5_cli._build_empty({"case_id": case_id})
+        payloads = {"case.json": case_doc, "phases/phase-04/modeling.json": modeling,
+                    "phases/phase-05/evaluations.json": empty}
+        files = []
+        for rel, value in payloads.items():
+            raw = json.dumps(value, ensure_ascii=False, indent=2).encode() + b"\n"
+            (package_root / rel).write_bytes(raw)
+            files.append({"path": rel, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw),
+                          "mime": "application/json"})
+        self.write_json(package_root / "package.json", {"case_id": case_id, "files": files})
 
-    def test_phase4_oof_join_metrics_and_pooled_diagnostics_use_only_synthetic_rows(self):
-        data, selected_config_ids = self._phase4_fixture()
-        index, plot_data = phase5_cli._build_phase4("synthetic-p4-case", data)
-        self.assertEqual(len(index["evaluations"]), 4)
-        config_ids = {item["configuration_id"] for item in index["evaluations"]}
-        self.assertEqual(config_ids, set(data["groups"]))
-        self.assertEqual(set(selected_config_ids[:2]), config_ids)
-        self.assertEqual(len(data["groups"]), 2)
-        self.assertNotIn(selected_config_ids[2], data["groups"])
-        self.assertTrue(all(group["winner_eligible"] is False for group in data["groups"].values()))
-        self.assertIn("cfg-67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298", config_ids)
-        self.assertEqual({group["track"] for group in data["groups"].values()}, {"primary", "baseline"})
-        for config_id in config_ids:
-            by_source = {item["metric_source"]: item for item in index["evaluations"]
-                         if item["configuration_id"] == config_id}
-            self.assertEqual(by_source["cv_fold_mean"]["linked_evaluation_ids"], [by_source["pooled_oof"]["evaluation_id"]])
-            self.assertEqual(by_source["pooled_oof"]["linked_evaluation_ids"], [by_source["cv_fold_mean"]["evaluation_id"]])
-            self.assertEqual(by_source["cv_fold_mean"]["fold_summary"]["ddof"], 1)
-            self.assertEqual(by_source["pooled_oof"]["n"], 6)
-            self.assertEqual(by_source["cv_fold_mean"]["prediction_origin"], by_source["pooled_oof"]["prediction_origin"])
-            expected_origin = "fold_specific_all_features_ols" if config_id.endswith("67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298") else "fold_specific_selected_to_ols"
-            self.assertEqual(by_source["cv_fold_mean"]["prediction_origin"], expected_origin)
-            self.assertEqual([fig["figure_id"] for fig in by_source["pooled_oof"]["figures"]],
-                             ["FIG-P5-02", "FIG-P5-01", "FIG-P5-03"])
-            self.assertTrue(all(fig["evaluation_id"] == by_source["pooled_oof"]["evaluation_id"]
-                                for fig in by_source["pooled_oof"]["figures"]))
-            self.assertEqual(plot_data[by_source["pooled_oof"]["evaluation_id"]][0], (10.0, 12.0))
-        self.assertIsNotNone(index["generated_at"])
-        self.assertTrue(index["generated_at"].endswith("Z"))
-        self.assertIsNone(index["release_id"])
-        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-assets-") as temp:
-            output_root = Path(temp)
-            phase5_cli._write_real_figures(output_root, index, plot_data)
-            phase5_cli._schema_validate(index)
-            for figure in (figure for evaluation in index["evaluations"] for figure in evaluation["figures"]):
-                asset = output_root / figure["asset_ref"]
-                self.assertTrue(asset.is_file())
-                self.assertEqual(figure["sha256"], hashlib.sha256(asset.read_bytes()).hexdigest())
-                if figure["figure_id"] == "FIG-P5-03":
-                    self.assertEqual(figure["histogram"]["n"], figure["n"])
-                    self.assertTrue(figure["histogram"]["bin_edges_ref"].startswith("assets/"))
-                    histogram = json.loads((output_root / figure["histogram"]["bin_edges_ref"]).read_text())
-                    self.assertEqual(len(histogram["bin_edges"]), figure["histogram"]["bin_count"] + 1)
-                    self.assertEqual(sum(histogram["counts"]), figure["n"])
-                    self.assertEqual(histogram["n"], figure["n"])
-        phase5_cli._validate_identity(index)
+        handoff_root = self.root / "handoff"
+        handoff_root.mkdir()
+        csv_path = handoff_root / "oof.csv"
+        csv_path.write_text("row_id,configuration_id,fold_index,task_id,actual,predicted\n"
+                            f"r1,{config_id},0,t0,10,12\n"
+                            f"r2,{config_id},0,t0,20,19\n"
+                            f"r3,{config_id},1,t1,30,29\n"
+                            f"r4,{config_id},1,t1,40,42\n", encoding="utf-8")
+        csv_sha = hashlib.sha256(csv_path.read_bytes()).hexdigest()
+        handoff = {"schema_version": "1.0.0", "case_id": case_id, "execution_run_id": run_id,
+                   "protocol_id": protocol_id, "protocol_version": "p4b-v2", "population": "development_oof",
+                   "target": {"column": "SalePrice", "unit": "USD"},
+                   "source_artifacts": {"manifest_sha256": "a" * 64, "summary_sha256": "b" * 64,
+                                         "oof_sha256": "c" * 64},
+                   "csv": {"path": "oof.csv", "sha256": csv_sha,
+                           "columns": ["row_id", "configuration_id", "fold_index", "task_id", "actual", "predicted"]},
+                   "row_count": 4, "n_per_configuration": 4, "expected_fold_ids": [0, 1],
+                   "configurations": [{"configuration_id": config_id, "config_hash": config_hash,
+                                        "method_id": "lasso", "track_id": "primary", "status": "COMPLETED",
+                                        "fold_tasks": [{"fold_index": 0, "task_id": "t0"},
+                                                       {"fold_index": 1, "task_id": "t1"}]}]}
+        handoff_path = self.write_json(handoff_root / "handoff.json", handoff)
+        handoff_sha = hashlib.sha256(handoff_path.read_bytes()).hexdigest()
+        gate = {"gate_id": "synthetic-handoff-gate", "authorized": True,
+                "mode": "phase5_handoff_evaluation", "allowed_operations": ["evaluate_handoff"],
+                "input_root": str(handoff_root.resolve()), "output_root": str(package_root.resolve()),
+                "host": {"platform": {"Darwin": "macos", "Windows": "windows"}.get(platform.system(), sys.platform),
+                         "host_id": socket.gethostname(), "python_version": f"{sys.version_info.major}.{sys.version_info.minor}",
+                         "python_executable": str(Path(sys.executable).resolve())},
+                "input_allowlist": [{"path": "handoff.json", "sha256": handoff_sha},
+                                    {"path": "oof.csv", "sha256": csv_sha}],
+                "handoff_sha256": handoff_sha, "case_id": case_id, "execution_run_id": run_id,
+                "protocol_id": protocol_id, "protocol_version": "p4b-v2", "manifest_sha256": "a" * 64}
+        gate_path = self.write_json(self.root / "handoff-gate.json", gate)
+        return package_root, handoff_root, gate_path
 
-    def test_phase4_asset_set_promotion_rolls_back_and_can_retry(self):
-        data, _ = self._phase4_fixture()
-        index, plot_data = phase5_cli._build_phase4("synthetic-p4-case", data)
-        real_link = phase5_cli.os.link
-        call_count = 0
-
-        def fail_second_promotion(source, destination):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 2:
-                raise OSError("simulated promotion failure")
-            return real_link(source, destination)
-
-        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-rollback-") as temp:
-            output_root = Path(temp)
-            assets = output_root / "assets"
-            with mock.patch.object(phase5_cli.os, "link", side_effect=fail_second_promotion):
-                with self.assertRaises(phase5_cli.CliError) as caught:
-                    phase5_cli._write_real_figures(output_root, index, plot_data)
-            self.assertEqual(caught.exception.code, "OUTPUT_WRITE_FAILED")
-            self.assertEqual(list(assets.iterdir()), [])
-            phase5_cli._write_real_figures(output_root, index, plot_data)
-            expected_count = sum(len(evaluation["figures"]) for evaluation in index["evaluations"])
-            expected_count += sum(1 for evaluation in index["evaluations"] if evaluation["metric_source"] == "pooled_oof")
-            self.assertEqual(len(list(assets.iterdir())), expected_count)
-
-    def test_phase4_index_failure_rolls_back_only_owned_assets_and_retry_succeeds(self):
-        data, _ = self._phase4_fixture()
-        index, plot_data = phase5_cli._build_phase4("synthetic-p4-case", data)
-        phase5_cli._validate_identity(index)
+    def test_evaluate_handoff_uses_normalized_contract_and_updates_package(self):
+        package_root, handoff_root, gate = self._handoff_fixture()
+        result = self.run_cli("evaluate-handoff", "--package-root", package_root,
+                              "--handoff-root", handoff_root, "--gate", gate)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        index_path = package_root / "phases/phase-05/evaluations.json"
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        self.assertEqual(index["status"], "PLANNED")
+        self.assertEqual(len(index["evaluations"]), 2)
         phase5_cli._schema_validate(index)
-        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-index-rollback-") as temp:
-            output_root = Path(temp).resolve()
-            assets = output_root / "assets"
-            assets.mkdir()
-            protected = assets / "pre-existing.bin"
-            protected.write_bytes(b"keep untouched")
-            index_path = output_root / "phases" / "phase-05" / "evaluations.json"
-            with mock.patch.object(phase5_cli, "_write_index", side_effect=phase5_cli.CliError("OUTPUT_WRITE_FAILED", "injected index failure", 5)):
-                with self.assertRaises(phase5_cli.CliError):
-                    phase5_cli._finalize_phase4_output(index, plot_data, output_root)
-            self.assertFalse(index_path.exists())
-            self.assertEqual(list(assets.iterdir()), [protected])
-            self.assertEqual(protected.read_bytes(), b"keep untouched")
+        package = json.loads((package_root / "package.json").read_text(encoding="utf-8"))
+        records = {record["path"]: record for record in package["files"]}
+        self.assertEqual(records["phases/phase-05/evaluations.json"]["sha256"],
+                         hashlib.sha256(index_path.read_bytes()).hexdigest())
 
-            written = phase5_cli._finalize_phase4_output(index, plot_data, output_root)
-            self.assertEqual(written, index_path)
-            self.assertTrue(index_path.is_file())
-            self.assertEqual(protected.read_bytes(), b"keep untouched")
-            self.assertGreater(len(list(assets.iterdir())), 1)
+    def test_evaluate_handoff_rejects_tampered_csv_without_package_change(self):
+        package_root, handoff_root, gate = self._handoff_fixture()
+        before = (package_root / "package.json").read_bytes()
+        with (handoff_root / "oof.csv").open("a", encoding="utf-8") as stream:
+            stream.write("tamper\n")
+        result = self.run_cli("evaluate-handoff", "--package-root", package_root,
+                              "--handoff-root", handoff_root, "--gate", gate)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual((package_root / "package.json").read_bytes(), before)
+        self.assertEqual(json.loads((package_root / "phases/phase-05/evaluations.json").read_text())["evaluations"], [])
 
-    def test_phase4_oof_rejects_invalid_task_join_and_missing_prediction(self):
-        data, _ = self._phase4_fixture()
-        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-bad-") as temp:
-            root = Path(temp)
-            csv_path = root / "oof.csv"
-            csv_path.write_text("Id,fold,task_id,method,track,actual,predicted\nrow,0,unknown,lasso,primary,1,2\n", encoding="utf-8")
-            summary_path = root / "summary.json"
-            summary_path.write_text("{}", encoding="utf-8")
-            manifest = {"run_id": "p4-run-01", "phase3_contract_version": "p4b-v2"}
-            gate = {"run_id": "p4-run-01", "protocol_version": "p4b-v2"}
-            with self.assertRaises(phase5_cli.CliError) as caught:
-                phase5_cli._read_phase4_oof(summary_path, csv_path, manifest, gate, "0" * 64, "1" * 64)
-            self.assertEqual(caught.exception.code, "JOIN_BLOCKED")
+    def test_evaluate_handoff_rejects_package_hash_and_identity_mismatches(self):
+        package_root, handoff_root, gate_path = self._handoff_fixture()
+        modeling_path = package_root / "phases/phase-04/modeling.json"
+        original_modeling = modeling_path.read_bytes()
+        modeling_path.write_bytes(original_modeling + b" ")
+        bad_package = self.run_cli("evaluate-handoff", "--package-root", package_root,
+                                   "--handoff-root", handoff_root, "--gate", gate_path)
+        self.assertNotEqual(bad_package.returncode, 0)
+        self.assertIn("HASH_MISMATCH", bad_package.stderr)
+        modeling_path.write_bytes(original_modeling)
 
-        data, _ = self._phase4_fixture()
-        group = next(iter(data["groups"].values()))
-        group["rows"][0] = (group["rows"][0][0], float("nan"))
-        with self.assertRaises(phase5_cli.CliError):
-            phase5_cli._build_phase4("synthetic-p4-case", data)
-
-    def test_phase4_oof_manifest_inventory_and_gate_allowlist_are_exact(self):
-        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-allowlist-") as temp:
-            root = Path(temp)
-            summary = self.write_json(root / "p4b_public_summary.json", {"synthetic": True})
-            oof = root / "p4b_oof_predictions.csv"
-            oof.write_text("Id,fold,task_id,method,track,actual,predicted\n", encoding="utf-8")
-            summary_sha = hashlib.sha256(summary.read_bytes()).hexdigest()
-            oof_sha = hashlib.sha256(oof.read_bytes()).hexdigest()
-            manifest = self.write_json(root / "p4b_manifest.json", {
-                "file_inventory": [
-                    {"relative_path": summary.name, "sha256": summary_sha, "is_public": True},
-                    {"relative_path": oof.name, "sha256": oof_sha, "is_public": False},
-                ],
-            })
-            manifest_sha = hashlib.sha256(manifest.read_bytes()).hexdigest()
-            gate = {"mode": "phase4_oof", "input_root": str(root), "manifest_sha256": manifest_sha,
-                    "input_allowlist": [{"path": summary.name, "sha256": summary_sha},
-                                        {"path": oof.name, "sha256": oof_sha}]}
-            expected = {"p4b_manifest.json": manifest_sha,
-                        "p4b_public_summary.json": summary_sha,
-                        "p4b_oof_predictions.csv": oof_sha}
-            with mock.patch.dict(phase5_cli.PHASE4_EVIDENCE_SHA256, expected):
-                resolved_summary, resolved_summary_sha, resolved_oof, resolved_oof_sha = phase5_cli._resolve_phase4_files(
-                    manifest, json.loads(manifest.read_text()), gate
-                )
-                self.assertEqual((resolved_summary, resolved_summary_sha), (summary.resolve(), summary_sha))
-                self.assertEqual((resolved_oof, resolved_oof_sha), (oof.resolve(), oof_sha))
-                gate["input_allowlist"].append({"path": "extra.csv", "sha256": "0" * 64})
-                with self.assertRaises(phase5_cli.CliError) as caught:
-                    phase5_cli._resolve_phase4_files(manifest, json.loads(manifest.read_text()), gate)
-                self.assertEqual(caught.exception.code, "NOT_AUTHORIZED")
+        handoff_path = handoff_root / "handoff.json"
+        handoff = json.loads(handoff_path.read_text(encoding="utf-8"))
+        handoff["execution_run_id"] = "different-run"
+        self.write_json(handoff_path, handoff)
+        gate = json.loads(gate_path.read_text(encoding="utf-8"))
+        handoff_sha = hashlib.sha256(handoff_path.read_bytes()).hexdigest()
+        gate["handoff_sha256"] = handoff_sha
+        gate["input_allowlist"][0]["sha256"] = handoff_sha
+        self.write_json(gate_path, gate)
+        bad_identity = self.run_cli("evaluate-handoff", "--package-root", package_root,
+                                    "--handoff-root", handoff_root, "--gate", gate_path)
+        self.assertNotEqual(bad_identity.returncode, 0)
+        self.assertIn("JOIN_BLOCKED", bad_identity.stderr)
+        self.assertEqual(json.loads((package_root / "phases/phase-05/evaluations.json").read_text())["evaluations"], [])
 
     def test_schema_and_cross_evaluation_join_validation(self):
         result = self.export_synthetic()

@@ -14,18 +14,15 @@ import socket
 import stat
 import sys
 import tempfile
+import csv
 from pathlib import Path
 from typing import Any
 
 
 SCHEMA_PATH = Path(__file__).with_name("evaluation-index.schema.json")
+HANDOFF_SCHEMA_PATH = Path(__file__).with_name("private-oof-handoff.schema.json")
 METRIC_NAMES = ("mae", "rmse", "r2")
 FIGURE_IDS = ("FIG-P5-01", "FIG-P5-02", "FIG-P5-03")
-PHASE4_EVIDENCE_SHA256 = {
-    "p4b_manifest.json": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e",
-    "p4b_public_summary.json": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
-    "p4b_oof_predictions.csv": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
-}
 
 
 class CliError(Exception):
@@ -124,183 +121,7 @@ def _resolve_allowlisted_source(manifest_path: Path, manifest: dict[str, Any], g
     return resolved, actual_digest
 
 
-def _resolve_phase4_files(manifest_path: Path, manifest: dict[str, Any], gate: dict[str, Any]) -> tuple[Path, str, Path, str]:
-    """Resolve exactly the public summary and OOF CSV named by a P4B manifest."""
-    if gate.get("mode") != "phase4_oof":
-        raise CliError("NOT_AUTHORIZED", "real OOF requires a phase4_oof gate")
-    input_root_value = gate.get("input_root")
-    if not isinstance(input_root_value, str) or not input_root_value:
-        raise CliError("NOT_AUTHORIZED", "gate.input_root is required")
-    root = Path(input_root_value).expanduser().resolve(strict=True)
-    if not root.is_dir() or manifest_path.parent.resolve(strict=True) != root:
-        raise CliError("NOT_AUTHORIZED", "Phase 4 manifest must reside directly under gate.input_root")
-    manifest_digest = _sha256(manifest_path)
-    if (manifest_digest != PHASE4_EVIDENCE_SHA256["p4b_manifest.json"]
-            or gate.get("manifest_sha256") != manifest_digest):
-        raise CliError("HASH_MISMATCH", "Phase 4 manifest digest does not match gate")
-    inventory = manifest.get("file_inventory")
-    if not isinstance(inventory, list):
-        raise CliError("INVALID_INPUT", "Phase 4 manifest file_inventory is required")
-    allowlist = gate.get("input_allowlist")
-    if not isinstance(allowlist, list):
-        raise CliError("NOT_AUTHORIZED", "gate.input_allowlist must be a list")
-
-    found: dict[str, tuple[Path, str]] = {}
-    for filename in ("p4b_public_summary.json", "p4b_oof_predictions.csv"):
-        entries = [item for item in inventory if isinstance(item, dict) and item.get("relative_path") == filename]
-        if len(entries) != 1:
-            raise CliError("NOT_AUTHORIZED", f"manifest must list exactly one {filename}")
-        entry = entries[0]
-        if filename == "p4b_public_summary.json" and entry.get("is_public") is not True:
-            raise CliError("NOT_AUTHORIZED", "public summary inventory classification is invalid")
-        relative = _safe_relative(filename, label="manifest relative_path")
-        allow = [item for item in allowlist if isinstance(item, dict) and item.get("path") == filename]
-        if len(allow) != 1 or allow[0].get("sha256") != entry.get("sha256"):
-            raise CliError("NOT_AUTHORIZED", f"{filename} must be allowlisted exactly once with its manifest digest")
-        candidate = root / relative
-        if candidate.is_symlink():
-            raise CliError("PATH_BLOCKED", f"{filename} may not be a symlink")
-        resolved = candidate.resolve(strict=True)
-        if not resolved.is_file() or resolved.parent != root:
-            raise CliError("PATH_BLOCKED", f"{filename} must be a regular file directly under input_root")
-        digest = _sha256(resolved)
-        if (not isinstance(entry.get("sha256"), str) or digest != entry["sha256"]
-                or digest != PHASE4_EVIDENCE_SHA256[filename]):
-            raise CliError("HASH_MISMATCH", f"{filename} digest does not match manifest and file")
-        found[filename] = resolved, digest
-    if len(allowlist) != 2:
-        raise CliError("NOT_AUTHORIZED", "phase4_oof allowlist must contain only the summary and OOF CSV")
-    return (*found["p4b_public_summary.json"], *found["p4b_oof_predictions.csv"])
-
-
-def _read_phase4_oof(summary_path: Path, csv_path: Path, manifest: dict[str, Any], gate: dict[str, Any],
-                     summary_digest: str, csv_digest: str) -> dict[str, Any]:
-    summary = _load_json(summary_path, label="Phase 4 public summary")
-    run_id = manifest.get("run_id")
-    protocol = manifest.get("phase3_contract_version")
-    metadata = summary.get("metadata")
-    if not isinstance(run_id, str) or not run_id or not isinstance(protocol, str) or not protocol:
-        raise CliError("INVALID_INPUT", "Phase 4 manifest run_id and phase3_contract_version are required")
-    if not isinstance(metadata, dict) or metadata.get("run_id") != run_id or metadata.get("protocol_version") != protocol:
-        raise CliError("JOIN_BLOCKED", "summary run/protocol identity does not join to Phase 4 manifest", 4)
-    if gate.get("run_id") != run_id or gate.get("protocol_version") != protocol:
-        raise CliError("NOT_AUTHORIZED", "gate run/protocol identity does not match Phase 4 manifest")
-    expected_columns = ["Id", "fold", "task_id", "method", "track", "actual", "predicted"]
-    fold_results = summary.get("per_outer_fold_results")
-    if not isinstance(fold_results, list):
-        raise CliError("INVALID_INPUT", "summary per_outer_fold_results must be a list")
-    tasks: dict[str, dict[str, Any]] = {}
-    for task in fold_results:
-        if not isinstance(task, dict):
-            raise CliError("INVALID_INPUT", "summary fold result must be an object")
-        task_id = task.get("task_id")
-        if not isinstance(task_id, str) or not task_id or task_id in tasks:
-            raise CliError("JOIN_BLOCKED", "summary task IDs must be present and unique", 4)
-        tasks[task_id] = task
-    groups: dict[str, dict[str, Any]] = {}
-    try:
-        with csv_path.open("r", encoding="utf-8-sig", newline="") as stream:
-            reader = csv.DictReader(stream)
-            if reader.fieldnames != expected_columns:
-                raise CliError("INVALID_INPUT", "OOF CSV columns must exactly match the seven-column Phase 4 contract")
-            seen_ids: set[tuple[str, str, str]] = set()
-            for row in reader:
-                if None in row or any(row.get(column) is None for column in expected_columns):
-                    raise CliError("INVALID_INPUT", "OOF CSV row has missing or extra fields")
-                task = tasks.get(row.get("task_id", ""))
-                if task is None:
-                    raise CliError("JOIN_BLOCKED", "OOF row task_id is absent from summary", 4)
-                for field in ("method", "track", "fold"):
-                    if str(task.get(field)) != row.get(field):
-                        raise CliError("JOIN_BLOCKED", f"OOF/summary task identity mismatch for {field}", 4)
-                if task.get("status") != "COMPLETED" or task.get("primary_valid") is not True:
-                    continue
-                expected_primary_track = {"primary": "selected_to_ols", "baseline": "all_features_ols"}.get(row["track"])
-                if expected_primary_track is None or task.get("primary_track") != expected_primary_track:
-                    raise CliError("JOIN_BLOCKED", "summary task does not match an eligible primary or baseline track", 4)
-                row_id = row.get("Id", "")
-                row_identity = (row_id, row["task_id"], row.get("track", ""))
-                if not row_id or row_identity in seen_ids:
-                    raise CliError("JOIN_BLOCKED", "OOF IDs must be present and unique within a task", 4)
-                seen_ids.add(row_identity)
-                try:
-                    actual, predicted = float(row["actual"]), float(row["predicted"])
-                except (TypeError, ValueError) as exc:
-                    actual, predicted = math.nan, math.nan
-                candidate = task.get("candidate")
-                if not isinstance(candidate, dict):
-                    raise CliError("JOIN_BLOCKED", "summary candidate identity is missing", 4)
-                config_hash = task.get("config_hash")
-                if (not isinstance(config_hash, str) or len(config_hash) != 64
-                        or any(char not in "0123456789abcdef" for char in config_hash)):
-                    raise CliError("JOIN_BLOCKED", "completed task needs a lowercase SHA-256 config_hash", 4)
-                config_id = "cfg-" + config_hash
-                group = groups.setdefault(config_id, {"method": task["method"], "track": row["track"], "candidate": candidate,
-                                                       "config_hash": config_hash,
-                                                       "rows": [], "folds": {}, "ids": set()})
-                if (group["candidate"] != candidate or group["config_hash"] != config_hash
-                        or group["method"] != task["method"] or group["track"] != row["track"]):
-                    raise CliError("JOIN_BLOCKED", "configuration identity collision", 4)
-                if row_id in group["ids"]:
-                    raise CliError("JOIN_BLOCKED", "Development OOF row ID occurs more than once per configuration", 4)
-                group["ids"].add(row_id)
-                group["rows"].append((actual, predicted))
-                group["folds"].setdefault(str(row["fold"]), []).append((actual, predicted))
-    except (OSError, UnicodeError, csv.Error) as exc:
-        raise CliError("INVALID_INPUT", f"cannot read Phase 4 OOF CSV: {exc}") from exc
-
-    eligible = {}
-    aggregate = summary.get("aggregate_results")
-    if not isinstance(aggregate, list):
-        raise CliError("INVALID_INPUT", "summary aggregate_results must be a list")
-    # Gate names the only configurations admitted for export. This prevents implicitly
-    # promoting every candidate or a secondary diagnostic track.
-    selected = gate.get("configurations")
-    if not isinstance(selected, list) or not selected:
-        raise CliError("NOT_AUTHORIZED", "gate.configurations must explicitly select eligible configurations")
-    for item in selected:
-        if not isinstance(item, dict) or not isinstance(item.get("configuration_id"), str):
-            raise CliError("NOT_AUTHORIZED", "each selected configuration needs configuration_id")
-        config_id = item["configuration_id"]
-        group = groups.get(config_id)
-        if group is None:
-            raise CliError("INVALID_INPUT", "selected configuration has no OOF predictions")
-        if item.get("method") != group["method"] or item.get("track") != group["track"] or item.get("candidate") != group["candidate"]:
-            raise CliError("JOIN_BLOCKED", "gate configuration identity does not match OOF task identity", 4)
-        expected_track = "baseline" if group["method"] == "ols_baseline" else "primary"
-        expected_primary_track = "all_features_ols" if expected_track == "baseline" else "selected_to_ols"
-        if group["track"] != expected_track:
-            raise CliError("NOT_AUTHORIZED", "selected configuration must use its Phase 4 primary track")
-        candidates = [entry for entry in aggregate if isinstance(entry, dict) and entry.get("method") == group["method"]
-                      and entry.get("candidate") == group["candidate"]]
-        if (len(candidates) != 1 or candidates[0].get("status") != "COMPLETED"
-                or candidates[0].get("coverage_complete") is not True
-                or candidates[0].get("valid_fold_count") != candidates[0].get("expected_fold_count")
-                or candidates[0].get("config_hash") != group["config_hash"]):
-            raise CliError("INVALID_INPUT", "selected configuration is not a complete, valid Phase 4 group")
-        folds = group["folds"]
-        expected_fold_count = candidates[0].get("expected_fold_count")
-        expected_folds = {str(value) for value in candidates[0].get("expected_folds", [])}
-        expected_rows = (metadata.get("data_boundary") or {}).get("development_rows") if isinstance(metadata.get("data_boundary"), dict) else None
-        if (len(folds) != expected_fold_count or set(folds) != expected_folds or not group["rows"]
-                or isinstance(expected_rows, bool) or not isinstance(expected_rows, int)
-                or expected_rows != len(group["rows"])
-                or any(not math.isfinite(value) for pair in group["rows"] for value in pair)
-                or any(not pairs for pairs in folds.values())):
-            raise CliError("INVALID_INPUT", "selected configuration has missing fold predictions")
-        if expected_primary_track not in ("selected_to_ols", "all_features_ols"):
-            raise CliError("INVALID_INPUT", "unsupported Phase 4 primary track")
-        group["configuration_id"] = config_id
-        group["winner_eligible"] = candidates[0].get("winner_eligible")
-        eligible[config_id] = group
-    if len(eligible) != len(selected):
-        raise CliError("NOT_AUTHORIZED", "gate configuration identities must be unique")
-    return {"run_id": run_id, "protocol": protocol, "groups": eligible,
-            "summary_digest": summary_digest, "csv_digest": csv_digest,
-            "target": gate.get("target")}
-
-
-def _build_phase4(index_case_id: str, data: dict[str, Any]) -> tuple[dict[str, Any], dict[str, list[tuple[float, float]]]]:
+def _build_handoff_evaluations(index_case_id: str, data: dict[str, Any]) -> tuple[dict[str, Any], dict[str, list[tuple[float, float]]]]:
     target = data["target"]
     if not isinstance(target, dict) or not isinstance(target.get("column"), str) or not isinstance(target.get("unit"), str):
         raise CliError("NOT_AUTHORIZED", "gate.target must define target column and unit")
@@ -537,42 +358,8 @@ def _finalize_phase4_output(index: dict[str, Any], plot_data: dict[str, list[tup
         raise
 
 
-def _validate_phase4_gate(gate: dict[str, Any], manifest: dict[str, Any]) -> None:
-    if gate.get("authorized") is not True or gate.get("mode") != "phase4_oof":
-        raise CliError("NOT_AUTHORIZED", "gate must explicitly authorize phase4_oof processing")
-    operations = gate.get("allowed_operations")
-    if not isinstance(operations, list) or "export" not in operations:
-        raise CliError("NOT_AUTHORIZED", "gate does not allow export")
-    if not isinstance(gate.get("gate_id"), str) or not gate["gate_id"]:
-        raise CliError("NOT_AUTHORIZED", "gate.gate_id is required")
-    if manifest.get("run_id") != gate.get("run_id"):
-        raise CliError("NOT_AUTHORIZED", "gate run identity does not match manifest")
-
-
 def _validate_gate(manifest_path: Path, manifest: dict[str, Any], gate: dict[str, Any],
                    output_root_arg: str, operation: str) -> Path:
-    if gate.get("mode") == "phase4_oof":
-        _validate_phase4_gate(gate, manifest)
-        input_root_value = gate.get("input_root")
-        if not isinstance(input_root_value, str) or manifest_path.parent.resolve(strict=True) != Path(input_root_value).expanduser().resolve(strict=True):
-            raise CliError("NOT_AUTHORIZED", "Phase 4 manifest must reside directly under gate.input_root")
-        host = gate.get("host")
-        if not isinstance(host, dict):
-            raise CliError("NOT_AUTHORIZED", "gate.host is required")
-        actual_platform = {"darwin": "macos", "win32": "windows"}.get(sys.platform, sys.platform)
-        if (host.get("platform") != actual_platform or host.get("host_id") != socket.gethostname()
-                or host.get("python_version") != f"{sys.version_info.major}.{sys.version_info.minor}"
-                or host.get("python_executable") != str(Path(sys.executable).resolve())):
-            raise CliError("HOST_MISMATCH", "gate host identity does not match this runtime")
-        output_root = Path(output_root_arg).expanduser().resolve(strict=True)
-        allowed_root = gate.get("output_root")
-        if not isinstance(allowed_root, str) or output_root != Path(allowed_root).expanduser().resolve(strict=True):
-            raise CliError("PATH_BLOCKED", "--output-root must exactly match gate.output_root")
-        if not output_root.is_dir():
-            raise CliError("PATH_BLOCKED", "gate.output_root must be an existing directory")
-        if not isinstance(gate.get("case_id"), str):
-            raise CliError("NOT_AUTHORIZED", "gate.case_id is required")
-        return output_root
     if gate.get("authorized") is not True or gate.get("mode") != "synthetic_only":
         raise CliError("NOT_AUTHORIZED", "gate must explicitly authorize synthetic_only processing")
     if not isinstance(gate.get("gate_id"), str) or not gate["gate_id"]:
@@ -998,7 +785,7 @@ def _export(args: argparse.Namespace) -> int:
     gate = _load_json(gate_path, label="gate")
     output_root = _validate_gate(manifest_path, manifest, gate, args.output_root, "export")
 
-    mode = "phase4_oof" if gate.get("mode") == "phase4_oof" else manifest.get("mode")
+    mode = manifest.get("mode")
     if mode == "empty":
         if manifest.get("source") is not None:
             raise CliError("INVALID_INPUT", "empty manifest must not declare a source")
@@ -1012,23 +799,12 @@ def _export(args: argparse.Namespace) -> int:
         if not isinstance(rows, list):
             raise CliError("INVALID_INPUT", "synthetic source rows must be a list")
         index = _build_synthetic(manifest, rows, digest)
-    elif mode == "phase4_oof":
-        target_file = output_root / "phases" / "phase-05" / "evaluations.json"
-        if target_file.exists() or target_file.is_symlink():
-            raise CliError("OUTPUT_EXISTS", f"refusing to overwrite existing output: {target_file}", 5)
-        summary_path, summary_digest, csv_path, csv_digest = _resolve_phase4_files(manifest_path, manifest, gate)
-        data = _read_phase4_oof(summary_path, csv_path, manifest, gate, summary_digest, csv_digest)
-        data["manifest_digest"] = _sha256(manifest_path)
-        index, plot_data = _build_phase4(gate["case_id"], data)
-        _validate_identity(index)
-        _schema_validate(index)
     else:
-        raise CliError("NOT_AUTHORIZED", "gate/manifest mode is not authorized")
+        raise CliError("NOT_AUTHORIZED", "synthetic Phase 5 export accepts only empty or synthetic manifests")
 
     _validate_identity(index)
     _schema_validate(index)
-    output = (_finalize_phase4_output(index, plot_data, output_root)
-              if mode == "phase4_oof" else _write_index(index, output_root))
+    output = _write_index(index, output_root)
     print(f"EXPORTED {output}")
     return 0
 
@@ -1042,10 +818,226 @@ def _validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _evaluate_handoff(args: argparse.Namespace) -> int:
+    """Evaluate only the normalized private handoff, never Phase 4 source files."""
+    handoff_root = Path(args.handoff_root).expanduser().resolve(strict=True)
+    package_root = Path(args.package_root).expanduser().resolve(strict=True)
+    gate = _load_json(Path(args.gate).expanduser().resolve(strict=True), label="Phase 5 handoff gate")
+    if gate.get("authorized") is not True or gate.get("mode") != "phase5_handoff_evaluation":
+        raise CliError("NOT_AUTHORIZED", "gate must authorize phase5_handoff_evaluation")
+    if "evaluate_handoff" not in gate.get("allowed_operations", []):
+        raise CliError("NOT_AUTHORIZED", "gate does not allow evaluate_handoff")
+    if not isinstance(gate.get("gate_id"), str) or not gate["gate_id"]:
+        raise CliError("NOT_AUTHORIZED", "gate.gate_id is required")
+    input_root = Path(gate.get("input_root", "")).expanduser().resolve(strict=True)
+    output_root = Path(gate.get("output_root", "")).expanduser().resolve(strict=True)
+    if handoff_root != input_root or package_root != output_root:
+        raise CliError("PATH_BLOCKED", "handoff/package roots must exactly match gate input_root/output_root")
+    if handoff_root == package_root or handoff_root.is_relative_to(package_root) or package_root.is_relative_to(handoff_root):
+        raise CliError("PATH_BLOCKED", "private handoff and Case Package roots must be separate, non-nested directories")
+    host = gate.get("host")
+    actual_platform = {"darwin": "macos", "win32": "windows"}.get(sys.platform, sys.platform)
+    if (not isinstance(host, dict) or host.get("platform") != actual_platform
+            or host.get("host_id") != socket.gethostname()
+            or host.get("python_version") != f"{sys.version_info.major}.{sys.version_info.minor}"
+            or host.get("python_executable") != str(Path(sys.executable).resolve())):
+        raise CliError("HOST_MISMATCH", "gate host does not match this runtime")
+
+    package_path = package_root / "package.json"
+    if package_path.is_symlink() or not package_path.is_file():
+        raise CliError("PATH_BLOCKED", "package.json must be a regular non-symlink file")
+    package = _load_json(package_path, label="Case Package manifest")
+    package_files = package.get("files")
+    if not isinstance(package_files, list):
+        raise CliError("JOIN_BLOCKED", "package.files must be a list", 4)
+    file_records: dict[str, dict[str, Any]] = {}
+    for record in package_files:
+        if not isinstance(record, dict) or not isinstance(record.get("path"), str) or record["path"] in file_records:
+            raise CliError("JOIN_BLOCKED", "package.files paths must be unique", 4)
+        rel = _safe_relative(record["path"], label="package.files.path")
+        path = package_root / rel
+        cursor = package_root
+        for part in rel.parts:
+            cursor = cursor / part
+            if cursor.is_symlink():
+                raise CliError("PATH_BLOCKED", f"package path contains a symlink: {record['path']}")
+        try:
+            resolved = path.resolve(strict=True)
+            resolved.relative_to(package_root)
+        except (OSError, ValueError) as exc:
+            raise CliError("PATH_BLOCKED", f"package file escapes or is missing: {record['path']}", 4) from exc
+        if not resolved.is_file():
+            raise CliError("HASH_MISMATCH", f"package file missing or unsafe: {record['path']}", 4)
+        payload = resolved.read_bytes()
+        if hashlib.sha256(payload).hexdigest() != record.get("sha256") or len(payload) != record.get("bytes"):
+            raise CliError("HASH_MISMATCH", f"package file digest mismatch: {record['path']}", 4)
+        file_records[record["path"]] = record
+    case_id = package.get("case_id")
+    modeling = _load_json(package_root / "phases/phase-04/modeling.json", label="Phase 4 modeling")
+    eval_rel = "phases/phase-05/evaluations.json"
+    if eval_rel not in file_records:
+        raise CliError("JOIN_BLOCKED", "package does not declare its Phase 5 evaluation slot", 4)
+    current_index_path = package_root / eval_rel
+    current_index = _load_json(current_index_path, label="empty Phase 5 slot")
+    if (current_index.get("case_id") != case_id or current_index.get("evaluations") != []
+            or current_index.get("status") != "UNAVAILABLE"):
+        raise CliError("NOT_AUTHORIZED", "Phase 5 package slot is not the expected unavailable empty slot")
+
+    handoff_path = handoff_root / "handoff.json"
+    csv_path = handoff_root / "oof.csv"
+    if any(path.is_symlink() or not path.is_file() for path in (handoff_path, csv_path)):
+        raise CliError("PATH_BLOCKED", "handoff.json and oof.csv must be regular non-symlink files")
+    handoff = _load_json(handoff_path, label="private OOF handoff")
+    _schema_validate_handoff(handoff)
+    allowlist = gate.get("input_allowlist")
+    expected_allowlist = [{"path": "handoff.json", "sha256": _sha256(handoff_path)},
+                          {"path": "oof.csv", "sha256": _sha256(csv_path)}]
+    if allowlist != expected_allowlist:
+        raise CliError("NOT_AUTHORIZED", "gate input_allowlist must bind exactly handoff.json and oof.csv")
+    if gate.get("handoff_sha256") != expected_allowlist[0]["sha256"]:
+        raise CliError("HASH_MISMATCH", "gate handoff_sha256 does not match handoff.json")
+    if handoff.get("csv", {}).get("sha256") != expected_allowlist[1]["sha256"]:
+        raise CliError("HASH_MISMATCH", "handoff CSV digest does not match oof.csv")
+    if (handoff.get("case_id") != case_id or gate.get("case_id") != case_id
+            or gate.get("execution_run_id") != handoff.get("execution_run_id")
+            or gate.get("protocol_id") != handoff.get("protocol_id")
+            or gate.get("protocol_version") != handoff.get("protocol_version")
+            or handoff.get("population") != "development_oof"):
+        raise CliError("JOIN_BLOCKED", "gate, handoff, and package case/run/protocol identities disagree", 4)
+    runs = modeling.get("execution_runs", [])
+    if (modeling.get("case_id") != case_id or modeling.get("cv", {}).get("protocol_id") != handoff.get("protocol_id")
+            or not any(isinstance(run, dict) and run.get("execution_run_id") == handoff.get("execution_run_id") for run in runs)):
+        raise CliError("JOIN_BLOCKED", "handoff identity does not join to Phase 4 modeling", 4)
+    configs = {item.get("configuration_id"): item for item in modeling.get("configurations", []) if isinstance(item, dict)}
+    selected = handoff.get("configurations")
+    if not isinstance(selected, list) or not selected:
+        raise CliError("JOIN_BLOCKED", "handoff configurations must be non-empty", 4)
+    for config in selected:
+        model_config = configs.get(config.get("configuration_id"))
+        if (model_config is None or model_config.get("status") != "VERIFIED"
+                or model_config.get("configuration_id") != "cfg-" + config.get("config_hash", "")
+                or model_config.get("method_id") != config.get("method_id")
+                or model_config.get("track_id") != config.get("track_id")):
+            raise CliError("JOIN_BLOCKED", "handoff configuration does not join to verified Phase 4 configuration", 4)
+    if gate.get("manifest_sha256") != handoff.get("source_artifacts", {}).get("manifest_sha256"):
+        raise CliError("HASH_MISMATCH", "gate manifest_sha256 differs from handoff provenance")
+
+    expected_columns = ["row_id", "configuration_id", "fold_index", "task_id", "actual", "predicted"]
+    groups: dict[str, dict[str, Any]] = {
+        item["configuration_id"]: {"folds": {}, "rows": [], "track": item["track_id"]}
+        for item in selected
+    }
+    task_map = {}
+    for item in selected:
+        for task in item["fold_tasks"]:
+            key = (item["configuration_id"], task["fold_index"])
+            if key in task_map:
+                raise CliError("JOIN_BLOCKED", "handoff has duplicate configuration/fold tasks", 4)
+            task_map[key] = task["task_id"]
+    seen_rows: set[tuple[str, str]] = set()
+    try:
+        with csv_path.open("r", encoding="utf-8", newline="") as stream:
+            reader = csv.DictReader(stream)
+            if reader.fieldnames != expected_columns:
+                raise CliError("JOIN_BLOCKED", "handoff CSV columns do not match the normalized contract", 4)
+            count = 0
+            for row in reader:
+                if None in row or any(row.get(name) is None for name in expected_columns):
+                    raise CliError("JOIN_BLOCKED", "handoff CSV row has missing or extra fields", 4)
+                config_id = row["configuration_id"]
+                try:
+                    fold = int(row["fold_index"])
+                    actual, predicted = float(row["actual"]), float(row["predicted"])
+                except (TypeError, ValueError) as exc:
+                    raise CliError("INVALID_INPUT", "handoff fold and prediction values must be numeric") from exc
+                row_identity = (config_id, row["row_id"])
+                if (config_id not in groups or not row["row_id"] or row_identity in seen_rows
+                        or task_map.get((config_id, fold)) != row["task_id"]
+                        or not math.isfinite(actual) or not math.isfinite(predicted)):
+                    raise CliError("JOIN_BLOCKED", "handoff row identity, task join, or values are invalid", 4)
+                seen_rows.add(row_identity)
+                group = groups[config_id]
+                group["rows"].append((actual, predicted))
+                group["folds"].setdefault(str(fold), []).append((actual, predicted))
+                count += 1
+    except (OSError, UnicodeError, csv.Error) as exc:
+        raise CliError("INVALID_INPUT", f"cannot read normalized handoff CSV: {exc}") from exc
+    if count != handoff.get("row_count") or any(len(group["rows"]) != handoff.get("n_per_configuration") for group in groups.values()):
+        raise CliError("JOIN_BLOCKED", "handoff row counts do not match its contract", 4)
+    expected_folds = [str(fold) for fold in handoff.get("expected_fold_ids", [])]
+    for group in groups.values():
+        if sorted(group["folds"]) != sorted(expected_folds) or any(not rows for rows in group["folds"].values()):
+            raise CliError("JOIN_BLOCKED", "handoff fold coverage is incomplete", 4)
+    data = {"target": handoff["target"], "groups": groups, "run_id": handoff["execution_run_id"],
+            "protocol": handoff["protocol_version"], "csv_digest": handoff["csv"]["sha256"],
+            "manifest_digest": handoff["source_artifacts"]["manifest_sha256"],
+            "summary_digest": handoff["source_artifacts"]["summary_sha256"]}
+    index, plot_data = _build_handoff_evaluations(case_id, data)
+    _validate_identity(index)
+    _schema_validate(index)
+    receipts = _write_real_figures(package_root, index, plot_data)
+    index_payload = (json.dumps(index, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+    new_manifest = dict(package)
+    new_files = [dict(record) for record in package_files]
+    replacement = {"path": eval_rel, "sha256": hashlib.sha256(index_payload).hexdigest(),
+                   "bytes": len(index_payload), "mime": "application/json"}
+    new_files = [replacement if record["path"] == eval_rel else record for record in new_files]
+    for receipt in receipts:
+        rel = receipt["path"].relative_to(package_root).as_posix()
+        new_files.append({"path": rel, "sha256": receipt["sha256"], "bytes": receipt["path"].stat().st_size,
+                          "mime": "image/png" if rel.endswith(".png") else "application/json"})
+    new_manifest["files"] = sorted(new_files, key=lambda record: record["path"])
+    manifest_payload = (json.dumps(new_manifest, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+    original_index = current_index_path.read_bytes()
+    try:
+        _atomic_replace_existing(current_index_path, index_payload)
+        _atomic_replace_existing(package_path, manifest_payload)
+    except Exception as exc:
+        try:
+            if current_index_path.read_bytes() != original_index:
+                _atomic_replace_existing(current_index_path, original_index)
+        except Exception as restore_exc:
+            raise CliError("OUTPUT_WRITE_FAILED", f"package update failed and index rollback failed: {restore_exc}", 5) from exc
+        rollback = _rollback_real_assets(receipts)
+        if rollback:
+            raise CliError("OUTPUT_WRITE_FAILED", f"package update failed; asset rollback issues: {rollback}", 5) from exc
+        raise
+    print(f"EVALUATED {current_index_path}")
+    return 0
+
+
+def _schema_validate_handoff(handoff: dict[str, Any]) -> None:
+    try:
+        import jsonschema
+        from jsonschema import Draft202012Validator, FormatChecker
+        schema = json.loads(HANDOFF_SCHEMA_PATH.read_text(encoding="utf-8"))
+        errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(handoff))
+    except ImportError as exc:
+        raise CliError("DEPENDENCY_MISSING", "install tools/phase5_evaluation/requirements.txt", 5) from exc
+    except (OSError, json.JSONDecodeError) as exc:
+        raise CliError("SCHEMA_FAIL", f"cannot load private handoff schema: {exc}", 4) from exc
+    if errors:
+        raise CliError("SCHEMA_FAIL", f"private handoff schema: {errors[0].message}", 4)
+
+
+def _atomic_replace_existing(path: Path, payload: bytes) -> None:
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="wb", dir=path.parent, prefix=".phase5-update-", delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    except OSError as exc:
+        raise CliError("OUTPUT_WRITE_FAILED", f"atomic package update failed: {exc}", 5) from exc
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Export a Phase 5 evaluation index from explicitly authorized synthetic inputs."
-    )
+    parser = argparse.ArgumentParser(description="Phase 5 evaluation CLI for synthetic fixtures or normalized private OOF handoffs.")
     subparsers = parser.add_subparsers(dest="command", required=True)
     export_parser = subparsers.add_parser("export", help="export an authorized empty or synthetic index")
     export_parser.add_argument("--manifest", required=True, help="explicit UTF-8 JSON input manifest")
@@ -1055,6 +1047,11 @@ def build_parser() -> argparse.ArgumentParser:
     validate_parser = subparsers.add_parser("validate", help="validate a Phase 5 index against the pinned schema")
     validate_parser.add_argument("--index", required=True, help="evaluation-index JSON to validate")
     validate_parser.set_defaults(handler=_validate)
+    handoff_parser = subparsers.add_parser("evaluate-handoff", help="evaluate a normalized Phase 4 private OOF handoff in a Case Package")
+    handoff_parser.add_argument("--handoff-root", required=True)
+    handoff_parser.add_argument("--package-root", required=True)
+    handoff_parser.add_argument("--gate", required=True)
+    handoff_parser.set_defaults(handler=_evaluate_handoff)
     return parser
 
 
