@@ -9,6 +9,12 @@
 | Overall UX architecture / page directory | [Current UX entry](../ui-ux/REGSCOPE-UX-SPEC.md) |
 | Phase 1–6 and Dashboard wireframes | [Page index](../ui-ux/REGSCOPE-RECONSTRUCTION-INDEX.md) |
 | **Case Package data format** | [Case Package Spec v1](../ui-ux/case-package/CASE-PACKAGE-SPEC-v1.md) |
+| Phase 1 content data format and sample | [Phase 1 contract](../ui-ux/case-package/phase-01/PHASE-01-DATA-CONTRACT-v1.md) |
+| Phase 2 EDA index and sample | [Phase 2 contract](../ui-ux/case-package/phase-02/PHASE-02-DATA-CONTRACT-v1.md) |
+| Phase 3 preparation and feature summary | [Phase 3 contract](../ui-ux/case-package/phase-03/PHASE-03-DATA-CONTRACT-v1.md) |
+| **Phase 4 modeling data format** | [Phase 4 Data Contract](../ui-ux/case-package/phase-04/PHASE-04-DATA-CONTRACT-v1.md) |
+| Phase 4 empty/MOCK samples and validation matrix | [Phase 4 sample folder](../ui-ux/case-package/phase-04/) |
+| Phase 4 JSON Schema | [phase-04.schema.json](./data-contracts/schemas/phase-04.schema.json) |
 | **Phase 5 static data format** | [Phase 5 Data Contract](../ui-ux/case-package/phase-05/PHASE-05-DATA-CONTRACT-v1.md) |
 | Phase 5 JSON Schema | [evaluation-index.schema.json](../ui-ux/case-package/phase-05/evaluation-index.schema.json) |
 | Phase 5 empty and nonempty sample | [Sample folder](../ui-ux/case-package/phase-05/sample/) |

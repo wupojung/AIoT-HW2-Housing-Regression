@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "synthetic-housing",
+  "status": "MOCK",
+  "default_analysis_id": "synthetic-overview",
+  "analyses": [
+    {
+      "id": "synthetic-overview",
+      "figure_id": "MOCK-FIG-01",
+      "title": "Synthetic overview",
+      "status": "MOCK",
+      "image_ref": null,
+      "table_ref": null,
+      "description": "MOCK: A synthetic selector entry with no figure asset.",
+      "finding": null,
+      "limitations": "Synthetic layout fixture only; no empirical interpretation.",
+      "provenance_ref": null
+    }
+  ]
+}

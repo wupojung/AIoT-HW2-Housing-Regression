@@ -56,8 +56,8 @@
       },
       "mean_selected_encoded_count": 239.66666666666666,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/15",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-2cc6e4b57a1018be232ca3b4836764386064679c764d0213a5bfaff33b899206",
@@ -87,8 +87,8 @@
       },
       "mean_selected_encoded_count": 239.66666666666666,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/16",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-20363ce2a7f8d58f4e840e81b72590fe8de7d1b0dbf47a124fa71e5f3bcf02de",
@@ -118,8 +118,8 @@
       },
       "mean_selected_encoded_count": 233.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/17",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-d7202991dc8fee11e65aac3b0532ac68b63599a6b0ec87eec5544eb13ad8c0f3",
@@ -149,8 +149,8 @@
       },
       "mean_selected_encoded_count": 207.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/18",
-      "method_winner": true,
-      "five_method_winner": false
+      "source_reported_method_winner": true,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-9fa4d99608f14f862026ee988a079004de547e0d713a17b25c36f41a7ac225e3",
@@ -180,8 +180,8 @@
       },
       "mean_selected_encoded_count": 239.66666666666666,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/19",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-dd45a0b3f79edae79eaa99d9a592757df83e7874b21f1acaea413103928dbdc0",
@@ -211,8 +211,8 @@
       },
       "mean_selected_encoded_count": 240.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/20",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-d8d37e65bf4102eb0c9aea0edd336d66f0b8557d5f280634ff59ad0fd44f3e89",
@@ -242,8 +242,8 @@
       },
       "mean_selected_encoded_count": 240.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/21",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-1c73870379fcd6a39c7137064f4cd21cc1b0b0424e5dc48fa0216806af0061db",
@@ -273,8 +273,8 @@
       },
       "mean_selected_encoded_count": 239.33333333333334,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/22",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-d29012556273bf48ab5997cb33861acd9454e5879dac80f885a7a721a2494460",
@@ -304,8 +304,8 @@
       },
       "mean_selected_encoded_count": 227.33333333333334,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/23",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-52f2eeb3d7721d8f4b0ae42ab242efb5c5aa4ac12906532d932958c14c2f7ae8",
@@ -335,8 +335,8 @@
       },
       "mean_selected_encoded_count": 239.0,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/24",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-1098e27f34125c296e9331aae6fa1ffec6075f3986b7577cfa813850951d3b53",
@@ -366,8 +366,8 @@
       },
       "mean_selected_encoded_count": 234.33333333333334,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/25",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     },
     {
       "configuration_id": "p4b-v2-d0247c0be6fbd0ab346b7d3d5c45583bf3d37d27c45e8d1d432a5cf88d569192",
@@ -397,8 +397,8 @@
       },
       "mean_selected_encoded_count": 236.33333333333334,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/26",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     }
   ],
   "method_id": "elastic_net",

@@ -15,7 +15,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.0.0"
+      "const": "1.1.0"
     },
     "case_id": {
       "type": "string",
@@ -191,6 +191,26 @@
             "type": "string",
             "minLength": 1
           },
+          "metadata_ref": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^phases/phase-04/configurations/[a-z0-9][a-z0-9._-]*/metadata\\.json$"
+          },
+          "fold_tasks_ref": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^phases/phase-04/configurations/[a-z0-9][a-z0-9._-]*/fold-tasks\\.json$"
+          },
+          "cv_metrics_ref": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^phases/phase-04/configurations/[a-z0-9][a-z0-9._-]*/cv-metrics\\.json$"
+          },
+          "selected_features_ref": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^phases/phase-04/configurations/[a-z0-9][a-z0-9._-]*/selected-features\\.json$"
+          },
           "status": {
             "enum": [
               "VERIFIED",
@@ -210,10 +230,102 @@
         "null"
       ]
     },
+    "source_reported_candidate_configuration_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
     "charts": {
       "type": "array",
       "items": {
-        "type": "object"
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "chart_id",
+          "chart_type",
+          "points_ref",
+          "status"
+        ],
+        "properties": {
+          "chart_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$"
+          },
+          "chart_type": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$"
+          },
+          "points_ref": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^phases/phase-04/charts/[a-z0-9][a-z0-9._-]*\\.json$"
+          },
+          "axes": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "comparison_protocol": {
+            "type": "object",
+            "required": [
+              "protocol_id"
+            ],
+            "properties": {
+              "protocol_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "fold_count": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "track_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "metric_source": {
+                "type": "string",
+                "minLength": 1
+              },
+              "metric": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_unit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "lower_is_better": {
+                "type": "boolean"
+              },
+              "status": {
+                "enum": [
+                  "VERIFIED",
+                  "MOCK",
+                  "UNAVAILABLE",
+                  "PLANNED",
+                  "ERROR",
+                  "SOURCE_REPORTED_NOT_VERIFIED",
+                  "SOURCE_REPORTED_VERIFIED_MATCH"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "status": {
+            "enum": [
+              "VERIFIED",
+              "MOCK",
+              "UNAVAILABLE",
+              "PLANNED",
+              "ERROR",
+              "SOURCE_REPORTED_NOT_VERIFIED"
+            ]
+          }
+        }
       }
     }
   }

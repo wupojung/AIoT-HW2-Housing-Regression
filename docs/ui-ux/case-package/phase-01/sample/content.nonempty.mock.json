@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "synthetic-housing",
+  "status": "MOCK",
+  "sections": [
+    {
+      "section_id": "problem",
+      "title": "Synthetic research question",
+      "body": "MOCK: Explore how two invented housing attributes relate to a made-up target."
+    },
+    {
+      "section_id": "objective",
+      "title": "Synthetic objective",
+      "body": "MOCK: Exercise the case page layout without presenting empirical findings."
+    },
+    {
+      "section_id": "limitations",
+      "title": "Limitations",
+      "body": "Every statement in this fixture is synthetic and must remain watermarked."
+    }
+  ]
+}

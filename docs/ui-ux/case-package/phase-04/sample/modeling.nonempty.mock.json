@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.1.0",
+  "case_id": "synthetic-housing",
+  "status": "MOCK",
+  "cv": {
+    "training_rows": 12,
+    "fold_count": 3,
+    "protocol_id": "synthetic-cv-3fold-v1",
+    "status": "MOCK"
+  },
+  "methods": [
+    {
+      "method_id": "synthetic_selector",
+      "label": "Synthetic selector",
+      "parameters": [
+        {
+          "parameter_id": "top_k",
+          "label": "Top K",
+          "data_type": "integer"
+        }
+      ]
+    }
+  ],
+  "execution_runs": [
+    {
+      "execution_run_id": "synthetic-p4-run-01",
+      "source_manifest_sha256": null,
+      "status": "MOCK"
+    }
+  ],
+  "configurations": [
+    {
+      "configuration_id": "synthetic-p4-config-01",
+      "execution_run_id": "synthetic-p4-run-01",
+      "method_id": "synthetic_selector",
+      "track_id": "selected_to_ols",
+      "params": {
+        "top_k": 2
+      },
+      "protocol_id": "synthetic-cv-3fold-v1",
+      "status": "MOCK"
+    }
+  ],
+  "default_configuration_id": "synthetic-p4-config-01",
+  "charts": []
+}

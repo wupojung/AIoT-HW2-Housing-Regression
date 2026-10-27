@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "synthetic-housing",
+  "status": "MOCK",
+  "feature_types": [
+    {"type_id": "nominal", "label": "Nominal"},
+    {"type_id": "ordinal", "label": "Ordinal"},
+    {"type_id": "discrete", "label": "Discrete"},
+    {"type_id": "continuous", "label": "Continuous"}
+  ],
+  "stages": [
+    {
+      "id": "raw",
+      "label": "Raw candidate columns",
+      "unit": "raw_columns",
+      "total": 4,
+      "total_status": "MOCK",
+      "segments": [
+        {"type_id": "nominal", "count": 1},
+        {"type_id": "ordinal", "count": 1},
+        {"type_id": "discrete", "count": 1},
+        {"type_id": "continuous", "count": 1}
+      ],
+      "distribution_status": "MOCK"
+    },
+    {
+      "id": "filtered",
+      "label": "After filtering",
+      "unit": "raw_columns",
+      "total": 3,
+      "total_status": "MOCK",
+      "segments": [
+        {"type_id": "nominal", "count": 1},
+        {"type_id": "ordinal", "count": 1},
+        {"type_id": "continuous", "count": 1}
+      ],
+      "distribution_status": "MOCK"
+    },
+    {
+      "id": "processed",
+      "label": "After preparation",
+      "unit": "pre_encoding_columns",
+      "total": 3,
+      "total_status": "MOCK",
+      "segments": [
+        {"type_id": "nominal", "count": 1},
+        {"type_id": "ordinal", "count": 1},
+        {"type_id": "continuous", "count": 1}
+      ],
+      "distribution_status": "MOCK"
+    },
+    {
+      "id": "encoded",
+      "label": "After encoding",
+      "unit": "encoded_features",
+      "total": 4,
+      "total_status": "MOCK",
+      "segments": [
+        {"type_id": "nominal", "count": 2},
+        {"type_id": "ordinal", "count": 1},
+        {"type_id": "continuous", "count": 1}
+      ],
+      "distribution_status": "MOCK",
+      "fit_population": null,
+      "pipeline_version": null
+    }
+  ],
+  "treatments": [],
+  "split": {
+    "source_labeled_rows": 10,
+    "training_rows": 8,
+    "holdout_rows": 2,
+    "seed": 7,
+    "status": "MOCK"
+  },
+  "lineage_ref": null
+}

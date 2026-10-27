@@ -12,9 +12,6 @@
   "protocol_id": "p4b-v2.0-development-3fold-rs42",
   "status": "SOURCE_REPORTED_NOT_VERIFIED",
   "winner_eligible": true,
-  "method_winner": true,
-  "five_method_winner": true,
-  "selection_role": "five_method_winner",
   "selection_basis": "lowest eligible selected_to_ols cv_fold_mean RMSE among the five feature-selection method winners; OLS baseline is not a feature-selection method",
   "coverage": {
     "expected_fold_count": 3,
@@ -46,7 +43,7 @@
     "Configuration-level completion does not change the parent execution run/resume status ERROR."
   ],
   "final_fit": {
-    "final_fit_id": "final-fit-development_20261026_01-lasso100-primary-ols",
+    "final_fit_id": null,
     "execution_run_id": "development_20261026_01",
     "configuration_id": "p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
     "artifact_type": "phase4-final-development-lasso100-primary-ols",
@@ -92,5 +89,8 @@
       "The fitted model binary, coefficients, scaler arrays, detailed feature list, and local artifact path are not included.",
       "This metadata does not register or enable a public prediction model."
     ]
-  }
+  },
+  "source_reported_method_winner": true,
+  "source_reported_five_method_winner": true,
+  "source_reported_selection_role": "five_method_winner"
 }

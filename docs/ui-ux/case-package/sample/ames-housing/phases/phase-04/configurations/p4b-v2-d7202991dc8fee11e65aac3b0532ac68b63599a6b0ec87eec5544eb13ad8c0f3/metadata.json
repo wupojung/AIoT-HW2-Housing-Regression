@@ -13,9 +13,6 @@
   "protocol_id": "p4b-v2.0-development-3fold-rs42",
   "status": "SOURCE_REPORTED_NOT_VERIFIED",
   "winner_eligible": true,
-  "method_winner": true,
-  "five_method_winner": false,
-  "selection_role": "method_winner",
   "selection_basis": null,
   "coverage": {
     "expected_fold_count": 3,
@@ -45,5 +42,8 @@
     "Development CV result only; no Holdout result is included.",
     "A final-fit model artifact is not present in the source run.",
     "Configuration-level completion does not change the parent execution run/resume status ERROR."
-  ]
+  ],
+  "source_reported_method_winner": true,
+  "source_reported_five_method_winner": false,
+  "source_reported_selection_role": "method_winner"
 }

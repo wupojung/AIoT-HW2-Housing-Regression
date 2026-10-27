@@ -53,8 +53,8 @@
       },
       "mean_selected_encoded_count": 240.33333333333334,
       "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/0",
-      "method_winner": false,
-      "five_method_winner": false
+      "source_reported_method_winner": false,
+      "source_reported_five_method_winner": false
     }
   ],
   "metric_semantics": "All-features OLS baseline; separate track, not mixed into selected-to-OLS ranking."

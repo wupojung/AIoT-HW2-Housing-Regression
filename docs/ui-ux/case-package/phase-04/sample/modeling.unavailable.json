@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.1.0",
+  "case_id": "ames-housing",
+  "status": "UNAVAILABLE",
+  "cv": {
+    "training_rows": null,
+    "fold_count": null,
+    "protocol_id": null,
+    "status": "UNAVAILABLE"
+  },
+  "methods": [],
+  "execution_runs": [],
+  "configurations": [],
+  "default_configuration_id": null,
+  "charts": []
+}

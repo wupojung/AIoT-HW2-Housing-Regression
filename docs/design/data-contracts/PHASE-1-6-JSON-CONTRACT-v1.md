@@ -45,21 +45,21 @@ case-package/
 
 ## 3. 每個 JSON 的欄位契約、UI 綁定與 EMPTY 決策
 
-### Phase 1 — `phases/phase-01/content.json`
+### Phase 1 — `phases/phase-01/content.json` ([contract and samples](../../ui-ux/case-package/phase-01/))
 
-根必填：`schema_version`, `case_id`, `status`, `sections[]`。每段：`section_id`（唯一穩定 key）、`title`、`body`（已審查公開安全純文字）。展示順序等於陣列順序；只做文字卡，不從空文字推測科學結論。根 `MOCK` 時加 MOCK 水印；`sections:[]` 時顯示「尚無經核准研究敘事」。所有來源/目標以 `case.json` 為唯一權威；`content.json` 可為各段提供後續 `source_ref`，但這是**選用且必須審核**的擴充欄位。
+根必填：`schema_version`, `case_id`, `status`, `sections[]`。每段：`section_id`（唯一穩定 key）、`title`、`body`（已審查公開安全純文字）。展示順序等於陣列順序；只做文字卡，不從空文字推測科學結論。根 `MOCK` 時加 MOCK 水印；`sections:[]` 時顯示「尚無經核准研究敘事」。所有來源/目標以 `case.json` 為唯一權威；來源連結與研究依據需另經審查，當前 Schema 不允許未定義欄位。
 
-### Phase 2 — `phases/phase-02/analyses.json`（EDA）
+### Phase 2 — `phases/phase-02/analyses.json`（EDA；[contract and samples](../../ui-ux/case-package/phase-02/)）
 
 根必填：`schema_version,case_id,status,default_analysis_id,analyses[]`。每分析必填 `id,figure_id,title,status,image_ref,table_ref,description,finding,limitations,provenance_ref`；允許 asset/table/finding/provenance nullable。已知的 FIG-01（總覽）、FIG-02（缺失值）、FIG-03（目標分布）、FIG-06（相關分析）在 Ames Sample 只有**選單資訊**，目前 `UNAVAILABLE` 不等於圖資已核准，UI 選中呈現同尺寸 unavailable 佔位。若分析項目非空，`default_analysis_id` 必須指向清單中一筆；空清單時 null。單次只顯示一個圖框，圖與 finding/source/table 同步替換；沒有圖不可保留上一張。圖資 VERIFIED 必須透過後續 Bundle 檢查 ref+hash+rights+alt+table、不可將 sample 的 title 當作已發布的實證圖。
 
-### Phase 3 — `phases/phase-03/preparation.json`（資料準備）
+### Phase 3 — `phases/phase-03/preparation.json`（資料準備；[contract and samples](../../ui-ux/case-package/phase-03/)）
 
 必填 `schema_version,case_id,status,feature_types[],stages[],treatments[],split,lineage_ref`。四種 classification：`nominal/ordinal/discrete/continuous`；`feature_types[]` 每項 `type_id,label`。四個**按順序** `stages[]`：`raw,filtered,processed,encoded`；每筆 `id,label,unit,total,total_status,segments[],distribution_status`；`total` nullable，`unit` 僅 `raw_columns/pre_encoding_columns/encoded_features`，不同單位不可做相同分母百分比。每 segment 有 `type_id,count`，當 distribution VERIFIED，所有 count 必須非負且和等於 total、type_id 只能引用 feature_types。型態分布未知就 `segments:[],distribution_status:UNAVAILABLE`，**不得假畫四條等比色塊**。`treatments[]` 是經 source 審核的缺失值處理/資料轉換紀錄（Sample 可為空）；不可臆測 imputation 或泄露 fold row index。`split` 是**row count**、非 feature count：`source_labeled_rows,training_rows,holdout_rows,seed,status`，Ames 歷史交接 1460/1168/292 在 Sample 的 `status=SOURCE_REPORTED_NOT_VERIFIED`，不自動升 VERIFIED。`lineage_ref` 指向選用 `feature-lineage.json`，**248 encoded 的 fit_population/pipeline_version/source SHA 未證實前只能作 reported/unavailable**，不能推算 Phase6 raw input。
 
 ### Phase 4 — `phases/phase-04/modeling.json`（建模）
 
-必填 `schema_version,case_id,status,cv,methods[],execution_runs[],configurations[],default_configuration_id,charts[]`。`cv{training_rows,fold_count,protocol_id,status}`、`methods[]` 每項 `method_id,label,parameters[]`，參數每項 `parameter_id,label,data_type`。只有**實際存在的配置**才可出現在 `configurations[]`：`configuration_id,execution_run_id,method_id,track_id,params,protocol_id,status`，metadata/fold/metrics/selected-feature refs 選用且必須可解參照。`execution_runs[]` 是多個 config 所屬的一次實驗執行，不得混作 method tuple。可變 K 不能作固定 Top-K 軸：fixed method 的 `requested_k` vs alpha/l1_ratio variable-method X 分開；selected fold K 與 final-fit K 是不同來源。`charts[]` 僅同 protocol/track/population 可比較。`execution_runs:[],configurations:[],default_configuration_id:null` 合法，UI 應顯示「尚無可驗證配置」，不得自動製造 Pearson/Lasso 榜單。
+必填 `schema_version,case_id,status,cv,methods[],execution_runs[],configurations[],default_configuration_id,charts[]`。`cv{training_rows,fold_count,protocol_id,status}`、`methods[]` 每項 `method_id,label,parameters[]`，參數每項 `parameter_id,label,data_type`。只有**實際存在的配置**才可出現在 `configurations[]`：`configuration_id,execution_run_id,method_id,track_id,params,protocol_id,status`；v1.1 可選 metadata/fold/metrics/selected-feature refs 必須是安全 case-root-relative refs，並由 Bundle QA 確認存在且在 manifest。`default_configuration_id` 只能指向 eligible 配置；尚未核准的來源候選另放 `source_reported_candidate_configuration_id`，不得供 UI 預設選取。`final_fit_id` 除非 source 證據明確提供且已審核，否則保持 null，不能從 configuration ID 推導。權威細節見 [Phase 4 Data Contract](../../ui-ux/case-package/phase-04/PHASE-04-DATA-CONTRACT-v1.md) 和 [Phase 4 Schema](./schemas/phase-04.schema.json)。`execution_runs[]` 是多個 config 所屬的一次實驗執行，不得混作 method tuple。可變 K 不能作固定 Top-K 軸：fixed method 的 `requested_k` vs alpha/l1_ratio variable-method X 分開；selected fold K 與 final-fit K 是不同來源。`charts[]` 僅同 protocol/track/population 可比較。`execution_runs:[],configurations:[],default_configuration_id:null` 合法，UI 應顯示「尚無可驗證配置」，不得自動製造 Pearson/Lasso 榜單。
 
 ### Phase 5 — `phases/phase-05/evaluations.json`（模型評估）
 

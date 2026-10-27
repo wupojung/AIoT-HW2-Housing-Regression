@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "status": "UNAVAILABLE",
+  "feature_types": [],
+  "stages": [],
+  "treatments": [],
+  "split": {
+    "source_labeled_rows": null,
+    "training_rows": null,
+    "holdout_rows": null,
+    "seed": null,
+    "status": "UNAVAILABLE"
+  },
+  "lineage_ref": null
+}

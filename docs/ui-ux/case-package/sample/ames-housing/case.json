@@ -16,5 +16,5 @@
     "value_type": "number"
   },
   "language": "zh-Hant",
-  "disclaimer": "Phase 4 僅為來源報稱的 Development aggregate，尚未完成研究驗證或發布核准；其他階段為 MOCK 或 UNAVAILABLE。不得視為已核准研究結果或可部署模型。"
+  "disclaimer": "Phase 3 and Phase 4 contain source-reported aggregate data that has not been independently confirmed; other phases are MOCK or UNAVAILABLE. No section is approved for release, and no deployable model is included."
 }
