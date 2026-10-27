@@ -2,6 +2,8 @@
 
 > Defines the static Phase 4 payload inside a Case Package. The authoritative modeling-index JSON Schema is [`docs/design/data-contracts/schemas/phase-04.schema.json`](../../../design/data-contracts/schemas/phase-04.schema.json); this folder does not duplicate it. This contract describes package-level meaning and cross-file checks that JSON Schema cannot perform. A schema pass is not scientific validation, publication approval, model readiness, or permission to train or deploy.
 
+The producer/schema/consumer path map is maintained once in [JSON Data Contracts → Phase 4 authoritative paths](../../../design/data-contracts/README.md#phase-4-authoritative-paths). The UI page is a consumer of this contract, not a second schema.
+
 ## 1. Files and authority
 
 ```text
@@ -30,7 +32,7 @@
 - `execution_runs[]` identifies one actual runner invocation (`execution_run_id,status`, optional source-manifest SHA). One run may contain many configurations; a method/parameter tuple is not a run.
 - `configurations[]` contains only source-backed configurations: `configuration_id,execution_run_id,method_id,track_id,params,protocol_id,status`. The status is an evidence/display gate, not a task execution status. Use `PLANNED` for source-reported configurations pending review and `ERROR` for invalid/incomplete configurations. Four optional case-root refs may point to that configuration's `metadata.json`, `fold-tasks.json`, `cv-metrics.json`, and `selected-features.json`.
 - `default_configuration_id` is a UI selection default and may point only to an eligible configuration. Keep it null while every configuration is `PLANNED`, `ERROR`, or otherwise ineligible. `source_reported_candidate_configuration_id` is a separate optional annotation for the candidate named by a source report; it never preselects a configuration or certifies a winner, release, or deployable model.
-- `charts[]` describes displayable aggregates; each entry requires a stable `chart_id`, `chart_type`, case-root-relative `points_ref`, and `status`. `status` controls eligibility independently from the point file's source status. A point's `source_reported_winner_eligible` flag is only source annotation; it never makes a chart point or configuration eligible for UI defaults. Comparisons must state and match protocol, track, metric source, target unit, and X-axis semantics. Never combine requested K, observed selected K, and regularization parameters on one unlabeled axis. Existence, file-manifest membership, ID joins, and comparability remain Bundle Validator checks.
+- `charts[]` describes displayable aggregates; each entry requires a stable `chart_id`, `chart_type`, case-root-relative `points_ref`, and `status`. `status` controls eligibility independently from the point file's source status. A point's `source_reported_winner_eligible` flag is only source annotation; it never makes a chart point or configuration eligible for UI defaults. Comparisons must state and match protocol, track, metric source, target unit, and X-axis semantics. Never combine requested K, observed K, and regularization parameters on one unlabeled axis. Existence, file-manifest membership, ID joins, task-to-point lineage, and comparability remain Bundle Validator checks. A protocol artifact's `SOURCE_REPORTED_VERIFIED_MATCH` means only that the source identity/protocol match was reported; it does not override `run_status=ERROR` or certify research/publication.
 
 Adding optional config detail refs is the backward-compatible v1.1 change. Reference existence, same-configuration identity, and membership in `package.json.files[]` are bundle checks, not schema assertions.
 
@@ -40,6 +42,8 @@ Adding optional config detail refs is the backward-compatible v1.1 change. Refer
 - `fold-tasks.json`: one record per planned outer-fold task with stable task ID, fold index, source execution state, and permitted aggregate counts. Keep `COMPLETED`, `INVALID`, `NOT_COMPUTED`, and `ERROR` visible. Do not convert incomplete tasks into successful results or expose row IDs/train/validation indices.
 - `cv-metrics.json`: metrics scoped to the actual fold set and target unit, with per-fold values, aggregation rule, mean and sample SD (`ddof=1`) where available. Mark unknown values null with a reason/status. CV fold mean is not pooled OOF and is not Holdout.
 - `selected-features.json`: selected encoded-feature IDs and allowed aggregate feature evidence. Preserve source attribution status; do not invent raw-field lineage or coefficient/rank evidence when absent. No row-level prediction payloads.
+
+The frontend loads `modeling.json` first and follows only the selected configuration's detail refs on demand. The optional aggregate selected-feature chart must not be fetched on the first screen; the current large staging projection is source-reported and has not received independent research or rights review.
 
 `final_fit` is optional. `final_fit_id` stays null unless that identity is explicitly present in independently reviewed source evidence; do not derive it from a `configuration_id` or invent one from method/parameters. Metadata-only projection must say whether it is source-reported/unverified and whether the fitted binary is private/not included. Never package joblib/pickle/model binaries, coefficients, scaler arrays, or enable Phase 6 prediction from a Phase 4 catalog entry.
 

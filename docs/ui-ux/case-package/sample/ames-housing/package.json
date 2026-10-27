@@ -2,7 +2,7 @@
   "package_schema_version": "1.0.0",
   "package_id": "sample-ames-housing-001",
   "case_id": "ames-housing",
-  "package_revision": "sample-r6-phase1-4-contract-samples",
+  "package_revision": "sample-r7-phase1-4-p4-consumer-audit",
   "package_status": "PLANNED",
   "publication": {
     "approved": false,
@@ -76,8 +76,8 @@
     },
     {
       "path": "phases/phase-04/charts/cv-protocol.json",
-      "sha256": "e3eef7c9904b8b5be90b27db5b335711a9ef86b4891b153bcb02cba1a2918e93",
-      "bytes": 1598,
+      "sha256": "475a5db532b707f089b695177c5febd6c462abf8acd597ca1b926d4c10061ccd",
+      "bytes": 1635,
       "mime": "application/json"
     },
     {

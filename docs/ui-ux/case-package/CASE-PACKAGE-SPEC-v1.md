@@ -117,6 +117,8 @@ PUBLIC (publisher 產生、URL，只讀)
 
 ## 6. Phase 4：execution/configuration/fold、圖表與折間 K
 
+Phase 4 producer, schema, data contract, frontend consumer, sample, and current validation evidence are indexed in the single [Phase 4 authoritative path table](../../design/data-contracts/README.md#phase-4-authoritative-paths). This package spec governs package-level semantics; it does not duplicate the root JSON Schema.
+
 **`phases/phase-04/modeling.json`**：
 - `cv`: `training_rows,fold_count,protocol_id,status`；真實 fold 由資料產物核實。**CV Folds=3** 與方法的 **Top K** 是不同控制/概念。
 - `methods[]`: method_id/label/parameters[]；每個 `parameter_id,label,data_type` 為動態表單定義，0–N 個均可。

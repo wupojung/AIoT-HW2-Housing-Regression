@@ -14,13 +14,27 @@
 | Phase 1 Business Understanding | `phases/phase-01/content.json` | [01](./schemas/phase-01.schema.json) | [01](../../ui-ux/case-package/sample/ames-housing/phases/phase-01/content.json) | 已核准真實敘事／來源 |
 | Phase 2 Data Understanding / EDA | `phases/phase-02/analyses.json` | [02](./schemas/phase-02.schema.json) | [02](../../ui-ux/case-package/sample/ames-housing/phases/phase-02/analyses.json) | 四幅核准圖的 public SHA/alt/table |
 | Phase 3 Data Preparation | `phases/phase-03/preparation.json` | [03](./schemas/phase-03.schema.json) | [03](../../ui-ux/case-package/sample/ames-housing/phases/phase-03/preparation.json) | 細分段數／fit scope/feature lineage |
-| Phase 4 Modeling | `phases/phase-04/modeling.json` | [04](./schemas/phase-04.schema.json) | [04](../../ui-ux/case-package/sample/ames-housing/phases/phase-04/modeling.json) | source-reported; config detail refs are optional in schema v1.1 |
+| Phase 4 Modeling | `phases/phase-04/modeling.json` | [04](./schemas/phase-04.schema.json) | [04](../../ui-ux/case-package/sample/ames-housing/phases/phase-04/modeling.json) | 30 `PLANNED`, 2 `ERROR`, no eligible default; leaf schemas / reusable Bundle Validator NOT_IMPLEMENTED |
 | Phase 5 Evaluation | `phases/phase-05/evaluations.json` | [05](../../ui-ux/case-package/phase-05/evaluation-index.schema.json) | [05](../../ui-ux/case-package/phase-05/sample/evaluations.json) | **契約設計已核准**；實證/Bundle 待後續 Gate |
 | Phase 6 Deployment/Prediction | `phases/phase-06/inference-catalog.json` | [06](./schemas/phase-06.schema.json) | [06](../../ui-ux/case-package/sample/ames-housing/phases/phase-06/inference-catalog.json) | valid registered model；預測 API 另案 |
 | Dashboard Verified | **無額外新 JSON**；只讀選定 Case 上述已審核資料 | 不適用 | 不適用 | Dashboard 視覺版型／欄位綁定仍待獨立 Review |
 | Dashboard Custom | **無研究 JSON**（未授權 Run/上傳） | 不適用 | 不適用 | 後續獨立授權，不能默認 API |
 
 Phase-specific package guidance and validation matrices: [Phase 1](../../ui-ux/case-package/phase-01/), [Phase 2](../../ui-ux/case-package/phase-02/), [Phase 3](../../ui-ux/case-package/phase-03/), and [Phase 4](../../ui-ux/case-package/phase-04/). The canonical schemas remain in this shared schema directory; do not duplicate them in phase folders.
+
+## Phase 4 authoritative paths
+
+Use this table when producer, frontend, and reviewer documents point to Phase 4. The root schema defines the JSON field shape; the data contract defines meaning and evidence boundaries; the page spec describes how a consumer presents those fields. The page spec does not define a second JSON contract.
+
+| Responsibility | Single reference | Rule |
+|---|---|---|
+| Producer/root field shape | [Phase 4 Modeling schema v1.1.0](./schemas/phase-04.schema.json) | Canonical Draft 2020-12 schema for `phases/phase-04/modeling.json` only. |
+| Field meaning / evidence rules | [Phase 4 Data Contract v1.1](../../ui-ux/case-package/phase-04/PHASE-04-DATA-CONTRACT-v1.md) | Defines source, status, ID, reference, and Phase 5 boundary semantics; no leaf schema is implied. |
+| Frontend layout and behavior | [Phase 4 page spec](../../ui-ux/pages/PHASE-04.md) | Consumer-only controls, perspectives, ordering, empty states, and on-demand loading; must follow the root schema and Data Contract. |
+| Staging fixture | [Ames Phase 4 modeling index](../../ui-ux/case-package/sample/ames-housing/phases/phase-04/modeling.json) | Source-reported staging sample, not verified research or publication-ready evidence. Refs resolve within the enclosing Ames Case Package. |
+| Validation evidence and gaps | [Phase 4 Validation Matrix](../../ui-ux/case-package/phase-04/VALIDATION-MATRIX.md) | Single-file schema checks plus explicit one-time snapshot audit results; leaf schemas and reusable Bundle Validator remain separate, unimplemented work. |
+
+Phase 4 IDs are not interchangeable: `execution_run_id` identifies a producer invocation; `configuration_id` identifies one method/parameter configuration; `default_configuration_id` is the only package-level configuration default. Do not introduce a parallel run/config schema in UI documentation.
 
 ## 地端／CI 共用命令
 

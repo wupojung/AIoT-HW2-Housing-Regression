@@ -1,8 +1,8 @@
 # Phase 4 — Modeling
 
-**Current detailed UX; docs-only. IMPORTANT ID CORRECTION:** historical UI-facing `run_id` means **configuration_id**; original research run maps to **execution_run_id**. See [canonical contract delta](../REGSCOPE-CONTRACT-REVIEW-DELTA.md). Text below preserves detailed interactions; corrected identities take precedence.
+**Current detailed UX; docs-only.** The active consumer contract is Case Package Phase 4 Modeling schema `1.1.0`: `execution_run_id` identifies one producer invocation and `configuration_id` identifies one selectable parameterized configuration. These IDs are distinct. The [data-contracts path table](../../design/data-contracts/README.md#phase-4-authoritative-paths) names the single producer schema, semantic contract, frontend layout, sample, and validation matrix. Earlier Phase 4 payload shapes in this document are superseded by that contract.
 
-## Phase 4 — Modeling / 模型建立：詳細 ASCII Wireframe + JSON Contract v1.0
+## Phase 4 — Modeling / 模型建立：詳細 ASCII Wireframe + JSON Consumer Contract v1.1
 
 **Owner-approved design direction (2026-10-26), DOCS ONLY.** This detailed section controls Phase 4 over the earlier abbreviated Phase 4 diagram, while preserving earlier scientific/evidence/governance safeguards. No implementation, model rerun, holdout use, merge or deployment is authorized.
 
@@ -18,6 +18,8 @@ Phase 4 teaches **(1) how the Training Set was cross-validated, (2) which featur
 
 ### B. ASCII wireframe — PC Desktop 1920 × 1080 reference; vertical scrolling
 
+The Ames fixture currently has no eligible configuration. This wireframe therefore shows the public empty state; the listed row/fold counts are source-reported only and must not be presented as verified.
+
 ~~~text
 +----------------------------------------------------------------------------------------------------------------+
 | RegScope                                     Home / CRISP-DM                      [Dashboard]                  |
@@ -26,6 +28,7 @@ Phase 4 teaches **(1) how the Training Set was cross-validated, (2) which featur
 +----------------------------------------------------------------------------------------------------------------+
 | PHASE 04 / MODELING                                                                                             |
 | 模型建立與特徵選擇：如何驗證訓練資料、選出特徵，並比較模型？                                                       |
+| STATUS: PLANNED / SOURCE_REPORTED_NOT_VERIFIED — staging preview only; not approved for public results            |
 |                                                                                                                |
 | ① CROSS-VALIDATION PROTOCOL                                            [3-Fold CV] (READ-ONLY)                 |
 | +------------------------------------------------------------------------------------------------------------+ |
@@ -41,27 +44,23 @@ Phase 4 teaches **(1) how the Training Set was cross-validated, (2) which featur
 |                                                                                                                |
 | ② FEATURE SELECTION & MODEL EXPLORER                                                                              |
 | +------------------------------------------------------------------------------------------------------------+ |
-| | Research perspective: [Method Comparison*] [Selected Features] [Feature Count vs CV RMSE]                    | |
+| | Research perspective: [Method Comparison] [Selected Features] [Feature Count vs CV RMSE]                    | |
 | |                                                                                                            | |
-| | Feature Selection Method: [ Pearson v ]                                                                     | |
-| | Method parameters — GENERATED from method.parameters[]; 0 to N controls, wrap into rows as required:        | |
-| | [ Top K: 5 v ]                (Pearson example only)                                                          | |
+| | Feature Selection Method: [No eligible configuration — disabled]                                           | |
+| | Method parameters — derive only from existing configurations[].params; current sample has no eligible one:   | |
+| | [Parameters unavailable]                                                                                   | |
 | |                                                                                                            | |
-| | Selecting Elastic Net instead could show [Alpha: 100 v] [L1 Ratio: 0.8 v] (example supported run only).    | |
-| | Selecting OLS baseline shows [No feature-selection parameters]                                              | |
-| | Valid completed run: [run_id / protocol / availability / source]                                            | |
+| | Configuration: [none]  Execution: [development_20261026_01 / ERROR]  Protocol: [source-reported]           | |
 | +------------------------------------------------------------------------------------------------------------+ |
 | | ONE PRIMARY RESULT PANEL — changes with research perspective                                               | |
-| | A) Method Comparison: compared method/compatible run → CV RMSE plot/table (only actual metrics).           | |
-| | B) Selected Features: documented encoded feature IDs, original source mapping, count and method outcome.    | |
-| | C) Feature Count vs CV RMSE: x = selected encoded count, y = measured CV RMSE, actual points only.          | |
-| | [Source / run identity] [Metric scope] [Limitations] [UNAVAILABLE reason where necessary]                    | |
+| | No verified, approved configuration. Public results are unavailable; do not draw charts or rank candidates. | |
+| | Reviewer preview, if enabled, must watermark PLANNED / SOURCE_REPORTED_NOT_VERIFIED and remain non-public.  | |
 | +------------------------------------------------------------------------------------------------------------+ |
 |                                                                                                                |
 | ③ EXPERIMENT CONFIGURATION (read-only)                                                                            |
 | +------------------------------------------------------------------------------------------------------------+ |
-| | Method ID   | Actual selected configuration | Selected encoded count / method-defined                       | |
-| | CV protocol | Fold count | Scoring | Train data/version | Run ID | Hyperparameters | Track / provenance       | |
+| | Method ID   | Configuration | Selected encoded count / method-defined (unavailable here)   | |
+| | CV protocol | Fold count | Scoring | Data version | Execution / Configuration IDs | Params | Track / provenance | |
 | | [Expand experiment details v]                                                                                | |
 | +------------------------------------------------------------------------------------------------------------+ |
 | [< Previous Phase: Data Preparation]                                                [Next Phase: Evaluation >]   |
@@ -70,8 +69,8 @@ Phase 4 teaches **(1) how the Training Set was cross-validated, (2) which featur
 
 **Presentation details**
 1. The CV diagram uses the **same quantitative 100%-horizontal-bar language** as Phase 3, but its unit is **ROWS within training folds**, NOT feature columns. Three bars represent one 3-fold CV protocol, not three independent train/test splits or three selections of a different dataset. Segment widths are equal-ish by actual fold-size data; in schematic view use approximate 33.3%, with explanatory note. Show 66.7% aggregate training versus 33.3% validation per run below the bars. Colors and labels visible without relying on color alone.
-2. Phase 4 has **one selected result perspective** at a time; do not render all comparison figures simultaneously. Dynamic controls appear in the same form below that perspective's selector; changing parameters swaps the selected evidenced run, its results and config together. Each result panel has explicit run/protocol/metric identity and an availability state.
-3. Do not assert that every parameter value in a numeric range is supported. **Dropdown choices reflect recorded, completed, eligible runs**, not a synthetic Cartesian product. A method with \`alpha\` + \`l1_ratio\` may have only one valid pair. If no run matches, show UNAVAILABLE and disable outcome rather than invent a score.
+2. Phase 4 has **one selected result perspective** at a time; do not render all comparison figures simultaneously. Dynamic controls appear in the same form below that perspective's selector; changing parameters swaps the selected evidenced configuration, its result and detail refs together. Each result panel has explicit configuration/execution/protocol/metric identity and an availability state.
+3. Do not assert that every parameter value in a numeric range is supported. **Dropdown choices reflect recorded, eligible configurations**, not a synthetic Cartesian product. A method with \`alpha\` + \`l1_ratio\` may have only one valid pair. If no configuration matches, show UNAVAILABLE and disable outcome rather than invent a score.
 4. CV comparison must show a compatible method/config/protocol/track population. Lasso/Elastic Net are not inherently fixed-Top-K selectors; selected encoded counts can be method-defined, while Pearson/Mutual Information/Ridge-RFE may use explicit \`top_k\`/requested selection counts when verified. A method's hyperparameter label is taken from its own schema.
 5. A visible method list MAY show Lasso, Pearson, Mutual Information, Ridge-RFE, Elastic Net, OLS Baseline for Ames when backed by actual run records. **OLS is a baseline without selection-specific params**, and should not silently be counted as a sixth feature-selection algorithm.
 6. Actual CV primary scoring metric is CV RMSE for current research design. Define lower-is-better and label units when verified; do not put Holdout RMSE or unreviewed test scores on Phase 4 charts. Display fold SD only if it exists.
@@ -81,138 +80,47 @@ Phase 4 teaches **(1) how the Training Set was cross-validated, (2) which featur
 
 | Control | Position | Action | Reset/guard |
 |---|---|---|---|
-| Global Research Dataset | shared header | Change \`case_id\`, replace *all* Phase 4 method definitions, runs, protocol, outcome and metadata | Reset method, params, selected run and result perspective to supported defaults; never leak Ames values to another case |
+| Global Research Dataset | shared header | Change \`case_id\`, replace *all* Phase 4 method definitions, execution runs, configurations, protocol, outcomes and metadata | Reset method, params, selected configuration and result perspective to supported defaults; never leak Ames values to another case |
 | Phase navigation 01–06 | shared header | Navigate within current case | Preserve \`case_id\`; Phase 4 always uses recorded current-case protocol |
-| 3-Fold summary | top card, read-only | Displays \`cv.folds\`, Training Set rows and scoring | NOT a selectable number of folds; unsupported protocol -> UNAVAILABLE |
+| 3-Fold summary | top card, read-only | Displays \`cv.fold_count\`, Training Set rows, and the linked protocol status; show scoring only from a compatible chart's declared metric metadata | NOT a selectable number of folds; missing metric/protocol -> UNKNOWN or UNAVAILABLE |
 | Expand CV methodology | below three fold bars | Accordion click toggles protocol, actual fold sizes if recorded, splitter type, shuffle, seed, fitting isolation, evidence | Collapsed initially; metadata missing -> explicit UNKNOWN |
-| Perspective tabs | top of Explorer | Switch exactly one result panel: method comparison / selected features / feature count vs CV | Keep method + valid selected run when panel supports it; otherwise show unavailability, never stale chart |
-| Method dropdown | Explorer | Select method among registered case methods | Recompute available parameter controls and eligible runs; reset all incompatible parameter values and prior result |
+| Perspective tabs | top of Explorer | Switch exactly one result panel: method comparison / selected features / feature count vs CV | Keep method + valid selected configuration when panel supports it; otherwise show unavailability, never stale chart |
+| Method dropdown | Explorer | Select method among registered case methods | Recompute available parameter controls and eligible configurations; reset all incompatible parameter values and prior result |
 | Each parameter dropdown | Explorer; dynamically repeated per method | Select one **allowed value** for that parameter | Options filtered to values of real available compatible run tuples; later param changes cannot create non-existent combo |
-| 0-parameter method | Explorer | Show concise “No feature-selection parameters”; select compatible default run | Don't render inert/blank dropdowns |
-| Selected run/evidence link | result header | Open traceable public run record if approved | Missing source: disabled with reason; do not expose local paths |
-| Expand experiment details | configuration card | Toggle full documented params, target, selected counts, CV protocol, track, run evidence and limitations | Missing values explicit UNKNOWN; no hardcoded metadata |
+| 0-parameter method | Explorer | Show concise “No feature-selection parameters”; select a compatible eligible configuration | Don't render inert/blank dropdowns |
+| Selected configuration/evidence link | result header | Open traceable public configuration record if approved | Missing source: disabled with reason; do not expose local paths |
+| Expand experiment details | configuration card | Toggle \`configuration_id\`, parent \`execution_run_id\`, documented params, target, selected counts, CV protocol, track, evidence and limitations | Missing values explicit UNKNOWN; no hardcoded metadata |
 | Previous Phase | footer | Go Phase 3 | Same case |
 | Next Phase | footer | Go Phase 5 | Same case; Phase 5 independent holdout gate |
 
-**Selection algorithm (UI-only, no fitting):** on method change, choose first eligible recorded run (or show UNAVAILABLE); read its complete param tuple, then populate the controls. On parameter change, filter \`runs[]\` by \`method_id\`, full recorded param tuple and relevant compatible CV protocol; update all other controls to a valid evidenced tuple or show no compatible run. **Never** silently preserve invalid old param combinations. Optional \`default_run_id\` must point to an eligible run. A dataset change invalidates caches/charts/results from previous case. If method definition exists without published run, it may be labeled PLANNED/UNAVAILABLE and disabled.
+**Selection algorithm (UI-only, no fitting):** on method change, filter \`configurations[]\` by \`method_id\` and compatible \`protocol_id\` / \`track_id\`, then populate controls from complete recorded \`params\` tuples. On parameter change, keep only exact existing configuration tuples; update dependent controls to an evidenced tuple or show no compatible configuration. **Never** synthesize a Cartesian combination or silently preserve an invalid tuple. \`default_configuration_id\` may point only to an eligible configuration; it is null in the current Ames staging package. A dataset change invalidates caches/charts/results from the previous case. If a method has no eligible configuration, show its status and reason without an enabled result selector.
 
-### D. Fixed JSON shape, extensible methods and immutable runs
+### D. Producer v1.1 consumption, perspectives, and eligibility
 
-This is the **proposed structural contract**, not a verified raw experimental artifact. Method names and parameters are examples of mappings; source-backed options MUST come from run inventory and research QA. No invented scores are provided.
+The single normative field shape is the canonical [Phase 4 root schema](../../design/data-contracts/schemas/phase-04.schema.json), interpreted by the [Phase 4 data contract](../case-package/phase-04/PHASE-04-DATA-CONTRACT-v1.md) and demonstrated by the [Ames staging sample](../case-package/sample/ames-housing/phases/phase-04/modeling.json). Earlier draft payload shapes are superseded; do not add legacy run identifiers. `execution_runs[]` records producer invocations; `configurations[]` records selectable method/parameter configurations. `default_configuration_id` is the only package-level configuration default.
 
-~~~json
-{
-  "phase4": {
-    "cv": {
-      "protocol_id": "development-3fold-cv",
-      "folds": 3,
-      "training_set_rows": 1168,
-      "holdout_test_rows": 292,
-      "metric": "rmse",
-      "splitter": null,
-      "shuffle": null,
-      "random_seed": null,
-      "fold_sizes_ref": null,
-      "evidence_ref": null
-    },
-    "default_perspective": "method_comparison",
-    "perspectives": [
-      "method_comparison",
-      "selected_features",
-      "feature_count_vs_cv"
-    ],
-    "methods": [
-      {
-        "id": "pearson",
-        "label": "Pearson",
-        "kind": "feature_selection",
-        "parameters": [
-          {
-            "id": "top_k",
-            "label": "Top K",
-            "type": "integer",
-            "control": "select",
-            "options": [2, 3, 5, 10, 20]
-          }
-        ]
-      },
-      {
-        "id": "lasso",
-        "label": "Lasso",
-        "kind": "feature_selection",
-        "parameters": [
-          {
-            "id": "alpha",
-            "label": "Alpha",
-            "type": "number",
-            "control": "select",
-            "options": [100]
-          }
-        ]
-      },
-      {
-        "id": "elastic_net",
-        "label": "Elastic Net",
-        "kind": "feature_selection",
-        "parameters": [
-          {
-            "id": "alpha",
-            "label": "Alpha",
-            "type": "number",
-            "control": "select",
-            "options": [100]
-          },
-          {
-            "id": "l1_ratio",
-            "label": "L1 Ratio",
-            "type": "number",
-            "control": "select",
-            "options": [0.8]
-          }
-        ]
-      },
-      {
-        "id": "ols_baseline",
-        "label": "OLS Baseline",
-        "kind": "baseline",
-        "parameters": []
-      }
-    ],
-    "runs": [
-      {
-        "run_id": "example-pearson-k5",
-        "method_id": "pearson",
-        "params": {"top_k": 5},
-        "cv_protocol_id": "development-3fold-cv",
-        "status": "MOCK",
-        "metrics_ref": null,
-        "selected_features_ref": null,
-        "evidence_ref": null
-      }
-    ],
-    "default_run_id": null
-  }
-}
-~~~
+| Perspective | Selector / compatible filter | X / columns | Y | Ordering | Missing or ineligible evidence |
+|---|---|---|---|---|---|
+| Method comparison | Filter by method, exact recorded `params`, `protocol_id`, metric source, target unit, and one compatible `track_id`; each point resolves to a `configuration_id`. | `configuration_id` (categorical); render method + full params as its label. Fixed-K charts are a distinct chart type with `requested_k` as X. Keep `selected_to_ols`, `all_features_ols`, and `diagnostic_only` tracks in separate panels. | `rmse` / mean CV RMSE in declared target units; lower is better only where the chart declares it. | No metric ranking for staging/unverified data. Eligible results sort by RMSE ascending, then stable configuration ID. | No compatible eligible config: show the empty-state text below; do not draw a connecting line across absent points. |
+| Selected features | One selected `configuration_id`; load only its `selected_features_ref` | Table columns: encoded feature ID, selected folds / total folds, selection fraction, source-mapping status. Show raw-source mapping only when present and attributed. | Not a metric chart. | Selection count descending, then encoded feature ID. | If the detail is absent or unavailable, show its reason; do not substitute another configuration's features. |
+| Feature count vs CV | Exact configurations in the same protocol/metric/target/track; separate fixed-requested-K and observed-selected-count chart types | Fixed chart: `requested_k`; observed chart: observed selected encoded count. Never combine requested K, observed count, and regularization values on one axis. | CV fold-mean RMSE in target units. | X ascending, then stable `configuration_id`; no interpolation or fabricated points. | Plot only existing points with eligible evidence; missing points remain gaps and have explicit reasons. |
 
-**NON-EMPIRICAL WARNING:** the \`example-pearson-k5\` run and its \`MOCK\` status exist **solely to show the schema shape**. It MUST NOT be loaded as an actual published run. The \`options\` values above are illustrative mappings based on the research-method discussion; DO NOT claim that every possible tuple is present, admissible or verified. In implementation, \`runs\` must be built from real immutable manifests. A safe production empty state is \`runs: []\`, no default run and disabled results.
+**One eligibility rule:** a public verified result is selectable only when the package publication gate is approved, the page-level Phase 4 evidence is `VERIFIED`, the configuration and required metric/detail evidence are independently `VERIFIED`, and any chart used is itself `VERIFIED` and compatible. The source candidate annotation and source-reported winner flags never count toward eligibility. Preserve producer execution state separately: `execution_runs[].status=ERROR` remains visible even if an individual configuration is later reviewed. For the current Ames staging sample (`publication.approved=false`, modeling `PLANNED`, 30 configurations `PLANNED`, 2 `ERROR`, no eligible default), the public verified view shows a “No verified, approved configuration” state and no result chart. A non-public reviewer preview may show source-reported points only with a visible `PLANNED / SOURCE_REPORTED_NOT_VERIFIED` watermark, no winner/rank/default, and no inference handoff.
 
-**Scalable schema rules**
-- \`methods[]\` is an arbitrary-length array; adding a new method requires a new \`id\`, \`label\`, \`kind\` and \`parameters[]\` entries, not front-end branching by hardcoded method names. \`parameters[]\` may have any number of items; render ordered controls from metadata. Param identifiers are method-scoped.
-- \`options[]\` describes UI-value candidates but **is NOT independent proof that every combination was run**. \`runs[]\` is the only source of legitimate parameter **tuples**. The final UI may derive each parameter's visible options from eligible runs rather than trusting the illustrative \`options[]\` catalog.
-- \`run_id\` is stable and globally unique in a case; link to immutable run/protocol/metric artifacts. A valid measurable result needs appropriate QA/publication approval and provenance. Additive per-run fields include \`track\`, \`scoring\`, \`encoded_selected_count\`, \`pipeline_version\`, \`artifact_digest\`, \`feature_mapping_version\` where evidence supports them. Do not infer selected feature count = requested \`top_k\` without verifying actual output.
-- In multi-case usage, embed this \`phase4\` under a root \`case_id\`, \`title\`, \`methodology_id\` manifest already defined in the Phase 1–3 reconstruction supplement. The root global Dataset picker always switches the whole case; no independent case selection inside Phase 4.
-- Known \`cv.folds=3\` and \`training_set_rows=1168\` are Ames scoped; any new case supplies its own. \`random_seed=null\` in \`cv\` means splitter seed not yet independently established by this design, even though the Phase 3 80/20 split seed is 42: **do not silently assume they are the same**.
-- Method selection is independent from evaluation approval and model deployability. This Phase 4 contract does not certify Holdout or Phase 6 inference eligibility.
+**Loading rule:** fetch `modeling.json` first. Do not eagerly fetch all chart point files or the 5.67 MB selected-features-by-configuration aggregate. For the Selected Features perspective, load only the chosen configuration's `selected_features_ref`; never bulk-load the global feature aggregate into the first screen. Load other chart points only when their perspective is opened. Keep long feature tables paginated or virtualized (maximum 50 rows per rendered page); switching configurations cancels/discards the prior detail request. The current source-reported feature payload is an aggregate projection, but rights and research approval remain unverified, so it is staging-only and not public UI evidence.
+
+**Provenance and error rule:** preserve all 96 task records (91 `COMPLETED`, 5 `INVALID`) and both `ERROR` configurations. A chart point may be shown as a verified aggregate only when its source fold set and any excluded task IDs/reasons are linked and independently reconciled with `fold-tasks.json` and `cv-metrics.json`. The current chart points do not identify included/excluded task IDs; they remain `PLANNED` and must not be recomputed, silently filtered, or ranked as a verified winner. `cv-protocol.json`'s `SOURCE_REPORTED_VERIFIED_MATCH` means source-manifest/protocol identity matched only; keep its `run_status=ERROR` visible and do not interpret the match status as research or publication verification.
 
 ### E. Phase 4 documentation acceptance checklist
 - [ ] 3-fold bar graph conveys approximately 2/3 training and 1/3 validation **within** the Training Set, with each third serving validation once; exact fold-size caveat visible.
 - [ ] Phase 3's 80/20 and Phase 4's 3-fold are distinct; Holdout Test Set never participates in CV; Kaggle competition test distinct.
-- [ ] All method/parameter controls are generated from case JSON; zero, one, two or many parameters are supported without changing the UI.
-- [ ] No unrestricted Cartesian combination of Alpha/L1 Ratio/Top K unless exact matching eligible completed run exists.
-- [ ] One of three result perspectives displays at a time; selection swaps method, run, source and result atomically.
+- [ ] All method/parameter controls are generated from `methods[]` and exact `configurations[].params`; no unrestricted Cartesian combination.
+- [ ] No unrestricted Cartesian combination of Alpha/L1 Ratio/Top K unless an exact eligible configuration exists.
+- [ ] `execution_run_id` and `configuration_id` are separately named and never conflated.
+- [ ] One of three result perspectives displays at a time; filters, axes, ordering and empty states follow the table above.
 - [ ] Selected encoded features are not equated with raw feature count, and \`top_k\` is not treated as CV folds.
-- [ ] Evidence/verification/UNKNOWN/UNAVAILABLE statuses apply to all run results and controls; no MOCK results presented as empirical.
+- [ ] Evidence/verification/UNKNOWN/UNAVAILABLE statuses apply to configurations, metrics and controls; no MOCK results presented as empirical.
+- [ ] Charts and feature details load on demand; no bulk feature payload loads on the initial page.
 - [ ] PR remains DOCS ONLY, subject to existing Owner and independent review gates.
 
 
@@ -231,15 +139,15 @@ This is the **proposed structural contract**, not a verified raw experimental ar
 | Legend: training / validation; ~66.7% train + ~33.3% validate in each fold; exact rows from evidence   |
 | [Expand CV protocol and fold details v]   HOLDOUT 292 rows not used here                             |
 |                                                                                                      |
-| 02. EXPLORE AN ACTUAL RESEARCH RUN                                                                   |
+| 02. EXPLORE A RECORDED RESEARCH CONFIGURATION                                                        |
 | Perspective: [Method comparison] [Selected features] [Feature count vs CV]                           |
-| Method: [Pearson v]                                                                                  |
-| Dynamic parameter controls: [Top K: 5 v] OR [Alpha v][L1 Ratio v] OR no controls as method requires   |
-| Resolved valid run: [run_id] [status]  [link to public evidence]                                      |
-| [ONE verified/available CV chart or feature table; otherwise explain UNAVAILABLE]                    |
+| Method: [No eligible configuration — disabled]                                                       |
+| Dynamic parameter controls: [Unavailable until an eligible configuration exists]                      |
+| Configuration: [none]  Execution: [development_20261026_01 / ERROR]                                  |
+| [No verified, approved configuration; show UNAVAILABLE reason, no result chart]                       |
 |                                                                                                      |
-| 03. SELECTED RUN SUMMARY                                                                             |
-| Case / Run / Method / actual params / selected encoded count / CV protocol / track / provenance       |
+| 03. SELECTED CONFIGURATION SUMMARY                                                                   |
+| Case / Configuration / Execution / Method / params / selected count: UNAVAILABLE / CV / provenance   |
 | [View Evaluation in Phase 5 >]               [Use this Model in Phase 6 >]                            |
 | If no linked evaluation: explain NOT EVALUATED. If no registered/deployable model: show reason.      |
 +------------------------------------------------------------------------------------------------------+
@@ -248,7 +156,7 @@ This is the **proposed structural contract**, not a verified raw experimental ar
 **Control behaviors, additive to original Phase 4 contract:**
 - \`View Evaluation in Phase 5\`: never calls API or computes metrics; navigates with exact case/run context; unsupported Phase 5 shows pending/unavailable scoped to that run, **not** Ames scores from another run.
 - \`Use this Model in Phase 6\`: navigates with case/run context and looks up approved registry entry; if zero eligible models, show Phase 6 availability panel, **not** a broken editable prediction form; if multiple approved versions, show a model selector with permitted exact IDs; if one, preselect it.
-- \`Return to Modeling\` on Phase 6 restores prior selected run and dynamically derived controls, including the complete valid parameter tuple. This restores view state, **does not restart training**.
-- K in CV folds is different from Top K for features; label \`CV Folds: 3\` read-only, \`Top K\` method-specific. Options are derived by \`run_id\` inventory.
+- \`Return to Modeling\` on Phase 6 restores prior selected configuration and dynamically derived controls, including the complete valid parameter tuple. This restores view state, **does not restart training**.
+- K in CV folds is different from Top K for features; label \`CV Folds: 3\` read-only, \`Top K\` method-specific. Options, when available, are derived from exact configuration tuples.
 - Do **not** make the Phase 5 handoff imply Phase 5 governance is already authorized or its Issue exists; it is an interface contract and placeholder.
 
