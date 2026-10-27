@@ -16,10 +16,10 @@ const PHASES = [
   [6, "Deployment", "模型預測實驗室"]
 ];
 const TYPES = [
-  ["nominal", "名目 (Nominal)", "#b9d6c4"],
-  ["ordinal", "次序 (Ordinal)", "#cadba6"],
-  ["discrete", "離散 (Discrete)", "#b9cedd"],
-  ["continuous", "連續 (Continuous)", "#e8d39a"]
+  ["nominal", "名目 (Nominal)", "#55d6c2"],
+  ["ordinal", "次序 (Ordinal)", "#a9df62"],
+  ["discrete", "離散 (Discrete)", "#70b5e8"],
+  ["continuous", "連續 (Continuous)", "#f1b45b"]
 ];
 const CASES = {
   "ames-housing": {
@@ -129,7 +129,6 @@ function updateShell() {
   phaseNav.innerHTML = PHASES.map(([n, en, zh]) => `<a class="phase-tab" href="#phase-${n}" ${phase === n ? 'aria-current="page"' : ""}><span class="num">0${n}</span><span class="phase-zh">${esc(zh)}</span><span class="phase-en">${esc(en)}</span></a>`).join("");
   document.querySelector("[data-home-link]").setAttribute("aria-current", state.route === "home" ? "page" : "false");
   document.querySelector("[data-crisp-link]").setAttribute("aria-current", phase ? "page" : "false");
-  document.querySelector("[data-dashboard-link]").setAttribute("aria-current", state.route === "dashboard" ? "page" : "false");
   caseSelect.innerHTML = Object.values(CASES).map((c) => `<option value="${esc(c.id)}" ${c.id === state.caseId ? "selected" : ""}>${esc(c.title)} · ${esc(c.status)}</option>`).join("");
 }
 function pageHeading(kicker, title, subtitle, status = caseData().status) {
