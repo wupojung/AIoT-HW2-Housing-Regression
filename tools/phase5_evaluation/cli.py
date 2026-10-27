@@ -21,6 +21,7 @@ from typing import Any
 
 SCHEMA_PATH = Path(__file__).with_name("evaluation-index.schema.json")
 HANDOFF_SCHEMA_PATH = Path(__file__).with_name("private-oof-handoff.schema.json")
+PHASE4_SCHEMA_PATH = Path(__file__).parents[1] / "research_export" / "phase-04.schema.json"
 METRIC_NAMES = ("mae", "rmse", "r2")
 FIGURE_IDS = ("FIG-P5-01", "FIG-P5-02", "FIG-P5-03")
 
@@ -873,7 +874,11 @@ def _evaluate_handoff(args: argparse.Namespace) -> int:
             raise CliError("HASH_MISMATCH", f"package file digest mismatch: {record['path']}", 4)
         file_records[record["path"]] = record
     case_id = package.get("case_id")
-    modeling = _load_json(package_root / "phases/phase-04/modeling.json", label="Phase 4 modeling")
+    modeling_rel = "phases/phase-04/modeling.json"
+    if modeling_rel not in file_records:
+        raise CliError("JOIN_BLOCKED", "package does not declare its Phase 4 modeling file", 4)
+    modeling = _load_json(package_root / modeling_rel, label="Phase 4 modeling")
+    _schema_validate_phase4(modeling)
     eval_rel = "phases/phase-05/evaluations.json"
     if eval_rel not in file_records:
         raise CliError("JOIN_BLOCKED", "package does not declare its Phase 5 evaluation slot", 4)
@@ -905,8 +910,11 @@ def _evaluate_handoff(args: argparse.Namespace) -> int:
             or handoff.get("population") != "development_oof"):
         raise CliError("JOIN_BLOCKED", "gate, handoff, and package case/run/protocol identities disagree", 4)
     runs = modeling.get("execution_runs", [])
+    matching_runs = [run for run in runs if isinstance(run, dict)
+                     and run.get("execution_run_id") == handoff.get("execution_run_id")]
     if (modeling.get("case_id") != case_id or modeling.get("cv", {}).get("protocol_id") != handoff.get("protocol_id")
-            or not any(isinstance(run, dict) and run.get("execution_run_id") == handoff.get("execution_run_id") for run in runs)):
+            or len(matching_runs) != 1
+            or matching_runs[0].get("source_manifest_sha256") != handoff.get("source_artifacts", {}).get("manifest_sha256")):
         raise CliError("JOIN_BLOCKED", "handoff identity does not join to Phase 4 modeling", 4)
     configs = {item.get("configuration_id"): item for item in modeling.get("configurations", []) if isinstance(item, dict)}
     selected = handoff.get("configurations")
@@ -973,37 +981,114 @@ def _evaluate_handoff(args: argparse.Namespace) -> int:
             "manifest_digest": handoff["source_artifacts"]["manifest_sha256"],
             "summary_digest": handoff["source_artifacts"]["summary_sha256"]}
     index, plot_data = _build_handoff_evaluations(case_id, data)
+    for evaluation in index["evaluations"]:
+        for figure in evaluation["figures"]:
+            figure["alt"] = _figure_alt(figure["figure_id"])
     _validate_identity(index)
     _schema_validate(index)
     receipts = _write_real_figures(package_root, index, plot_data)
-    index_payload = (json.dumps(index, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
-    new_manifest = dict(package)
-    new_files = [dict(record) for record in package_files]
-    replacement = {"path": eval_rel, "sha256": hashlib.sha256(index_payload).hexdigest(),
-                   "bytes": len(index_payload), "mime": "application/json"}
-    new_files = [replacement if record["path"] == eval_rel else record for record in new_files]
-    for receipt in receipts:
-        rel = receipt["path"].relative_to(package_root).as_posix()
-        new_files.append({"path": rel, "sha256": receipt["sha256"], "bytes": receipt["path"].stat().st_size,
-                          "mime": "image/png" if rel.endswith(".png") else "application/json"})
-    new_manifest["files"] = sorted(new_files, key=lambda record: record["path"])
-    manifest_payload = (json.dumps(new_manifest, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
-    original_index = current_index_path.read_bytes()
     try:
+        figure_manifest_path = package_root / "assets" / "figure-manifest.json"
+        figure_manifest = _build_figure_manifest(case_id, index, package_root)
+        figure_manifest_payload = (json.dumps(figure_manifest, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+        _atomic_write_new(figure_manifest_path, figure_manifest_payload)
+        info = figure_manifest_path.lstat()
+        receipts.append({"path": figure_manifest_path, "device": info.st_dev, "inode": info.st_ino,
+                         "sha256": hashlib.sha256(figure_manifest_payload).hexdigest()})
+
+        index_payload = (json.dumps(index, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+        new_manifest = dict(package)
+        new_manifest["asset_manifest_ref"] = "assets/figure-manifest.json"
+        phases = dict(new_manifest.get("phases", {}))
+        phase5 = dict(phases.get("phase5", {}))
+        phase5["status"] = index["status"]
+        phases["phase5"] = phase5
+        new_manifest["phases"] = phases
+        new_files = [dict(record) for record in package_files]
+        replacement = {"path": eval_rel, "sha256": hashlib.sha256(index_payload).hexdigest(),
+                       "bytes": len(index_payload), "mime": "application/json"}
+        new_files = [replacement if record["path"] == eval_rel else record for record in new_files]
+        for receipt in receipts:
+            rel = receipt["path"].relative_to(package_root).as_posix()
+            mime = "image/png" if rel.endswith(".png") else "application/json"
+            new_files.append({"path": rel, "sha256": receipt["sha256"], "bytes": receipt["path"].stat().st_size,
+                              "mime": mime})
+        new_manifest["files"] = sorted(new_files, key=lambda record: record["path"])
+        manifest_payload = (json.dumps(new_manifest, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+        original_index = current_index_path.read_bytes()
+        original_package = package_path.read_bytes()
         _atomic_replace_existing(current_index_path, index_payload)
         _atomic_replace_existing(package_path, manifest_payload)
     except Exception as exc:
+        restore_errors = []
         try:
-            if current_index_path.read_bytes() != original_index:
+            if "original_package" in locals() and package_path.read_bytes() != original_package:
+                _atomic_replace_existing(package_path, original_package)
+        except Exception as restore_exc:
+            restore_errors.append(f"package restore failed: {restore_exc}")
+        try:
+            if "original_index" in locals() and current_index_path.read_bytes() != original_index:
                 _atomic_replace_existing(current_index_path, original_index)
         except Exception as restore_exc:
-            raise CliError("OUTPUT_WRITE_FAILED", f"package update failed and index rollback failed: {restore_exc}", 5) from exc
+            restore_errors.append(f"index restore failed: {restore_exc}")
         rollback = _rollback_real_assets(receipts)
-        if rollback:
-            raise CliError("OUTPUT_WRITE_FAILED", f"package update failed; asset rollback issues: {rollback}", 5) from exc
+        if rollback or restore_errors:
+            details = "; ".join(restore_errors + [f"asset rollback: {rollback}"] if rollback else restore_errors)
+            raise CliError("OUTPUT_WRITE_FAILED", f"package update failed; rollback incomplete: {details}", 5) from exc
         raise
     print(f"EVALUATED {current_index_path}")
     return 0
+
+
+def _figure_alt(figure_id: str) -> str:
+    return {
+        "FIG-P5-01": "Development OOF actual versus predicted values; review pending.",
+        "FIG-P5-02": "Development OOF residuals versus predicted values; review pending.",
+        "FIG-P5-03": "Development OOF residual distribution; review pending.",
+    }.get(figure_id, "Development OOF diagnostic; review pending.")
+
+
+def _build_figure_manifest(case_id: str, index: dict[str, Any], package_root: Path) -> dict[str, Any]:
+    figures = []
+    for evaluation in index["evaluations"]:
+        for figure in evaluation["figures"]:
+            png_ref = figure.get("asset_ref")
+            if not isinstance(png_ref, str):
+                raise CliError("JOIN_BLOCKED", "generated Phase 5 figure needs a package asset_ref", 4)
+            png_path = package_root / _safe_relative(png_ref, label="figure.asset_ref")
+            payload = png_path.read_bytes()
+            if len(payload) < 24 or payload[:8] != b"\x89PNG\r\n\x1a\n":
+                raise CliError("OUTPUT_WRITE_FAILED", "generated figure is not a valid PNG", 5)
+            width = int.from_bytes(payload[16:20], "big")
+            height = int.from_bytes(payload[20:24], "big")
+            figures.append({
+                "figure_id": figure["figure_id"], "case_id": case_id, "phase": "phase5",
+                "source_configuration_id": figure["configuration_id"],
+                "source_evaluation_id": figure["evaluation_id"], "svg_ref": None, "png_ref": png_ref,
+                "width": width, "height": height, "alt": figure["alt"], "accessible_table_ref": None,
+                "source_evidence_ref": f"sha256:{figure['source_digest']}", "sha256_svg": None,
+                "sha256_png": hashlib.sha256(payload).hexdigest(), "publication_review": "PENDING",
+                "status": "PLANNED",
+            })
+    return {"schema_version": "1.0.0", "case_id": case_id,
+            "status": "PLANNED" if figures else "UNAVAILABLE", "figures": figures}
+
+
+def _schema_validate_phase4(modeling: dict[str, Any]) -> None:
+    try:
+        import jsonschema
+        from jsonschema import Draft202012Validator
+        schema = json.loads(PHASE4_SCHEMA_PATH.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        errors = list(Draft202012Validator(schema).iter_errors(modeling))
+    except ImportError as exc:
+        raise CliError("DEPENDENCY_MISSING", "install tools/phase5_evaluation/requirements.txt", 5) from exc
+    except (OSError, json.JSONDecodeError, jsonschema.SchemaError) as exc:
+        raise CliError("SCHEMA_FAIL", f"cannot load pinned Phase 4 schema: {exc}", 4) from exc
+    if errors:
+        first = errors[0]
+        location = ".".join(str(part) for part in first.absolute_path) or "$"
+        raise CliError("SCHEMA_FAIL", f"Phase 4 modeling {location}: {first.message}", 4)
 
 
 def _schema_validate_handoff(handoff: dict[str, Any]) -> None:

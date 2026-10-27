@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import csv
+import argparse
 import importlib.util
 import json
 import platform
@@ -300,7 +301,13 @@ class Phase5CliTests(unittest.TestCase):
             (package_root / rel).write_bytes(raw)
             files.append({"path": rel, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw),
                           "mime": "application/json"})
-        self.write_json(package_root / "package.json", {"case_id": case_id, "files": files})
+        self.write_json(package_root / "package.json", {
+            "package_schema_version": "1.0.0", "package_id": "synthetic-package", "case_id": case_id,
+            "package_revision": "synthetic-r1", "package_status": "PLANNED",
+            "publication": {"approved": False, "release_id": None, "review_status": "PENDING"},
+            "case_ref": "case.json", "phases": {"phase5": {"status": "UNAVAILABLE",
+                                                                  "data_ref": "phases/phase-05/evaluations.json"}},
+            "asset_manifest_ref": None, "files": files})
 
         handoff_root = self.root / "handoff"
         handoff_root.mkdir()
@@ -352,6 +359,24 @@ class Phase5CliTests(unittest.TestCase):
         records = {record["path"]: record for record in package["files"]}
         self.assertEqual(records["phases/phase-05/evaluations.json"]["sha256"],
                          hashlib.sha256(index_path.read_bytes()).hexdigest())
+        self.assertEqual(package["phases"]["phase5"]["status"], index["status"])
+        self.assertEqual(package["asset_manifest_ref"], "assets/figure-manifest.json")
+        asset_manifest_path = package_root / package["asset_manifest_ref"]
+        asset_manifest = json.loads(asset_manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(asset_manifest["status"], "PLANNED")
+        self.assertEqual(len(asset_manifest["figures"]), 3)
+        for figure in asset_manifest["figures"]:
+            image_path = package_root / figure["png_ref"]
+            self.assertEqual(figure["sha256_png"], hashlib.sha256(image_path.read_bytes()).hexdigest())
+            self.assertGreater(figure["width"], 0)
+            self.assertGreater(figure["height"], 0)
+            self.assertTrue(figure["alt"])
+            self.assertEqual(figure["publication_review"], "PENDING")
+            self.assertEqual(figure["status"], "PLANNED")
+        for relative, record in records.items():
+            artifact = package_root / relative
+            self.assertEqual(record["bytes"], artifact.stat().st_size)
+            self.assertEqual(record["sha256"], hashlib.sha256(artifact.read_bytes()).hexdigest())
 
     def test_evaluate_handoff_rejects_tampered_csv_without_package_change(self):
         package_root, handoff_root, gate = self._handoff_fixture()
@@ -389,6 +414,82 @@ class Phase5CliTests(unittest.TestCase):
         self.assertNotEqual(bad_identity.returncode, 0)
         self.assertIn("JOIN_BLOCKED", bad_identity.stderr)
         self.assertEqual(json.loads((package_root / "phases/phase-05/evaluations.json").read_text())["evaluations"], [])
+
+    def test_evaluate_handoff_requires_declared_phase4_modeling_file(self):
+        package_root, handoff_root, gate = self._handoff_fixture()
+        package_root = package_root.resolve()
+        handoff_root = handoff_root.resolve()
+        package_path = package_root / "package.json"
+        package = json.loads(package_path.read_text(encoding="utf-8"))
+        package["files"] = [record for record in package["files"]
+                            if record["path"] != "phases/phase-04/modeling.json"]
+        self.write_json(package_path, package)
+        result = self.run_cli("evaluate-handoff", "--package-root", package_root,
+                              "--handoff-root", handoff_root, "--gate", gate)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("does not declare its Phase 4 modeling file", result.stderr)
+        self.assertEqual(json.loads((package_root / "phases/phase-05/evaluations.json").read_text())["evaluations"], [])
+
+    def test_evaluate_handoff_joins_manifest_digest_to_execution_run(self):
+        package_root, handoff_root, gate_path = self._handoff_fixture()
+        handoff_path = handoff_root / "handoff.json"
+        handoff = json.loads(handoff_path.read_text(encoding="utf-8"))
+        handoff["source_artifacts"]["manifest_sha256"] = "d" * 64
+        self.write_json(handoff_path, handoff)
+        gate = json.loads(gate_path.read_text(encoding="utf-8"))
+        handoff_sha = hashlib.sha256(handoff_path.read_bytes()).hexdigest()
+        gate["handoff_sha256"] = handoff_sha
+        gate["input_allowlist"][0]["sha256"] = handoff_sha
+        gate["manifest_sha256"] = "d" * 64
+        self.write_json(gate_path, gate)
+        result = self.run_cli("evaluate-handoff", "--package-root", package_root,
+                              "--handoff-root", handoff_root, "--gate", gate_path)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("does not join to Phase 4 modeling", result.stderr)
+        self.assertEqual(json.loads((package_root / "phases/phase-05/evaluations.json").read_text())["evaluations"], [])
+
+    def test_package_manifest_update_failure_rolls_back_owned_assets_and_retries(self):
+        package_root, handoff_root, gate_path = self._handoff_fixture()
+        package_root = package_root.resolve()
+        handoff_root = handoff_root.resolve()
+        assets = package_root / "assets"
+        assets.mkdir()
+        preexisting = assets / "pre-existing.bin"
+        preexisting.write_bytes(b"keep this existing asset")
+        package_path = package_root / "package.json"
+        package = json.loads(package_path.read_text(encoding="utf-8"))
+        package["files"].append({"path": "assets/pre-existing.bin",
+                                 "sha256": hashlib.sha256(preexisting.read_bytes()).hexdigest(),
+                                 "bytes": preexisting.stat().st_size, "mime": "application/octet-stream"})
+        self.write_json(package_path, package)
+        package_before = package_path.read_bytes()
+        index_path = package_root / "phases/phase-05/evaluations.json"
+        index_before = index_path.read_bytes()
+        original_replace = phase5_cli._atomic_replace_existing
+        failed = False
+
+        def fail_package_manifest_once(path, payload):
+            nonlocal failed
+            if path == package_path and not failed:
+                failed = True
+                raise phase5_cli.CliError("OUTPUT_WRITE_FAILED", "injected package manifest update failure", 5)
+            return original_replace(path, payload)
+
+        args = argparse.Namespace(package_root=str(package_root), handoff_root=str(handoff_root), gate=str(gate_path))
+        with mock.patch.object(phase5_cli, "_atomic_replace_existing", side_effect=fail_package_manifest_once):
+            with self.assertRaises(phase5_cli.CliError):
+                phase5_cli._evaluate_handoff(args)
+        self.assertEqual(package_path.read_bytes(), package_before)
+        self.assertEqual(index_path.read_bytes(), index_before)
+        self.assertEqual(sorted(path.name for path in assets.iterdir()), ["pre-existing.bin"])
+        self.assertEqual(preexisting.read_bytes(), b"keep this existing asset")
+
+        result = phase5_cli._evaluate_handoff(args)
+        self.assertEqual(result, 0)
+        updated_package = json.loads(package_path.read_text(encoding="utf-8"))
+        self.assertEqual(updated_package["phases"]["phase5"]["status"], "PLANNED")
+        self.assertTrue((assets / "figure-manifest.json").is_file())
+        self.assertEqual(preexisting.read_bytes(), b"keep this existing asset")
 
     def test_schema_and_cross_evaluation_join_validation(self):
         result = self.export_synthetic()
