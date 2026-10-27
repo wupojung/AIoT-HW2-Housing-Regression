@@ -41,7 +41,7 @@ No producer, schema, model, preprocessing, OOF, configuration, or package resear
 - `node --check web/app.js`: PASS.
 - `tests/test_web_foundation.py`: 5 passed using the existing Core-worktree Python 3.12 environment.
 - `git diff --check`: PASS at the time of this checkpoint.
-- Production browser test, GitHub required checks, and independent QA of this UI revision: NOT RUN / PENDING.
+- Independent W5P2 QA of the exact code commit `03baa4719b1739559f539532bf71f00321e87367`: PASS. Private report: `local/phase5-e2e-20261028/W5P2-UI-RECOVERY-INDEPENDENT-QA-20261028.md`. The independent smoke did not assert R² against JSON or cycle through every PNG. P1 follow-up Chromium run compared pooled and mean-fold RMSE/MAE/R² against package JSON and loaded each of the three PNGs one at a time: PASS; machine JSON retains the values and asset paths. Production browser test and GitHub required checks: NOT RUN.
 
 ## Current worktree and release state
 
