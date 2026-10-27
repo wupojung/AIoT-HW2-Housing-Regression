@@ -131,6 +131,16 @@ def _validate_gate(manifest_path: Path, manifest: dict[str, Any], gate: dict[str
     host = gate.get("host")
     if not isinstance(host, dict):
         raise CliError("NOT_AUTHORIZED", "gate.host is required")
+    input_root_value = gate.get("input_root")
+    if not isinstance(input_root_value, str) or not input_root_value:
+        raise CliError("NOT_AUTHORIZED", "gate.input_root is required")
+    input_root = Path(input_root_value).expanduser().resolve(strict=True)
+    if not input_root.is_dir():
+        raise CliError("NOT_AUTHORIZED", "gate.input_root must be an existing directory")
+    manifest_root = manifest_path.parent.resolve(strict=True)
+    if manifest_root != input_root:
+        raise CliError("NOT_AUTHORIZED", "manifest must reside directly under gate.input_root")
+
     actual_platform = {"darwin": "macos", "win32": "windows"}.get(sys.platform, sys.platform)
     if host.get("platform") != actual_platform:
         raise CliError("HOST_MISMATCH", "gate host platform does not match this runtime")

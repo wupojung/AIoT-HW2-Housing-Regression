@@ -118,7 +118,7 @@ class Phase5CliTests(unittest.TestCase):
 
     def test_help_and_argument_errors(self):
         help_result = subprocess.run(
-            ["python3", str(CLI_PATH), "--help"], cwd=REPO_ROOT,
+            [sys.executable, str(CLI_PATH), "--help"], cwd=REPO_ROOT,
             text=True, capture_output=True,
         )
         self.assertEqual(help_result.returncode, 0, help_result.stderr)
@@ -141,6 +141,34 @@ class Phase5CliTests(unittest.TestCase):
         self.assertEqual(index["evaluations"], [])
         self.assertIsNone(index["default_evaluation_id"])
         self.assertEqual(self.run_cli("validate", "--index", output).returncode, 0)
+
+    def test_empty_export_requires_manifest_inside_gate_input_root(self):
+        manifest = self.write_manifest(mode="empty")
+        self.write_gate()
+        outside = self.root / "outside"
+        outside.mkdir()
+        outside_manifest = self.write_json(
+            outside / "manifest.json",
+            json.loads(manifest.read_text(encoding="utf-8")),
+        )
+        misplaced = self.run_cli(
+            "export", "--manifest", outside_manifest, "--gate", self.gate_path,
+            "--output-root", self.output_root,
+        )
+        self.assertNotEqual(misplaced.returncode, 0)
+        self.assertIn("NOT_AUTHORIZED", misplaced.stderr)
+        self.assertFalse((self.output_root / "phases/phase-05/evaluations.json").exists())
+
+        gate = json.loads(self.gate_path.read_text(encoding="utf-8"))
+        gate.pop("input_root")
+        self.write_json(self.gate_path, gate)
+        missing_root = self.run_cli(
+            "export", "--manifest", manifest, "--gate", self.gate_path,
+            "--output-root", self.output_root,
+        )
+        self.assertNotEqual(missing_root.returncode, 0)
+        self.assertIn("NOT_AUTHORIZED", missing_root.stderr)
+        self.assertFalse((self.output_root / "phases/phase-05/evaluations.json").exists())
 
     def test_synthetic_metrics_are_separate_and_residual_sign_is_explicit(self):
         result = self.export_synthetic()
