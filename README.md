@@ -4,6 +4,8 @@
 
 This repository is an independent home for the HW2 Housing Regression Lab. RegScope M0 provides a responsive, static showcase for the project scope and CRISP-DM workflow. Housing regression models, feature selection, and evaluated results are future work and are not represented as completed.
 
+**研究規劃入口：** [Recovery #28（公開版）](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/28)；[P4-B 三折五方法協定（R2 Docs PR 待審）](docs/crisp-dm/04-modeling-p4b-experiment-protocol.md)。歷史 P4-A 五折 OLS 不可直接與未來三折比較；292 Holdout 仍封存。
+
 ## Project method: CRISP-DM
 
 The project adopts CRISP-DM as its end-to-end data-mining process:
@@ -23,7 +25,8 @@ The team uses parallel agent collaboration: agents work on separate tasks and re
 
 ## Repository map
 
-- `python/src/` — Python application and modeling package.
+- `python/src/` - experiment environment smoke check and future Python code.
+- `requirements.in` / `requirements.lock` - pinned Python 3.12 experiment dependencies.
 - `web/` — web application and dashboard.
 - `tools/research_collector/` — public-source metadata collection utilities.
 - `tests/` — automated checks, including security scanner cases.
@@ -46,4 +49,4 @@ Copy `.env.example` to `.env` for local configuration. Never put real credential
 
 Install the pre-commit hook with `pre-commit install`. It scans staged and tracked files once at commit time; CI scans each pull request once. Use `python tools/security_scan.py --all` for a manual audit when the hook was bypassed or before an initial public release. Follow **BUILD → RUN → TEST → VERIFY → PASS** and record validation evidence in the pull request.
 
-For WSL and Python environment setup, see [Developer Setup](docs/SETUP.md).
+For Windows, macOS, and Linux experiment setup, see [Python Experiment Environment](python/README.md). Optional WSL notes remain in [Developer Setup](docs/SETUP.md).

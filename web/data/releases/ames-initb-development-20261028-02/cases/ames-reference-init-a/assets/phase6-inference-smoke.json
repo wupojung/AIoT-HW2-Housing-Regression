@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "run_id": "initb-development-e2e-20261028-02",
+  "configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+  "source_sha256": "1e18addf81e5e4d347cc17ee6075bbe4a42b7fa26b9e5b063e8f692a5f929d41",
+  "config_sha256": "a67b42afed991d7a69f5de7fdc56657ed9fce9495316bafe89deb2deee6be05f",
+  "model_sha256": "31d6ae6d778b86c7421fc27d01726ce3272e9ccf272c9eb6133d40967bb4f272",
+  "reload_verified": true,
+  "local_inference_verified": true,
+  "prediction_finite": true,
+  "input_scope": "one_private_development_training_record",
+  "validation_partition_used": false,
+  "deployable": false,
+  "prediction_value_included": false
+}

@@ -1,23 +1,33 @@
-# RegScope web foundation
+# RegScope functional desktop prototype
 
-RegScope M0 is a lightweight, static HTML/CSS/JavaScript showcase. It has no application backend, database, third-party runtime packages, or model results. The small responsive navigation script only opens and closes the mobile menu.
+This is a lightweight static HTML/CSS/JavaScript prototype. It has no application backend, model runtime, data-processing runtime, or third-party runtime packages.
 
-## Run locally
+## Preview locally
 
 From the repository root:
 
 ```powershell
-python -m http.server 8000 --directory web
+python -m http.server 8000 --bind 127.0.0.1
 ```
 
-Open <http://localhost:8000>. The same command works with Python on macOS and Linux.
+Open <http://127.0.0.1:8000/web/>. The Home / CRISP-DM route begins at Phase 1. The shared six-phase navigation, case switch, phase controls, dashboard mode switch, CSV header preview, and unavailable states work in the browser. The repository root is served only on loopback so the local preview can read the ignored staging package; do not expose this server to a network.
+
+The case selector keeps the MOCK UI fixture as its own selectable case and adds the formal Ames Case Package as a separate option. Selecting the formal package loads its static Phase 5 evaluation index and displays the indexed CV fold mean and pooled OOF metrics. Other phase pages continue to show their existing preview content. Diagnostic figures remain unavailable because the evaluation records do not reference figures and the package marks its figure assets as `PLANNED`; those assets are not substituted with mock charts. A planned placeholder case remains available to demonstrate state clearing. Dashboard Custom Dataset can preview a small local CSV header and sample; the file is not uploaded or stored. Direct URL is format-checked only, and Run stays disabled.
+
+## Ames Case Package static reference
+
+The complete Case Package copy is kept outside the static site at the ignored private path `local/staging/formal-data-test-20261027-01/case-package/`. Keep the package root, `package.json`, all manifest-listed files, and relative paths together. It contains 236 files (235 package manifest entries plus `package.json`); all manifest file hashes and byte counts match. This is staging, not a public release.
+
+The frontend reads this private staging path only on a loopback preview. On other hosts it shows an unavailable state until an approved immutable release is produced. The PR #35 release layout is `/data/current-release.json` plus `/data/releases/<release_id>/cases/<case_id>/...`; this staging copy is not placed under `web/` and will not leak into the static output. Its package content and Phases 1–4 are marked `VERIFIED` for the requested UI state check. Phase 5 retains `PLANNED` / independent review `PENDING`, and each evaluation remains `AWAITING_REVIEW`. The Kaggle source page identifies the dataset license as MIT. The Phase 5 index has 60 evaluations, while figure references are empty and the figure manifest marks its 90 PNG assets `PLANNED`.
+
+## INIT B package consumer smoke
+
+The case selector offers `Ames Housing — INIT B Reference Baseline` from the immutable static release named by `data/current-release.json`. The browser verifies the pointer’s package SHA-256 and byte length, then checks all six phase documents, referenced Phase 4 CV metrics, figures, and Phase 6 smoke summary against the package manifest. The public bundle contains aggregate results and figures only; the row-level OOF CSV, fitted model binary, and one-record prediction value remain local and are excluded by the exporter. Phase 1 remains UNAVAILABLE for lack of approved business evidence. Phase 5 is displayed as Development OOF with research publication review pending. Phase 6 reports a local inference smoke but does not provide a prediction API. Package status remains PARTIAL.
+
+Phase 6 offers manual entry and an alternate browser-local CSV flow. CSV headers are matched only by the exact names `Neighborhood`, `OverallQual`, `BedroomAbvGr`, and `GrLivArea`; a selected row can populate the matching manual controls. The file is read in browser memory, is not uploaded or persisted, and unsupported or out-of-range values are not applied. The mock estimate remains fixed and is not calculated from either manual or CSV input.
+
+The site remains a static prototype. Its loopback-only Reference Baseline preview reads an ignored local Case Package and displays package-bound calculations and local inference smoke evidence; the browser itself does not train or evaluate a model, and it does not expose a remote prediction service. Do not copy raw datasets, private research, credentials, or unreviewed working files into `web/`.
 
 ## Vercel output
 
-The root `vercel.json` sets `web/` as the static output directory. Only the site files in that directory are published as the deployment output. There is no build command or install step. Before an approved deployment, run:
-
-```powershell
-python tools/security_scan.py --build-dir web
-```
-
-Do not add local data, credentials, research PDFs, or raw datasets to `web/`. See `docs/SECURITY_AND_DATA_POLICY.md` for the repository data boundary and Vercel release checks.
+The root `vercel.json` sets `web/` as the static output directory. There is no build command or install step. Deployment and security checks require their separate authorization gates. Do not add local data, credentials, research PDFs, or raw datasets to `web/`.

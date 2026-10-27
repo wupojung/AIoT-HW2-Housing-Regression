@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "initb-development-e2e-20261028-02",
+  "code_head": "ba80db58defb980d70664b1f661489f0ef7231d6",
+  "phase6_code_head": "1d3b191709901d7fbaaa750f5326a7705237fb31",
+  "config_sha256": "a67b42afed991d7a69f5de7fdc56657ed9fce9495316bafe89deb2deee6be05f",
+  "source_sha256": "1e18addf81e5e4d347cc17ee6075bbe4a42b7fa26b9e5b063e8f692a5f929d41",
+  "development_data_sha256": "2525b2e9385f9873a45d124dfd7520851234fe0a30501a69b8e5e5536403017c",
+  "fold_sha256": "2d12b0a6294055b8aac95e6055fc9095c436c472666f56fd6f33828cc683dd30",
+  "candidate_search": "NOT RUN",
+  "oof_artifact_ref": null,
+  "oof_sha256": "4a610750b97e042212f51c018d48e3521257fbb81608af8cba337d4101815445"
+}

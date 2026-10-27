@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-reference-init-a",
+  "status": "VERIFIED",
+  "models": [
+    {
+      "model_id": "ames-reference-local-ols",
+      "model_version": "initb-development-e2e-20261028-02",
+      "source_execution_run_id": "initb-development-e2e-20261028-02",
+      "source_configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+      "model_status": "LOCAL_PRIVATE_VERIFIED",
+      "input_schema_ref": "assets/phase6-input-schema.json",
+      "readiness": {
+        "predict_enabled": false,
+        "scope": "local_only",
+        "model_sha256": "31d6ae6d778b86c7421fc27d01726ce3272e9ccf272c9eb6133d40967bb4f272",
+        "reload_verified": true,
+        "local_inference_verified": true,
+        "deployment": "NOT_DEPLOYED"
+      }
+    }
+  ],
+  "readiness": {
+    "predict_enabled": false,
+    "reason_code": "LOCAL_ONLY_NO_SERVICE",
+    "message": "Fixed Development model was saved, reloaded and locally smoke-predicted; no API or deployment is enabled."
+  }
+}

@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "status",
+    "feature_types",
+    "stages",
+    "treatments",
+    "split",
+    "lineage_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "VERIFIED",
+        "MOCK",
+        "UNAVAILABLE",
+        "PLANNED",
+        "ERROR"
+      ]
+    },
+    "feature_types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "type_id",
+          "label"
+        ],
+        "properties": {
+          "type_id": {
+            "enum": [
+              "nominal",
+              "ordinal",
+              "discrete",
+              "continuous"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "unit",
+          "total",
+          "total_status",
+          "segments",
+          "distribution_status"
+        ],
+        "properties": {
+          "id": {
+            "enum": [
+              "raw",
+              "filtered",
+              "processed",
+              "encoded"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "unit": {
+            "enum": [
+              "raw_columns",
+              "pre_encoding_columns",
+              "encoded_features"
+            ]
+          },
+          "total": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "total_status": {
+            "enum": [
+              "VERIFIED",
+              "MOCK",
+              "UNAVAILABLE",
+              "SOURCE_REPORTED_NOT_VERIFIED"
+            ]
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "type_id",
+                "count"
+              ],
+              "properties": {
+                "type_id": {
+                  "enum": [
+                    "nominal",
+                    "ordinal",
+                    "discrete",
+                    "continuous"
+                  ]
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "distribution_status": {
+            "enum": [
+              "VERIFIED",
+              "MOCK",
+              "UNAVAILABLE",
+              "PLANNED",
+              "ERROR"
+            ]
+          },
+          "fit_population": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pipeline_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "treatments": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "split": {
+      "type": "object",
+      "required": [
+        "source_labeled_rows",
+        "training_rows",
+        "holdout_rows",
+        "seed",
+        "status"
+      ],
+      "properties": {
+        "source_labeled_rows": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "training_rows": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "holdout_rows": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "status": {
+          "enum": [
+            "VERIFIED",
+            "MOCK",
+            "UNAVAILABLE",
+            "SOURCE_REPORTED_NOT_VERIFIED"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "lineage_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

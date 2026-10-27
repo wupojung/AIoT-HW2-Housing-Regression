@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "release_id": "ames-initb-development-20261028-02",
+  "case_id": "ames-reference-init-a",
+  "data_scope": "aggregate Development research output",
+  "excluded_artifacts": [
+    "row-level Development OOF CSV",
+    "fitted model binary",
+    "one-record inference value"
+  ],
+  "phase5_publication_review": "PENDING",
+  "phase6_remote_inference": "UNAVAILABLE"
+}

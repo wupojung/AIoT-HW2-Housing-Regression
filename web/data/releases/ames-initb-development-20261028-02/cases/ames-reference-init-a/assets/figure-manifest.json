@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-reference-init-a",
+  "status": "VERIFIED",
+  "figures": [
+    {
+      "figure_id": "figure-missingness",
+      "case_id": "ames-reference-init-a",
+      "phase": 2,
+      "source_configuration_id": null,
+      "source_evaluation_id": null,
+      "svg_ref": "phases/phase-02/figures/missingness.svg",
+      "png_ref": null,
+      "width": 760,
+      "height": 575,
+      "alt": "Counts missing cells by field without exposing row values.",
+      "accessible_table_ref": null,
+      "source_evidence_ref": "Authorized local Development train source; aggregate-only engineering smoke.",
+      "sha256_svg": "2258ae445dd745594a01a2fb0ce5c2f26ce76cc18dcbc32c3fc296d065a2c5f1",
+      "sha256_png": null,
+      "publication_review": "NOT_REVIEWED",
+      "status": "VERIFIED"
+    },
+    {
+      "figure_id": "figure-target-distribution",
+      "case_id": "ames-reference-init-a",
+      "phase": 2,
+      "source_configuration_id": null,
+      "source_evaluation_id": null,
+      "svg_ref": "phases/phase-02/figures/target-distribution.svg",
+      "png_ref": null,
+      "width": 760,
+      "height": 360,
+      "alt": "Binned numeric target distribution for a formal training engineering smoke; the approved empirical Phase 2 report remains authoritative.",
+      "accessible_table_ref": null,
+      "source_evidence_ref": "Authorized local Development train source; aggregate-only engineering smoke.",
+      "sha256_svg": "7198f2a0408942666a9cbcd834933e142185dc13147900a5b0b5da4724a9b494",
+      "sha256_png": null,
+      "publication_review": "NOT_REVIEWED",
+      "status": "VERIFIED"
+    },
+    {
+      "figure_id": "FIG-P5-01",
+      "source_evaluation_id": "initb-development-e2e-20261028-02.development-oof.pooled",
+      "source_configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+      "svg_ref": null,
+      "png_ref": "phases/phase-05/assets/actual-vs-predicted.png",
+      "sha256_png": "9eb4a3c302677dba9f2c14d71c0401e1a0342b2405cab7d4b8695c5a76252ae5",
+      "status": "PENDING_REVIEW"
+    },
+    {
+      "figure_id": "FIG-P5-02",
+      "source_evaluation_id": "initb-development-e2e-20261028-02.development-oof.pooled",
+      "source_configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+      "svg_ref": null,
+      "png_ref": "phases/phase-05/assets/residual-vs-predicted.png",
+      "sha256_png": "f936a70d9a837a5d41b168db4e2f3834fc26e4bfda17d85a4febfcac7164eaee",
+      "status": "PENDING_REVIEW"
+    },
+    {
+      "figure_id": "FIG-P5-03",
+      "source_evaluation_id": "initb-development-e2e-20261028-02.development-oof.pooled",
+      "source_configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+      "svg_ref": null,
+      "png_ref": "phases/phase-05/assets/residual-distribution.png",
+      "sha256_png": "94c4acdaf4dd2724a11587bee46ea6e7eaf5ac9a4811de13609b88f208898cef",
+      "status": "PENDING_REVIEW"
+    }
+  ]
+}

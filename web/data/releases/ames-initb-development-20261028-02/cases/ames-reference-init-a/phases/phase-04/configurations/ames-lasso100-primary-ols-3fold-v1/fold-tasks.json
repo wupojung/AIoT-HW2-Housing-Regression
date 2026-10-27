@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "initb-development-e2e-20261028-02",
+  "folds": [
+    {
+      "fold": 0,
+      "validation_rows": 390,
+      "status": "COMPLETED",
+      "convergence_status": "CONVERGED",
+      "rmse": 28943.434495196187,
+      "mae": 19258.304582654546,
+      "r2": 0.8301499562166021,
+      "task_id": "1e22b2d74bff4eefebe464a662e8a34d17d636790fd05b70bc0ab169d838ebf6"
+    },
+    {
+      "fold": 1,
+      "validation_rows": 389,
+      "status": "COMPLETED",
+      "convergence_status": "CONVERGED",
+      "rmse": 33319.289142866124,
+      "mae": 18416.22045301395,
+      "r2": 0.834475772568999,
+      "task_id": "e04809578b19dd1dcc39c3cd9f30f74049c57635a623a0d589ab9a88e422d7a1"
+    },
+    {
+      "fold": 2,
+      "validation_rows": 389,
+      "status": "COMPLETED",
+      "convergence_status": "CONVERGED",
+      "rmse": 43904.830047554424,
+      "mae": 20510.62150041847,
+      "r2": 0.6878516112579971,
+      "task_id": "f09e5c6638db586237db73b4170c2b8039cac3867e4c662e6e2f212413291816"
+    }
+  ],
+  "predictions_included": false,
+  "oof_artifact_ref": null,
+  "oof_sha256": "4a610750b97e042212f51c018d48e3521257fbb81608af8cba337d4101815445"
+}

@@ -1,0 +1,174 @@
+{
+  "package_schema_version": "1.0.0",
+  "package_id": "ames-reference-init-a-initb-development-e2e-20261028-02",
+  "case_id": "ames-reference-init-a",
+  "package_revision": "ames-initb-development-20261028-02",
+  "package_status": "PARTIAL",
+  "publication": {
+    "approved": false,
+    "release_id": "ames-initb-development-20261028-02",
+    "review_status": "PENDING"
+  },
+  "case_ref": "case.json",
+  "phases": {
+    "phase1": {
+      "status": "UNAVAILABLE",
+      "data_ref": "phases/phase-01/content.json"
+    },
+    "phase2": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-02/analyses.json"
+    },
+    "phase3": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-03/preparation.json"
+    },
+    "phase4": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-04/modeling.json"
+    },
+    "phase5": {
+      "status": "PLANNED",
+      "data_ref": "phases/phase-05/evaluations.json"
+    },
+    "phase6": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-06/inference-catalog.json"
+    }
+  },
+  "asset_manifest_ref": "assets/figure-manifest.json",
+  "files": [
+    {
+      "path": "assets/execution-manifest.json",
+      "sha256": "4d06eda0864356a95f32d2eab7d5925fade84c212939930e1332f0a68c1c33e5",
+      "bytes": 1455,
+      "mime": "application/json"
+    },
+    {
+      "path": "assets/figure-manifest.json",
+      "sha256": "3152829ff5f325f847446c3e073e55492fd16868aedded43c90981424ee52289",
+      "bytes": 2898,
+      "mime": "application/json"
+    },
+    {
+      "path": "assets/phase6-inference-smoke.json",
+      "sha256": "eab7beec206da0205488d54345f6c54d336dfb10b78a095618717877d0a5548c",
+      "bytes": 643,
+      "mime": "application/json"
+    },
+    {
+      "path": "assets/phase6-input-schema.json",
+      "sha256": "ec7adad00d8fb571e49b2f63777607123d2562e14deaff8090c0316fdb6d4e31",
+      "bytes": 235,
+      "mime": "application/json"
+    },
+    {
+      "path": "assets/public-release-notice.json",
+      "sha256": "70698ef5995b2f9380a6829a63801dbcbf3536092c0beeaa91be98e08adc8ba3",
+      "bytes": 395,
+      "mime": "application/json"
+    },
+    {
+      "path": "case.json",
+      "sha256": "9d3aa154e004812f0b565e59943af3ddc319334fa5a6bbd67ca3d016ffa5b7ff",
+      "bytes": 622,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-01/content.json",
+      "sha256": "446880dc494abeeeb825e372be565867025c68a741e1b4b9707aba0ae7ec1eab",
+      "bytes": 115,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-02/analyses.json",
+      "sha256": "3ffc1cbd8784443ca5e97584833bdb48e6536bc1ae9d052120506b0c14837bc3",
+      "bytes": 9133,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-02/figures/missingness.svg",
+      "sha256": "2258ae445dd745594a01a2fb0ce5c2f26ce76cc18dcbc32c3fc296d065a2c5f1",
+      "bytes": 3810,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-02/figures/target-distribution.svg",
+      "sha256": "7198f2a0408942666a9cbcd834933e142185dc13147900a5b0b5da4724a9b494",
+      "bytes": 2735,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-03/preparation.json",
+      "sha256": "c837b3e7d68c6b8e28c2d7542841e5d90af5b769959c9f3e04a4677eb6a82a6d",
+      "bytes": 3867,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ames-lasso100-primary-ols-3fold-v1/cv-metrics.json",
+      "sha256": "8e878ffb8dc7a8db649fb6b15ff873eb599e49dd0cbd72caa4a4d37f66dc4c6f",
+      "bytes": 1874,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ames-lasso100-primary-ols-3fold-v1/fold-tasks.json",
+      "sha256": "f517bab1d46b8dfafd3fe19c22606e41dcaa5cd375af020adcdd5fadc07b4857",
+      "bytes": 1179,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ames-lasso100-primary-ols-3fold-v1/metadata.json",
+      "sha256": "0e5ac8024d6180b11242bec6d5b7cee518e606b3fdd0f605e79ab15fa0661001",
+      "bytes": 707,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/modeling.json",
+      "sha256": "ae029f422ccced4fa93a46fba822ab81e1304dfa8d6ccb3fc71b471317bf7c9e",
+      "bytes": 2124,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-05/assets/actual-vs-predicted.png",
+      "sha256": "9eb4a3c302677dba9f2c14d71c0401e1a0342b2405cab7d4b8695c5a76252ae5",
+      "bytes": 82352,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-05/assets/residual-distribution.png",
+      "sha256": "94c4acdaf4dd2724a11587bee46ea6e7eaf5ac9a4811de13609b88f208898cef",
+      "bytes": 25301,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-05/assets/residual-histogram.json",
+      "sha256": "3a7b1ae2622e1e314873c8674d16f67829ed932200e6bef4d824bf138be402b7",
+      "bytes": 1067,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-05/assets/residual-vs-predicted.png",
+      "sha256": "f936a70d9a837a5d41b168db4e2f3834fc26e4bfda17d85a4febfcac7164eaee",
+      "bytes": 64205,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-05/evaluations.json",
+      "sha256": "9cde38ae0a9f0136942462218e31a4ac86e8dbc1f0fc54cbf4aaae528ea486bd",
+      "bytes": 11507,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-05/fold-metrics.json",
+      "sha256": "a49faec8f3dac4451071298238c08394ee46ed40d4b3eb7cd1096c1fcdfe0aef",
+      "bytes": 805,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-06/inference-catalog.json",
+      "sha256": "3b720f467dc76a3e8d6163a0437b47d7fd76fe465c5ea40094b91eb0febca359",
+      "bytes": 998,
+      "mime": "application/json"
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 name: Security scan
 
-on:
+'on':
   pull_request:
-    branches: [main]
+    branches: [deploy]
   workflow_dispatch:
 
 concurrency:
@@ -22,9 +22,41 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install pinned pip
+        run: python -m pip install --upgrade pip==26.2.2
+      - name: Install locked Python environment
+        run: python -m pip install -r requirements.lock
       - name: Scan tracked repository files
         run: python tools/security_scan.py --tracked
-      - name: Run scanner unit tests
-        run: python -m unittest discover -s tests/security -v
-      - name: Run web foundation tests
-        run: python -m unittest discover -s tests -p "test_web_foundation.py" -v
+      - name: Run environment smoke test
+        run: python python/src/environment_check.py
+      - name: Run project tests outside the legacy P4B runner
+        run: python -m pytest -q --ignore=tests/modeling/test_p4b_runner.py
+
+  # The historical runner uses Win32 Job Objects and keeps its own test record.
+  # It is intentionally separate from the required `scan` status for the new Core release.
+  legacy-p4b-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned pip
+        run: python -m pip install --upgrade pip==26.2.2
+      - name: Install locked Python environment
+        run: python -m pip install -r requirements.lock
+      - name: Prepare legacy test artifact directory
+        run: python -c "from pathlib import Path; Path('artifacts').mkdir(exist_ok=True)"
+      - name: Run legacy P4B Windows acceptance tests
+        run: python -m pytest -q tests/modeling/test_p4b_runner.py tests/modeling/test_harness.py --junitxml=artifacts/legacy-p4b-windows.xml
+      - name: Preserve legacy P4B test result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legacy-p4b-windows-test-results
+          path: artifacts/legacy-p4b-windows.xml
+          if-no-files-found: warn
+          retention-days: 14

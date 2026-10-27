@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "release_id": "ames-initb-development-20261028-02",
+  "cases": [
+    {
+      "case_id": "ames-reference-init-a",
+      "package_ref": "releases/ames-initb-development-20261028-02/cases/ames-reference-init-a/package.json",
+      "package_status": "PARTIAL",
+      "package_sha256": "623c6cc968a65df02b3c6c676758b2fdca25031049cf5013980612cac8ac513f",
+      "package_bytes": 5704
+    }
+  ]
+}
