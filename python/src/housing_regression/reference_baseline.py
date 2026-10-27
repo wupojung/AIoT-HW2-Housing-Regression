@@ -508,7 +508,8 @@ def run_reference_phase3(config_path: str | os.PathLike[str]) -> dict[str, Any]:
 
 
 def run_fixed_lasso_cv(
-    config_path: str | os.PathLike[str], *, code_head: str, run_id: str = REFERENCE_RUN_ID
+    config_path: str | os.PathLike[str], *, code_head: str, run_id: str = REFERENCE_RUN_ID,
+    oof_output_path: str | os.PathLike[str] | None = None,
 ) -> dict[str, Any]:
     """Run only the historically selected Lasso alpha=100 primary-OLS track.
 
@@ -532,6 +533,7 @@ def run_fixed_lasso_cv(
     fold_sha = fold_assignment_digest(fold_labels)
     data_sha = compute_canonical_fingerprint(development_rows)
     fold_results: list[dict[str, Any]] = []
+    oof_records: list[dict[str, Any]] = []
     with threadpool_limits(limits=1):
         splitter = KFold(n_splits=REFERENCE_OUTER_FOLDS, shuffle=True, random_state=REFERENCE_SPLIT_SEED)
         for fold, (train_positions, validation_positions) in enumerate(splitter.split(development_rows)):
@@ -565,6 +567,18 @@ def run_fixed_lasso_cv(
             design_validation = np.column_stack((np.ones(len(X_validation)), X_validation[:, selected]))
             coefficients, _residuals, rank, singular_values = np.linalg.lstsq(design_train, y_train, rcond=None)
             predictions = design_validation @ coefficients
+            if oof_output_path is not None:
+                for validation_offset, (position, actual, predicted) in enumerate(zip(
+                    validation_positions, y_validation, predictions, strict=True
+                )):
+                    oof_records.append({
+                        "run_id": run_id,
+                        "configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+                        "fold": fold,
+                        "row_id": validation_records[validation_offset][ID_COLUMN],
+                        "actual": float(actual),
+                        "predicted": float(predicted),
+                    })
             residual = y_validation - predictions
             rmse = float(np.sqrt(np.mean(np.square(residual))))
             mae = float(np.mean(np.abs(residual)))
@@ -590,7 +604,7 @@ def run_fixed_lasso_cv(
     rmse = [item["rmse"] for item in fold_results]
     mae = [item["mae"] for item in fold_results]
     r2 = [item["r2"] for item in fold_results]
-    return {
+    result = {
         "run_id": run_id,
         "config_sha256": config.config_sha256,
         "code_head": code_head,
@@ -607,6 +621,40 @@ def run_fixed_lasso_cv(
             "r2": float(np.mean(r2)), "r2_sample_sd": float(np.std(r2, ddof=1)),
         },
     }
+    if oof_output_path is not None:
+        output = Path(oof_output_path)
+        metadata_path = output.with_suffix(output.suffix + ".metadata.json")
+        if output.exists() or output.is_symlink() or metadata_path.exists() or metadata_path.is_symlink():
+            raise ReferenceBaselineError("refusing to overwrite Development OOF evidence")
+        if output.parent.is_symlink() or not output.parent.is_dir():
+            raise ReferenceBaselineError("Development OOF output directory must exist and not be a symlink")
+        expected_ids = [row[ID_COLUMN] for row in development_rows]
+        records_by_id = {record["row_id"]: record for record in oof_records}
+        if len(records_by_id) != REFERENCE_TRAIN_ROWS or set(records_by_id) != set(expected_ids):
+            raise ReferenceBaselineError("OOF records do not cover Development rows exactly once")
+        with output.open("x", encoding="utf-8", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=["run_id", "configuration_id", "fold", "row_id", "actual", "predicted"], lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(records_by_id[row_id] for row_id in expected_ids)
+            stream.flush()
+            os.fsync(stream.fileno())
+        oof_payload = output.read_bytes()
+        fold_counts = {str(fold): sum(record["fold"] == fold for record in oof_records) for fold in range(REFERENCE_OUTER_FOLDS)}
+        oof_metadata = {
+            "schema_version": "1.0.0", "run_id": run_id,
+            "configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+            "evaluation_population": "development_oof", "row_count": len(oof_records),
+            "fold_counts": fold_counts, "source_sha256": _sha256(config.source_csv.read_bytes()),
+            "config_sha256": config.config_sha256, "development_data_sha256": data_sha,
+            "fold_assignment_sha256": fold_sha, "oof_sha256": _sha256(oof_payload),
+            "target": TARGET_COLUMN, "residual_sign": "actual_minus_predicted",
+            "validation_partition_used": False,
+        }
+        metadata_path.write_text(json.dumps(oof_metadata, indent=2, allow_nan=False) + "\n", encoding="utf-8", newline="\n")
+        result["oof"] = {key: value for key, value in oof_metadata.items() if key not in ("source_sha256",)}
+        result["oof"]["oof_file"] = output.name
+        result["oof"]["metadata_file"] = metadata_path.name
+    return result
 
 
 def run_reference_final_fit_smoke(
@@ -675,4 +723,114 @@ def run_reference_final_fit_smoke(
         "deployable": False,
         "candidate_search": "NOT RUN",
         "max_ols_singular_value": float(singular_values[0]) if len(singular_values) else None,
+    }
+
+
+@dataclass
+class ReferenceFittedModel:
+    """Private local-only INIT B preprocessing and fixed OLS inference state."""
+
+    run_id: str
+    configuration_id: str
+    config_sha256: str
+    source_sha256: str
+    pipeline: ReferencePhase3Pipeline
+    scaler: Any
+    scale_columns: list[int]
+    selected_indices: np.ndarray
+    coefficients: np.ndarray
+    feature_names: list[str]
+
+    def predict_one(self, predictors: Mapping[str, Any]) -> float:
+        expected = set(ALL_PREDICTOR_COLUMNS)
+        if set(predictors) != expected:
+            raise ReferenceBaselineError("inference input must contain exactly the configured 79 predictor fields")
+        batch = self.pipeline.transform([{**predictors, ID_COLUMN: "LOCAL-INFERENCE"}], "local_inference")
+        matrix = batch.matrix.copy()
+        if matrix.shape != (1, len(self.feature_names)):
+            raise ReferenceBaselineError("inference feature shape differs from fitted model")
+        if self.scale_columns:
+            matrix[:, self.scale_columns] = self.scaler.transform(matrix[:, self.scale_columns])
+        design = np.column_stack((np.ones(1), matrix[:, self.selected_indices]))
+        prediction = float(design @ self.coefficients)
+        if not math.isfinite(prediction):
+            raise ReferenceBaselineError("inference prediction is non-finite")
+        return prediction
+
+
+def fit_and_persist_reference_model(
+    config_path: str | os.PathLike[str], output_path: str | os.PathLike[str], *,
+    code_head: str, run_id: str,
+) -> dict[str, Any]:
+    """Fit fixed final Lasso-selection→OLS on Development and persist local model state."""
+    import joblib
+    from sklearn.linear_model import Lasso
+    from sklearn.preprocessing import StandardScaler
+    from threadpoolctl import threadpool_limits
+
+    config = load_reference_config(config_path)
+    _headers, rows = read_reference_csv(config.source_csv)
+    train_indices, _validation_indices = split_reference_rows(rows)
+    development_rows = [rows[index] for index in train_indices]
+    pipeline = ReferencePhase3Pipeline()
+    batch = pipeline.fit_transform(development_rows, "final_development_fit")
+    matrix = batch.matrix.copy()
+    y = np.asarray(batch.y, dtype=np.float64)
+    scale_columns = [
+        index for index, name in enumerate(batch.feature_names)
+        if name not in STRUCTURAL_INDICATORS and not name.endswith("_is_missing")
+        and not any(name.startswith(column + "_") for column in NOMINAL_COLUMNS)
+    ]
+    scaler = StandardScaler()
+    with threadpool_limits(limits=1):
+        if scale_columns:
+            matrix[:, scale_columns] = scaler.fit_transform(matrix[:, scale_columns])
+        lasso = Lasso(alpha=REFERENCE_LASSO_ALPHA, max_iter=10000, tol=1e-4, selection="cyclic")
+        lasso.fit(matrix, y)
+        selected = np.flatnonzero(np.abs(lasso.coef_) > 1e-8)
+        if not len(selected) or not np.isfinite(lasso.coef_).all():
+            raise ReferenceBaselineError("fixed final Lasso did not produce a finite selected feature set")
+        design = np.column_stack((np.ones(len(matrix)), matrix[:, selected]))
+        coefficients, _residuals, rank, _singular_values = np.linalg.lstsq(design, y, rcond=None)
+    source_sha = _sha256(config.source_csv.read_bytes())
+    model = ReferenceFittedModel(
+        run_id=run_id, configuration_id="ames-lasso100-primary-ols-3fold-v1",
+        config_sha256=config.config_sha256, source_sha256=source_sha, pipeline=pipeline,
+        scaler=scaler, scale_columns=scale_columns, selected_indices=selected,
+        coefficients=coefficients, feature_names=list(batch.feature_names),
+    )
+    output = Path(output_path)
+    if output.exists() or output.is_symlink() or output.parent.is_symlink() or not output.parent.is_dir():
+        raise ReferenceBaselineError("refusing to overwrite model artifact or write through a symlink")
+    try:
+        with output.open("xb") as stream:
+            joblib.dump(model, stream, compress=3)
+            stream.flush()
+            os.fsync(stream.fileno())
+    except FileExistsError as exc:
+        raise ReferenceBaselineError("refusing to overwrite model artifact") from exc
+    except OSError as exc:
+        raise ReferenceBaselineError("could not persist local model artifact") from exc
+    loaded = joblib.load(output)
+    if not isinstance(loaded, ReferenceFittedModel):
+        raise ReferenceBaselineError("persisted model has an unexpected type")
+    smoke_input = {name: development_rows[0][name] for name in ALL_PREDICTOR_COLUMNS}
+    before = model.predict_one(smoke_input)
+    after = loaded.predict_one(smoke_input)
+    if not math.isclose(before, after, rel_tol=0.0, abs_tol=1e-9):
+        raise ReferenceBaselineError("reloaded model prediction does not match in-memory fit")
+    model_sha = _sha256(output.read_bytes())
+    return {
+        "status": "PASS", "run_id": run_id,
+        "configuration_id": model.configuration_id, "model_id": "ames-reference-local-ols",
+        "model_version": run_id, "source_sha256": source_sha,
+        "config_sha256": config.config_sha256, "model_sha256": model_sha,
+        "model_ref": output.name, "development_rows": len(development_rows),
+        "encoded_features": len(batch.feature_names), "selected_features": len(selected),
+        "lasso_convergence": "CONVERGED" if int(lasso.n_iter_) < lasso.max_iter else "ITERATION_LIMIT_REACHED",
+        "ols_rank": int(rank), "reload_verified": True,
+        "local_inference_verified": True, "prediction_finite": math.isfinite(after),
+        "prediction_value": after, "input_scope": "one_private_development_training_record",
+        "validation_partition_used": False, "deployable": False,
+        "code_head": code_head,
     }
