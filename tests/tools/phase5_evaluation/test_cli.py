@@ -274,19 +274,35 @@ class Phase5CliTests(unittest.TestCase):
         self.assertEqual(list(new_target.parent.glob(".phase5-*.tmp")), [])
 
     def _phase4_fixture(self):
-        candidate = {"alpha": 100.0, "candidate_order": 3}
-        config_id = "p4-" + hashlib.sha256(
-            json.dumps(["lasso", "primary", candidate], sort_keys=True, separators=(",", ":")).encode()
-        ).hexdigest()[:24]
+        lasso_candidate = {"alpha": 100.0, "candidate_order": 3}
+        configs = [
+            {"method": "lasso", "track": "primary", "primary_track": "selected_to_ols",
+             "candidate": lasso_candidate, "config_hash": hashlib.sha256(b"valid-lasso-config").hexdigest(),
+             "winner_eligible": False},
+            {"method": "ols_baseline", "track": "baseline", "primary_track": "all_features_ols",
+             "candidate": {}, "config_hash": "67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298",
+             "winner_eligible": False},
+            {"method": "lasso", "track": "primary", "primary_track": "selected_to_ols",
+             "candidate": {"alpha": 0.1, "candidate_order": 0},
+             "config_hash": hashlib.sha256(b"invalid-lasso-config").hexdigest(), "winner_eligible": False,
+             "status": "INVALID", "primary_valid": False},
+        ]
         tasks = []
         rows = []
-        for fold, pairs in enumerate((((10, 12), (20, 19)), ((30, 29), (40, 42)), ((50, 52), (60, 58)))):
-            task_id = f"task-{fold}"
-            tasks.append({"task_id": task_id, "method": "lasso", "track": "primary", "primary_track": "selected_to_ols",
-                          "fold": fold, "candidate": candidate, "status": "COMPLETED", "primary_valid": True})
-            for index, (actual, predicted) in enumerate(pairs):
-                rows.append({"Id": f"dev-{fold}-{index}", "fold": fold, "task_id": task_id,
-                             "method": "lasso", "track": "primary", "actual": actual, "predicted": predicted})
+        pairs_by_fold = (((10, 12), (20, 19)), ((30, 29), (40, 42)), ((50, 52), (60, 58)))
+        for config_index, config in enumerate(configs):
+            for fold, pairs in enumerate(pairs_by_fold):
+                task_id = f"task-{config_index}-{fold}"
+                task_status = config.get("status", "COMPLETED")
+                primary_valid = config.get("primary_valid", True)
+                tasks.append({"task_id": task_id, "method": config["method"], "track": config["track"],
+                              "primary_track": config["primary_track"], "fold": fold,
+                              "candidate": config["candidate"], "config_hash": config["config_hash"],
+                              "status": task_status, "primary_valid": primary_valid})
+                for index, (actual, predicted) in enumerate(pairs):
+                    rows.append({"Id": f"dev-{config_index}-{fold}-{index}", "fold": fold, "task_id": task_id,
+                                 "method": config["method"], "track": config["track"],
+                                 "actual": actual, "predicted": predicted if primary_valid else None})
         with tempfile.TemporaryDirectory(prefix="phase5-p4oof-") as temp:
             root = Path(temp)
             csv_path = root / "oof.csv"
@@ -295,44 +311,98 @@ class Phase5CliTests(unittest.TestCase):
                 writer.writeheader(); writer.writerows(rows)
             summary_path = self.write_json(root / "summary.json", {
                 "metadata": {"run_id": "p4-run-01", "protocol_version": "p4b-v2",
-                             "data_boundary": {"development_rows": len(rows)}},
+                             "data_boundary": {"development_rows": sum(len(fold_pairs) for fold_pairs in pairs_by_fold)}},
                 "per_outer_fold_results": tasks,
-                "aggregate_results": [{"method": "lasso", "candidate": candidate,
-                                       "status": "COMPLETED", "winner_eligible": True,
-                                       "expected_fold_count": 3, "expected_folds": [0, 1, 2]}],
+                "aggregate_results": [{"method": config["method"], "candidate": config["candidate"],
+                                       "config_hash": config["config_hash"], "status": config.get("status", "COMPLETED"),
+                                       "coverage_complete": config.get("status", "COMPLETED") == "COMPLETED",
+                                       "valid_fold_count": 3 if config.get("status", "COMPLETED") == "COMPLETED" else 0,
+                                       "winner_eligible": config["winner_eligible"],
+                                       "expected_fold_count": 3, "expected_folds": [0, 1, 2]}
+                                       for config in configs],
             })
             manifest = {"run_id": "p4-run-01", "phase3_contract_version": "p4b-v2"}
             gate = {"run_id": "p4-run-01", "protocol_version": "p4b-v2", "target": {"column": "SalePrice", "unit": "USD"},
-                    "configurations": [{"configuration_id": config_id, "method": "lasso", "track": "primary", "candidate": candidate}]}
+                    "configurations": [{"configuration_id": "cfg-" + config["config_hash"], "method": config["method"],
+                                        "track": config["track"], "candidate": config["candidate"]}
+                                       for config in configs if config.get("status", "COMPLETED") == "COMPLETED"]}
             data = phase5_cli._read_phase4_oof(summary_path, csv_path, manifest, gate,
                                                hashlib.sha256(summary_path.read_bytes()).hexdigest(),
                                                hashlib.sha256(csv_path.read_bytes()).hexdigest())
-            return data, config_id
+            return data, ["cfg-" + config["config_hash"] for config in configs]
 
     def test_phase4_oof_join_metrics_and_pooled_diagnostics_use_only_synthetic_rows(self):
-        data, config_id = self._phase4_fixture()
+        data, selected_config_ids = self._phase4_fixture()
         index, plot_data = phase5_cli._build_phase4("synthetic-p4-case", data)
-        self.assertEqual(len(index["evaluations"]), 2)
-        by_source = {item["metric_source"]: item for item in index["evaluations"]}
-        self.assertNotEqual(by_source["cv_fold_mean"]["evaluation_id"], by_source["pooled_oof"]["evaluation_id"])
-        self.assertEqual(by_source["cv_fold_mean"]["linked_evaluation_ids"], [by_source["pooled_oof"]["evaluation_id"]])
-        self.assertEqual(by_source["cv_fold_mean"]["fold_summary"]["ddof"], 1)
-        self.assertEqual(by_source["pooled_oof"]["n"], 6)
-        self.assertEqual([fig["figure_id"] for fig in by_source["pooled_oof"]["figures"]],
-                         ["FIG-P5-02", "FIG-P5-01", "FIG-P5-03"])
-        self.assertTrue(all(fig["evaluation_id"] == by_source["pooled_oof"]["evaluation_id"]
-                            for fig in by_source["pooled_oof"]["figures"]))
-        self.assertEqual(plot_data[by_source["pooled_oof"]["evaluation_id"]][0], (10.0, 12.0))
-        self.assertEqual(config_id, by_source["pooled_oof"]["configuration_id"])
+        self.assertEqual(len(index["evaluations"]), 4)
+        config_ids = {item["configuration_id"] for item in index["evaluations"]}
+        self.assertEqual(config_ids, set(data["groups"]))
+        self.assertEqual(set(selected_config_ids[:2]), config_ids)
+        self.assertEqual(len(data["groups"]), 2)
+        self.assertNotIn(selected_config_ids[2], data["groups"])
+        self.assertTrue(all(group["winner_eligible"] is False for group in data["groups"].values()))
+        self.assertIn("cfg-67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298", config_ids)
+        self.assertEqual({group["track"] for group in data["groups"].values()}, {"primary", "baseline"})
+        for config_id in config_ids:
+            by_source = {item["metric_source"]: item for item in index["evaluations"]
+                         if item["configuration_id"] == config_id}
+            self.assertEqual(by_source["cv_fold_mean"]["linked_evaluation_ids"], [by_source["pooled_oof"]["evaluation_id"]])
+            self.assertEqual(by_source["pooled_oof"]["linked_evaluation_ids"], [by_source["cv_fold_mean"]["evaluation_id"]])
+            self.assertEqual(by_source["cv_fold_mean"]["fold_summary"]["ddof"], 1)
+            self.assertEqual(by_source["pooled_oof"]["n"], 6)
+            self.assertEqual(by_source["cv_fold_mean"]["prediction_origin"], by_source["pooled_oof"]["prediction_origin"])
+            expected_origin = "fold_specific_all_features_ols" if config_id.endswith("67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298") else "fold_specific_selected_to_ols"
+            self.assertEqual(by_source["cv_fold_mean"]["prediction_origin"], expected_origin)
+            self.assertEqual([fig["figure_id"] for fig in by_source["pooled_oof"]["figures"]],
+                             ["FIG-P5-02", "FIG-P5-01", "FIG-P5-03"])
+            self.assertTrue(all(fig["evaluation_id"] == by_source["pooled_oof"]["evaluation_id"]
+                                for fig in by_source["pooled_oof"]["figures"]))
+            self.assertEqual(plot_data[by_source["pooled_oof"]["evaluation_id"]][0], (10.0, 12.0))
+        self.assertIsNotNone(index["generated_at"])
+        self.assertTrue(index["generated_at"].endswith("Z"))
+        self.assertIsNone(index["release_id"])
         with tempfile.TemporaryDirectory(prefix="phase5-p4oof-assets-") as temp:
             output_root = Path(temp)
             phase5_cli._write_real_figures(output_root, index, plot_data)
             phase5_cli._schema_validate(index)
-            for figure in by_source["pooled_oof"]["figures"]:
-                asset = output_root / "phases" / "phase-05" / figure["asset_ref"]
+            for figure in (figure for evaluation in index["evaluations"] for figure in evaluation["figures"]):
+                asset = output_root / figure["asset_ref"]
                 self.assertTrue(asset.is_file())
                 self.assertEqual(figure["sha256"], hashlib.sha256(asset.read_bytes()).hexdigest())
+                if figure["figure_id"] == "FIG-P5-03":
+                    self.assertEqual(figure["histogram"]["n"], figure["n"])
+                    self.assertTrue(figure["histogram"]["bin_edges_ref"].startswith("assets/"))
+                    histogram = json.loads((output_root / figure["histogram"]["bin_edges_ref"]).read_text())
+                    self.assertEqual(len(histogram["bin_edges"]), figure["histogram"]["bin_count"] + 1)
+                    self.assertEqual(sum(histogram["counts"]), figure["n"])
+                    self.assertEqual(histogram["n"], figure["n"])
         phase5_cli._validate_identity(index)
+
+    def test_phase4_asset_set_promotion_rolls_back_and_can_retry(self):
+        data, _ = self._phase4_fixture()
+        index, plot_data = phase5_cli._build_phase4("synthetic-p4-case", data)
+        real_link = phase5_cli.os.link
+        call_count = 0
+
+        def fail_second_promotion(source, destination):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 2:
+                raise OSError("simulated promotion failure")
+            return real_link(source, destination)
+
+        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-rollback-") as temp:
+            output_root = Path(temp)
+            assets = output_root / "assets"
+            with mock.patch.object(phase5_cli.os, "link", side_effect=fail_second_promotion):
+                with self.assertRaises(phase5_cli.CliError) as caught:
+                    phase5_cli._write_real_figures(output_root, index, plot_data)
+            self.assertEqual(caught.exception.code, "OUTPUT_WRITE_FAILED")
+            self.assertEqual(list(assets.iterdir()), [])
+            phase5_cli._write_real_figures(output_root, index, plot_data)
+            expected_count = sum(len(evaluation["figures"]) for evaluation in index["evaluations"])
+            expected_count += sum(1 for evaluation in index["evaluations"] if evaluation["metric_source"] == "pooled_oof")
+            self.assertEqual(len(list(assets.iterdir())), expected_count)
 
     def test_phase4_oof_rejects_invalid_task_join_and_missing_prediction(self):
         data, _ = self._phase4_fixture()

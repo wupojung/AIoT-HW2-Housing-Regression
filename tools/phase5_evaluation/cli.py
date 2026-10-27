@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import bisect
 import csv
+import datetime
 import hashlib
 import json
 import math
@@ -210,10 +212,11 @@ def _read_phase4_oof(summary_path: Path, csv_path: Path, manifest: dict[str, Any
                 for field in ("method", "track", "fold"):
                     if str(task.get(field)) != row.get(field):
                         raise CliError("JOIN_BLOCKED", f"OOF/summary task identity mismatch for {field}", 4)
-                if task.get("status") != "COMPLETED":
+                if task.get("status") != "COMPLETED" or task.get("primary_valid") is not True:
                     continue
-                if task.get("primary_track") != "selected_to_ols":
-                    raise CliError("JOIN_BLOCKED", "summary task is not on the selected_to_ols primary track", 4)
+                expected_primary_track = {"primary": "selected_to_ols", "baseline": "all_features_ols"}.get(row["track"])
+                if expected_primary_track is None or task.get("primary_track") != expected_primary_track:
+                    raise CliError("JOIN_BLOCKED", "summary task does not match an eligible primary or baseline track", 4)
                 row_id = row.get("Id", "")
                 row_identity = (row_id, row["task_id"], row.get("track", ""))
                 if not row_id or row_identity in seen_ids:
@@ -226,11 +229,16 @@ def _read_phase4_oof(summary_path: Path, csv_path: Path, manifest: dict[str, Any
                 candidate = task.get("candidate")
                 if not isinstance(candidate, dict):
                     raise CliError("JOIN_BLOCKED", "summary candidate identity is missing", 4)
-                key_payload = json.dumps([task["method"], row["track"], candidate], sort_keys=True, separators=(",", ":"))
-                config_id = "p4-" + hashlib.sha256(key_payload.encode("utf-8")).hexdigest()[:24]
+                config_hash = task.get("config_hash")
+                if (not isinstance(config_hash, str) or len(config_hash) != 64
+                        or any(char not in "0123456789abcdef" for char in config_hash)):
+                    raise CliError("JOIN_BLOCKED", "completed task needs a lowercase SHA-256 config_hash", 4)
+                config_id = "cfg-" + config_hash
                 group = groups.setdefault(config_id, {"method": task["method"], "track": row["track"], "candidate": candidate,
+                                                       "config_hash": config_hash,
                                                        "rows": [], "folds": {}, "ids": set()})
-                if group["candidate"] != candidate:
+                if (group["candidate"] != candidate or group["config_hash"] != config_hash
+                        or group["method"] != task["method"] or group["track"] != row["track"]):
                     raise CliError("JOIN_BLOCKED", "configuration identity collision", 4)
                 if row_id in group["ids"]:
                     raise CliError("JOIN_BLOCKED", "Development OOF row ID occurs more than once per configuration", 4)
@@ -258,12 +266,17 @@ def _read_phase4_oof(summary_path: Path, csv_path: Path, manifest: dict[str, Any
             raise CliError("INVALID_INPUT", "selected configuration has no OOF predictions")
         if item.get("method") != group["method"] or item.get("track") != group["track"] or item.get("candidate") != group["candidate"]:
             raise CliError("JOIN_BLOCKED", "gate configuration identity does not match OOF task identity", 4)
-        if group["track"] != "primary":
-            raise CliError("NOT_AUTHORIZED", "only the Phase 4 primary track is eligible")
+        expected_track = "baseline" if group["method"] == "ols_baseline" else "primary"
+        expected_primary_track = "all_features_ols" if expected_track == "baseline" else "selected_to_ols"
+        if group["track"] != expected_track:
+            raise CliError("NOT_AUTHORIZED", "selected configuration must use its Phase 4 primary track")
         candidates = [entry for entry in aggregate if isinstance(entry, dict) and entry.get("method") == group["method"]
                       and entry.get("candidate") == group["candidate"]]
-        if len(candidates) != 1 or candidates[0].get("status") != "COMPLETED" or candidates[0].get("winner_eligible") is not True:
-            raise CliError("INVALID_INPUT", "selected configuration is not a completed winner-eligible Phase 4 group")
+        if (len(candidates) != 1 or candidates[0].get("status") != "COMPLETED"
+                or candidates[0].get("coverage_complete") is not True
+                or candidates[0].get("valid_fold_count") != candidates[0].get("expected_fold_count")
+                or candidates[0].get("config_hash") != group["config_hash"]):
+            raise CliError("INVALID_INPUT", "selected configuration is not a complete, valid Phase 4 group")
         folds = group["folds"]
         expected_fold_count = candidates[0].get("expected_fold_count")
         expected_folds = {str(value) for value in candidates[0].get("expected_folds", [])}
@@ -274,7 +287,10 @@ def _read_phase4_oof(summary_path: Path, csv_path: Path, manifest: dict[str, Any
                 or any(not math.isfinite(value) for pair in group["rows"] for value in pair)
                 or any(not pairs for pairs in folds.values())):
             raise CliError("INVALID_INPUT", "selected configuration has missing fold predictions")
+        if expected_primary_track not in ("selected_to_ols", "all_features_ols"):
+            raise CliError("INVALID_INPUT", "unsupported Phase 4 primary track")
         group["configuration_id"] = config_id
+        group["winner_eligible"] = candidates[0].get("winner_eligible")
         eligible[config_id] = group
     if len(eligible) != len(selected):
         raise CliError("NOT_AUTHORIZED", "gate configuration identities must be unique")
@@ -298,8 +314,10 @@ def _build_phase4(index_case_id: str, data: dict[str, Any]) -> tuple[dict[str, A
                             if all(m[name] is not None for m in per_fold.values()) and len(per_fold) > 1 else None)
                      for name in METRIC_NAMES}
         fold_id, pooled_id = f"{config_id}-fold-mean", f"{config_id}-pooled-oof"
+        prediction_origin = ("fold_specific_all_features_ols" if group["track"] == "baseline"
+                             else "fold_specific_selected_to_ols")
         base_manifest = {"execution_run_id": data["run_id"], "configuration_id": config_id,
-                         "prediction_origin": "phase4_fold_specific_models", "protocol_version": data["protocol"], "target": target}
+                         "prediction_origin": prediction_origin, "protocol_version": data["protocol"], "target": target}
         fold_eval = _base_evaluation(fold_id, base_manifest, len(group["rows"]), fold_mean,
                                      data["csv_digest"], "cv_fold_mean",
                                      {"fold_count": len(folds), "aggregation": "fold_mean", "ddof": 1,
@@ -319,22 +337,24 @@ def _build_phase4(index_case_id: str, data: dict[str, Any]) -> tuple[dict[str, A
             evaluation["interval"]["int_s"]["reason_code"] = "NO_INTERVAL_EVIDENCE"
             evaluation["limitations"] = ["Development OOF only; not independent generalization; no final fit or Holdout evidence."]
             evaluation["review_status"] = "AWAITING_REVIEW"
+        histogram_ref = f"assets/{pooled_id}-FIG-P5-03-histogram.json"
         pooled_eval["figures"] = [{
             "figure_id": fig_id, "evaluation_id": pooled_id, "configuration_id": config_id,
-            "evaluation_population": "development_oof", "prediction_origin": "phase4_fold_specific_models",
+            "evaluation_population": "development_oof", "prediction_origin": prediction_origin,
             "n": len(group["rows"]), "status": "PLANNED", "publication_review": "PENDING",
             "asset_ref": f"assets/{pooled_id}-{fig_id.lower()}.png", "sha256": None,
             "accessible_table_ref": None, "alt": None, "finding": None,
             "limitations": ["Development OOF diagnostic; publication review pending."], "source_digest": data["csv_digest"],
             "axes": _real_axes(fig_id, target["unit"]),
             "residual_sign": "actual_minus_predicted" if fig_id != "FIG-P5-01" else None,
-            "histogram": {"bin_count": 30, "bin_edges_ref": f"asset:{pooled_id}-{fig_id.lower()}.png", "n": len(group["rows"])} if fig_id == "FIG-P5-03" else None,
+            "histogram": {"bin_count": 30, "bin_edges_ref": histogram_ref, "n": len(group["rows"])} if fig_id == "FIG-P5-03" else None,
         } for fig_id in ("FIG-P5-02", "FIG-P5-01", "FIG-P5-03")]
         pooled_eval["asset_status"] = "AVAILABLE"
         evaluations.extend((fold_eval, pooled_eval))
         plot_data[pooled_id] = group["rows"]
     default_id = next((item["evaluation_id"] for item in evaluations if item["metric_source"] == "cv_fold_mean"), None)
-    return ({"schema_version": "1.0.0", "case_id": index_case_id, "release_id": None, "generated_at": None,
+    return ({"schema_version": "1.0.0", "case_id": index_case_id, "release_id": None,
+             "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
              "status": "PLANNED", "reason_code": "PUBLICATION_REVIEW_PENDING", "publication_review": "PENDING",
              "default_evaluation_id": default_id, "evaluations": evaluations,
              "ui": _build_empty({"case_id": index_case_id})["ui"]}, plot_data)
@@ -348,56 +368,126 @@ def _real_axes(figure_id: str, unit: str) -> dict[str, Any]:
     }[figure_id]
 
 
+def _histogram(values: list[float], bin_count: int = 30) -> tuple[list[float], list[int]]:
+    if not values or any(not math.isfinite(value) for value in values):
+        raise CliError("INVALID_INPUT", "histogram requires finite pooled residuals")
+    low, high = min(values), max(values)
+    if low == high:
+        low, high = low - 0.5, high + 0.5
+    width = (high - low) / bin_count
+    edges = [low + index * width for index in range(bin_count)] + [high]
+    counts = [0] * bin_count
+    for value in values:
+        index = max(0, min(bisect.bisect_right(edges, value) - 1, bin_count - 1))
+        counts[index] += 1
+    return edges, counts
+
+
 def _write_real_figures(output_root: Path, index: dict[str, Any], plot_data: dict[str, list[tuple[float, float]]]) -> None:
+    """Render all pooled diagnostics off-tree, then promote the set with rollback."""
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError as exc:
         raise CliError("DEPENDENCY_MISSING", "install the tool-local matplotlib requirement", 5) from exc
-    for evaluation in index["evaluations"]:
-        if evaluation["metric_source"] != "pooled_oof":
-            continue
-        pairs = plot_data[evaluation["evaluation_id"]]
-        actual = [pair[0] for pair in pairs]; predicted = [pair[1] for pair in pairs]
-        residual = [y - yhat for y, yhat in pairs]
-        for figure in evaluation["figures"]:
-            dest = output_root / "phases" / "phase-05" / figure["asset_ref"]
-            if dest.exists() or dest.is_symlink():
-                raise CliError("OUTPUT_EXISTS", f"refusing to overwrite figure asset: {dest}", 5)
-            cursor = output_root
-            for component in ("phases", "phase-05", "assets"):
-                cursor = cursor / component
-                if cursor.is_symlink():
-                    raise CliError("PATH_BLOCKED", "figure output path contains a symlink")
-                cursor.mkdir(exist_ok=True)
-            fig, ax = plt.subplots(figsize=(7, 5), constrained_layout=True)
-            if figure["figure_id"] == "FIG-P5-01":
-                ax.scatter(actual, predicted, s=12, alpha=.7); low=min(actual+predicted); high=max(actual+predicted); ax.plot([low,high],[low,high], color="black", linewidth=1)
-                ax.set(xlabel="Actual", ylabel="Predicted")
-            elif figure["figure_id"] == "FIG-P5-02":
-                ax.scatter(predicted, residual, s=12, alpha=.7); ax.axhline(0, color="black", linewidth=1)
-                ax.set(xlabel="Predicted", ylabel="Actual - Predicted")
-            else:
-                ax.hist(residual, bins=30); ax.axvline(0, color="black", linewidth=1)
-                ax.set(xlabel="Actual - Predicted", ylabel="Count")
-            temporary = None
+
+    assets_dir = output_root / "assets"
+    if assets_dir.is_symlink():
+        raise CliError("PATH_BLOCKED", "asset output directory may not be a symlink")
+    assets_dir.mkdir(exist_ok=True)
+    if not assets_dir.is_dir():
+        raise CliError("PATH_BLOCKED", "asset output path must be a directory")
+
+    staged_to_final: list[tuple[Path, Path]] = []
+    staged_figure_digests: list[tuple[dict[str, Any], str]] = []
+    with tempfile.TemporaryDirectory(prefix=".phase5-asset-stage-", dir=output_root) as stage_name:
+        stage_assets = Path(stage_name) / "assets"
+        stage_assets.mkdir()
+        try:
+            for evaluation in index["evaluations"]:
+                if evaluation["metric_source"] != "pooled_oof":
+                    continue
+                pairs = plot_data[evaluation["evaluation_id"]]
+                actual = [pair[0] for pair in pairs]
+                predicted = [pair[1] for pair in pairs]
+                residual = [y - yhat for y, yhat in pairs]
+                for figure in evaluation["figures"]:
+                    asset_ref = figure.get("asset_ref")
+                    parts = Path(asset_ref).parts if isinstance(asset_ref, str) else ()
+                    if len(parts) != 2 or parts[0] != "assets":
+                        raise CliError("PATH_BLOCKED", "figure asset_ref must be a case-root assets path")
+                    filename = parts[1]
+                    staged_png = stage_assets / filename
+                    final_png = assets_dir / filename
+                    if final_png.exists() or final_png.is_symlink():
+                        raise CliError("OUTPUT_EXISTS", f"refusing to overwrite figure asset: {final_png}", 5)
+
+                    fig, ax = plt.subplots(figsize=(7, 5), constrained_layout=True)
+                    histogram_evidence = None
+                    try:
+                        if figure["figure_id"] == "FIG-P5-01":
+                            ax.scatter(actual, predicted, s=12, alpha=.7)
+                            low, high = min(actual + predicted), max(actual + predicted)
+                            ax.plot([low, high], [low, high], color="black", linewidth=1)
+                            ax.set(xlabel="Actual", ylabel="Predicted")
+                        elif figure["figure_id"] == "FIG-P5-02":
+                            ax.scatter(predicted, residual, s=12, alpha=.7)
+                            ax.axhline(0, color="black", linewidth=1)
+                            ax.set(xlabel="Predicted", ylabel="Actual - Predicted")
+                        else:
+                            histogram_evidence = _histogram(residual, figure["histogram"]["bin_count"])
+                            ax.hist(residual, bins=histogram_evidence[0])
+                            ax.axvline(0, color="black", linewidth=1)
+                            ax.set(xlabel="Actual - Predicted", ylabel="Count")
+                        fig.savefig(staged_png, format="png", dpi=120)
+                    except Exception as exc:
+                        raise CliError("OUTPUT_WRITE_FAILED", f"figure rendering failed: {exc}", 5) from exc
+                    finally:
+                        plt.close(fig)
+                    staged_figure_digests.append((figure, _sha256(staged_png)))
+                    staged_to_final.append((staged_png, final_png))
+
+                    if figure["figure_id"] == "FIG-P5-03":
+                        histogram = figure["histogram"]
+                        edges, counts = histogram_evidence
+                        histogram_name = Path(histogram["bin_edges_ref"]).name
+                        staged_histogram = stage_assets / histogram_name
+                        final_histogram = assets_dir / histogram_name
+                        if final_histogram.exists() or final_histogram.is_symlink():
+                            raise CliError("OUTPUT_EXISTS", f"refusing to overwrite histogram data: {final_histogram}", 5)
+                        payload = {"bin_edges": edges, "counts": counts, "n": len(residual),
+                                   "residual_sign": "actual_minus_predicted"}
+                        staged_histogram.write_text(json.dumps(payload, allow_nan=False, separators=(",", ":")) + "\n", encoding="utf-8")
+                        if sum(counts) != histogram["n"]:
+                            raise CliError("INVALID_INPUT", "histogram bin counts do not sum to pooled OOF n")
+                        staged_to_final.append((staged_histogram, final_histogram))
+
+            for _, destination in staged_to_final:
+                if destination.exists() or destination.is_symlink():
+                    raise CliError("OUTPUT_EXISTS", f"refusing to overwrite asset: {destination}", 5)
+            promoted: list[Path] = []
             try:
-                with tempfile.NamedTemporaryFile(mode="wb", dir=dest.parent, prefix=".phase5-figure-", suffix=".tmp", delete=False) as stream:
-                    temporary = Path(stream.name)
-                fig.savefig(temporary, format="png", dpi=120)
-                with temporary.open("rb") as stream:
-                    os.fsync(stream.fileno())
-                os.link(temporary, dest)
-            except FileExistsError as exc:
-                raise CliError("OUTPUT_EXISTS", f"refusing to overwrite figure asset: {dest}", 5) from exc
-            except OSError as exc:
-                raise CliError("OUTPUT_WRITE_FAILED", f"figure creation failed: {exc}", 5) from exc
-            finally:
-                plt.close(fig)
-                if temporary is not None:
-                    temporary.unlink(missing_ok=True)
-            figure["sha256"] = _sha256(dest)
+                for staged, destination in staged_to_final:
+                    os.link(staged, destination)
+                    promoted.append(destination)
+                for figure, digest in staged_figure_digests:
+                    figure["sha256"] = digest
+            except Exception as exc:
+                rollback_errors = []
+                for destination in reversed(promoted):
+                    try:
+                        destination.unlink()
+                    except OSError as rollback_exc:
+                        rollback_errors.append(str(rollback_exc))
+                suffix = f"; rollback errors: {'; '.join(rollback_errors)}" if rollback_errors else ""
+                if isinstance(exc, FileExistsError):
+                    raise CliError("OUTPUT_EXISTS", f"asset promotion collided: {exc}{suffix}", 5) from exc
+                raise CliError("OUTPUT_WRITE_FAILED", f"asset-set promotion failed: {exc}{suffix}", 5) from exc
+        except CliError:
+            raise
+        except OSError as exc:
+            raise CliError("OUTPUT_WRITE_FAILED", f"asset staging failed: {exc}", 5) from exc
 
 
 def _validate_phase4_gate(gate: dict[str, Any], manifest: dict[str, Any]) -> None:
