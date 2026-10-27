@@ -20,7 +20,7 @@ from housing_regression.init_config import ConfigError, load_config
 
 
 _FIELD_NAME = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_. -]{0,63}$")
-_MISSING = {"", "na", "n/a", "nan", "null", "none"}
+_MISSING = {"", "NA"}
 SYNTHETIC_MOCK = "synthetic_mock"
 FORMAL_DEVELOPMENT = "formal_development"
 Phase2DataMode = Literal["synthetic_mock", "formal_development"]
@@ -30,11 +30,12 @@ AMES_FIELD_TYPES = {
         "LotFrontage", "LotArea", "MasVnrArea", "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF",
         "TotalBsmtSF", "1stFlrSF", "2ndFlrSF", "LowQualFinSF", "GrLivArea", "GarageArea",
         "WoodDeckSF", "OpenPorchSF", "EnclosedPorch", "3SsnPorch", "ScreenPorch", "PoolArea",
-        "MiscVal", "YearBuilt", "YearRemodAdd", "GarageYrBlt",
+        "MiscVal",
     ), "continuous"),
     **dict.fromkeys((
         "BsmtFullBath", "BsmtHalfBath", "FullBath", "HalfBath", "BedroomAbvGr", "KitchenAbvGr",
         "TotRmsAbvGrd", "Fireplaces", "GarageCars", "MoSold", "YrSold",
+        "YearBuilt", "YearRemodAdd", "GarageYrBlt",
     ), "discrete"),
     **dict.fromkeys((
         "OverallQual", "OverallCond", "ExterQual", "ExterCond", "BsmtQual", "BsmtCond",
@@ -53,7 +54,8 @@ AMES_FIELD_TYPES = {
 
 
 def _missing(value: str) -> bool:
-    return value.strip().casefold() in _MISSING
+    """Match the Ames CSV contract: empty cells and exact literal ``NA`` only."""
+    return value.strip() in _MISSING
 
 
 def _format_number(value: float) -> int | float:
@@ -103,7 +105,7 @@ def _missingness_svg(
     missing_counts: dict[str, int], row_count: int, data_mode: Phase2DataMode
 ) -> str:
     ranked = sorted(
-        missing_counts.items(),
+        ((name, count) for name, count in missing_counts.items() if count > 0),
         key=lambda item: (-(item[1] / row_count), item[0]),
     )[:20]
     width = 760

@@ -193,6 +193,48 @@ class Phase12CoreTests(unittest.TestCase):
             build_phase2(self.config, output_root, data_mode="verified")
         self.assertFalse((output_root / "phases").exists())
 
+    def test_phase2_formal_missing_tokens_preserve_none_category(self):
+        source = self.root / "missing-token-cases.csv"
+        source.write_text(
+            "Id,MasVnrType,SalePrice,YearBuilt,YearRemodAdd,GarageYrBlt,LotShape,LandSlope\n"
+            '1,None,100,2000,2001,1999,Reg,Gtl\n'
+            '2,NA,200,2000,2001,1999,IR1,Mod\n'
+            '3,,300,2000,2001,1999,IR2,Sev\n'
+            '4,N/A,400,2000,2001,1999,IR3,Gtl\n'
+            '5,none,500,2000,2001,1999,Reg,Gtl\n'
+            '6,null,600,2000,2001,1999,Reg,Gtl\n'
+            '7,nan,700,2000,2001,1999,Reg,Gtl\n'
+            '8,na,800,2000,2001,1999,Reg,Gtl\n',
+            encoding="utf-8",
+        )
+        case_dir = self.root / "missing-token-case"
+        case_dir.mkdir()
+        config = initialize_case(source, "missing-token-case", "SalePrice", case_dir).config_path
+        output_root = self.root / "missing-token-output"
+        output_root.mkdir()
+
+        output = build_phase2(config, output_root, data_mode="formal_development")
+
+        self.assertEqual(output["status"], "VERIFIED")
+        findings = {item["id"]: item["finding"] for item in output["analyses"]}
+        self.assertIn("MasVnrType=2/8", findings["missingness"])
+        self.assertIn("MasVnrType: 6 distinct", findings["feature-summary"])
+        self.assertIn("YearBuilt [discrete] include", findings["field-decisions"])
+        self.assertIn("YearRemodAdd [discrete] include", findings["field-decisions"])
+        self.assertIn("GarageYrBlt [discrete] include", findings["field-decisions"])
+        # Phase 2 and Phase 3 documents disagree on these semantic categories;
+        # retain the currently implemented Phase 2 labels pending owner decision.
+        self.assertIn("LotShape [ordinal] include", findings["field-decisions"])
+        self.assertIn("LandSlope [ordinal] include", findings["field-decisions"])
+
+        figures = output_root / "phases/phase-02/figures"
+        missing_svg = (figures / "missingness.svg").read_text(encoding="utf-8")
+        self.assertIn("MasVnrType", missing_svg)
+        self.assertIn("25.0%", missing_svg)
+        self.assertNotIn(">SalePrice</text>", missing_svg)
+        self.assertNotIn(">YearBuilt</text>", missing_svg)
+        validate_document(output, phase_schema_path(2))
+
     def test_empty_phase2_is_unavailable_and_invalid_csv_fails_without_output(self):
         empty_dir = self.root / "empty-case"
         empty_dir.mkdir()
