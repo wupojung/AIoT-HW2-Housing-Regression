@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "python" / "src"))
 
 from housing_regression.data_prep.constants import NOMINAL_COLUMNS, NUMERIC_COLUMNS, ORDINAL_COLUMNS, ORDINAL_LEVELS
-from housing_regression.reference_baseline import ReferencePhase3Pipeline, _missing
+from housing_regression.reference_baseline import ReferenceFittedModel, ReferencePhase3Pipeline, _missing
 
 
 class ReferenceBaselineTests(unittest.TestCase):
@@ -53,6 +53,26 @@ class ReferenceBaselineTests(unittest.TestCase):
         self.assertEqual(batch.matrix[0, batch.feature_names.index("LotFrontage")], 1.0)
         self.assertEqual(batch.matrix[0, batch.feature_names.index("MasVnrType_BrkFace")], 1.0)
         self.assertEqual(batch.matrix[0, batch.feature_names.index("MasVnrType_is_missing")], 1.0)
+
+    def test_persisted_model_prediction_returns_finite_scalar(self):
+        class FakeBatch:
+            matrix = np.asarray([[2.0]])
+
+        class FakePipeline:
+            def transform(self, rows, split_name):
+                return FakeBatch()
+
+        from housing_regression.data_prep.constants import ALL_PREDICTOR_COLUMNS
+
+        model = ReferenceFittedModel(
+            run_id="test-run", configuration_id="test-config", config_sha256="a" * 64,
+            source_sha256="b" * 64, pipeline=FakePipeline(), scaler=None,
+            scale_columns=[], selected_indices=np.asarray([0]),
+            coefficients=np.asarray([1.0, 3.0]), feature_names=["x"],
+        )
+        value = model.predict_one({name: "x" for name in ALL_PREDICTOR_COLUMNS})
+        self.assertEqual(value, 7.0)
+        self.assertTrue(np.isfinite(value))
 
 
 if __name__ == "__main__":

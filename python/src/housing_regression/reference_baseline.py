@@ -752,7 +752,7 @@ class ReferenceFittedModel:
         if self.scale_columns:
             matrix[:, self.scale_columns] = self.scaler.transform(matrix[:, self.scale_columns])
         design = np.column_stack((np.ones(1), matrix[:, self.selected_indices]))
-        prediction = float(design @ self.coefficients)
+        prediction = float((design @ self.coefficients).item())
         if not math.isfinite(prediction):
             raise ReferenceBaselineError("inference prediction is non-finite")
         return prediction
@@ -834,3 +834,35 @@ def fit_and_persist_reference_model(
         "validation_partition_used": False, "deployable": False,
         "code_head": code_head,
     }
+
+
+def smoke_loaded_reference_model(
+    config_path: str | os.PathLike[str], model_path: str | os.PathLike[str], *, run_id: str
+) -> dict[str, Any]:
+    """Reload an already fitted private model and run one Development-only inference smoke."""
+    import joblib
+
+    config = load_reference_config(config_path)
+    path = Path(model_path)
+    if path.is_symlink() or not path.is_file():
+        raise ReferenceBaselineError("persisted model artifact is missing or unsafe")
+    model = joblib.load(path)
+    if not isinstance(model, ReferenceFittedModel):
+        raise ReferenceBaselineError("persisted model has an unexpected type")
+    source_sha = _sha256(config.source_csv.read_bytes())
+    if model.run_id != run_id or model.config_sha256 != config.config_sha256 or model.source_sha256 != source_sha:
+        raise ReferenceBaselineError("persisted model run/config/source provenance mismatch")
+    _headers, rows = read_reference_csv(config.source_csv)
+    train_indices, _validation_indices = split_reference_rows(rows)
+    input_row = rows[train_indices[0]]
+    predictors = {name: input_row[name] for name in ALL_PREDICTOR_COLUMNS}
+    prediction = model.predict_one(predictors)
+    if not math.isfinite(prediction):
+        raise ReferenceBaselineError("reloaded model inference returned a non-finite value")
+    return {"status": "PASS", "run_id": model.run_id, "configuration_id": model.configuration_id,
+            "source_sha256": source_sha, "config_sha256": config.config_sha256,
+            "model_sha256": _sha256(path.read_bytes()), "model_ref": path.name,
+            "reload_verified": True, "local_inference_verified": True,
+            "prediction_finite": True, "prediction_value": prediction,
+            "input_scope": "one_private_development_training_record",
+            "validation_partition_used": False, "deployable": False}
