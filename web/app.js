@@ -40,13 +40,8 @@ const CASES = {
     ].map(([id, figureId, title]) => ({ id, figureId, title, status: "UNAVAILABLE", imageRef: null, tableRef: null,
       description: "待綁定已核准圖資", finding: null,
       limitations: "圖資尚未通過此 Sample 的發布審查", provenanceRef: null })),
-    stages: [
-      { id: "raw", label: "原始候選欄位", unit: "原始欄位", total: 79, totalStatus: "SOURCE_REPORTED_NOT_VERIFIED", segments: [], distributionStatus: "UNAVAILABLE" },
-      { id: "filtered", label: "欄位排除後", unit: "原始欄位", total: null, totalStatus: "UNAVAILABLE", segments: [], distributionStatus: "UNAVAILABLE" },
-      { id: "processed", label: "資料處理後", unit: "編碼前欄位", total: null, totalStatus: "UNAVAILABLE", segments: [], distributionStatus: "UNAVAILABLE" },
-      { id: "encoded", label: "編碼後", unit: "編碼特徵", total: 248, totalStatus: "SOURCE_REPORTED_NOT_VERIFIED", segments: [], distributionStatus: "UNAVAILABLE" }
-    ],
-    split: { source: 1460, training: 1168, holdout: 292, seed: 42, status: "SOURCE_REPORTED_NOT_VERIFIED", competitionTest: 1459 },
+    stages: null,
+    split: null,
     cv: { trainingRows: 1168, foldCount: 3, protocolId: null, status: "SOURCE_REPORTED_NOT_VERIFIED" },
     methods: [
       { id: "pearson", label: "Pearson", parameters: [{ id: "top_k", label: "Top K", dataType: "integer" }] },
@@ -68,7 +63,7 @@ const CASES = {
 };
 
 const state = {
-  caseId: "ames-housing", route: "phase-1", analysisId: "overview", perspective: "method_comparison",
+  caseId: "ames-housing", route: "home", analysisId: "overview", perspective: "method_comparison",
   phase5Figure: "FIG-P5-02", p5Population: "development_oof", p5DetailsOpen: false,
   dashboardMode: "verified", customSource: "file", customFile: null, customUrl: "", customHeaders: [], customRows: [],
   targetField: "", featureFields: [], csvMessage: "尚未載入資料。CSV 僅在此瀏覽器本機預覽，不會上傳。", customValidated: false
@@ -101,9 +96,9 @@ function banner(caseInfo = caseData()) {
 }
 function updateShell() {
   const phase = routePhase();
-  phaseNav.hidden = !phase;
+  phaseNav.hidden = !phase || state.route === "home" || state.route === "dashboard";
   phaseNav.innerHTML = PHASES.map(([n, en, zh]) => `<a class="phase-tab" href="#phase-${n}" ${phase === n ? 'aria-current="page"' : ""}><span class="num">0${n}</span><span>${esc(zh)}</span></a>`).join("");
-  document.querySelector("[data-home-link]").setAttribute("aria-current", state.route === "phase-1" ? "page" : "false");
+  document.querySelector("[data-home-link]").setAttribute("aria-current", state.route === "home" ? "page" : "false");
   document.querySelector("[data-dashboard-link]").setAttribute("aria-current", state.route === "dashboard" ? "page" : "false");
   caseSelect.innerHTML = Object.values(CASES).map((c) => `<option value="${esc(c.id)}" ${c.id === state.caseId ? "selected" : ""}>${esc(c.title)} · ${esc(c.status)}</option>`).join("");
 }
@@ -112,7 +107,9 @@ function pageHeading(kicker, title, subtitle, status = caseData().status) {
 }
 function footerNav(prev, next) {
   const phase = routePhase();
-  const samplePath = REF[`phase${phase}`];
+  const samplePath = phase === 3
+    ? "web/data/cases/ames-housing/phase-03/preparation.json"
+    : REF[`phase${phase}`];
   const schemaPath = phase === 5
     ? "docs/ui-ux/case-package/phase-05/evaluation-index.schema.json"
     : `docs/design/data-contracts/schemas/phase-0${phase}.schema.json`;
@@ -123,15 +120,19 @@ function footerNav(prev, next) {
 function plannedPanel(message = "此案例目前沒有可用的研究資料。") {
   return `<section class="state-panel"><span class="state-icon" aria-hidden="true">i</span><h3>此階段尚未提供資料</h3><p>${esc(message)}切換至此案例不會沿用 Ames 的文字、圖表或狀態。</p>${badge("PLANNED")}</section>`;
 }
+function renderHome() {
+  const c = caseData();
+  return `<div class="page">${banner(c)}<section class="home-hero"><div><p class="kicker">NCHU AIoT 2026 · HOUSING REGRESSION LAB</p><h1>從研究問題<br>走向可追溯的證據</h1><p>以清楚可追溯的方式呈現住宅迴歸研究。進入 CRISP-DM，從案例與研究問題開始。</p><a class="button" href="#phase-1">CRISP-DM →</a></div></section></div>`;
+}
 function renderPhase1() {
   const c = caseData();
-  const intro = `<section class="hero-layout"><div class="hero-card"><p class="kicker">NCHU AIoT 2026 · HOUSING REGRESSION LAB</p><h1>從研究問題，<br>走向可追溯的證據。</h1><p>以 CRISP-DM 六階段呈現住宅迴歸研究流程。所有頁面依資料來源狀態顯示內容，缺少審核資料時保留明確的 unavailable 狀態。</p><a class="button" href="#phase-2">開始瀏覽研究流程 →</a></div><div class="journey-card"><div><p class="eyebrow">CRISP-DM RESEARCH JOURNEY</p><h2>六個階段，<br>一段完整研究路徑。</h2><p class="body-copy">從案例脈絡、資料理解和準備，走到模型建立、評估與部署狀態。</p></div><div class="journey-line" aria-label="CRISP-DM 六階段">${PHASES.map((p) => `<span class="journey-step"><i></i>0${p[0]} ${esc(p[2])}</span>`).join("")}</div></div></section>`;
-  if (c.status === "PLANNED") return `<div class="page">${intro}${banner(c)}${pageHeading("PHASE 01 / BUSINESS UNDERSTANDING", "業務理解", "案例脈絡、研究目標與預測標的。", "PLANNED")}${plannedPanel("尚未提供案例來源、研究問題或預測標的。")}${footerNav(null, [2, "資料理解"])}</div>`;
+  if (c.status === "PLANNED") return `<div class="page">${banner(c)}${pageHeading("PHASE 01 / BUSINESS UNDERSTANDING", "業務理解", "案例脈絡、研究目標與預測標的。", "PLANNED")}${plannedPanel("尚未提供案例來源、研究問題或預測標的。")}${footerNav(null, [2, "資料理解"])}</div>`;
   const sections = c.sections.map((s) => `<article class="card"><div class="card-head"><div><p class="eyebrow">CASE NARRATIVE</p><h2>${esc(s.title)}</h2></div>${badge("MOCK")}</div><div class="card-body"><p class="body-copy">${esc(s.body)}</p></div></article>`).join("");
   const caseCard = `<article class="card"><div class="card-head"><div><p class="eyebrow">DATASET / CASE</p><h2>${esc(c.title)}</h2></div>${badge(c.status)}</div><div class="card-body"><dl class="data-row"><dt>Dataset</dt><dd>House Prices</dd></dl><dl class="data-row"><dt>Source</dt><dd>${esc(c.source)}</dd></dl><dl class="data-row"><dt>Source URL</dt><dd><a class="text-link" href="${esc(c.sourceUrl)}" target="_blank" rel="noreferrer">開啟官方資料來源 ↗</a></dd></dl><dl class="data-row"><dt>License review</dt><dd>${esc(c.license)}</dd></dl></div></article>`;
   const target = `<article class="card"><div class="card-head"><div><p class="eyebrow">PREDICTION TARGET</p><h2>預測標的</h2></div>${badge("MOCK")}</div><div class="card-body"><dl class="data-row"><dt>欄位</dt><dd>${esc(c.target.label)} (${esc(c.target.column)})</dd></dl><dl class="data-row"><dt>單位</dt><dd>${esc(c.target.unit)}</dd></dl><div class="method-ribbon"><strong>共享研究方法</strong><span>Multiple Linear Regression → Feature Selection → Evaluation<br>Methodology ID: ${esc(c.methodology)}</span></div></div></article>`;
-  return `<div class="page">${intro}${banner(c)}${pageHeading("PHASE 01 / BUSINESS UNDERSTANDING", "業務理解", "研究案例介紹：資料來源、問題、研究目標與預測標的。", c.status)}<div class="grid three phase1-grid">${caseCard}${sections}${target}</div>${footerNav(null, [2, "資料理解"])}</div>`;
+  return `<div class="page">${banner(c)}${pageHeading("PHASE 01 / BUSINESS UNDERSTANDING", "業務理解", "研究案例介紹：資料來源、問題、研究目標與預測標的。", c.status)}<div class="grid three phase1-grid">${caseCard}${sections}${target}</div>${footerNav(null, [2, "資料理解"])}</div>`;
 }
+
 function renderPhase2() {
   const c = caseData();
   if (c.status === "PLANNED") return `<div class="page">${banner(c)}${pageHeading("PHASE 02 / DATA UNDERSTANDING", "資料理解", "瀏覽已產生並核准的靜態 EDA 證據。", "PLANNED")}${plannedPanel()}${footerNav([1,"業務理解"],[3,"資料準備"])}</div>`;
@@ -140,27 +141,114 @@ function renderPhase2() {
   const imageState = selected.imageRef ? `<img src="${esc(selected.imageRef)}" alt="${esc(selected.title)}">` : `<div class="state-panel"><span class="state-icon" aria-hidden="true">◌</span><h3>${esc(selected.figureId)} · ${esc(selected.title)}</h3><p>UNAVAILABLE — ${esc(selected.limitations)}. No figure or accessible table is included in this fixture.</p>${badge(selected.status)}</div>`;
   return `<div class="page">${banner(c)}${pageHeading("PHASE 02 / DATA UNDERSTANDING", "資料理解", "從已完成且公開的描述性分析中閱讀一項證據；本頁不執行即時 EDA。", "UNAVAILABLE")}<section class="card"><div class="card-head"><div><p class="eyebrow">AVAILABLE EDA ANALYSES · CASE FIXTURE LIST</p><h2>選擇一個分析視角</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><div class="selector-row" role="group" aria-label="選擇 EDA 分析">${buttons}</div></div></section><div class="analysis-layout"><section class="card"><div class="card-head"><div><p class="eyebrow">SELECTED · ${esc(selected.figureId)}</p><h2>${esc(selected.title)}</h2></div>${badge(selected.status)}</div><div class="card-body"><div class="figure-frame" role="img" aria-label="${esc(selected.title)} 圖資目前不可用">${imageState}</div><p class="stage-note">Accessible table: ${selected.tableRef ? esc(selected.tableRef) : "UNAVAILABLE — no table fixture provided."}</p></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">EVIDENCE NOTES</p><h2>分析說明</h2></div></div><div class="card-body"><dl class="data-row"><dt>描述</dt><dd>${esc(selected.description)}</dd></dl><dl class="data-row"><dt>觀察結果</dt><dd>${selected.finding ? esc(selected.finding) : "UNAVAILABLE — no finding is included in this sample."}</dd></dl><dl class="data-row"><dt>限制</dt><dd>${esc(selected.limitations)}</dd></dl><dl class="data-row"><dt>來源</dt><dd>${selected.provenanceRef ? esc(selected.provenanceRef) : "UNAVAILABLE — provenance reference not included."}</dd></dl></div></section></div>${footerNav([1,"業務理解"],[3,"資料準備"])}</div>`;
 }
-function renderSegments(stage) {
-  const total = stage.total;
-  const verified = stage.distributionStatus === "VERIFIED" && total > 0 && stage.segments.length > 0 && stage.segments.reduce((sum, segment) => sum + segment.count, 0) === total;
-  if (!verified) return `<div class="stack-track is-unknown" role="img" aria-label="型態分布 ${esc(statusLabel(stage.distributionStatus))}">型態分布 ${esc(statusLabel(stage.distributionStatus))} · percentages not available</div><div class="legend">${TYPES.map(([, label, color]) => `<span class="legend-item"><i class="legend-dot" style="--dot:${color}"></i>${esc(label)}：未知</span>`).join("")}</div>`;
-  const segments = stage.segments.map((s) => {
-    const type = TYPES.find(([id]) => id === s.typeId); const percent = (s.count / total) * 100;
-    return `<span class="stack-segment" style="width:${percent}%;background:${type?.[2] || "#ccc"}" title="${esc(type?.[1] || s.typeId)} ${s.count} / ${total} (${percent.toFixed(1)}%)"></span>`;
-  }).join("");
-  return `<div class="stack-track" role="img" aria-label="${esc(stage.label)}: ${stage.segments.map(s => `${s.typeId} ${s.count}`).join(", ")}">${segments}</div><div class="legend">${stage.segments.map((s) => { const t = TYPES.find(([id]) => id === s.typeId); return `<span class="legend-item"><i class="legend-dot" style="--dot:${t?.[2] || "#ccc"}"></i>${esc(t?.[1] || s.typeId)}：${s.count} · ${(s.count / total * 100).toFixed(1)}%</span>`; }).join("")}</div>`;
+let phase3Data = null;
+let phase3Loading = false;
+let phase3LoadError = null;
+const PHASE3_DATA_URL = "/data/cases/ames-housing/phase-03/preparation.json";
+const PHASE3_UNIT_LABELS = {
+  raw_columns: "raw columns",
+  pre_encoding_columns: "pre-encoding columns",
+  encoded_features: "encoded features"
+};
+
+function loadPhase3Data() {
+  if (phase3Loading || phase3Data || phase3LoadError) return;
+  phase3Loading = true;
+  fetch(PHASE3_DATA_URL)
+    .then((response) => {
+      if (!response.ok) throw new Error(`Static JSON request failed (${response.status})`);
+      return response.json();
+    })
+    .then((data) => {
+      if (data.case_id !== "ames-housing" || data.schema_version !== "1.0.0") {
+        throw new Error("Static Phase 3 JSON has an unexpected case or schema version.");
+      }
+      phase3Data = data;
+    })
+    .catch((error) => {
+      phase3LoadError = error instanceof Error ? error.message : "Unable to load Phase 3 data.";
+    })
+    .finally(() => {
+      phase3Loading = false;
+      if (state.route === "phase-3" && state.caseId === "ames-housing") render();
+    });
 }
+
+function renderSegments(stage, featureTypes) {
+  const total = stage.total;
+  const colorsById = new Map(TYPES.map(([id, label, color]) => [id, { english: label.split(" ")[0], color }]));
+  const dataTypes = featureTypes.map((item) => {
+    const type = colorsById.get(item.type_id);
+    return [item.type_id, `${type?.english || item.type_id} ${item.label}`, type?.color || "#ccc"];
+  });
+  const segments = Array.isArray(stage.segments) ? stage.segments : [];
+  const segmentTotal = segments.reduce((sum, segment) => sum + segment.count, 0);
+  const eligible = stage.distribution_status === "VERIFIED"
+    && stage.total_status === "VERIFIED"
+    && Number.isInteger(total)
+    && total > 0
+    && segments.length > 0
+    && segments.every((segment) => Number.isInteger(segment.count) && segment.count >= 0 && dataTypes.some(([id]) => id === segment.type_id))
+    && segmentTotal === total;
+  if (!eligible) {
+    return `<div class="stack-track is-unknown" role="img" aria-label="型態分布 ${esc(statusLabel(stage.distribution_status))}">型態分布 ${esc(statusLabel(stage.distribution_status))} · percentages unavailable</div><div class="legend">${dataTypes.map(([, label, color]) => `<span class="legend-item"><i class="legend-dot" style="--dot:${color}"></i>${esc(label)}：未知</span>`).join("")}</div>`;
+  }
+  const bars = segments.map((segment) => {
+    const type = TYPES.find(([id]) => id === segment.type_id);
+    const percent = (segment.count / total) * 100;
+    return `<span class="stack-segment" style="width:${percent}%;background:${type?.[2] || "#ccc"}" title="${esc(type?.[1] || segment.type_id)} ${segment.count} / ${total} (${percent.toFixed(1)}%)"></span>`;
+  }).join("");
+  const legend = segments.map((segment) => {
+    const type = TYPES.find(([id]) => id === segment.type_id);
+    return `<span class="legend-item"><i class="legend-dot" style="--dot:${type?.[2] || "#ccc"}"></i>${esc(type?.[1] || segment.type_id)}：${segment.count} · ${(segment.count / total * 100).toFixed(1)}%</span>`;
+  }).join("");
+  return `<div class="stack-track" role="img" aria-label="${esc(stage.label)}: ${segments.map((segment) => `${segment.type_id} ${segment.count}`).join(", ")}">${bars}</div><div class="legend">${legend}</div>`;
+}
+
 function renderPhase3() {
   const c = caseData();
   if (c.status === "PLANNED") return `<div class="page">${banner(c)}${pageHeading("PHASE 03 / DATA PREPARATION", "資料準備", "呈現原始、篩選、處理與編碼的特徵變化。", "PLANNED")}${plannedPanel()}${footerNav([2,"資料理解"],[4,"模型建立"])}</div>`;
-  const stages = c.stages.map((s, i) => `<section class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index">0${i + 1}</span><h2>${esc(s.label)}</h2></div><span class="stage-total">TOTAL: ${s.total == null ? "UNKNOWN" : esc(s.total)} ${esc(s.unit)} ${badge(s.totalStatus)}</span></div>${renderSegments(s)}<p class="stage-note">${s.id === "raw" ? "79 is a source-reported candidate predictor count; classification is pending audit." : s.id === "encoded" ? "248 is source-reported encoded dimensions; fit population, pipeline version and type lineage are unavailable." : "Retained feature total and category counts are unavailable; no zero-exclusion assumption is made."}</p>${s.id === "filtered" ? `<details class="disclosure"><summary>顯示排除欄位與原因</summary><div class="disclosure-body">Exclusion audit pending. No excluded-column list or verified zero count is available.</div></details>` : ""}${s.id === "processed" ? TYPES.map(([id,label]) => `<details class="disclosure"><summary>${esc(label)} · UNKNOWN</summary><div class="disclosure-body">No source-backed operation or field-level treatment is provided for this type.</div></details>`).join("") : ""}${s.id === "encoded" ? `<details class="disclosure"><summary>展開 raw-to-encoded feature mapping</summary><div class="disclosure-body">UNAVAILABLE — no approved lineage mapping is included.</div></details>` : ""}</section>`).join("");
-  const split = c.split; const total = split.source;
-  return `<div class="page">${banner(c)}${pageHeading("PHASE 03 / DATA PREPARATION", "資料準備", "四個相同量尺的特徵階段，接續一個獨立的資料列切分。分布未知時不繪製假比例。", "MOCK")}<div class="stage-list">${stages}<section class="card"><div class="card-head"><div><p class="eyebrow">DATASET PARTITION · ROWS, NOT FEATURES</p><h2>訓練集與保留測試集</h2></div>${badge(split.status)}</div><div class="card-body"><p class="body-copy">來源回報的切分：${split.training} / ${total} Training Set · ${split.holdout} / ${total} Holdout Test Set · Random Seed ${split.seed}。比例僅依來源回報值呈現，未驗證。</p><div class="row-split" role="img" aria-label="來源回報切分比例：訓練 80%，保留測試 20%"><span style="width:${split.training/total*100}%">Training Set · ${split.training} rows · 80%</span><span style="width:${split.holdout/total*100}%">Holdout · ${split.holdout} · 20%</span></div><p class="stage-note">Kaggle competition test (${split.competitionTest} unlabeled rows) is separate. Phase 4 CV uses only the Training Set; Holdout is not shown as a Phase 4 result.</p></div></section></div>${footerNav([2,"資料理解"],[4,"模型建立"])}</div>`;
+  if (!phase3Data && !phase3LoadError) {
+    loadPhase3Data();
+    return `<div class="page">${banner(c)}${pageHeading("PHASE 03 / DATA PREPARATION", "資料準備", "從靜態案例 JSON 載入階段數值；分布未知時不繪製假比例。", "MOCK")}<section class="state-panel" role="status"><span class="state-icon" aria-hidden="true">…</span><h3>載入 Phase 3 靜態資料</h3><p>目前頁面不會保留其他案例的階段資料。</p></section></div>`;
+  }
+  if (phase3LoadError) return `<div class="page">${banner(c)}${pageHeading("PHASE 03 / DATA PREPARATION", "資料準備", "Phase 3 資料無法載入。", "ERROR")}<section class="state-panel" role="alert"><h3>Phase 3 JSON 載入失敗</h3><p>${esc(phase3LoadError)}</p></section>${footerNav([2,"資料理解"],[4,"模型建立"])}</div>`;
+  if (phase3Data.case_id !== c.id) return `<div class="page">${banner(c)}${pageHeading("PHASE 03 / DATA PREPARATION", "資料準備", "沒有與目前案例相符的 Phase 3 資料。", "UNAVAILABLE")}${plannedPanel("目前沒有此案例的 Phase 3 JSON。")}${footerNav([2,"資料理解"],[4,"模型建立"])}</div>`;
+
+  const data = phase3Data;
+  const stages = data.stages.map((stage, index) => {
+    const unit = PHASE3_UNIT_LABELS[stage.unit] || stage.unit;
+    const note = stage.id === "raw"
+      ? `The ${stage.total ?? "unknown"} raw candidate predictor count is source-reported; feature classification is pending audit.`
+      : stage.id === "encoded"
+        ? `${stage.total ?? "Unknown"} encoded dimensions are source-reported; fit population, pipeline version and type lineage are unavailable.`
+        : "Retained feature total and category counts are unavailable; no zero-exclusion assumption is made.";
+    return `<section class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index">0${index + 1}</span><h2>${esc(stage.label)}</h2></div><span class="stage-total">TOTAL: ${stage.total == null ? "UNKNOWN" : esc(stage.total)} ${esc(unit)} ${badge(stage.total_status)}</span></div>${renderSegments(stage, data.feature_types)}<p class="stage-note">${esc(note)}</p>${stage.id === "filtered" ? `<details class="disclosure"><summary>顯示排除欄位與原因</summary><div class="disclosure-body">Exclusion audit pending. No excluded-column list or verified zero count is available.</div></details>` : ""}${stage.id === "processed" ? TYPES.map(([,label]) => `<details class="disclosure"><summary>${esc(label)} · UNKNOWN</summary><div class="disclosure-body">No source-backed operation or field-level treatment is provided for this type.</div></details>`).join("") : ""}${stage.id === "encoded" ? `<details class="disclosure"><summary>展開 raw-to-encoded feature mapping</summary><div class="disclosure-body">${data.lineage_ref ? esc(data.lineage_ref) : "UNAVAILABLE — no approved lineage mapping is included."}</div></details>` : ""}</section>`;
+  }).join("");
+  const split = data.split;
+  const totalRows = split.source_labeled_rows;
+  const splitReady = Number.isInteger(totalRows) && totalRows > 0
+    && Number.isInteger(split.training_rows) && Number.isInteger(split.holdout_rows)
+    && split.training_rows >= 0 && split.holdout_rows >= 0
+    && split.training_rows + split.holdout_rows === totalRows;
+  const splitContent = splitReady
+    ? `<p class="body-copy">來源回報的切分：${split.training_rows} / ${totalRows} Training Set · ${split.holdout_rows} / ${totalRows} Holdout Test Set · Random Seed ${split.seed ?? "UNKNOWN"}。比例僅依來源回報值呈現，未驗證。</p><div class="row-split" role="img" aria-label="來源回報切分比例：訓練 ${Math.round(split.training_rows / totalRows * 100)}%，保留測試 ${Math.round(split.holdout_rows / totalRows * 100)}%"><span style="width:${split.training_rows / totalRows * 100}%">Training Set · ${split.training_rows} rows · ${Math.round(split.training_rows / totalRows * 100)}%</span><span style="width:${split.holdout_rows / totalRows * 100}%">Holdout · ${split.holdout_rows} rows · ${Math.round(split.holdout_rows / totalRows * 100)}%</span></div><p class="stage-note">Phase 4 CV uses only the Training Set; Holdout is not shown as a Phase 4 result.</p>`
+    : `<div class="state-panel"><h3>UNAVAILABLE — split row counts do not reconcile.</h3><p>No split proportion is drawn unless source counts are complete and sum to the labeled row total.</p></div>`;
+  return `<div class="page">${banner(c)}${pageHeading("PHASE 03 / DATA PREPARATION", "資料準備", "四個相同量尺的特徵階段，接續一個獨立的資料列切分。分布未知時不繪製假比例。", data.status)}<div class="stage-list">${stages}<section class="card"><div class="card-head"><div><p class="eyebrow">DATASET PARTITION · ROWS, NOT FEATURES</p><h2>訓練集與保留測試集</h2></div>${badge(split.status)}</div><div class="card-body">${splitContent}</div></section></div>${footerNav([2,"資料理解"],[4,"模型建立"])}</div>`;
 }
+
 function renderPhase4() {
   const c = caseData();
   if (c.status === "PLANNED") return `<div class="page">${banner(c)}${pageHeading("PHASE 04 / MODELING", "模型建立", "只呈現實際完成且可核對的模型實驗。", "PLANNED")}${plannedPanel()}${footerNav([3,"資料準備"],[5,"模型評估"])}</div>`;
-  const folds = Array.from({ length: c.cv.foldCount }, (_, i) => { const validAt = i; return `<div class="cv-row"><span class="cv-label">Fold ${i+1}</span><div class="cv-track" role="img" aria-label="Fold ${i+1} 約三分之一 validation，三分之二 training"><span class="cv-valid" style="width:33.333%">Validation ~33.3%</span><span class="cv-train" style="width:66.667%">Training ~66.7%</span></div></div>`; }).join("");
+  const foldNames = ["Fold A", "Fold B", "Fold C"];
+  const folds = Array.from({ length: 3 }, (_, iteration) => {
+    const blocks = foldNames.map((foldName, foldIndex) => {
+      const isValidation = foldIndex === iteration;
+      const role = isValidation ? "Validation" : "Training";
+      return `<span class="${isValidation ? "cv-valid" : "cv-train"}" style="width:33.333%">${foldName} · ${role}</span>`;
+    }).join("");
+    return `<div class="cv-row"><span class="cv-label">CV iteration ${iteration + 1}</span><div class="cv-track" role="img" aria-label="CV iteration ${iteration + 1}: ${foldNames.map((name, index) => `${name} ${index === iteration ? "validation" : "training"}`).join(", ")}">${blocks}</div></div>`;
+  }).join("");
   const methodOptions = c.methods.map((m) => `<option value="${esc(m.id)}">${esc(m.label)}</option>`).join("");
   const perspectives = [["method_comparison","Method Comparison"],["selected_features","Selected Features"],["feature_count_vs_cv","Feature Count vs CV RMSE"]].map(([id,label]) => `<button class="selector-button" type="button" data-perspective="${id}" aria-pressed="${state.perspective === id}">${label}</button>`).join("");
   const emptyMessages = {
@@ -168,7 +256,7 @@ function renderPhase4() {
     selected_features: "No selected-feature artifact is available. Raw and encoded feature counts are not interchangeable.",
     feature_count_vs_cv: "No measured points are available. No interpolated curve or synthetic scores are shown."
   };
-  return `<div class="page">${banner(c)}${pageHeading("PHASE 04 / MODELING", "模型建立與特徵選擇", "閱讀交叉驗證流程、實際方法與可用結果。選擇器只使用有效 configuration；本 fixture 沒有可用實驗。", "UNAVAILABLE")}<section class="card"><div class="card-head"><div><p class="eyebrow">01 · CROSS-VALIDATION PROTOCOL</p><h2>3-Fold CV · Training Set only</h2></div>${badge(c.cv.status)}</div><div class="cv-block"><p class="body-copy">Training Set: ${c.cv.trainingRows} source-reported rows · Fold count: ${c.cv.foldCount} (read only) · Primary metric: CV RMSE, lower is better when verified.</p>${folds}<div class="legend"><span class="legend-item"><i class="legend-dot" style="--dot:#d8e5ec"></i>Training folds</span><span class="legend-item"><i class="legend-dot" style="--dot:#b9d8c8"></i>Validation fold rotates</span></div><p class="stage-note">Schematic only; exact fold sizes and protocol ID are unknown. Holdout Test Set (292 source-reported rows) is not used here. Kaggle competition test is a separate population.</p><details class="disclosure"><summary>展開 CV methodology</summary><div class="disclosure-body">Fold count and training rows are source-reported only. Splitter, shuffle, seed, fold-level counts, fit isolation and evidence reference are UNKNOWN.</div></details></div></section><section class="card explorer"><div class="card-head"><div><p class="eyebrow">02 · FEATURE SELECTION & MODEL EXPLORER</p><h2>選擇一種研究視角</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><div class="selector-row" role="group" aria-label="研究視角">${perspectives}</div><div class="control-row"><label class="control">Feature-selection method<select disabled><option>請先選擇可用的 configuration</option>${methodOptions}</select></label><label class="control">Valid configuration<select disabled><option>尚無可驗證配置</option></select></label></div><div class="state-panel"><span class="state-icon" aria-hidden="true">i</span><h3>${esc(emptyMessages[state.perspective] || emptyMessages.method_comparison)}</h3><p>Method catalog is a schema/sample reference, not proof that these methods were run. Configurations: ${c.configurations.length}. No scores or feature lists are fabricated.</p>${badge("UNAVAILABLE")}</div><details class="disclosure"><summary>展開實驗設定與研究限制</summary><div class="disclosure-body">A configuration is distinct from an execution run. Current sample has no execution runs, configurations, eligible parameter tuples, metrics or selected-feature artifacts.</div></details><div class="button-row" style="margin-top:18px"><a class="button" href="#phase-5">查看 Phase 5 評估狀態 →</a><a class="button" href="#phase-6">查詢 Phase 6 模型就緒狀態 →</a></div></div></section>${footerNav([3,"資料準備"],[5,"模型評估"])}</div>`;
+  return `<div class="page">${banner(c)}${pageHeading("PHASE 04 / MODELING", "模型建立與特徵選擇", "閱讀交叉驗證流程、實際方法與可用結果。選擇器只使用有效 configuration；本 fixture 沒有可用實驗。", "UNAVAILABLE")}<section class="card"><div class="card-head"><div><p class="eyebrow">01 · CROSS-VALIDATION PROTOCOL</p><h2>3-Fold CV · Training Set only</h2></div>${badge(c.cv.status)}</div><div class="cv-block"><p class="body-copy">Training Set: ${c.cv.trainingRows} source-reported rows · Fold count: ${c.cv.foldCount} (read only) · Primary metric: CV RMSE, lower is better when verified.</p>${folds}<div class="legend"><span class="legend-item"><i class="legend-dot" style="--dot:#d8e5ec"></i>Training folds</span><span class="legend-item"><i class="legend-dot" style="--dot:#b9d8c8"></i>Validation fold rotates</span></div><p class="stage-note">Schematic only: each row shows three approximately equal fold blocks; exact fold sizes and protocol ID are unknown. Holdout Test Set (292 source-reported rows) is not used here. Kaggle competition test is a separate population.</p><details class="disclosure"><summary>展開 CV methodology</summary><div class="disclosure-body">Fold count and training rows are source-reported only. Splitter, shuffle, seed, fold-level counts, fit isolation and evidence reference are UNKNOWN.</div></details></div></section><section class="card explorer"><div class="card-head"><div><p class="eyebrow">02 · FEATURE SELECTION & MODEL EXPLORER</p><h2>選擇一種研究視角</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><div class="selector-row" role="group" aria-label="研究視角">${perspectives}</div><div class="control-row"><label class="control">Feature-selection method<select disabled><option>請先選擇可用的 configuration</option>${methodOptions}</select></label><label class="control">Valid configuration<select disabled><option>尚無可驗證配置</option></select></label></div><div class="state-panel"><span class="state-icon" aria-hidden="true">i</span><h3>${esc(emptyMessages[state.perspective] || emptyMessages.method_comparison)}</h3><p>Method catalog is a schema/sample reference, not proof that these methods were run. Configurations: ${c.configurations.length}. No scores or feature lists are fabricated.</p>${badge("UNAVAILABLE")}</div><details class="disclosure"><summary>展開實驗設定與研究限制</summary><div class="disclosure-body">A configuration is distinct from an execution run. Current sample has no execution runs, configurations, eligible parameter tuples, metrics or selected-feature artifacts.</div></details><div class="button-row" style="margin-top:18px"><a class="button" href="#phase-5">查看 Phase 5 評估狀態 →</a><a class="button" href="#phase-6">查詢 Phase 6 模型就緒狀態 →</a></div></div></section>${footerNav([3,"資料準備"],[5,"模型評估"])}</div>`;
 }
 function renderPhase5() {
   const c = caseData();
@@ -202,14 +290,15 @@ function renderDashboard() {
 function render() {
   updateShell();
   const phase = routePhase();
-  if (state.route === "dashboard") app.innerHTML = renderDashboard();
+  if (state.route === "home") app.innerHTML = renderHome();
+  else if (state.route === "dashboard") app.innerHTML = renderDashboard();
   else if (phase === 1) app.innerHTML = renderPhase1();
   else if (phase === 2) app.innerHTML = renderPhase2();
   else if (phase === 3) app.innerHTML = renderPhase3();
   else if (phase === 4) app.innerHTML = renderPhase4();
   else if (phase === 5) app.innerHTML = renderPhase5();
   else if (phase === 6) app.innerHTML = renderPhase6();
-  else { state.route = "phase-1"; app.innerHTML = renderPhase1(); }
+  else { state.route = "home"; app.innerHTML = renderHome(); }
 }
 function csvRows(text) {
   const rows = []; let row = []; let cell = ""; let quoted = false;
@@ -230,10 +319,11 @@ function resetCustom() {
   state.csvMessage = "尚未載入資料。CSV 僅在此瀏覽器本機預覽，不會上傳。";
 }
 function routeFromHash() {
-  const raw = location.hash.replace(/^#/, "") || "phase-1";
-  if (raw === "dashboard") state.route = "dashboard";
+  const raw = location.hash.replace(/^#/, "") || "home";
+  if (raw === "home") state.route = "home";
+  else if (raw === "dashboard") state.route = "dashboard";
   else if (/^phase-[1-6]$/.test(raw)) state.route = raw;
-  else state.route = "phase-1";
+  else state.route = "home";
   render();
 }
 
@@ -287,5 +377,5 @@ app.addEventListener("input", (event) => {
   }
 });
 
-if (!location.hash) location.hash = "phase-1";
+if (!location.hash) location.hash = "home";
 routeFromHash();

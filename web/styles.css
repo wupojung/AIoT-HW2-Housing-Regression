@@ -173,3 +173,8 @@ th { position: sticky; top: 0; background: #eef3ee; color: #45574e; }
 .source-note span { flex: 1 1 520px; }
 .source-note a { color: var(--green); font-weight: 750; text-decoration: none; }
 .source-note a:hover { text-decoration: underline; }
+.home-hero { min-height: 470px; display: grid; grid-template-columns: minmax(0, 920px); align-content: center; padding: clamp(40px, 6vw, 96px); background: var(--green-dark); color: #fff; }
+.home-hero .kicker { color: #bad9c6; }
+.home-hero h1 { max-width: 790px; font-size: clamp(46px, 5.2vw, 76px); }
+.home-hero p:not(.kicker) { max-width: 650px; color: #d0ddd5; font-size: 15px; line-height: 1.85; }
+.home-hero .button { margin-top: 8px; border-color: #c7d8ce; background: #f8fbf8; color: var(--green-dark); }
