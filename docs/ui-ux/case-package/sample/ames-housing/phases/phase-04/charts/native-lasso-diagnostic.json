@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "execution_run_id": "development_20261026_01",
+  "protocol_id": "p4b-v2.0-development-3fold-rs42",
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "source_manifest_sha256": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e",
+  "data_boundary": "Development OOF only; Holdout not accessed.",
+  "limitations": [
+    "The parent run/resume reports FAILED; only per-configuration records meeting complete 3-fold coverage are included in primary charts.",
+    "Chart records are staging data pending independent review.",
+    "Two incomplete/invalid Lasso configurations are retained in the configuration inventory with ERROR status and excluded from comparable result points."
+  ],
+  "chart_id": "native-lasso-diagnostic",
+  "chart_type": "native_diagnostic",
+  "track_id": "diagnostic_only",
+  "status": "PLANNED",
+  "axes": {
+    "x": {
+      "field": "configuration_id",
+      "label": "Lasso Configuration",
+      "unit": "categorical"
+    },
+    "y": {
+      "field": "rmse",
+      "label": "Native Diagnostic CV RMSE",
+      "unit": "USD"
+    }
+  },
+  "points": [
+    {
+      "configuration_id": "p4b-v2-d0ea8d1b5d1d55b5b429a30fa8f7bdf406832c945cbc17b0153747fd681e0925",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d0ea8d1b5d1d55b5b429a30fa8f7bdf406832c945cbc17b0153747fd681e0925/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "lasso",
+      "method_label": "Lasso",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 10.0
+      },
+      "candidate_order": 2,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 20388.662490408544,
+        "rmse": 36372.10966189846,
+        "r2": 0.7715688982779453
+      },
+      "sample_sd": {
+        "mae": 1456.5398539947953,
+        "rmse": 8107.613158257886,
+        "r2": 0.09147685964971788
+      },
+      "mean_selected_encoded_count": 186.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/12",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "lasso",
+      "method_label": "Lasso",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 100.0
+      },
+      "candidate_order": 3,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 18637.403019322745,
+        "rmse": 33716.09946460899,
+        "r2": 0.8051967082698387
+      },
+      "sample_sd": {
+        "mae": 838.8047262176963,
+        "rmse": 6706.569589728554,
+        "r2": 0.06614272156337077
+      },
+      "mean_selected_encoded_count": 103.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/14",
+      "method_winner": true,
+      "five_method_winner": true
+    }
+  ],
+  "method_id": "lasso",
+  "selection_use": "diagnostic_only; not eligible for primary winner selection."
+}

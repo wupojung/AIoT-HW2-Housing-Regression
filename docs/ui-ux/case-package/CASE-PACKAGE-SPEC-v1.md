@@ -1,6 +1,6 @@
 # RegScope Case Package v1.0 — 資料包與前後端交換契約
 
-> **唯一目的：定義「後端產生一包資料 → 驗證 → 核准發布 → 前端自動渲染」的完整交換格式。** 2026-10-27，Draft PR #35 **文件與 MOCK Sample 階段**；不授權模型運算、私有 OOF/Holdout 讀取、CLI/前端工程、Merge 或 Deploy。Phase 5 依 [Issue #37 §15](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/37) 對齊，但該 §15.4 是概念 JSON，**不是有效公開 fixture**。本文件是 v1.0 設計權威；碰到舊文件路徑/欄位不一致，以這份契約為提案準則，未核准部分交 Reviewer。
+> **唯一目的：定義「後端產生一包資料 → 驗證 → 核准發布 → 前端自動渲染」的完整交換格式。** Draft PR #35 現包含文件與一份混合狀態的 Case Package Sample：Phase 4 是來源報稱、尚未驗證的 Development aggregate，其餘階段維持 MOCK/UNAVAILABLE；整包仍未核准發布。這不授權模型運算、私有 OOF/Holdout 讀取、CLI/前端工程、Merge 或 Deploy。Phase 5 依 [Issue #37 §15](https://github.com/wupojung/AIoT-HW2-Housing-Regression/issues/37) 對齊，但該 §15.4 是概念 JSON，**不是有效公開 fixture**。本文件是 v1.0 設計權威；碰到舊文件路徑/欄位不一致，以這份契約為提案準則，未核准部分交 Reviewer。
 
 ## 1. 精確的角色與發布模型
 
@@ -86,7 +86,7 @@ PUBLIC (publisher 產生、URL，只讀)
 | `asset_manifest_ref` | string|null | 本包所有圖檔共用索引 |
 | `files` | array | **發布前必須非空且涵蓋所有檔案**：每項 `path,sha256,bytes,mime`；不含 `package.json` 自身以避免自我雜湊循環 |
 
-**完整性規則：** 根 package manifest 的 `files[]` 覆蓋所有實體子檔（除自身），每個 SHA-256 與精確 bytes/MIME 實際一致；任何 `data_ref` 或 `image_ref` 必須命中 `files[]` 且存在。本 Repo 提供的 Sample 因是開發中的 MOCK staging，`files:[]` **只可作為未封包 staging**，不能通過 publisher gate；真正上傳前必須跑封包工具補齊並驗證。這是刻意分清「UI 示範資料」與「可正式發布的完整包」。Validator 在 staging 可提供 `fixture_only` 模式，但 release mode 必須嚴格拒絕空雜湊清單。
+**完整性規則：** 根 package manifest 的 `files[]` 覆蓋所有實體子檔（除自身），每個 SHA-256 與精確 bytes/MIME 實際一致；任何 `data_ref` 或 `image_ref` 必須命中 `files[]` 且存在。Ames Sample 現已封存 staging 檔案清單；雜湊只證明快照完整性，**不代表研究驗證、權利審查或發布核准**。任何 `files:[]` 仍是未封包 staging，不能通過 publisher gate。發布仍需獨立審查、來源/權利檢查和核准。這是刻意分清「可讀、可檢查的 staging package」與「可正式發布的完整包」。Validator 在 staging 可提供 `fixture_only` 模式，release mode 必須嚴格拒絕空雜湊清單。
 
 ## 4. `case.json` 與共同欄位詞彙
 
@@ -175,7 +175,7 @@ PUBLIC (publisher 產生、URL，只讀)
 - [Phase1](./sample/ames-housing/phases/phase-01/content.json) · [Phase2](./sample/ames-housing/phases/phase-02/analyses.json) · [Phase3](./sample/ames-housing/phases/phase-03/preparation.json) · [Phase4](./sample/ames-housing/phases/phase-04/modeling.json) · [Phase5](./sample/ames-housing/phases/phase-05/evaluations.json) · [Phase6](./sample/ames-housing/phases/phase-06/inference-catalog.json) · [Figure manifest](./sample/ames-housing/assets/figure-manifest.json)
 - [sample/planned-case/package.json](./sample/planned-case/package.json) · [case.json](./sample/planned-case/case.json)
 
-**Sample is deliberately `MOCK/UNAVAILABLE/PLANNED`, never VERIFIED and NEVER approved for production**, even if using Ames known historical numbers. It demonstrates 6 Phase refs, four Phase2 selectors with null image refs, Phase3 unknown percentages, Phase4 zero eligible configs, Phase5 no valid evaluation, Phase6 no model, and second planned case isolation. It may be run through a frontend MOCK data mode; can't be used as a live deployable research release. `files:[]` marks **unsealed sample**; must be filled with real file hashes by future exporter/validator before upload/release. This design separates **parseable sample** from **publication-valid package** and prohibits accidental fixture promotion.
+**Sample package is `PLANNED`, never VERIFIED, and never approved for production.** Phase 4 contains 32 configurations and 96 fold-task records projected from a manifest-marked public summary; those records and the Final Fit metadata projection remain `SOURCE_REPORTED_NOT_VERIFIED`. Five fold tasks and two configurations are incomplete/invalid, not silently dropped. The Final Fit binary and sensitive fitted values are excluded. Phases 1/3 remain MOCK, Phases 2/5/6 remain unavailable; no Phase 5 result is inferred from Phase 4. The sealed `files[]` is an integrity manifest only. Publication remains false, and this sample must not be presented as verified research or a live deployable release.
 
 ### 10.1 Offline exporter contract (future permitted implementation)
 
@@ -200,7 +200,7 @@ Each action idempotent, bounded IO, emits `coverage-report` and `checkpoint`; no
 
 ## 11. Canonical future extensions and explicit unknowns
 
-Open technical followups: Draft 2020-12 JSON Schema files and real strict validator are **not yet implemented**; source-key mapping for `p4b_public_summary.json`, `p4b_private_details.json`, 96 task checkpoints, Mac/Windows Final Fit artifact and Phase 5 OOF are UNKNOWN until separately permitted audit. Public Phase2 current asset URLs/SHA/license, Phase3 248 fit scope, actual eligible configuration IDs, Phase5 legal figures and deployable models all need evidence. **Do not infer them from this spec or Sample.**
+Open technical followups: Draft 2020-12 JSON Schema files and real strict validator are **not yet implemented**; the Phase 4 sample maps the manifest-marked public summary and a restricted Final Fit metadata projection, while private details, raw task checkpoints, fitted binary internals, and Phase 5 OOF remain excluded. Public Phase2 current asset URLs/SHA/license, Phase3 248 fit scope, Phase5 legal figures and deployable models still need evidence. The Phase 4 sample is source-reported and structurally reviewed, not scientific verification or publication approval.
 
 **Change policy**: backward-compatible optional field may add a minor schema version after review; deleting/renaming required keys, changing ID semantics or accepted status requires major version and a deterministic adapter, not silent drift. Every new Case Package must declare schema version and be rejected with actionable error if unsupported. This contract is the backbone of frontend/backend separation; **no research data is invented to make a demo appear complete**.
 

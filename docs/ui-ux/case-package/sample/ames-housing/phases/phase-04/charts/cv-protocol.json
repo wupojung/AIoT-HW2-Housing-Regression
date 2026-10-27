@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "protocol_id": "p4b-v2.0-development-3fold-rs42",
+  "protocol_version": "v2.0",
+  "execution_run_id": "development_20261026_01",
+  "training_rows": 1168,
+  "fold_count": 3,
+  "splitter": "KFold",
+  "shuffle": true,
+  "random_state": 42,
+  "folds": [
+    {
+      "fold_index": 0,
+      "training_rows": 778,
+      "validation_rows": 390,
+      "status": "SOURCE_REPORTED_NOT_VERIFIED"
+    },
+    {
+      "fold_index": 1,
+      "training_rows": 779,
+      "validation_rows": 389,
+      "status": "SOURCE_REPORTED_NOT_VERIFIED"
+    },
+    {
+      "fold_index": 2,
+      "training_rows": 779,
+      "validation_rows": 389,
+      "status": "SOURCE_REPORTED_NOT_VERIFIED"
+    }
+  ],
+  "outer_fold_digest_expected": "2d12b0a6294055b8aac95e6055fc9095c436c472666f56fd6f33828cc683dd30",
+  "dataset_fingerprint_status": "VERIFIED_MATCH",
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "status": "SOURCE_REPORTED_VERIFIED_MATCH",
+  "run_status": "ERROR",
+  "limitations": [
+    "Fold sizes were counted from Development OOF Id membership for one complete configuration; identifiers are not exported.",
+    "The parent Run/Resume failed after per-configuration outputs were written.",
+    "Holdout and competition test were not accessed.",
+    "Two incomplete/invalid Lasso configurations are retained in the configuration inventory with ERROR status and excluded from comparable result points."
+  ],
+  "source_manifest_sha256": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e"
+}

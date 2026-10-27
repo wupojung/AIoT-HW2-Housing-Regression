@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "execution_run_id": "development_20261026_01",
+  "configuration_id": "p4b-v2-b87169fc4edca859fb91775a40d668145f81e926620d949aadbb38b4272fc6a3",
+  "protocol_id": "p4b-v2.0-development-3fold-rs42",
+  "metric_source": "cv_fold_mean",
+  "scope": "development_training_set_cross_validation",
+  "target": {
+    "column": "SalePrice",
+    "unit": "USD"
+  },
+  "n": 1168,
+  "fold_aggregation": "arithmetic_mean_across_valid_outer_folds",
+  "status": "SOURCE_REPORTED_NOT_VERIFIED",
+  "metrics": {
+    "mae": {
+      "fold_values": [
+        27452.376194084944,
+        28566.08492290088,
+        28777.20691503554
+      ],
+      "mean": 28265.222677340455,
+      "sample_sd": 711.8164636311562,
+      "valid_fold_count": 3,
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
+      "reason": null
+    },
+    "rmse": {
+      "fold_values": [
+        36312.00429363416,
+        43084.5867561654,
+        45251.9871804692
+      ],
+      "mean": 41549.52607675625,
+      "sample_sd": 4663.48924854844,
+      "valid_fold_count": 3,
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
+      "reason": null
+    },
+    "r2": {
+      "fold_values": [
+        0.7326587484454132,
+        0.7232332088615945,
+        0.6684020724310772
+      ],
+      "mean": 0.7080980099126949,
+      "sample_sd": 0.03469921884596127,
+      "valid_fold_count": 3,
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
+      "reason": null
+    }
+  },
+  "native_diagnostic": {
+    "track_id": "diagnostic_only",
+    "metric_source": "cv_fold_mean",
+    "fold_metrics": [
+      {
+        "task_id": "task_3f4986cef786e2e9b6ba6a13fea3fb28",
+        "fold_index": 0,
+        "status": "COMPLETED",
+        "metrics": null
+      },
+      {
+        "task_id": "task_60db3d58483649feb8fdc8bcba4868f7",
+        "fold_index": 1,
+        "status": "COMPLETED",
+        "metrics": null
+      },
+      {
+        "task_id": "task_c1f5332ebb9d1ca344eb8964eb413f29",
+        "fold_index": 2,
+        "status": "COMPLETED",
+        "metrics": null
+      }
+    ],
+    "metrics": {
+      "mae": {
+        "fold_values": [
+          null,
+          null,
+          null
+        ],
+        "mean": null,
+        "sample_sd": null,
+        "valid_fold_count": 0,
+        "status": "UNAVAILABLE",
+        "reason": "No complete valid 3-fold aggregate is available."
+      },
+      "rmse": {
+        "fold_values": [
+          null,
+          null,
+          null
+        ],
+        "mean": null,
+        "sample_sd": null,
+        "valid_fold_count": 0,
+        "status": "UNAVAILABLE",
+        "reason": "No complete valid 3-fold aggregate is available."
+      },
+      "r2": {
+        "fold_values": [
+          null,
+          null,
+          null
+        ],
+        "mean": null,
+        "sample_sd": null,
+        "valid_fold_count": 0,
+        "status": "UNAVAILABLE",
+        "reason": "No complete valid 3-fold aggregate is available."
+      }
+    },
+    "status": "UNAVAILABLE"
+  },
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "limitations": [
+    "Fold mean is not pooled OOF.",
+    "No Holdout metrics."
+  ]
+}

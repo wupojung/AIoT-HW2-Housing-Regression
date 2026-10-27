@@ -1,0 +1,466 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "execution_run_id": "development_20261026_01",
+  "protocol_id": "p4b-v2.0-development-3fold-rs42",
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "source_manifest_sha256": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e",
+  "data_boundary": "Development OOF only; Holdout not accessed.",
+  "limitations": [
+    "The parent run/resume reports FAILED; only per-configuration records meeting complete 3-fold coverage are included in primary charts.",
+    "Chart records are staging data pending independent review.",
+    "Two incomplete/invalid Lasso configurations are retained in the configuration inventory with ERROR status and excluded from comparable result points."
+  ],
+  "chart_id": "observed-selected-count-vs-cv-rmse",
+  "chart_type": "observed_selected_count_vs_cv_rmse",
+  "track_id": "selected_to_ols",
+  "status": "PLANNED",
+  "axes": {
+    "x": {
+      "field": "mean_selected_encoded_count",
+      "label": "Mean Observed Selected Encoded Count",
+      "unit": "encoded features"
+    },
+    "y": {
+      "field": "rmse",
+      "label": "Mean CV RMSE",
+      "unit": "USD"
+    }
+  },
+  "points": [
+    {
+      "configuration_id": "p4b-v2-d0ea8d1b5d1d55b5b429a30fa8f7bdf406832c945cbc17b0153747fd681e0925",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d0ea8d1b5d1d55b5b429a30fa8f7bdf406832c945cbc17b0153747fd681e0925/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "lasso",
+      "method_label": "Lasso",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 10.0
+      },
+      "candidate_order": 2,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 21517.336501839654,
+        "rmse": 38292.53481595476,
+        "r2": 0.7465069919035022
+      },
+      "sample_sd": {
+        "mae": 1629.7265771688162,
+        "rmse": 8255.467739323229,
+        "r2": 0.09966190160541662
+      },
+      "mean_selected_encoded_count": 186.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/12",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "lasso",
+      "method_label": "Lasso",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 100.0
+      },
+      "candidate_order": 3,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 19395.048844977035,
+        "rmse": 35389.18456107843,
+        "r2": 0.7841591133550846
+      },
+      "sample_sd": {
+        "mae": 1053.8753165510327,
+        "rmse": 7692.476162629342,
+        "r2": 0.08343278368205118
+      },
+      "mean_selected_encoded_count": 103.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/14",
+      "method_winner": true,
+      "five_method_winner": true
+    },
+    {
+      "configuration_id": "p4b-v2-d8d37e65bf4102eb0c9aea0edd336d66f0b8557d5f280634ff59ad0fd44f3e89",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d8d37e65bf4102eb0c9aea0edd336d66f0b8557d5f280634ff59ad0fd44f3e89/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.2
+      },
+      "candidate_order": 0,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22052.250546635925,
+        "rmse": 40160.069288470586,
+        "r2": 0.7209645121731473
+      },
+      "sample_sd": {
+        "mae": 1596.438811885919,
+        "rmse": 7965.317253767736,
+        "r2": 0.10297928424631993
+      },
+      "mean_selected_encoded_count": 240.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/21",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-dd45a0b3f79edae79eaa99d9a592757df83e7874b21f1acaea413103928dbdc0",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-dd45a0b3f79edae79eaa99d9a592757df83e7874b21f1acaea413103928dbdc0/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.5
+      },
+      "candidate_order": 1,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22052.250546635925,
+        "rmse": 40160.069288470586,
+        "r2": 0.7209645121731473
+      },
+      "sample_sd": {
+        "mae": 1596.438811885919,
+        "rmse": 7965.317253767736,
+        "r2": 0.10297928424631993
+      },
+      "mean_selected_encoded_count": 240.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/20",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-279a8a5b1c1fa1fa93991dc3691c7f22800aeeaa5633b8a4a21e60490cab2efb",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-279a8a5b1c1fa1fa93991dc3691c7f22800aeeaa5633b8a4a21e60490cab2efb/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.8
+      },
+      "candidate_order": 2,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22059.288178344985,
+        "rmse": 40171.75225830986,
+        "r2": 0.7207988463245204
+      },
+      "sample_sd": {
+        "mae": 1594.9646962448696,
+        "rmse": 7953.87551406253,
+        "r2": 0.10290400320356985
+      },
+      "mean_selected_encoded_count": 239.66666666666666,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/15",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-9fa4d99608f14f862026ee988a079004de547e0d713a17b25c36f41a7ac225e3",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-9fa4d99608f14f862026ee988a079004de547e0d713a17b25c36f41a7ac225e3/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 1.0,
+        "l1_ratio": 0.2
+      },
+      "candidate_order": 3,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22029.3123745692,
+        "rmse": 40148.97955033059,
+        "r2": 0.7211216123172682
+      },
+      "sample_sd": {
+        "mae": 1601.878054166064,
+        "rmse": 7976.210319980443,
+        "r2": 0.10305136018171322
+      },
+      "mean_selected_encoded_count": 239.66666666666666,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/19",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-2cc6e4b57a1018be232ca3b4836764386064679c764d0213a5bfaff33b899206",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-2cc6e4b57a1018be232ca3b4836764386064679c764d0213a5bfaff33b899206/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 1.0,
+        "l1_ratio": 0.5
+      },
+      "candidate_order": 4,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22052.42779072313,
+        "rmse": 40160.36070822103,
+        "r2": 0.7209603818269962
+      },
+      "sample_sd": {
+        "mae": 1596.4005601783251,
+        "rmse": 7965.031425952495,
+        "r2": 0.1029773983055095
+      },
+      "mean_selected_encoded_count": 239.66666666666666,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/16",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-1c73870379fcd6a39c7137064f4cd21cc1b0b0424e5dc48fa0216806af0061db",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-1c73870379fcd6a39c7137064f4cd21cc1b0b0424e5dc48fa0216806af0061db/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 1.0,
+        "l1_ratio": 0.8
+      },
+      "candidate_order": 5,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22034.999362608145,
+        "rmse": 40160.71894424053,
+        "r2": 0.7209532086311238
+      },
+      "sample_sd": {
+        "mae": 1593.5841890180989,
+        "rmse": 7967.8261191652855,
+        "r2": 0.1030137014363623
+      },
+      "mean_selected_encoded_count": 239.33333333333334,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/22",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-52f2eeb3d7721d8f4b0ae42ab242efb5c5aa4ac12906532d932958c14c2f7ae8",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-52f2eeb3d7721d8f4b0ae42ab242efb5c5aa4ac12906532d932958c14c2f7ae8/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 10.0,
+        "l1_ratio": 0.2
+      },
+      "candidate_order": 6,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22036.931154107577,
+        "rmse": 40142.96164740567,
+        "r2": 0.7211248834774353
+      },
+      "sample_sd": {
+        "mae": 1622.8262437833446,
+        "rmse": 7976.552563544549,
+        "r2": 0.10325261739595873
+      },
+      "mean_selected_encoded_count": 239.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/24",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-d0247c0be6fbd0ab346b7d3d5c45583bf3d37d27c45e8d1d432a5cf88d569192",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d0247c0be6fbd0ab346b7d3d5c45583bf3d37d27c45e8d1d432a5cf88d569192/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 10.0,
+        "l1_ratio": 0.5
+      },
+      "candidate_order": 7,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22116.566466580713,
+        "rmse": 40429.628603601486,
+        "r2": 0.7164820533297291
+      },
+      "sample_sd": {
+        "mae": 1837.9387317282903,
+        "rmse": 8642.090933824953,
+        "r2": 0.11289689126022424
+      },
+      "mean_selected_encoded_count": 236.33333333333334,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/26",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-20363ce2a7f8d58f4e840e81b72590fe8de7d1b0dbf47a124fa71e5f3bcf02de",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-20363ce2a7f8d58f4e840e81b72590fe8de7d1b0dbf47a124fa71e5f3bcf02de/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 10.0,
+        "l1_ratio": 0.8
+      },
+      "candidate_order": 8,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 21895.526619861907,
+        "rmse": 39588.40062346258,
+        "r2": 0.72844826235583
+      },
+      "sample_sd": {
+        "mae": 1717.6329894001467,
+        "rmse": 8481.320893211127,
+        "r2": 0.10770409983751322
+      },
+      "mean_selected_encoded_count": 233.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/17",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-1098e27f34125c296e9331aae6fa1ffec6075f3986b7577cfa813850951d3b53",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-1098e27f34125c296e9331aae6fa1ffec6075f3986b7577cfa813850951d3b53/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 100.0,
+        "l1_ratio": 0.2
+      },
+      "candidate_order": 9,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 21979.224627845677,
+        "rmse": 39989.70095495329,
+        "r2": 0.7224908724550794
+      },
+      "sample_sd": {
+        "mae": 1747.5862410106574,
+        "rmse": 8204.711791502217,
+        "r2": 0.10709409668025804
+      },
+      "mean_selected_encoded_count": 234.33333333333334,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/25",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-d29012556273bf48ab5997cb33861acd9454e5879dac80f885a7a721a2494460",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d29012556273bf48ab5997cb33861acd9454e5879dac80f885a7a721a2494460/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 100.0,
+        "l1_ratio": 0.5
+      },
+      "candidate_order": 10,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 21949.616273118972,
+        "rmse": 40105.64852985529,
+        "r2": 0.7219766220758661
+      },
+      "sample_sd": {
+        "mae": 1711.5036077933578,
+        "rmse": 7274.633610479925,
+        "r2": 0.09500632481211621
+      },
+      "mean_selected_encoded_count": 227.33333333333334,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/23",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-d7202991dc8fee11e65aac3b0532ac68b63599a6b0ec87eec5544eb13ad8c0f3",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d7202991dc8fee11e65aac3b0532ac68b63599a6b0ec87eec5544eb13ad8c0f3/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 100.0,
+        "l1_ratio": 0.8
+      },
+      "candidate_order": 11,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 21747.55235686453,
+        "rmse": 38108.091255656356,
+        "r2": 0.7502479911036722
+      },
+      "sample_sd": {
+        "mae": 1324.6683634608892,
+        "rmse": 7059.401758548815,
+        "r2": 0.08317850787095193
+      },
+      "mean_selected_encoded_count": 207.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/18",
+      "method_winner": true,
+      "five_method_winner": false
+    }
+  ],
+  "x_semantics": "Mean selected encoded count across the three CV folds; distinct from requested K and final-fit count.",
+  "final_fit_selected_count_included": false
+}

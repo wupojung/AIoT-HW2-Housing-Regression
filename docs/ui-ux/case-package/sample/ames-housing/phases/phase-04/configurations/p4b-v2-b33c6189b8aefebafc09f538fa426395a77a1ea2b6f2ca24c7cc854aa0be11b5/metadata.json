@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "execution_run_id": "development_20261026_01",
+  "configuration_id": "p4b-v2-b33c6189b8aefebafc09f538fa426395a77a1ea2b6f2ca24c7cc854aa0be11b5",
+  "method_id": "mutual_information",
+  "track_id": "selected_to_ols",
+  "params": {
+    "requested_k": 20
+  },
+  "candidate_order": 4,
+  "protocol_id": "p4b-v2.0-development-3fold-rs42",
+  "status": "VERIFIED",
+  "winner_eligible": true,
+  "method_winner": true,
+  "five_method_winner": false,
+  "selection_role": "method_winner",
+  "selection_basis": null,
+  "coverage": {
+    "expected_fold_count": 3,
+    "observed_fold_count": 3,
+    "valid_fold_count": 3,
+    "coverage_complete": true,
+    "observed_row_count": 3
+  },
+  "requested_k": 20,
+  "selected_k_by_fold": [
+    20,
+    20,
+    20
+  ],
+  "selected_k_summary": {
+    "min": 20,
+    "max": 20,
+    "mean": 20.0
+  },
+  "final_fit_selected_k": null,
+  "fit_population": "fold_specific_training_subsets",
+  "final_fit_artifact_status": "UNAVAILABLE_NOT_PRESENT_IN_SOURCE",
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "source_manifest_sha256": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e",
+  "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/6",
+  "limitations": [
+    "Development CV result only; no Holdout result is included.",
+    "A final-fit model artifact is not present in the source run.",
+    "Configuration-level completion does not change the parent execution run/resume status ERROR."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "execution_run_id": "development_20261026_01",
+  "protocol_id": "p4b-v2.0-development-3fold-rs42",
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "source_manifest_sha256": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e",
+  "data_boundary": "Development OOF only; Holdout not accessed.",
+  "limitations": [
+    "The parent run/resume reports FAILED; only per-configuration records meeting complete 3-fold coverage are included in primary charts.",
+    "Chart records are staging data pending independent review.",
+    "Two incomplete/invalid Lasso configurations are retained in the configuration inventory with ERROR status and excluded from comparable result points."
+  ],
+  "chart_id": "baseline-all-features-ols",
+  "chart_type": "baseline",
+  "track_id": "all_features_ols",
+  "status": "PLANNED",
+  "axes": {
+    "x": {
+      "field": "configuration_id",
+      "label": "Baseline Configuration",
+      "unit": "categorical"
+    },
+    "y": {
+      "field": "rmse",
+      "label": "Mean CV RMSE",
+      "unit": "USD"
+    }
+  },
+  "points": [
+    {
+      "configuration_id": "p4b-v2-67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ols_baseline",
+      "method_label": "OLS Baseline",
+      "track_id": "all_features_ols",
+      "params": {},
+      "candidate_order": null,
+      "status": "VERIFIED",
+      "winner_eligible": false,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22167.835718447255,
+        "rmse": 40628.988626233804,
+        "r2": 0.7141847678830092
+      },
+      "sample_sd": {
+        "mae": 1583.9792491848796,
+        "rmse": 7535.171942694206,
+        "r2": 0.10052347717193387
+      },
+      "mean_selected_encoded_count": 240.33333333333334,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/0",
+      "method_winner": false,
+      "five_method_winner": false
+    }
+  ],
+  "metric_semantics": "All-features OLS baseline; separate track, not mixed into selected-to-OLS ranking."
+}

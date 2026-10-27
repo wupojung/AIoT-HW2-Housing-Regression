@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0.0",
   "case_id": "ames-housing",
-  "title": "Ames Housing — MOCK UI Sample",
-  "case_status": "MOCK",
+  "title": "Ames Housing — Phase 4 Source-Reported Sample",
+  "case_status": "PLANNED",
   "methodology_id": "mlr-feature-selection-v1",
   "source": {
     "label": "Kaggle House Prices",
@@ -16,5 +16,5 @@
     "value_type": "number"
   },
   "language": "zh-Hant",
-  "disclaimer": "僅供 UI 測試，非已核准研究成果"
+  "disclaimer": "Phase 4 僅為來源報稱的 Development aggregate，尚未完成研究驗證或發布核准；其他階段為 MOCK 或 UNAVAILABLE。不得視為已核准研究結果或可部署模型。"
 }

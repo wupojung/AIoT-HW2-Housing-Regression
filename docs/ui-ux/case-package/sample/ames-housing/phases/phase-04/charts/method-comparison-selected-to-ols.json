@@ -1,0 +1,915 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "execution_run_id": "development_20261026_01",
+  "protocol_id": "p4b-v2.0-development-3fold-rs42",
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "source_manifest_sha256": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e",
+  "data_boundary": "Development OOF only; Holdout not accessed.",
+  "limitations": [
+    "The parent run/resume reports FAILED; only per-configuration records meeting complete 3-fold coverage are included in primary charts.",
+    "Chart records are staging data pending independent review.",
+    "Two incomplete/invalid Lasso configurations are retained in the configuration inventory with ERROR status and excluded from comparable result points."
+  ],
+  "chart_id": "method-comparison-selected-to-ols",
+  "chart_type": "method_comparison",
+  "track_id": "selected_to_ols",
+  "status": "PLANNED",
+  "axes": {
+    "x": {
+      "field": "configuration_id",
+      "label": "Configuration",
+      "unit": "categorical"
+    },
+    "y": {
+      "field": "rmse",
+      "label": "Mean CV RMSE",
+      "unit": "USD"
+    }
+  },
+  "points": [
+    {
+      "configuration_id": "p4b-v2-47c2ce66ecde074a5358fe1b6538988bb7912d7fd40e4bd75bc00263f9aa4007",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-47c2ce66ecde074a5358fe1b6538988bb7912d7fd40e4bd75bc00263f9aa4007/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "pearson",
+      "method_label": "Pearson",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 2
+      },
+      "candidate_order": 0,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 29529.68742665515,
+        "rmse": 43427.890297865255,
+        "r2": 0.6823873759355416
+      },
+      "sample_sd": {
+        "mae": 2538.6187378980867,
+        "rmse": 6401.804244512194,
+        "r2": 0.04494150871968727
+      },
+      "mean_selected_encoded_count": 2.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/4",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-05a42a840e86417500b7b074f48d18b215aed5e569852838928ef4a5d7dcc7c7",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-05a42a840e86417500b7b074f48d18b215aed5e569852838928ef4a5d7dcc7c7/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "pearson",
+      "method_label": "Pearson",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 3
+      },
+      "candidate_order": 1,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 27256.836771805643,
+        "rmse": 39849.593057764985,
+        "r2": 0.7314899318975652
+      },
+      "sample_sd": {
+        "mae": 254.595783097258,
+        "rmse": 4186.518765570992,
+        "r2": 0.027876604730202762
+      },
+      "mean_selected_encoded_count": 3.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/5",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-76875a54b9938060c533ef3a3a95cf0f3deff80daf1872f079f3df63ba40c03f",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-76875a54b9938060c533ef3a3a95cf0f3deff80daf1872f079f3df63ba40c03f/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "pearson",
+      "method_label": "Pearson",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 5
+      },
+      "candidate_order": 2,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 25902.705771055906,
+        "rmse": 38596.54293261736,
+        "r2": 0.7484339601432645
+      },
+      "sample_sd": {
+        "mae": 752.0154261243734,
+        "rmse": 4753.863454350181,
+        "r2": 0.03156311383907882
+      },
+      "mean_selected_encoded_count": 5.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/2",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-4c0e705bb36a73081152863b4338858994672e53cad4b8ec3f0a60a881c1451a",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-4c0e705bb36a73081152863b4338858994672e53cad4b8ec3f0a60a881c1451a/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "pearson",
+      "method_label": "Pearson",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 10
+      },
+      "candidate_order": 3,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 23896.460841230553,
+        "rmse": 37623.0236419121,
+        "r2": 0.760520352567239
+      },
+      "sample_sd": {
+        "mae": 688.1493053105233,
+        "rmse": 5507.540566720266,
+        "r2": 0.044889328181986515
+      },
+      "mean_selected_encoded_count": 10.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/3",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-fb8b057e667700b125e73b488fedd95dcb3356c5a51b8dc746896fc66671d72d",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-fb8b057e667700b125e73b488fedd95dcb3356c5a51b8dc746896fc66671d72d/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "pearson",
+      "method_label": "Pearson",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 20
+      },
+      "candidate_order": 4,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 23379.76055428339,
+        "rmse": 36918.472529716695,
+        "r2": 0.7688358444482523
+      },
+      "sample_sd": {
+        "mae": 327.5919001532378,
+        "rmse": 6235.749334900129,
+        "r2": 0.05582239617352005
+      },
+      "mean_selected_encoded_count": 20.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/1",
+      "method_winner": true,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-b87169fc4edca859fb91775a40d668145f81e926620d949aadbb38b4272fc6a3",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-b87169fc4edca859fb91775a40d668145f81e926620d949aadbb38b4272fc6a3/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "mutual_information",
+      "method_label": "Mutual Information",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 2
+      },
+      "candidate_order": 0,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 28265.222677340455,
+        "rmse": 41549.52607675625,
+        "r2": 0.7080980099126949
+      },
+      "sample_sd": {
+        "mae": 711.8164636311562,
+        "rmse": 4663.48924854844,
+        "r2": 0.03469921884596127
+      },
+      "mean_selected_encoded_count": 2.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/9",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-f8964bbe4d91e2b423d244942a1c96bdee2b15c2376af1d4c24b708f6d6ddb20",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-f8964bbe4d91e2b423d244942a1c96bdee2b15c2376af1d4c24b708f6d6ddb20/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "mutual_information",
+      "method_label": "Mutual Information",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 3
+      },
+      "candidate_order": 1,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 26303.528398642036,
+        "rmse": 40657.56457082416,
+        "r2": 0.720181294361988
+      },
+      "sample_sd": {
+        "mae": 764.1711477218519,
+        "rmse": 5770.583839295363,
+        "r2": 0.05168077758822443
+      },
+      "mean_selected_encoded_count": 3.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/10",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-fe67d806a6c09274e96d968e73b93f31c694d678af46ee7aede9abfe4a49c2d0",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-fe67d806a6c09274e96d968e73b93f31c694d678af46ee7aede9abfe4a49c2d0/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "mutual_information",
+      "method_label": "Mutual Information",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 5
+      },
+      "candidate_order": 2,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 25514.78287896191,
+        "rmse": 39569.69348351081,
+        "r2": 0.7350895121597136
+      },
+      "sample_sd": {
+        "mae": 853.9250585018582,
+        "rmse": 5608.46182828632,
+        "r2": 0.047658830029954385
+      },
+      "mean_selected_encoded_count": 5.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/7",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-c79851bf9d83e7280f5c3f42d39ad330d2742267e109de1c802b1c4761f78480",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-c79851bf9d83e7280f5c3f42d39ad330d2742267e109de1c802b1c4761f78480/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "mutual_information",
+      "method_label": "Mutual Information",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 10
+      },
+      "candidate_order": 3,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 23589.258642931018,
+        "rmse": 37527.43522632216,
+        "r2": 0.7616321091146014
+      },
+      "sample_sd": {
+        "mae": 443.60323385671694,
+        "rmse": 5680.559619157279,
+        "r2": 0.04750265204943735
+      },
+      "mean_selected_encoded_count": 10.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/8",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-b33c6189b8aefebafc09f538fa426395a77a1ea2b6f2ca24c7cc854aa0be11b5",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-b33c6189b8aefebafc09f538fa426395a77a1ea2b6f2ca24c7cc854aa0be11b5/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "mutual_information",
+      "method_label": "Mutual Information",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 20
+      },
+      "candidate_order": 4,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 23510.51328705125,
+        "rmse": 37208.2782358083,
+        "r2": 0.7653452560956394
+      },
+      "sample_sd": {
+        "mae": 465.9633727932281,
+        "rmse": 6243.802693549466,
+        "r2": 0.055193631865791584
+      },
+      "mean_selected_encoded_count": 20.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/6",
+      "method_winner": true,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-1988433b54f59f8e579c2d77bbd63a965d7a09e6b5c2db229cadc2eb42d5d0c4",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-1988433b54f59f8e579c2d77bbd63a965d7a09e6b5c2db229cadc2eb42d5d0c4/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ridge_rfe",
+      "method_label": "Ridge RFE",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 2
+      },
+      "candidate_order": 0,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 53233.03340098433,
+        "rmse": 74000.81914360402,
+        "r2": 0.062061406578001965
+      },
+      "sample_sd": {
+        "mae": 3366.6982022777424,
+        "rmse": 4023.302141116442,
+        "r2": 0.16167811371672966
+      },
+      "mean_selected_encoded_count": 2.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/30",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-5209c529b590f46510d92d4477a0919257f4fc0eede444f3f7bf2d571cce282d",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-5209c529b590f46510d92d4477a0919257f4fc0eede444f3f7bf2d571cce282d/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ridge_rfe",
+      "method_label": "Ridge RFE",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 3
+      },
+      "candidate_order": 1,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 53151.00553052633,
+        "rmse": 74055.95824217157,
+        "r2": 0.06046131796632522
+      },
+      "sample_sd": {
+        "mae": 3381.4239894332563,
+        "rmse": 4243.184722634905,
+        "r2": 0.16483952447674857
+      },
+      "mean_selected_encoded_count": 3.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/31",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-55d847e58f1bed76947d8912dbd3441e3d05ddc96f3d0c0e4728919118befb42",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-55d847e58f1bed76947d8912dbd3441e3d05ddc96f3d0c0e4728919118befb42/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ridge_rfe",
+      "method_label": "Ridge RFE",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 5
+      },
+      "candidate_order": 2,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 49765.242131773884,
+        "rmse": 69384.42648409263,
+        "r2": 0.17344101982660576
+      },
+      "sample_sd": {
+        "mae": 2251.9901210495036,
+        "rmse": 3658.338439034194,
+        "r2": 0.15751107448401935
+      },
+      "mean_selected_encoded_count": 5.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/28",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-67e3f996e959abae53745d268e5801e8b11fe386218827b9324285c06e06c5e7",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-67e3f996e959abae53745d268e5801e8b11fe386218827b9324285c06e06c5e7/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ridge_rfe",
+      "method_label": "Ridge RFE",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 10
+      },
+      "candidate_order": 3,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 41579.93364533977,
+        "rmse": 56076.71966740654,
+        "r2": 0.46978981773276
+      },
+      "sample_sd": {
+        "mae": 7907.1976508903535,
+        "rmse": 9759.798722271775,
+        "r2": 0.10690327141958789
+      },
+      "mean_selected_encoded_count": 10.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/29",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-616569f18d0fb28c9e7d1fda84ccfb2e65740a7f8f51b8fbc53b2cf892750fa8",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-616569f18d0fb28c9e7d1fda84ccfb2e65740a7f8f51b8fbc53b2cf892750fa8/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ridge_rfe",
+      "method_label": "Ridge RFE",
+      "track_id": "selected_to_ols",
+      "params": {
+        "requested_k": 20
+      },
+      "candidate_order": 4,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 26744.64428120067,
+        "rmse": 40704.14419998816,
+        "r2": 0.7165010676923899
+      },
+      "sample_sd": {
+        "mae": 845.3295407017887,
+        "rmse": 5607.648188782953,
+        "r2": 0.06980872154147973
+      },
+      "mean_selected_encoded_count": 20.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/27",
+      "method_winner": true,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-d0ea8d1b5d1d55b5b429a30fa8f7bdf406832c945cbc17b0153747fd681e0925",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d0ea8d1b5d1d55b5b429a30fa8f7bdf406832c945cbc17b0153747fd681e0925/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "lasso",
+      "method_label": "Lasso",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 10.0
+      },
+      "candidate_order": 2,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 21517.336501839654,
+        "rmse": 38292.53481595476,
+        "r2": 0.7465069919035022
+      },
+      "sample_sd": {
+        "mae": 1629.7265771688162,
+        "rmse": 8255.467739323229,
+        "r2": 0.09966190160541662
+      },
+      "mean_selected_encoded_count": 186.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/12",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "lasso",
+      "method_label": "Lasso",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 100.0
+      },
+      "candidate_order": 3,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 19395.048844977035,
+        "rmse": 35389.18456107843,
+        "r2": 0.7841591133550846
+      },
+      "sample_sd": {
+        "mae": 1053.8753165510327,
+        "rmse": 7692.476162629342,
+        "r2": 0.08343278368205118
+      },
+      "mean_selected_encoded_count": 103.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/14",
+      "method_winner": true,
+      "five_method_winner": true
+    },
+    {
+      "configuration_id": "p4b-v2-d8d37e65bf4102eb0c9aea0edd336d66f0b8557d5f280634ff59ad0fd44f3e89",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d8d37e65bf4102eb0c9aea0edd336d66f0b8557d5f280634ff59ad0fd44f3e89/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.2
+      },
+      "candidate_order": 0,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22052.250546635925,
+        "rmse": 40160.069288470586,
+        "r2": 0.7209645121731473
+      },
+      "sample_sd": {
+        "mae": 1596.438811885919,
+        "rmse": 7965.317253767736,
+        "r2": 0.10297928424631993
+      },
+      "mean_selected_encoded_count": 240.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/21",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-dd45a0b3f79edae79eaa99d9a592757df83e7874b21f1acaea413103928dbdc0",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-dd45a0b3f79edae79eaa99d9a592757df83e7874b21f1acaea413103928dbdc0/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.5
+      },
+      "candidate_order": 1,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22052.250546635925,
+        "rmse": 40160.069288470586,
+        "r2": 0.7209645121731473
+      },
+      "sample_sd": {
+        "mae": 1596.438811885919,
+        "rmse": 7965.317253767736,
+        "r2": 0.10297928424631993
+      },
+      "mean_selected_encoded_count": 240.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/20",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-279a8a5b1c1fa1fa93991dc3691c7f22800aeeaa5633b8a4a21e60490cab2efb",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-279a8a5b1c1fa1fa93991dc3691c7f22800aeeaa5633b8a4a21e60490cab2efb/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.8
+      },
+      "candidate_order": 2,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22059.288178344985,
+        "rmse": 40171.75225830986,
+        "r2": 0.7207988463245204
+      },
+      "sample_sd": {
+        "mae": 1594.9646962448696,
+        "rmse": 7953.87551406253,
+        "r2": 0.10290400320356985
+      },
+      "mean_selected_encoded_count": 239.66666666666666,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/15",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-9fa4d99608f14f862026ee988a079004de547e0d713a17b25c36f41a7ac225e3",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-9fa4d99608f14f862026ee988a079004de547e0d713a17b25c36f41a7ac225e3/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 1.0,
+        "l1_ratio": 0.2
+      },
+      "candidate_order": 3,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22029.3123745692,
+        "rmse": 40148.97955033059,
+        "r2": 0.7211216123172682
+      },
+      "sample_sd": {
+        "mae": 1601.878054166064,
+        "rmse": 7976.210319980443,
+        "r2": 0.10305136018171322
+      },
+      "mean_selected_encoded_count": 239.66666666666666,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/19",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-2cc6e4b57a1018be232ca3b4836764386064679c764d0213a5bfaff33b899206",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-2cc6e4b57a1018be232ca3b4836764386064679c764d0213a5bfaff33b899206/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 1.0,
+        "l1_ratio": 0.5
+      },
+      "candidate_order": 4,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22052.42779072313,
+        "rmse": 40160.36070822103,
+        "r2": 0.7209603818269962
+      },
+      "sample_sd": {
+        "mae": 1596.4005601783251,
+        "rmse": 7965.031425952495,
+        "r2": 0.1029773983055095
+      },
+      "mean_selected_encoded_count": 239.66666666666666,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/16",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-1c73870379fcd6a39c7137064f4cd21cc1b0b0424e5dc48fa0216806af0061db",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-1c73870379fcd6a39c7137064f4cd21cc1b0b0424e5dc48fa0216806af0061db/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 1.0,
+        "l1_ratio": 0.8
+      },
+      "candidate_order": 5,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22034.999362608145,
+        "rmse": 40160.71894424053,
+        "r2": 0.7209532086311238
+      },
+      "sample_sd": {
+        "mae": 1593.5841890180989,
+        "rmse": 7967.8261191652855,
+        "r2": 0.1030137014363623
+      },
+      "mean_selected_encoded_count": 239.33333333333334,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/22",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-52f2eeb3d7721d8f4b0ae42ab242efb5c5aa4ac12906532d932958c14c2f7ae8",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-52f2eeb3d7721d8f4b0ae42ab242efb5c5aa4ac12906532d932958c14c2f7ae8/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 10.0,
+        "l1_ratio": 0.2
+      },
+      "candidate_order": 6,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22036.931154107577,
+        "rmse": 40142.96164740567,
+        "r2": 0.7211248834774353
+      },
+      "sample_sd": {
+        "mae": 1622.8262437833446,
+        "rmse": 7976.552563544549,
+        "r2": 0.10325261739595873
+      },
+      "mean_selected_encoded_count": 239.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/24",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-d0247c0be6fbd0ab346b7d3d5c45583bf3d37d27c45e8d1d432a5cf88d569192",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d0247c0be6fbd0ab346b7d3d5c45583bf3d37d27c45e8d1d432a5cf88d569192/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 10.0,
+        "l1_ratio": 0.5
+      },
+      "candidate_order": 7,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 22116.566466580713,
+        "rmse": 40429.628603601486,
+        "r2": 0.7164820533297291
+      },
+      "sample_sd": {
+        "mae": 1837.9387317282903,
+        "rmse": 8642.090933824953,
+        "r2": 0.11289689126022424
+      },
+      "mean_selected_encoded_count": 236.33333333333334,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/26",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-20363ce2a7f8d58f4e840e81b72590fe8de7d1b0dbf47a124fa71e5f3bcf02de",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-20363ce2a7f8d58f4e840e81b72590fe8de7d1b0dbf47a124fa71e5f3bcf02de/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 10.0,
+        "l1_ratio": 0.8
+      },
+      "candidate_order": 8,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 21895.526619861907,
+        "rmse": 39588.40062346258,
+        "r2": 0.72844826235583
+      },
+      "sample_sd": {
+        "mae": 1717.6329894001467,
+        "rmse": 8481.320893211127,
+        "r2": 0.10770409983751322
+      },
+      "mean_selected_encoded_count": 233.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/17",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-1098e27f34125c296e9331aae6fa1ffec6075f3986b7577cfa813850951d3b53",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-1098e27f34125c296e9331aae6fa1ffec6075f3986b7577cfa813850951d3b53/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 100.0,
+        "l1_ratio": 0.2
+      },
+      "candidate_order": 9,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 21979.224627845677,
+        "rmse": 39989.70095495329,
+        "r2": 0.7224908724550794
+      },
+      "sample_sd": {
+        "mae": 1747.5862410106574,
+        "rmse": 8204.711791502217,
+        "r2": 0.10709409668025804
+      },
+      "mean_selected_encoded_count": 234.33333333333334,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/25",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-d29012556273bf48ab5997cb33861acd9454e5879dac80f885a7a721a2494460",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d29012556273bf48ab5997cb33861acd9454e5879dac80f885a7a721a2494460/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 100.0,
+        "l1_ratio": 0.5
+      },
+      "candidate_order": 10,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 21949.616273118972,
+        "rmse": 40105.64852985529,
+        "r2": 0.7219766220758661
+      },
+      "sample_sd": {
+        "mae": 1711.5036077933578,
+        "rmse": 7274.633610479925,
+        "r2": 0.09500632481211621
+      },
+      "mean_selected_encoded_count": 227.33333333333334,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/23",
+      "method_winner": false,
+      "five_method_winner": false
+    },
+    {
+      "configuration_id": "p4b-v2-d7202991dc8fee11e65aac3b0532ac68b63599a6b0ec87eec5544eb13ad8c0f3",
+      "configuration_detail_ref": "phases/phase-04/configurations/p4b-v2-d7202991dc8fee11e65aac3b0532ac68b63599a6b0ec87eec5544eb13ad8c0f3/metadata.json",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "method_label": "Elastic Net",
+      "track_id": "selected_to_ols",
+      "params": {
+        "alpha": 100.0,
+        "l1_ratio": 0.8
+      },
+      "candidate_order": 11,
+      "status": "VERIFIED",
+      "winner_eligible": true,
+      "fold_count": 3,
+      "n": 1168,
+      "metrics": {
+        "mae": 21747.55235686453,
+        "rmse": 38108.091255656356,
+        "r2": 0.7502479911036722
+      },
+      "sample_sd": {
+        "mae": 1324.6683634608892,
+        "rmse": 7059.401758548815,
+        "r2": 0.08317850787095193
+      },
+      "mean_selected_encoded_count": 207.0,
+      "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/18",
+      "method_winner": true,
+      "five_method_winner": false
+    }
+  ],
+  "metric_semantics": "Arithmetic mean of the three primary-track fold RMSE values."
+}

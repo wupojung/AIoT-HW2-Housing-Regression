@@ -12,7 +12,7 @@
 | **Source data** | 原始資料、row-level OOF、Holdout row、fit artifacts | 僅私有研究區，不得因 JSON 引用而公開 |
 | **Manifest** | 列出合法檔案位置/版本/依賴的索引；不是結果本身 | `package.json`，且所有路徑 Case-root-relative |
 | **Schema** | 描述單一 JSON 欄位型態、必填、枚舉等的 JSON Schema 2020-12 | `docs/design/data-contracts/schemas/*.schema.json`；**不是 payload** |
-| **Sample/fixture** | 為測試 UI 與結構製作的明確 MOCK/UNAVAILABLE JSON，非已核准研究證據 | 既有 `docs/ui-ux/case-package/sample/`；禁止標 VERIFIED |
+| **Sample/fixture** | 可包含明確 MOCK/UNAVAILABLE 資料，或來源報稱但未驗證的公開安全 aggregate；都不是已核准研究證據 | `docs/ui-ux/case-package/sample/`；不得因封存或呈現而標 VERIFIED |
 | **Figure asset** | 經審查的靜態 SVG/PNG 或統計替代表，不能由瀏覽器反向算研究結果 | `phases/phase-*/figures/` 並在 `assets/figure-manifest.json` 與 `files[]` 完整引用 |
 | **Ready prediction service** | 經後端五項 readiness gate 核准的模型服務 | Phase 6 專屬，不是 Case Package 自動賦予 |
 | **status** | 資料證據狀態（UNAVAILABLE/PLANNED/MOCK/VERIFIED/ERROR） | 與 Review approval、model readiness、schema parse PASS 彼此獨立 |
@@ -77,7 +77,7 @@ Verified 模式唯讀已有 Case Package `case.json` / Phase2–5 結果，並�
 
 1. **Namespace**：`case_id` 全部吻合；`execution_run_id` 是研究執行、`configuration_id` 是方法/參數組合、`evaluation_id` 是評估觀測，`model_id` 是經核准的部署模型。任何單一過時 `run_id` 不作權威。
 2. **Status**：`MOCK` 可渲染測試但要顯示水印；`UNAVAILABLE` 不得產生實測圖；`SOURCE_REPORTED_NOT_VERIFIED` 是欄位級來源報稱、非根 `VERIFIED`；`release_id` 不等於 `package_revision`。
-3. **Assets**：FIG/JSON SHA+case-root refs 和公開權利需要實體驗證；Sample `files:[]` 只能作 staging。
+3. **Assets**：FIG/JSON SHA+case-root refs 和公開權利需要實體驗證；Sample `files[]` 的完整雜湊只代表 staging 快照完整，不代表公開權利、研究驗證或發布核准；`files:[]` 仍是未封包 staging。
 4. **No fabricated numbers**：各 Phase 的缺欄填 null＋reason/status；不把示意值/交接值當真值，不把原始 row/OOF/holdout 對外公開。
 5. **Readiness vs design**：Schema PASS 是單檔結構 PASS，不是 source、Bundle、模型訓練、API、Release PASS。
 6. **Version control**：非 Phase5 新 Schema 提案皆 v1.0，實際下游 Producer 應先做 Schema/fixture/cross-Phase handshake，發現真正相容性缺口由 Owner/PM 核准升版；不能靜默改名或換 enum。
@@ -85,8 +85,8 @@ Verified 模式唯讀已有 Case Package `case.json` / Phase2–5 結果，並�
 
 ## 5. 還需要盤點什麼？（分層處理，不阻擋契約設計）
 
-**短期資料契約 P0**：所有 Phase 各自最低正例/空態範例、Schema structural runtime、UI component→JSON field mapping 逐頁檢查、上層 sample 的 `files:[]` 是 staging 不可發布、來源真正 key path/fit scope **UNKNOWN** 的對照清單。後續工程才做 full Bundle Validator/atomic publication。Phase5 本輪設計已正式結案，不重新擴大驗收。
+**短期資料契約 P0**：所有 Phase 各自最低正例/空態範例、Schema structural runtime、UI component→JSON field mapping 逐頁檢查、完整 package manifest 與來源真正 key path/fit scope **UNKNOWN** 的對照清單。Ames Sample 的 Phase 4 aggregate 已有來源對照，但仍為 SOURCE_REPORTED_NOT_VERIFIED；package `files[]` 封存不代表可發布。後續工程才做 full Bundle Validator/atomic publication。Phase5 本輪設計已正式結案，不重新擴大驗收。
 
-**來源資料另 Gate**：Phase2 FIG-01/02/03/06 正式圖與 SHA；Phase3 清洗前後欄位/每型態分類/encoder lineage + fit population；Phase4 real eligible configs/3-fold task/final fit mapping；Phase5 paired OOF、INT-S 等 Owner 授權；Phase6 validated fitted preprocessing、model registry/schema + deployed inference。缺來源時不可把 schema 設計當 data verified。
+**來源資料另 Gate**：Phase2 FIG-01/02/03/06 正式圖與 SHA；Phase3 清洗前後欄位/每型態分類/encoder lineage + fit population；Phase4 Sample 已提供 source-reported config/task/final-fit mapping，但研究正確性、完整實驗證據與模型發布資格仍待獨立確認；Phase5 paired OOF、INT-S 等 Owner 授權；Phase6 validated fitted preprocessing、model registry/schema + deployed inference。缺來源時不可把 schema 設計當 data verified。
 
 **明天的 Producer 交付規則：** 不得由模型或 UI 自行解讀欄位；以所屬 Schema 當唯一單檔檢查入口，使用共用 `docs/design/tools/validate_schema.py --schema ... input.json`。錯誤欄位、未知 ID、未核准圖或來源，**停止該筆資料發布**，可顯示 UNAVAILABLE，不使整個前端失效。

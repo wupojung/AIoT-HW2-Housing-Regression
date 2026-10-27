@@ -1,0 +1,267 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "execution_run_id": "development_20261026_01",
+  "configuration_id": "p4b-v2-1988433b54f59f8e579c2d77bbd63a965d7a09e6b5c2db229cadc2eb42d5d0c4",
+  "track_id": "selected_to_ols",
+  "status": "SOURCE_REPORTED_NOT_VERIFIED",
+  "raw_source_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED",
+  "aggregated_selected_encoded_features": [
+    {
+      "encoded_feature_id": "Condition2_PosN",
+      "selected_fold_count": 2,
+      "fold_count": 3,
+      "selection_fraction": 0.6666666666666666,
+      "raw_source_mapping": [
+        {
+          "fold_index": 0,
+          "encoding_type": "one_hot",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "Condition2"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "Condition2"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        },
+        {
+          "fold_index": 2,
+          "encoding_type": "one_hot",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "Condition2"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "Condition2"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "encoded_feature_id": "Neighborhood_NoRidge",
+      "selected_fold_count": 1,
+      "fold_count": 3,
+      "selection_fraction": 0.3333333333333333,
+      "raw_source_mapping": [
+        {
+          "fold_index": 1,
+          "encoding_type": "one_hot",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "Neighborhood"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "Neighborhood"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "encoded_feature_id": "Neighborhood_NridgHt",
+      "selected_fold_count": 1,
+      "fold_count": 3,
+      "selection_fraction": 0.3333333333333333,
+      "raw_source_mapping": [
+        {
+          "fold_index": 1,
+          "encoding_type": "one_hot",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "Neighborhood"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "Neighborhood"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "encoded_feature_id": "RoofMatl_WdShngl",
+      "selected_fold_count": 2,
+      "fold_count": 3,
+      "selection_fraction": 0.6666666666666666,
+      "raw_source_mapping": [
+        {
+          "fold_index": 0,
+          "encoding_type": "one_hot",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "RoofMatl"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "RoofMatl"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        },
+        {
+          "fold_index": 2,
+          "encoding_type": "one_hot",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "RoofMatl"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "RoofMatl"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    }
+  ],
+  "fold_feature_evidence": [
+    {
+      "task_id": "task_0f2a7a7db47bac4bb5f20546569aaee3",
+      "fold_index": 0,
+      "status": "COMPLETED",
+      "selected_encoded_feature_ids": [
+        "Condition2_PosN",
+        "RoofMatl_WdShngl"
+      ],
+      "selected_raw_sources_reported": [
+        "Condition2",
+        "RoofMatl"
+      ],
+      "feature_lineage_reported": [
+        {
+          "encoded_name": "Condition2_PosN",
+          "raw_source_columns": [
+            "Condition2"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_WdShngl",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        }
+      ],
+      "rank_or_score": null,
+      "coef_or_importance": null,
+      "score_evidence": null,
+      "mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+    },
+    {
+      "task_id": "task_1db711e07404def29ccc6197e671a9a9",
+      "fold_index": 1,
+      "status": "COMPLETED",
+      "selected_encoded_feature_ids": [
+        "Neighborhood_NoRidge",
+        "Neighborhood_NridgHt"
+      ],
+      "selected_raw_sources_reported": [
+        "Neighborhood"
+      ],
+      "feature_lineage_reported": [
+        {
+          "encoded_name": "Neighborhood_NoRidge",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NridgHt",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        }
+      ],
+      "rank_or_score": null,
+      "coef_or_importance": null,
+      "score_evidence": null,
+      "mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+    },
+    {
+      "task_id": "task_2efc54408d9d303c7b5917d97208e213",
+      "fold_index": 2,
+      "status": "COMPLETED",
+      "selected_encoded_feature_ids": [
+        "Condition2_PosN",
+        "RoofMatl_WdShngl"
+      ],
+      "selected_raw_sources_reported": [
+        "Condition2",
+        "RoofMatl"
+      ],
+      "feature_lineage_reported": [
+        {
+          "encoded_name": "Condition2_PosN",
+          "raw_source_columns": [
+            "Condition2"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_WdShngl",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        }
+      ],
+      "rank_or_score": null,
+      "coef_or_importance": null,
+      "score_evidence": null,
+      "mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+    }
+  ],
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "limitations": [
+    "Encoded-to-raw lineage is reported by source and not cross-checked against Phase 3."
+  ]
+}

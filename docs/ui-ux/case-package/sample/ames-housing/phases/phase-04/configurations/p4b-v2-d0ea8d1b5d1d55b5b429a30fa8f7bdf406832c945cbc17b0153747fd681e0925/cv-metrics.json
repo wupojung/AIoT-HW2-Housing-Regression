@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "execution_run_id": "development_20261026_01",
+  "configuration_id": "p4b-v2-d0ea8d1b5d1d55b5b429a30fa8f7bdf406832c945cbc17b0153747fd681e0925",
+  "protocol_id": "p4b-v2.0-development-3fold-rs42",
+  "metric_source": "cv_fold_mean",
+  "scope": "development_training_set_cross_validation",
+  "target": {
+    "column": "SalePrice",
+    "unit": "USD"
+  },
+  "n": 1168,
+  "fold_aggregation": "arithmetic_mean_across_valid_outer_folds",
+  "status": "SOURCE_REPORTED_NOT_VERIFIED",
+  "metrics": {
+    "mae": {
+      "fold_values": [
+        21017.387064711744,
+        20196.150300393507,
+        23338.472140413716
+      ],
+      "mean": 21517.336501839654,
+      "sample_sd": 1629.7265771688162,
+      "valid_fold_count": 3,
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
+      "reason": null
+    },
+    "rmse": {
+      "fold_values": [
+        32055.662104281146,
+        35167.669827246966,
+        47654.27251633616
+      ],
+      "mean": 38292.53481595476,
+      "sample_sd": 8255.467739323229,
+      "valid_fold_count": 3,
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
+      "reason": null
+    },
+    "r2": {
+      "fold_values": [
+        0.791658859198313,
+        0.8156015349181694,
+        0.6322605815940243
+      ],
+      "mean": 0.7465069919035022,
+      "sample_sd": 0.09966190160541662,
+      "valid_fold_count": 3,
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
+      "reason": null
+    }
+  },
+  "native_diagnostic": {
+    "track_id": "diagnostic_only",
+    "metric_source": "cv_fold_mean",
+    "fold_metrics": [
+      {
+        "task_id": "task_e93b8bfeac74bd3fd0241ccae02d0a6f",
+        "fold_index": 0,
+        "status": "COMPLETED",
+        "metrics": {
+          "rmse": 29748.364445889027,
+          "mae": 19831.37785018552,
+          "r2": 0.8205713781488313
+        }
+      },
+      {
+        "task_id": "task_249a542d175c1f5c06c18f6d8c3302e4",
+        "fold_index": 1,
+        "status": "COMPLETED",
+        "metrics": {
+          "rmse": 33954.41940621099,
+          "mae": 19293.04729513082,
+          "r2": 0.8281052025812795
+        }
+      },
+      {
+        "task_id": "task_818fe293153628e10114489c3920dbc6",
+        "fold_index": 2,
+        "status": "COMPLETED",
+        "metrics": {
+          "rmse": 45413.545133595355,
+          "mae": 22041.562325909294,
+          "r2": 0.6660301141037254
+        }
+      }
+    ],
+    "metrics": {
+      "mae": {
+        "fold_values": [
+          19831.37785018552,
+          19293.04729513082,
+          22041.562325909294
+        ],
+        "mean": 20388.662490408544,
+        "sample_sd": 1456.5398539947953,
+        "valid_fold_count": 3,
+        "status": "SOURCE_REPORTED_NOT_VERIFIED",
+        "reason": null
+      },
+      "rmse": {
+        "fold_values": [
+          29748.364445889027,
+          33954.41940621099,
+          45413.545133595355
+        ],
+        "mean": 36372.10966189846,
+        "sample_sd": 8107.613158257886,
+        "valid_fold_count": 3,
+        "status": "SOURCE_REPORTED_NOT_VERIFIED",
+        "reason": null
+      },
+      "r2": {
+        "fold_values": [
+          0.8205713781488313,
+          0.8281052025812795,
+          0.6660301141037254
+        ],
+        "mean": 0.7715688982779453,
+        "sample_sd": 0.09147685964971788,
+        "valid_fold_count": 3,
+        "status": "SOURCE_REPORTED_NOT_VERIFIED",
+        "reason": null
+      }
+    },
+    "status": "SOURCE_REPORTED_NOT_VERIFIED"
+  },
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "limitations": [
+    "Fold mean is not pooled OOF.",
+    "No Holdout metrics."
+  ]
+}

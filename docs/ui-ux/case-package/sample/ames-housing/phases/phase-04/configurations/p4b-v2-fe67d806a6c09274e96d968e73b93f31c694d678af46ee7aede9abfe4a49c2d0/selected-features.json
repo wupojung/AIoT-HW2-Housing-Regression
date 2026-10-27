@@ -1,0 +1,586 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "execution_run_id": "development_20261026_01",
+  "configuration_id": "p4b-v2-fe67d806a6c09274e96d968e73b93f31c694d678af46ee7aede9abfe4a49c2d0",
+  "track_id": "selected_to_ols",
+  "status": "SOURCE_REPORTED_NOT_VERIFIED",
+  "raw_source_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED",
+  "aggregated_selected_encoded_features": [
+    {
+      "encoded_feature_id": "ExterQual",
+      "selected_fold_count": 1,
+      "fold_count": 3,
+      "selection_fraction": 0.3333333333333333,
+      "raw_source_mapping": [
+        {
+          "fold_index": 0,
+          "encoding_type": "ordinal",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "ExterQual"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "ExterQual"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "encoded_feature_id": "GarageArea",
+      "selected_fold_count": 3,
+      "fold_count": 3,
+      "selection_fraction": 1.0,
+      "raw_source_mapping": [
+        {
+          "fold_index": 0,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "GarageArea"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "GarageArea"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        },
+        {
+          "fold_index": 1,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "GarageArea"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "GarageArea"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        },
+        {
+          "fold_index": 2,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "GarageArea"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "GarageArea"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "encoded_feature_id": "GarageCars",
+      "selected_fold_count": 3,
+      "fold_count": 3,
+      "selection_fraction": 1.0,
+      "raw_source_mapping": [
+        {
+          "fold_index": 0,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "GarageCars"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "GarageCars"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        },
+        {
+          "fold_index": 1,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "GarageCars"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "GarageCars"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        },
+        {
+          "fold_index": 2,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "GarageCars"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "GarageCars"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "encoded_feature_id": "GrLivArea",
+      "selected_fold_count": 3,
+      "fold_count": 3,
+      "selection_fraction": 1.0,
+      "raw_source_mapping": [
+        {
+          "fold_index": 0,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "GrLivArea"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "GrLivArea"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        },
+        {
+          "fold_index": 1,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "GrLivArea"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "GrLivArea"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        },
+        {
+          "fold_index": 2,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "GrLivArea"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "GrLivArea"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "encoded_feature_id": "OverallQual",
+      "selected_fold_count": 3,
+      "fold_count": 3,
+      "selection_fraction": 1.0,
+      "raw_source_mapping": [
+        {
+          "fold_index": 0,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "OverallQual"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "OverallQual"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        },
+        {
+          "fold_index": 1,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "OverallQual"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "OverallQual"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        },
+        {
+          "fold_index": 2,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "OverallQual"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "OverallQual"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "encoded_feature_id": "TotalBsmtSF",
+      "selected_fold_count": 1,
+      "fold_count": 3,
+      "selection_fraction": 0.3333333333333333,
+      "raw_source_mapping": [
+        {
+          "fold_index": 2,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "TotalBsmtSF"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "TotalBsmtSF"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "encoded_feature_id": "YearBuilt",
+      "selected_fold_count": 1,
+      "fold_count": 3,
+      "selection_fraction": 0.3333333333333333,
+      "raw_source_mapping": [
+        {
+          "fold_index": 1,
+          "encoding_type": "numeric",
+          "is_derived": false,
+          "direct_raw_sources_reported": [
+            "YearBuilt"
+          ],
+          "derived_dependencies_reported": [],
+          "raw_source_columns_reported": [
+            "YearBuilt"
+          ],
+          "source_provenance_status": "RESOLVED",
+          "case_package_mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+        }
+      ]
+    }
+  ],
+  "fold_feature_evidence": [
+    {
+      "task_id": "task_0c615fe68a485b4d3711be650e20a552",
+      "fold_index": 0,
+      "status": "COMPLETED",
+      "selected_encoded_feature_ids": [
+        "OverallQual",
+        "GrLivArea",
+        "GarageCars",
+        "GarageArea",
+        "ExterQual"
+      ],
+      "selected_raw_sources_reported": [
+        "ExterQual",
+        "GarageArea",
+        "GarageCars",
+        "GrLivArea",
+        "OverallQual"
+      ],
+      "feature_lineage_reported": [
+        {
+          "encoded_name": "OverallQual",
+          "raw_source_columns": [
+            "OverallQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GrLivArea",
+          "raw_source_columns": [
+            "GrLivArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GrLivArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageCars",
+          "raw_source_columns": [
+            "GarageCars"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageCars"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageArea",
+          "raw_source_columns": [
+            "GarageArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "ExterQual",
+          "raw_source_columns": [
+            "ExterQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ExterQual"
+          ],
+          "derived_dependencies": []
+        }
+      ],
+      "rank_or_score": null,
+      "coef_or_importance": null,
+      "score_evidence": {
+        "score_invalid": false,
+        "score_invalid_reason": null,
+        "score_kind": "mutual_information",
+        "score_count": 237,
+        "finite_score_count": 237,
+        "constant_feature_count": 0,
+        "invalid_score_count": 0,
+        "invalid_score_features": [],
+        "invalid_score_features_truncated": false,
+        "rank_tiebreak": "encoded_feature_name_ascending"
+      },
+      "mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+    },
+    {
+      "task_id": "task_76143522d39b2ede880b3f48760fcb6b",
+      "fold_index": 1,
+      "status": "COMPLETED",
+      "selected_encoded_feature_ids": [
+        "OverallQual",
+        "GrLivArea",
+        "GarageArea",
+        "YearBuilt",
+        "GarageCars"
+      ],
+      "selected_raw_sources_reported": [
+        "GarageArea",
+        "GarageCars",
+        "GrLivArea",
+        "OverallQual",
+        "YearBuilt"
+      ],
+      "feature_lineage_reported": [
+        {
+          "encoded_name": "OverallQual",
+          "raw_source_columns": [
+            "OverallQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GrLivArea",
+          "raw_source_columns": [
+            "GrLivArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GrLivArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageArea",
+          "raw_source_columns": [
+            "GarageArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearBuilt",
+          "raw_source_columns": [
+            "YearBuilt"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearBuilt"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageCars",
+          "raw_source_columns": [
+            "GarageCars"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageCars"
+          ],
+          "derived_dependencies": []
+        }
+      ],
+      "rank_or_score": null,
+      "coef_or_importance": null,
+      "score_evidence": {
+        "score_invalid": false,
+        "score_invalid_reason": null,
+        "score_kind": "mutual_information",
+        "score_count": 239,
+        "finite_score_count": 239,
+        "constant_feature_count": 0,
+        "invalid_score_count": 0,
+        "invalid_score_features": [],
+        "invalid_score_features_truncated": false,
+        "rank_tiebreak": "encoded_feature_name_ascending"
+      },
+      "mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+    },
+    {
+      "task_id": "task_6a3e63faef1dbd1cc941db925e4c528b",
+      "fold_index": 2,
+      "status": "COMPLETED",
+      "selected_encoded_feature_ids": [
+        "OverallQual",
+        "GrLivArea",
+        "TotalBsmtSF",
+        "GarageCars",
+        "GarageArea"
+      ],
+      "selected_raw_sources_reported": [
+        "GarageArea",
+        "GarageCars",
+        "GrLivArea",
+        "OverallQual",
+        "TotalBsmtSF"
+      ],
+      "feature_lineage_reported": [
+        {
+          "encoded_name": "OverallQual",
+          "raw_source_columns": [
+            "OverallQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GrLivArea",
+          "raw_source_columns": [
+            "GrLivArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GrLivArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotalBsmtSF",
+          "raw_source_columns": [
+            "TotalBsmtSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotalBsmtSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageCars",
+          "raw_source_columns": [
+            "GarageCars"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageCars"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageArea",
+          "raw_source_columns": [
+            "GarageArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageArea"
+          ],
+          "derived_dependencies": []
+        }
+      ],
+      "rank_or_score": null,
+      "coef_or_importance": null,
+      "score_evidence": {
+        "score_invalid": false,
+        "score_invalid_reason": null,
+        "score_kind": "mutual_information",
+        "score_count": 245,
+        "finite_score_count": 245,
+        "constant_feature_count": 0,
+        "invalid_score_count": 0,
+        "invalid_score_features": [],
+        "invalid_score_features_truncated": false,
+        "rank_tiebreak": "encoded_feature_name_ascending"
+      },
+      "mapping_status": "SOURCE_REPORTED_NOT_VERIFIED"
+    }
+  ],
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "limitations": [
+    "Encoded-to-raw lineage is reported by source and not cross-checked against Phase 3."
+  ]
+}

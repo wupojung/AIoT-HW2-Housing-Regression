@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-housing",
+  "execution_run_id": "development_20261026_01",
+  "configuration_id": "p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
+  "method_id": "lasso",
+  "track_id": "selected_to_ols",
+  "params": {
+    "alpha": 100.0
+  },
+  "candidate_order": 3,
+  "protocol_id": "p4b-v2.0-development-3fold-rs42",
+  "status": "VERIFIED",
+  "winner_eligible": true,
+  "method_winner": true,
+  "five_method_winner": true,
+  "selection_role": "five_method_winner",
+  "selection_basis": "lowest eligible selected_to_ols cv_fold_mean RMSE among the five feature-selection method winners; OLS baseline is not a feature-selection method",
+  "coverage": {
+    "expected_fold_count": 3,
+    "observed_fold_count": 3,
+    "valid_fold_count": 3,
+    "coverage_complete": true,
+    "observed_row_count": 3
+  },
+  "requested_k": null,
+  "selected_k_by_fold": [
+    104,
+    103,
+    102
+  ],
+  "selected_k_summary": {
+    "min": 102,
+    "max": 104,
+    "mean": 103.0
+  },
+  "final_fit_selected_k": 97,
+  "fit_population": "fold_specific_training_subsets",
+  "final_fit_artifact_status": "SOURCE_REPORTED_NOT_VERIFIED_METADATA_AVAILABLE_BINARY_PRIVATE",
+  "source_artifact_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "source_manifest_sha256": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e",
+  "source_ref": "source-artifact:sha256:293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc#/aggregate_results/14",
+  "limitations": [
+    "Development CV result only; no Holdout result is included.",
+    "A final-fit model artifact is not present in the source run.",
+    "Configuration-level completion does not change the parent execution run/resume status ERROR."
+  ],
+  "final_fit": {
+    "final_fit_id": "final-fit-development_20261026_01-lasso100-primary-ols",
+    "execution_run_id": "development_20261026_01",
+    "configuration_id": "p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
+    "artifact_type": "phase4-final-development-lasso100-primary-ols",
+    "status": "SOURCE_REPORTED_NOT_VERIFIED",
+    "training_status": "SUCCESS",
+    "method_id": "lasso",
+    "params": {
+      "alpha": 100.0
+    },
+    "primary_track_id": "selected_to_ols",
+    "primary_estimator": "OLS",
+    "fit_population": "development_training_set",
+    "development_rows": 1168,
+    "target_column": "SalePrice",
+    "selected_encoded_feature_count": 97,
+    "convergence": {
+      "status": "CONVERGED",
+      "warning_count": 0,
+      "iterations": 446
+    },
+    "primary_ols": {
+      "coefficient_count_including_intercept": 98,
+      "rank": 97,
+      "nullity": 1
+    },
+    "selection_cv_reference": {
+      "metric_source": "cv_fold_mean",
+      "rmse": 35389.18456107843,
+      "mae": 19395.048844977035,
+      "r2": 0.7841591133550846
+    },
+    "holdout_used": false,
+    "development_prediction_round_trip": "PASS_DEVELOPMENT_ROW_ONLY",
+    "artifact": {
+      "status": "PRIVATE_NOT_INCLUDED_IN_CASE_PACKAGE",
+      "sha256": "5693839403b6687bd9d593c8b26d2d0f1373bd8931ca48466e1c7e66f15641eb",
+      "bytes": 12262
+    },
+    "source_metadata_sha256": "5e51a3176c87710d6b989ff2bac7b69616ef61a3a68d355f17b0dd0239f4dfe3",
+    "source_manifest_includes_final_fit_metadata": false,
+    "limitations": [
+      "The source metadata is not included in the public source manifest; values remain source-reported pending independent review.",
+      "The fitted model binary, coefficients, scaler arrays, detailed feature list, and local artifact path are not included.",
+      "This metadata does not register or enable a public prediction model."
+    ]
+  }
+}
