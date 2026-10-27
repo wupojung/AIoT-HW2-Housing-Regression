@@ -7,8 +7,18 @@
     <meta name="description" content="RegScope — 以 CRISP-DM 引導的住宅迴歸研究展示。" />
     <title>RegScope — Housing Regression Lab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="/styles.css" />
-    <script src="/app.js" defer></script>
+    <script>
+      const webBase = location.pathname.startsWith("/web/") ? "/web" : "";
+      const stylesheet = document.createElement("link");
+      stylesheet.rel = "stylesheet";
+      stylesheet.href = `${webBase}/styles.css`;
+      document.head.append(stylesheet);
+      document.addEventListener("DOMContentLoaded", () => {
+        const application = document.createElement("script");
+        application.src = `${webBase}/app.js`;
+        document.body.append(application);
+      }, { once: true });
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳至主要內容</a>

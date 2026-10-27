@@ -114,6 +114,7 @@ const app = document.querySelector("#app");
 const phaseNav = document.querySelector("#phase-nav");
 const caseContext = document.querySelector("#case-context");
 const caseSelect = document.querySelector("#case-select");
+const WEB_BASE = location.pathname.startsWith("/web/") ? "/web" : "";
 const IS_LOCAL_STAGING_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname) && location.pathname.startsWith("/web/");
 const PHASE5_PACKAGE_ROOT = IS_LOCAL_STAGING_PREVIEW
   ? "/local/staging/formal-data-test-20261027-01/case-package"
@@ -142,11 +143,11 @@ function setPhase(phase) { setRoute(`phase-${phase}`); }
 function banner(caseInfo = caseData()) {
   const formalPackage = caseInfo.packageMode === "formal";
   const reason = formalPackage
-    ? `Formal Case Package ${caseInfo.packageRevision} · Phase 5 index is loaded from this package; other phase UI remains preview-only.`
+    ? `Formal Case Package ${caseInfo.packageRevision} · only Phase 5 reads local staging; Phases 1–4 remain MOCK UI previews. This is not a public release.`
     : caseInfo.status === "MOCK"
     ? `UI fixture only · package revision ${caseInfo.packageRevision} · ${SOURCE}. These values are not approved research results.`
     : "Planned placeholder only · no research package, data, or model is available.";
-  const bannerStatus = formalPackage ? caseInfo.packageStatus : caseInfo.status;
+  const bannerStatus = caseInfo.status;
   return `<div class="fixture-banner"><span><strong>${formalPackage ? "Formal package preview" : caseInfo.status === "MOCK" ? "Fixture preview" : "Planned case"}</strong> · ${esc(reason)}</span>${badge(bannerStatus)}</div>`;
 }
 function updateShell() {
@@ -174,7 +175,7 @@ function footerNav(prev, next) {
   const fileUrl = (path) => path?.startsWith("/")
     ? path
     : path?.startsWith("web/")
-      ? `/${path.slice(4)}`
+      ? `${WEB_BASE}/${path.slice(4)}`
       : path ? `https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/08413d08f5cabbbf519b8ceee4ed68b7187d2669/${path}` : null;
   const provenanceLabel = phase === 5 ? "Case Package files · Phase 5 formal reference" : `Fixture / contract provenance · ${SOURCE}`;
   const manifestLabel = "Schema ↗";
@@ -212,7 +213,7 @@ function renderPhase2() {
 let phase3Data = null;
 let phase3Loading = false;
 let phase3LoadError = null;
-const PHASE3_DATA_URL = "/data/cases/ames-housing/phase-03/preparation.json";
+const PHASE3_DATA_URL = `${WEB_BASE}/data/cases/ames-housing/phase-03/preparation.json`;
 const PHASE3_UNIT_LABELS = {
   raw_columns: "原始欄位 Raw columns",
   pre_encoding_columns: "編碼前欄位 Pre-encoding columns",
