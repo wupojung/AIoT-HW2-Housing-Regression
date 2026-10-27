@@ -116,6 +116,9 @@ const caseContext = document.querySelector("#case-context");
 const caseSelect = document.querySelector("#case-select");
 const WEB_BASE = location.pathname.startsWith("/web/") ? "/web" : "";
 const IS_LOCAL_STAGING_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname) && location.pathname.startsWith("/web/");
+const REFERENCE_PACKAGE_ROOT = IS_LOCAL_STAGING_PREVIEW
+  ? "/local/reference-baseline-20261028/runs/ames-reference-package-r3"
+  : null;
 const PHASE5_PACKAGE_ROOT = IS_LOCAL_STAGING_PREVIEW
   ? "/local/staging/formal-data-test-20261027-01/case-package"
   : null;
@@ -158,6 +161,96 @@ function updateShell() {
   document.querySelector("[data-home-link]").setAttribute("aria-current", state.route === "home" ? "page" : "false");
   document.querySelector("[data-crisp-link]").setAttribute("aria-current", phase ? "page" : "false");
   caseSelect.innerHTML = Object.entries(CASES).map(([key, c]) => `<option value="${esc(key)}" ${key === state.caseId ? "selected" : ""}>${esc(c.title)} · ${c.packageMode === "formal" ? "FORMAL PACKAGE" : esc(c.status)}</option>`).join("");
+}
+
+// Real-data packages are loaded only from an ignored, loopback-served local path.
+let referencePackage = null;
+let referencePackageError = null;
+let referencePackageLoading = false;
+function safePackageRef(ref) {
+  return typeof ref === "string" && !ref.startsWith("/") && !ref.includes("\\")
+    && ref.split("/").every((part) => part && part !== "." && part !== "..");
+}
+async function loadReferencePackage() {
+  if (!REFERENCE_PACKAGE_ROOT || referencePackage || referencePackageError || referencePackageLoading) return;
+  referencePackageLoading = true;
+  try {
+    const getJson = async (ref) => {
+      if (!safePackageRef(ref)) throw new Error("Unsafe Case Package path reference.");
+      const response = await fetch(`${REFERENCE_PACKAGE_ROOT}/${ref}`);
+      if (!response.ok) throw new Error(`Case Package request failed (${response.status}).`);
+      return response.json();
+    };
+    const manifest = await getJson("package.json");
+    if (manifest.case_id !== "ames-reference-init-a" || !Array.isArray(manifest.files)) throw new Error("Unexpected Case Package identity or file manifest.");
+    const listed = new Map(manifest.files.map((entry) => [entry.path, entry]));
+    if (listed.size !== manifest.files.length) throw new Error("Duplicate Case Package file entry.");
+    const docs = {};
+    for (const [phase, fallback] of [[1,"phases/phase-01/content.json"],[2,"phases/phase-02/analyses.json"],[3,"phases/phase-03/preparation.json"],[4,"phases/phase-04/modeling.json"],[5,"phases/phase-05/evaluations.json"],[6,"phases/phase-06/inference-catalog.json"]]) {
+      const ref = manifest.phases?.[`phase${phase}`]?.data_ref || fallback;
+      const entry = listed.get(ref);
+      if (!entry) throw new Error(`Phase ${phase} reference is not package-manifest-listed.`);
+      const response = await fetch(`${REFERENCE_PACKAGE_ROOT}/${ref}`);
+      if (!response.ok) throw new Error(`Phase ${phase} request failed (${response.status}).`);
+      const bytes = await response.arrayBuffer();
+      const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+      if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error(`Phase ${phase} manifest digest/size mismatch.`);
+      docs[phase] = JSON.parse(new TextDecoder().decode(bytes));
+      if (docs[phase].case_id !== manifest.case_id) throw new Error(`Phase ${phase} Case ID mismatch.`);
+    }
+    for (const entry of manifest.files.filter((item) => item.mime === "image/svg+xml")) {
+      if (!safePackageRef(entry.path)) throw new Error("Unsafe figure path reference.");
+      const response = await fetch(`${REFERENCE_PACKAGE_ROOT}/${entry.path}`);
+      if (!response.ok) throw new Error(`Figure request failed (${response.status}).`);
+      const bytes = await response.arrayBuffer();
+      const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+      if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error("Figure manifest digest/size mismatch.");
+    }
+    const defaultConfig = docs[4].configurations.find((item) => item.configuration_id === docs[4].default_configuration_id);
+    const metricsRef = defaultConfig?.cv_metrics_ref;
+    const metricsEntry = manifest.files.find((entry) => entry.path === metricsRef);
+    if (!metricsEntry || !safePackageRef(metricsRef)) throw new Error("Phase 4 CV metrics reference is not package-bound.");
+    const metricsResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${metricsRef}`);
+    if (!metricsResponse.ok) throw new Error(`Phase 4 metrics request failed (${metricsResponse.status}).`);
+    const metricsBytes = await metricsResponse.arrayBuffer();
+    const metricsDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", metricsBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    if (metricsDigest !== metricsEntry.sha256 || metricsBytes.byteLength !== metricsEntry.bytes) throw new Error("Phase 4 metrics manifest digest/size mismatch.");
+    const cvMetrics = JSON.parse(new TextDecoder().decode(metricsBytes));
+    if (cvMetrics.case_id !== manifest.case_id || cvMetrics.run_id !== defaultConfig.execution_run_id) throw new Error("Phase 4 metrics identity mismatch.");
+    referencePackage = { manifest, docs, cvMetrics, figurePaths: manifest.files.filter((item) => item.mime === "image/svg+xml").map((item) => item.path) };
+    CASES[manifest.case_id] = { id: manifest.case_id, title: "Ames Housing — INIT B Reference Baseline", status: manifest.package_status, packageMode: "reference", packageRevision: manifest.package_revision, analyses: [] };
+  } catch (error) {
+    referencePackageError = error instanceof Error ? error.message : "Unable to verify Case Package.";
+  } finally {
+    referencePackageLoading = false;
+    updateShell();
+    if (state.caseId === "ames-reference-init-a") render();
+  }
+}
+function renderReferencePackagePhase(phase) {
+  const pkg = referencePackage;
+  const c = caseData();
+  const doc = pkg?.docs[phase];
+  if (!pkg || !doc) return `<div class="page">${pageHeading(`PHASE 0${phase} / REFERENCE PACKAGE`, "INIT B Reference Baseline", "本機套件載入或驗證狀態。", referencePackageError ? "ERROR" : "UNAVAILABLE")}<section class="state-panel" role="${referencePackageError ? "alert" : "status"}"><h3>${referencePackageError ? "Case Package 驗證失敗" : "載入隔離的本機 Case Package"}</h3><p>${esc(referencePackageError || "Package 僅從 loopback 本機路徑載入，不會發佈。")}</p></section></div>`;
+  const unavailable = doc.status === "UNAVAILABLE" || doc.status === "PLANNED";
+  let body = "";
+  if (phase === 1 || phase === 5 || phase === 6 || unavailable) {
+    body = `<section class="state-panel"><h3>${esc(doc.reason_code || doc.readiness?.reason_code || "此 Phase 尚無可用資料")}</h3><p>${esc(doc.readiness?.message || "此 Case Package 將該階段標示為 UNAVAILABLE；未以示意數據補上。")}</p>${badge(doc.status)}</section>`;
+  } else if (phase === 2) {
+    body = doc.analyses.map((a) => `<section class="card"><div class="card-head"><div><p class="eyebrow">${esc(a.figure_id)}</p><h2>${esc(a.title)}</h2></div>${badge(a.status)}</div><div class="card-body"><p>${esc(a.description)}</p><p>${esc(a.finding || "")}</p>${a.image_ref ? `<img class="package-figure" src="${REFERENCE_PACKAGE_ROOT}/${encodeURI(a.image_ref)}" alt="${esc(a.title)}; ${esc(a.description)}">` : ""}<p class="stage-note">${esc(a.limitations || "")}</p></div></section>`).join("");
+  } else if (phase === 3) {
+    body = `<section class="card"><div class="card-body"><h2>資料準備與編碼</h2>${doc.stages.map((s) => `<dl class="data-row"><dt>${esc(s.label)}</dt><dd>${esc(s.total)} · ${esc(s.unit)} · ${esc(s.total_status)}</dd></dl>`).join("")}<p>Train / validation: ${doc.split.training_rows} / ${doc.split.holdout_rows}; seed ${doc.split.seed}.</p><p>Fit scope: development training only.</p></div></section>`;
+  } else if (phase === 4) {
+    const cfg = doc.configurations.find((item) => item.configuration_id === doc.default_configuration_id);
+    const metricsRef = cfg?.cv_metrics_ref;
+    const metrics = metricsRef && pkg.manifest.files.some((f) => f.path === metricsRef)
+      ? `<p>CV metrics file: <a href="${REFERENCE_PACKAGE_ROOT}/${encodeURI(metricsRef)}" target="_blank" rel="noreferrer">${esc(metricsRef)}</a></p><p>Execution: ${esc(cfg.execution_run_id)} · ${esc(cfg.method_id)} · ${esc(cfg.protocol_id)}</p>`
+      : `<p>CV metric artifact unavailable.</p>`;
+    const foldRows = pkg.cvMetrics.fold_results.map((fold) => `<tr><td>${fold.fold + 1}</td><td>${fold.validation_rows}</td><td>${fold.rmse.toFixed(6)}</td><td>${fold.mae.toFixed(6)}</td><td>${fold.r2.toFixed(8)}</td></tr>`).join("");
+    const mean = pkg.cvMetrics.mean_fold_metrics;
+    body = `<section class="card"><div class="card-body"><h2>${esc(cfg?.configuration_id || "No configuration")}</h2><p>${esc(cfg?.track_id || "")}</p><pre class="package-json">${esc(JSON.stringify(cfg?.params || {}, null, 2))}</pre>${metrics}<p>CV rows ${doc.cv.training_rows} · folds ${doc.cv.fold_count} · ${esc(doc.cv.protocol_id)}.</p><table class="mock-data-table"><thead><tr><th>Fold</th><th>Validation rows</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody>${foldRows}<tr><th>Mean</th><th>—</th><th>${mean.rmse.toFixed(6)}</th><th>${mean.mae.toFixed(6)}</th><th>${mean.r2.toFixed(8)}</th></tr></tbody></table><p>Candidate search: NOT RUN.</p><p class="stage-note">Fold metrics are directly read from the manifest-bound historical Development artifact; they are not recalculated in the browser and do not represent independent generalization testing.</p></div></section>`;
+  }
+  return `<div class="page"><div class="fixture-banner"><span><strong>Local Case Package · ${esc(pkg.manifest.package_revision)}</strong> · publication not approved; verified package bytes loaded from loopback.</span>${badge(doc.status)}</div>${pageHeading(`PHASE 0${phase} / ${PHASES[phase-1][1].toUpperCase()}`, PHASES[phase-1][2], "INIT B Reference Baseline · Package-bound values and explicit unavailable states.", doc.status)}${body}<p class="stage-note">Displayed phase document, Phase 4 metrics and referenced figures match package SHA/byte metadata. Package status: ${esc(pkg.manifest.package_status)}; not a public release.</p></div>`;
 }
 function pageHeading(kicker, title, subtitle, status = caseData().status) {
   return `<div class="page-heading"><div><p class="kicker">${esc(kicker)}</p><h1>${esc(title)}</h1><p class="lede">${esc(subtitle)}</p></div><div class="page-meta">${badge(status)}</div></div>`;
@@ -503,10 +596,12 @@ function renderDashboard() {
   return `<div class="page">${banner(c)}${pageHeading("INTEGRATED REGRESSION ANALYSIS", "Dashboard", "獨立的分析工作區。Verified Research 與 Custom Dataset 互斥；兩種模式不共享研究結果。", c.status)}<div class="mode-switch" role="group" aria-label="Dashboard mode"><button type="button" data-dashboard-mode="verified" aria-pressed="${state.dashboardMode === "verified"}">Verified Research</button><button type="button" data-dashboard-mode="custom" aria-pressed="${state.dashboardMode === "custom"}">Custom Dataset</button></div><div style="margin-top:18px">${state.dashboardMode === "verified" ? renderDashboardVerified() : customPanel()}</div><div class="button-row" style="margin-top:22px"><a class="button" href="#phase-1">← Back to CRISP-DM Home</a></div></div>`;
 }
 function render() {
+  if (REFERENCE_PACKAGE_ROOT && !referencePackage && !referencePackageError && !referencePackageLoading) loadReferencePackage();
   updateShell();
   const phase = routePhase();
   if (state.route === "home") app.innerHTML = renderHome();
   else if (state.route === "dashboard") app.innerHTML = renderDashboard();
+  else if (phase && caseData().packageMode === "reference") app.innerHTML = renderReferencePackagePhase(phase);
   else if (phase === 1) app.innerHTML = renderPhase1();
   else if (phase === 2) app.innerHTML = renderPhase2();
   else if (phase === 3) app.innerHTML = renderPhase3();

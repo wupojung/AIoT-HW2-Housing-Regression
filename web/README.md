@@ -20,6 +20,10 @@ The complete Case Package copy is kept outside the static site at the ignored pr
 
 The frontend reads this private staging path only on a loopback preview. On other hosts it shows an unavailable state until an approved immutable release is produced. The PR #35 release layout is `/data/current-release.json` plus `/data/releases/<release_id>/cases/<case_id>/...`; this staging copy is not placed under `web/` and will not leak into the static output. Its package content and Phases 1–4 are marked `VERIFIED` for the requested UI state check. Phase 5 retains `PLANNED` / independent review `PENDING`, and each evaluation remains `AWAITING_REVIEW`. The Kaggle source page identifies the dataset license as MIT. The Phase 5 index has 60 evaluations, while figure references are empty and the figure manifest marks its 90 PNG assets `PLANNED`.
 
+## INIT B package consumer smoke
+
+On loopback only, the case selector also offers `Ames Housing — INIT B Reference Baseline` after it loads the ignored R3 package at `local/reference-baseline-20261028/runs/ames-reference-package-r3/`. The browser checks package-listed SHA-256 and byte lengths for the six phase documents, Phase 4 CV metrics, and SVG assets before rendering. Phase 2–4 display package-bound aggregates/configuration; Phase 1, 5, and 6 preserve their package `UNAVAILABLE` states. The R3 package is partial and publication is not approved. This preview does not add package files to `web/` or expose raw rows.
+
 Phase 6 offers manual entry and an alternate browser-local CSV flow. CSV headers are matched only by the exact names `Neighborhood`, `OverallQual`, `BedroomAbvGr`, and `GrLivArea`; a selected row can populate the matching manual controls. The file is read in browser memory, is not uploaded or persisted, and unsupported or out-of-range values are not applied. The mock estimate remains fixed and is not calculated from either manual or CSV input.
 
 The prototype remains static. It does not fetch live research services, call an API, train or evaluate a model, or enable real prediction. Do not copy raw datasets, private research, credentials, or unreviewed working files into `web/`.

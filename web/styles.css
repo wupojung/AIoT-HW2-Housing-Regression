@@ -422,3 +422,6 @@ details.disclosure summary { color: #126879; }
 @keyframes home-drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @keyframes trace-flow { to { stroke-dashoffset: -104; } }
 @keyframes node-glow { from { opacity: .62; transform: scale(.88); } to { opacity: 1; transform: scale(1.12); } }
+
+.package-figure { display: block; width: 100%; max-height: 560px; object-fit: contain; margin: 18px 0; background: #fff; border: 1px solid #d9e2e7; border-radius: 8px; }
+.package-json { overflow-x: auto; padding: 12px; background: #f4f7f8; border-radius: 8px; }
