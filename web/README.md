@@ -22,11 +22,11 @@ The frontend reads this private staging path only on a loopback preview. On othe
 
 ## INIT B package consumer smoke
 
-On loopback only, the case selector also offers `Ames Housing — INIT B Reference Baseline` after it loads the ignored R3 package at `local/reference-baseline-20261028/runs/ames-reference-package-r3/`. The browser checks package-listed SHA-256 and byte lengths for the six phase documents, Phase 4 CV metrics, and SVG assets before rendering. Phase 2–4 display package-bound aggregates/configuration; Phase 1, 5, and 6 preserve their package `UNAVAILABLE` states. The R3 package is partial and publication is not approved. This preview does not add package files to `web/` or expose raw rows.
+On loopback only, the case selector offers `Ames Housing — INIT B Reference Baseline` after it loads the ignored `local/reference-baseline-20261028/runs/ames-reference-e2e-20261028-02/case-package/` package. The browser checks package-listed SHA-256 and byte lengths for all six phase documents, Phase 4 CV metrics, Phase 2 SVGs, Phase 5 PNGs, and the Phase 6 inference smoke record before rendering. Phase 2–4 show source-bound calculations; Phase 5 shows Development OOF metrics and draft diagnostics with review pending; Phase 6 shows the private model reload/local inference smoke with remote prediction disabled. Phase 1 remains UNAVAILABLE for lack of approved business evidence. The package is PARTIAL and not publication-approved. Package files and raw OOF/model artifacts are not copied into `web/`.
 
 Phase 6 offers manual entry and an alternate browser-local CSV flow. CSV headers are matched only by the exact names `Neighborhood`, `OverallQual`, `BedroomAbvGr`, and `GrLivArea`; a selected row can populate the matching manual controls. The file is read in browser memory, is not uploaded or persisted, and unsupported or out-of-range values are not applied. The mock estimate remains fixed and is not calculated from either manual or CSV input.
 
-The prototype remains static. It does not fetch live research services, call an API, train or evaluate a model, or enable real prediction. Do not copy raw datasets, private research, credentials, or unreviewed working files into `web/`.
+The site remains a static prototype. Its loopback-only Reference Baseline preview reads an ignored local Case Package and displays package-bound calculations and local inference smoke evidence; the browser itself does not train or evaluate a model, and it does not expose a remote prediction service. Do not copy raw datasets, private research, credentials, or unreviewed working files into `web/`.
 
 ## Vercel output
 

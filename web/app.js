@@ -117,7 +117,7 @@ const caseSelect = document.querySelector("#case-select");
 const WEB_BASE = location.pathname.startsWith("/web/") ? "/web" : "";
 const IS_LOCAL_STAGING_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname) && location.pathname.startsWith("/web/");
 const REFERENCE_PACKAGE_ROOT = IS_LOCAL_STAGING_PREVIEW
-  ? "/local/reference-baseline-20261028/runs/ames-reference-package-r3"
+  ? "/local/reference-baseline-20261028/runs/ames-reference-e2e-20261028-02/case-package"
   : null;
 const PHASE5_PACKAGE_ROOT = IS_LOCAL_STAGING_PREVIEW
   ? "/local/staging/formal-data-test-20261027-01/case-package"
@@ -198,7 +198,7 @@ async function loadReferencePackage() {
       docs[phase] = JSON.parse(new TextDecoder().decode(bytes));
       if (docs[phase].case_id !== manifest.case_id) throw new Error(`Phase ${phase} Case ID mismatch.`);
     }
-    for (const entry of manifest.files.filter((item) => item.mime === "image/svg+xml")) {
+    for (const entry of manifest.files.filter((item) => ["image/svg+xml", "image/png"].includes(item.mime))) {
       if (!safePackageRef(entry.path)) throw new Error("Unsafe figure path reference.");
       const response = await fetch(`${REFERENCE_PACKAGE_ROOT}/${entry.path}`);
       if (!response.ok) throw new Error(`Figure request failed (${response.status}).`);
@@ -217,7 +217,16 @@ async function loadReferencePackage() {
     if (metricsDigest !== metricsEntry.sha256 || metricsBytes.byteLength !== metricsEntry.bytes) throw new Error("Phase 4 metrics manifest digest/size mismatch.");
     const cvMetrics = JSON.parse(new TextDecoder().decode(metricsBytes));
     if (cvMetrics.case_id !== manifest.case_id || cvMetrics.run_id !== defaultConfig.execution_run_id) throw new Error("Phase 4 metrics identity mismatch.");
-    referencePackage = { manifest, docs, cvMetrics, figurePaths: manifest.files.filter((item) => item.mime === "image/svg+xml").map((item) => item.path) };
+    const smokeRef = "assets/phase6-inference-smoke.json";
+    const smokeEntry = listed.get(smokeRef);
+    if (!smokeEntry) throw new Error("Phase 6 inference smoke evidence is not package-manifest-listed.");
+    const smokeResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${smokeRef}`);
+    if (!smokeResponse.ok) throw new Error(`Phase 6 smoke evidence request failed (${smokeResponse.status}).`);
+    const smokeBytes = await smokeResponse.arrayBuffer();
+    const smokeDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", smokeBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    if (smokeDigest !== smokeEntry.sha256 || smokeBytes.byteLength !== smokeEntry.bytes) throw new Error("Phase 6 smoke evidence manifest digest/size mismatch.");
+    const phase6Smoke = JSON.parse(new TextDecoder().decode(smokeBytes));
+    referencePackage = { manifest, docs, cvMetrics, phase6Smoke, figurePaths: manifest.files.filter((item) => ["image/svg+xml", "image/png"].includes(item.mime)).map((item) => item.path) };
     CASES[manifest.case_id] = { id: manifest.case_id, title: "Ames Housing — INIT B Reference Baseline", status: manifest.package_status, packageMode: "reference", packageRevision: manifest.package_revision, analyses: [] };
   } catch (error) {
     referencePackageError = error instanceof Error ? error.message : "Unable to verify Case Package.";
@@ -232,9 +241,9 @@ function renderReferencePackagePhase(phase) {
   const c = caseData();
   const doc = pkg?.docs[phase];
   if (!pkg || !doc) return `<div class="page">${pageHeading(`PHASE 0${phase} / REFERENCE PACKAGE`, "INIT B Reference Baseline", "本機套件載入或驗證狀態。", referencePackageError ? "ERROR" : "UNAVAILABLE")}<section class="state-panel" role="${referencePackageError ? "alert" : "status"}"><h3>${referencePackageError ? "Case Package 驗證失敗" : "載入隔離的本機 Case Package"}</h3><p>${esc(referencePackageError || "Package 僅從 loopback 本機路徑載入，不會發佈。")}</p></section></div>`;
-  const unavailable = doc.status === "UNAVAILABLE" || doc.status === "PLANNED";
+  const unavailable = doc.status === "UNAVAILABLE";
   let body = "";
-  if (phase === 1 || phase === 5 || phase === 6 || unavailable) {
+  if (phase === 1 || unavailable) {
     body = `<section class="state-panel"><h3>${esc(doc.reason_code || doc.readiness?.reason_code || "此 Phase 尚無可用資料")}</h3><p>${esc(doc.readiness?.message || "此 Case Package 將該階段標示為 UNAVAILABLE；未以示意數據補上。")}</p>${badge(doc.status)}</section>`;
   } else if (phase === 2) {
     body = doc.analyses.map((a) => `<section class="card"><div class="card-head"><div><p class="eyebrow">${esc(a.figure_id)}</p><h2>${esc(a.title)}</h2></div>${badge(a.status)}</div><div class="card-body"><p>${esc(a.description)}</p><p>${esc(a.finding || "")}</p>${a.image_ref ? `<img class="package-figure" src="${REFERENCE_PACKAGE_ROOT}/${encodeURI(a.image_ref)}" alt="${esc(a.title)}; ${esc(a.description)}">` : ""}<p class="stage-note">${esc(a.limitations || "")}</p></div></section>`).join("");
@@ -248,7 +257,21 @@ function renderReferencePackagePhase(phase) {
       : `<p>CV metric artifact unavailable.</p>`;
     const foldRows = pkg.cvMetrics.fold_results.map((fold) => `<tr><td>${fold.fold + 1}</td><td>${fold.validation_rows}</td><td>${fold.rmse.toFixed(6)}</td><td>${fold.mae.toFixed(6)}</td><td>${fold.r2.toFixed(8)}</td></tr>`).join("");
     const mean = pkg.cvMetrics.mean_fold_metrics;
-    body = `<section class="card"><div class="card-body"><h2>${esc(cfg?.configuration_id || "No configuration")}</h2><p>${esc(cfg?.track_id || "")}</p><pre class="package-json">${esc(JSON.stringify(cfg?.params || {}, null, 2))}</pre>${metrics}<p>CV rows ${doc.cv.training_rows} · folds ${doc.cv.fold_count} · ${esc(doc.cv.protocol_id)}.</p><table class="mock-data-table"><thead><tr><th>Fold</th><th>Validation rows</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody>${foldRows}<tr><th>Mean</th><th>—</th><th>${mean.rmse.toFixed(6)}</th><th>${mean.mae.toFixed(6)}</th><th>${mean.r2.toFixed(8)}</th></tr></tbody></table><p>Candidate search: NOT RUN.</p><p class="stage-note">Fold metrics are directly read from the manifest-bound historical Development artifact; they are not recalculated in the browser and do not represent independent generalization testing.</p></div></section>`;
+    body = `<section class="card"><div class="card-body"><h2>${esc(cfg?.configuration_id || "No configuration")}</h2><p>${esc(cfg?.track_id || "")}</p><pre class="package-json">${esc(JSON.stringify(cfg?.params || {}, null, 2))}</pre>${metrics}<p>CV rows ${doc.cv.training_rows} · folds ${doc.cv.fold_count} · ${esc(doc.cv.protocol_id)}.</p><table class="mock-data-table"><thead><tr><th>Fold</th><th>Validation rows</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody>${foldRows}<tr><th>Mean</th><th>—</th><th>${mean.rmse.toFixed(6)}</th><th>${mean.mae.toFixed(6)}</th><th>${mean.r2.toFixed(8)}</th></tr></tbody></table><p>Candidate search: NOT RUN.</p><p class="stage-note">Fold metrics are read from this run’s manifest-bound Development artifact; they are not recalculated in the browser and do not represent independent generalization testing.</p></div></section>`;
+  } else if (phase === 5) {
+    const pooled = doc.evaluations.find((item) => item.evaluation_id === doc.default_evaluation_id) || doc.evaluations.find((item) => item.metric_source === "pooled_oof");
+    const fmt = (key, value) => key === "r2" ? Number(value).toFixed(8) : Number(value).toLocaleString("en-US", {minimumFractionDigits: 6, maximumFractionDigits: 6});
+    const metrics = pooled ? `<div class="mock-data-table"><table><thead><tr><th>Development OOF metric</th><th>Value</th><th>Evidence state</th></tr></thead><tbody>${["mae","rmse","r2"].map((key) => `<tr><td>${key.toUpperCase()}</td><td>${fmt(key,pooled.metrics[key].value)}</td><td>${esc(pooled.metrics[key].status)}</td></tr>`).join("")}</tbody></table></div>` : "";
+    const figures = (pooled?.figures || []).map((figure) => {
+      const listed = pkg.manifest.files.find((entry) => entry.path === figure.asset_ref);
+      const safe = safePackageRef(figure.asset_ref) && listed && listed.sha256 === figure.sha256;
+      return `<section class="card"><div class="card-head"><div><p class="eyebrow">${esc(figure.figure_id)}</p><h2>${esc(figure.alt || figure.figure_id)}</h2></div>${badge(figure.status)}</div><div class="card-body">${safe ? `<img class="package-figure" src="${REFERENCE_PACKAGE_ROOT}/${encodeURI(figure.asset_ref)}" alt="${esc(figure.alt || figure.figure_id)}">` : `<p role="alert">Figure ref failed package manifest check.</p>`}<p class="stage-note">${esc(figure.finding || "")} · ${esc(figure.publication_review)}</p></div></section>`;
+    }).join("");
+    body = `<section class="card"><div class="card-head"><div><p class="eyebrow">DEVELOPMENT OOF · ${esc(pooled?.metric_source || "UNAVAILABLE")}</p><h2>Phase 5 已計算評估 · 待研究審查</h2></div>${badge(doc.status)}</div><div class="card-body"><p>Run ${esc(pooled?.execution_run_id || "")} · Config ${esc(pooled?.configuration_id || "")} · n=${esc(pooled?.n || "—")}</p>${metrics}<p class="stage-note">指標由本次 Phase 4 三折 Development OOF 計算；屬內部交叉驗證，不是獨立泛化測試。Publication review: ${esc(doc.publication_review)}.</p><p>OOF source SHA-256: <code>${esc(pooled?.evidence?.source_artifact_sha256 || "")}</code></p></div></section>${figures}`;
+  } else if (phase === 6) {
+    const model = doc.models?.[0];
+    const smoke = pkg.phase6Smoke;
+    body = `<section class="card"><div class="card-head"><div><p class="eyebrow">LOCAL PRIVATE MODEL</p><h2>${esc(model?.model_id || "No model")}</h2></div>${badge(model?.model_status || doc.status)}</div><div class="card-body"><dl class="data-row"><dt>Source Run / Config</dt><dd>${esc(model?.source_execution_run_id || "")} / ${esc(model?.source_configuration_id || "")}</dd></dl><dl class="data-row"><dt>Model SHA-256</dt><dd><code>${esc(model?.readiness?.model_sha256 || "")}</code></dd></dl><dl class="data-row"><dt>Reload / Local inference</dt><dd>${smoke.reload_verified ? "PASS" : "FAIL"} / ${smoke.local_inference_verified ? "PASS" : "FAIL"}</dd></dl><dl class="data-row"><dt>Development inference smoke</dt><dd>${Number(smoke.prediction_value).toLocaleString("en-US", {style:"currency",currency:"USD",maximumFractionDigits:2})}</dd></dl><p class="stage-note">One Development training record was used for a private local smoke only. Prediction is not a research result. Remote prediction and deployment are disabled.</p></div></section>`;
   }
   return `<div class="page"><div class="fixture-banner"><span><strong>Local Case Package · ${esc(pkg.manifest.package_revision)}</strong> · publication not approved; verified package bytes loaded from loopback.</span>${badge(doc.status)}</div>${pageHeading(`PHASE 0${phase} / ${PHASES[phase-1][1].toUpperCase()}`, PHASES[phase-1][2], "INIT B Reference Baseline · Package-bound values and explicit unavailable states.", doc.status)}${body}<p class="stage-note">Displayed phase document, Phase 4 metrics and referenced figures match package SHA/byte metadata. Package status: ${esc(pkg.manifest.package_status)}; not a public release.</p></div>`;
 }
