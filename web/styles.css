@@ -284,12 +284,14 @@ h2 { color: #18374b; letter-spacing: -.025em; }
 .phase-footer .button { min-width: 225px; border-radius: 9px; font-size: 14px; }
 .state-panel { border-color: #cbdde5; border-radius: 10px; background: linear-gradient(140deg, #f7fbfd, #f0f6f8); }
 .state-icon { border-color: #bad4dc; border-radius: 12px; background: #e9f7f5; color: #087e82; }
-.home-hero { position: relative; isolation: isolate; overflow: hidden; min-height: 500px; border: 1px solid rgba(118, 233, 221, .32); border-radius: 18px; background: radial-gradient(ellipse at 88% 46%, rgba(23, 130, 143, .4), transparent 30%), linear-gradient(118deg, #0b1d30 0%, #0d3045 65%, #0c4854 100%); box-shadow: 0 25px 65px rgba(10, 35, 51, .17); }
+.home-page { padding-top: 34px; }
+.home-hero { position: relative; isolation: isolate; overflow: hidden; min-height: clamp(600px, 70vh, 720px); border: 1px solid rgba(118, 233, 221, .32); border-radius: 18px; background: radial-gradient(ellipse at 88% 46%, rgba(23, 130, 143, .4), transparent 30%), linear-gradient(118deg, #0b1d30 0%, #0d3045 65%, #0c4854 100%); box-shadow: 0 25px 65px rgba(10, 35, 51, .17); }
 .home-hero::before { position: absolute; z-index: -1; inset: 0; background-image: linear-gradient(rgba(156, 223, 224, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(156, 223, 224, .07) 1px, transparent 1px); background-size: 36px 36px; mask-image: linear-gradient(90deg, transparent, #000 65%); content: ""; }
 .home-hero::after { position: absolute; z-index: -1; top: 50%; right: 13%; width: 310px; aspect-ratio: 1; border: 1px solid rgba(94, 225, 212, .18); border-radius: 50%; box-shadow: 0 0 0 34px rgba(94, 225, 212, .035), 0 0 0 72px rgba(94, 225, 212, .025), inset 0 0 55px rgba(69, 215, 199, .06); content: ""; transform: translateY(-50%); }
 .home-hero > div { position: relative; z-index: 1; }
 .home-hero .kicker { color: #7fe0cf; }
 .home-hero h1 { color: #f2fbff; text-shadow: 0 4px 25px rgba(0, 0, 0, .18); }
+.home-hero p.home-en-title { margin: 18px 0 14px; color: #8fe4d6; font-size: clamp(19px, 2vw, 25px); font-weight: 600; letter-spacing: -.025em; line-height: 1.4; }
 .home-hero p:not(.kicker) { color: #c5d8e1; }
 .home-hero .button { border-color: rgba(153, 236, 219, .55); border-radius: 9px; box-shadow: 0 5px 20px rgba(0, 0, 0, .14); }
 .phase1-grid .card { min-height: 245px; }

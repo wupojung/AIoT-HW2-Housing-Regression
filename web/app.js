@@ -150,8 +150,7 @@ function plannedPanel(message = "此案例目前沒有可用的研究資料。")
   return `<section class="state-panel"><span class="state-icon" aria-hidden="true">i</span><h3>此階段尚未提供資料</h3><p>${esc(message)}切換至此案例不會沿用 Ames 的文字、圖表或狀態。</p>${badge("PLANNED")}</section>`;
 }
 function renderHome() {
-  const c = caseData();
-  return `<div class="page">${banner(c)}<section class="home-hero"><div><p class="kicker">NCHU AIoT 2026 · HOUSING REGRESSION LAB</p><h1>從研究問題<br>走向可追溯的證據</h1><p>以清楚可追溯的方式呈現住宅迴歸研究。進入 CRISP-DM，從案例與研究問題開始。</p><a class="button" href="#phase-1">CRISP-DM →</a></div></section></div>`;
+  return `<div class="page home-page"><section class="home-hero"><div><p class="kicker">研究入口 · RESEARCH WORKSPACE</p><h1>從研究問題<br>走向可追溯的證據</h1><p class="home-en-title">From research questions to traceable evidence</p><p>以清楚可追溯的方式呈現住宅迴歸研究。<br>Explore housing regression research through a clear, traceable workflow.</p><a class="button" href="#phase-1">進入 CRISP-DM · Enter CRISP-DM →</a></div></section></div>`;
 }
 function renderPhase1() {
   const c = caseData();
