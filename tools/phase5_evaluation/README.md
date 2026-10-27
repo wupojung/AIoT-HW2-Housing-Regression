@@ -1,98 +1,54 @@
-# Phase 5 synthetic Evaluation CLI
+# Phase 5 Evaluation CLI
 
-This is an engineering-gate tool for producing a Phase 5 empty index or a clearly marked synthetic evaluation. It does not read Ames/Kaggle data, OOF/Holdout rows, fitted models, or Phase 4 run artifacts. It never publishes a package. All nonempty output uses `MOCK` metrics, leaves figures unavailable, and keeps INT-F/INT-S unavailable.
+This gate-bound tool exports an empty index, a clearly marked synthetic evaluation, or an explicitly authorized Phase 4 Development OOF evaluation. It does not read Holdout/competition-test rows or fitted models, retrain Phase 4, or publish a package. INT-F and INT-S remain unavailable pending their separate evidence and review.
 
-## Contract pin
+## Contract and isolated environment
 
-`evaluation-index.schema.json` is copied byte-for-byte from PR #35 commit `8d2bc4405e08e1a1b982204984f681d90975956a`, path `docs/ui-ux/case-package/phase-05/evaluation-index.schema.json` (schema version `1.0.0`, JSON Schema Draft 2020-12; Git blob SHA-1 `c5ce014f9b96fded1df2f756f590c88d1401eac6`, file SHA-256 `a7f725d74e00d0c8e0ee24685722251181f45fec36e5145da0e2205aef89ad1f`). The wire output is `phases/phase-05/evaluations.json`. CV fold-mean and pooled OOF have distinct evaluation IDs and are only linked to each other; fold SD is per metric with `ddof: 1`. Schema validation uses `Draft202012Validator` and `FormatChecker`.
+`evaluation-index.schema.json` is copied byte-for-byte from PR #35 commit `8d2bc4405e08e1a1b982204984f681d90975956a`, path `docs/ui-ux/case-package/phase-05/evaluation-index.schema.json` (schema version `1.0.0`, JSON Schema Draft 2020-12; Git blob SHA-1 `c5ce014f9b96fded1df2f756f590c88d1401eac6`, file SHA-256 `a7f725d74e00d0c8e0ee24685722251181f45fec36e5145da0e2205aef89ad1f`). The wire output is `phases/phase-05/evaluations.json`. CV fold-mean and pooled OOF have distinct linked IDs; fold SD uses `ddof: 1`.
 
-The isolated task environment resolved `jsonschema[format]==4.25.1` from the available package index. Create it under the authorized ignored task directory; do not install globally or modify root dependency files:
+Install dependencies only in an authorized isolated environment. Do not install globally or modify root dependency files:
 
 ```sh
 python3 -m venv local/research/phase5/engineering-gate-20261027-01/venv
 local/research/phase5/engineering-gate-20261027-01/venv/bin/python -m pip install -r tools/phase5_evaluation/requirements.txt
 ```
 
-## Invocation
+The output root must already exist and resolve exactly to `gate.output_root`. The exporter refuses to replace the index or figure assets. Index files and PNG assets are staged then atomically hard-linked into place; filesystems without hard-link support fail closed. `--help` works without dependencies; `export` and `validate` require the isolated environment. Exit codes: `0` success, `2` usage error, `3` invalid input/authorization/host/path/digest, `4` schema or identity/join failure, `5` output/dependency failure.
+
+## Synthetic mode
+
+The synthetic manifest and gate contract remains available for unit fixtures. A synthetic manifest has `manifest_version: 1`, `mode: synthetic`, `case_id`, run/configuration identity, prediction origin, protocol version, target, and a relative `source` path/SHA-256 with kind `synthetic_prediction_pairs`. The source JSON is `{"fixture_kind":"synthetic","rows":[...]}`; each row has `fold_id`, finite `actual`, and finite `predicted` values.
+
+The gate must set `authorized: true`, `mode: synthetic_only`, `allowed_operations: [export]`, `gate_id`, `input_root`, `input_allowlist`, `output_root`, and exact runtime `host` values (`platform`, `host_id`, `python_version`, `python_executable`). The input root must equal the manifest directory and the allowlist must contain the source exactly once with its digest. The tool rejects path traversal, symlinks, host mismatch and digest mismatch. Synthetic results are marked `MOCK` and are not empirical evidence.
+
+## Phase 4 Development OOF adapter
+
+For the single Owner-authorized Issue #37 Development run, `--manifest` is the original `p4b_manifest.json`. This adapter accepts only these handoff-pinned digests:
+
+- Manifest: `3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e`
+- Public summary: `293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc`
+- OOF CSV: `02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988`
+
+The trusted Coordinator gate uses `mode: phase4_oof`, `authorized: true`, `allowed_operations: [export]`, `gate_id`, `case_id`, `run_id`, `protocol_version`, `manifest_sha256`, `input_root`, `input_allowlist`, `output_root`, exact runtime `host` values, `target: {column, unit}`, and a nonempty `configurations` array. The input root is the approved Development artifact directory. The allowlist contains exactly `p4b_public_summary.json` and `p4b_oof_predictions.csv` with their pinned digests. The CLI opens only these two manifest-listed files; it does not inspect other inventory entries.
+
+Each selected configuration has `configuration_id`, `method`, `track: primary`, and the exact `candidate` object from the summary. Its ID is `p4-` plus the first 24 lowercase hex characters of SHA-256 over UTF-8 JSON `[method, "primary", candidate]`, serialized with sorted keys and separators `,` and `:`. Every selected config must be completed and winner-eligible in the summary, cover every expected fold, contain exactly the declared Development row count, and have finite predictions. Native secondary, incomplete/invalid, and unselected groups are not exported.
+
+The CSV header must exactly be `Id,fold,task_id,method,track,actual,predicted`. Every exported row's task/fold/method/track joins to one public-summary task. Output has distinct fold-mean and pooled OOF evaluations with reciprocal IDs; pooled metrics are calculated across the OOF rows, and fold sample SD uses `ddof: 1`. Only pooled OOF evaluations receive FIG-P5-02/01/03 PNG diagnostics. Residuals are `actual - predicted`. The index contains metrics and evidence references, not raw rows or predictions; image assets are diagnostics with publication review pending. The top-level index remains `PLANNED` until publication review, even though the individual OOF metrics are marked `VERIFIED`. No final fit or Holdout result is inferred.
+
+Never open `holdout-validation/`, competition test, unmanifested diagnostic CSVs, or private Phase 4 details. The CLI does not establish gate authenticity, inspect Git state, or infer permission; only the trusted Owner/Coordinator provides the gate.
+
+Example (the Coordinator supplies the trusted gate and private output directory):
 
 ```sh
 local/research/phase5/engineering-gate-20261027-01/venv/bin/python tools/phase5_evaluation/cli.py export \
-  --manifest /approved/input-root/manifest.json \
-  --gate /approved/control/gate.json \
-  --output-root /approved/private-staging-root
+  --manifest /approved/development-root/p4b_manifest.json \
+  --gate /private/owner-gate.json \
+  --output-root /private/phase5-staging
 ```
 
-The output root must already exist and resolve exactly to `gate.output_root`. The tool creates only `phases/phase-05/evaluations.json`; it refuses to replace an existing file. A same-directory staged file is flushed and atomically hard-linked into place, so interrupted promotion leaves no partial destination. Filesystem hard-link support is required; unsupported filesystems fail closed.
-
-`python3 tools/phase5_evaluation/cli.py --help` is available without the validator dependency. The `export` and `validate` operations require the isolated environment above. Exit codes are stable: `0` success, `2` argparse usage error, `3` invalid input/authorization/host/path/digest, `4` schema or identity/join failure, `5` output/dependency failure.
-
-## Input manifests
-
-Both control files are UTF-8 JSON. `manifest.json` must be directly inside `gate.input_root`. An authorized empty request contains no source and has this shape:
-
-```json
-{
-  "manifest_version": 1,
-  "mode": "empty",
-  "case_id": "synthetic-empty-demo",
-  "reason_code": "NO_APPROVED_EVALUATIONS"
-}
-```
-
-A synthetic request identifies its target and canonical identities, and references a separate synthetic-only source file by relative path and SHA-256:
-
-```json
-{
-  "manifest_version": 1,
-  "mode": "synthetic",
-  "case_id": "synthetic-housing-demo",
-  "execution_run_id": "synthetic-run-01",
-  "configuration_id": "synthetic-config-01",
-  "prediction_origin": "synthetic_fold_specific_models",
-  "protocol_version": "synthetic-protocol-v1",
-  "target": {"column": "SyntheticTarget", "unit": "synthetic_units"},
-  "source": {
-    "path": "predictions.json",
-    "sha256": "<64-character SHA-256 of predictions.json>",
-    "kind": "synthetic_prediction_pairs"
-  }
-}
-```
-
-The referenced source must contain `{"fixture_kind":"synthetic","rows":[...]}`. Each row has a string `fold_id` and finite numeric `actual`/`predicted` values. At least two folds with at least two rows per fold are required. The program calculates each fold's metrics first, then the arithmetic fold mean and sample SD; pooled metrics are separately calculated over all rows. `residual = actual - predicted`. IDs and values remain synthetic and are not evidence about Ames.
-
-The gate record is an explicit local authorization envelope. Its `authorized` field must be true, `mode` must be `synthetic_only`, and `allowed_operations` must include `export`. `input_root` must match the manifest directory; `input_allowlist` must contain exactly one matching source path and digest. `output_root` must be an existing directory and exactly match `--output-root`. `host.platform`, `host.host_id`, `host.python_version`, and `host.python_executable` must match the current runtime. The CLI rejects traversal, absolute paths, symlinks in the source path, host mismatch, missing authorization, and any mismatch between manifest digest, gate digest, and source bytes.
-A synthetic gate record has this shape (replace the host values with the exact authorized runtime values):
-
-```json
-{
-  "gate_id": "owner-approved-synthetic-gate",
-  "authorized": true,
-  "mode": "synthetic_only",
-  "allowed_operations": ["export"],
-  "input_root": "/private/approved/input-root",
-  "input_allowlist": [
-    {"path": "predictions.json", "sha256": "<64-character SHA-256>"}
-  ],
-  "output_root": "/private/approved/staging-root",
-  "host": {
-    "platform": "macos",
-    "host_id": "<host name>",
-    "python_version": "3.9",
-    "python_executable": "/private/task-env/bin/python"
-  }
-}
-```
-
-For an empty request, `input_allowlist` is an empty array; the gate still authorizes the operation, output root, and runtime.
-
-The CLI does not discover or verify the authenticity of a gate record, inspect Git state, or infer real-data permission. A trusted Owner/Coordinator must provide the gate. Never use a synthetic gate for a real source.
-
-## Validation
+Validate the resulting index with:
 
 ```sh
 local/research/phase5/engineering-gate-20261027-01/venv/bin/python tools/phase5_evaluation/cli.py validate \
-  --index /private/staging-root/phases/phase-05/evaluations.json
+  --index /private/phase5-staging/phases/phase-05/evaluations.json
 ```
-
-Validation checks the pinned schema and evaluation ID/link invariants. It does not implement Case Package cross-file joins, asset-byte checks, rights review, release sealing, publication, or research QA. Phase 6 owns those gates. Linux/Windows portability is designed but was not runtime-tested for this handoff.

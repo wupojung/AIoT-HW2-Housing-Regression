@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import csv
 import importlib.util
 import json
 import platform
@@ -271,6 +272,119 @@ class Phase5CliTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "OUTPUT_WRITE_FAILED")
         self.assertFalse(new_target.exists())
         self.assertEqual(list(new_target.parent.glob(".phase5-*.tmp")), [])
+
+    def _phase4_fixture(self):
+        candidate = {"alpha": 100.0, "candidate_order": 3}
+        config_id = "p4-" + hashlib.sha256(
+            json.dumps(["lasso", "primary", candidate], sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()[:24]
+        tasks = []
+        rows = []
+        for fold, pairs in enumerate((((10, 12), (20, 19)), ((30, 29), (40, 42)), ((50, 52), (60, 58)))):
+            task_id = f"task-{fold}"
+            tasks.append({"task_id": task_id, "method": "lasso", "track": "primary", "primary_track": "selected_to_ols",
+                          "fold": fold, "candidate": candidate, "status": "COMPLETED", "primary_valid": True})
+            for index, (actual, predicted) in enumerate(pairs):
+                rows.append({"Id": f"dev-{fold}-{index}", "fold": fold, "task_id": task_id,
+                             "method": "lasso", "track": "primary", "actual": actual, "predicted": predicted})
+        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-") as temp:
+            root = Path(temp)
+            csv_path = root / "oof.csv"
+            with csv_path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=["Id", "fold", "task_id", "method", "track", "actual", "predicted"])
+                writer.writeheader(); writer.writerows(rows)
+            summary_path = self.write_json(root / "summary.json", {
+                "metadata": {"run_id": "p4-run-01", "protocol_version": "p4b-v2",
+                             "data_boundary": {"development_rows": len(rows)}},
+                "per_outer_fold_results": tasks,
+                "aggregate_results": [{"method": "lasso", "candidate": candidate,
+                                       "status": "COMPLETED", "winner_eligible": True,
+                                       "expected_fold_count": 3, "expected_folds": [0, 1, 2]}],
+            })
+            manifest = {"run_id": "p4-run-01", "phase3_contract_version": "p4b-v2"}
+            gate = {"run_id": "p4-run-01", "protocol_version": "p4b-v2", "target": {"column": "SalePrice", "unit": "USD"},
+                    "configurations": [{"configuration_id": config_id, "method": "lasso", "track": "primary", "candidate": candidate}]}
+            data = phase5_cli._read_phase4_oof(summary_path, csv_path, manifest, gate,
+                                               hashlib.sha256(summary_path.read_bytes()).hexdigest(),
+                                               hashlib.sha256(csv_path.read_bytes()).hexdigest())
+            return data, config_id
+
+    def test_phase4_oof_join_metrics_and_pooled_diagnostics_use_only_synthetic_rows(self):
+        data, config_id = self._phase4_fixture()
+        index, plot_data = phase5_cli._build_phase4("synthetic-p4-case", data)
+        self.assertEqual(len(index["evaluations"]), 2)
+        by_source = {item["metric_source"]: item for item in index["evaluations"]}
+        self.assertNotEqual(by_source["cv_fold_mean"]["evaluation_id"], by_source["pooled_oof"]["evaluation_id"])
+        self.assertEqual(by_source["cv_fold_mean"]["linked_evaluation_ids"], [by_source["pooled_oof"]["evaluation_id"]])
+        self.assertEqual(by_source["cv_fold_mean"]["fold_summary"]["ddof"], 1)
+        self.assertEqual(by_source["pooled_oof"]["n"], 6)
+        self.assertEqual([fig["figure_id"] for fig in by_source["pooled_oof"]["figures"]],
+                         ["FIG-P5-02", "FIG-P5-01", "FIG-P5-03"])
+        self.assertTrue(all(fig["evaluation_id"] == by_source["pooled_oof"]["evaluation_id"]
+                            for fig in by_source["pooled_oof"]["figures"]))
+        self.assertEqual(plot_data[by_source["pooled_oof"]["evaluation_id"]][0], (10.0, 12.0))
+        self.assertEqual(config_id, by_source["pooled_oof"]["configuration_id"])
+        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-assets-") as temp:
+            output_root = Path(temp)
+            phase5_cli._write_real_figures(output_root, index, plot_data)
+            phase5_cli._schema_validate(index)
+            for figure in by_source["pooled_oof"]["figures"]:
+                asset = output_root / "phases" / "phase-05" / figure["asset_ref"]
+                self.assertTrue(asset.is_file())
+                self.assertEqual(figure["sha256"], hashlib.sha256(asset.read_bytes()).hexdigest())
+        phase5_cli._validate_identity(index)
+
+    def test_phase4_oof_rejects_invalid_task_join_and_missing_prediction(self):
+        data, _ = self._phase4_fixture()
+        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-bad-") as temp:
+            root = Path(temp)
+            csv_path = root / "oof.csv"
+            csv_path.write_text("Id,fold,task_id,method,track,actual,predicted\nrow,0,unknown,lasso,primary,1,2\n", encoding="utf-8")
+            summary_path = root / "summary.json"
+            summary_path.write_text("{}", encoding="utf-8")
+            manifest = {"run_id": "p4-run-01", "phase3_contract_version": "p4b-v2"}
+            gate = {"run_id": "p4-run-01", "protocol_version": "p4b-v2"}
+            with self.assertRaises(phase5_cli.CliError) as caught:
+                phase5_cli._read_phase4_oof(summary_path, csv_path, manifest, gate, "0" * 64, "1" * 64)
+            self.assertEqual(caught.exception.code, "JOIN_BLOCKED")
+
+        data, _ = self._phase4_fixture()
+        group = next(iter(data["groups"].values()))
+        group["rows"][0] = (group["rows"][0][0], float("nan"))
+        with self.assertRaises(phase5_cli.CliError):
+            phase5_cli._build_phase4("synthetic-p4-case", data)
+
+    def test_phase4_oof_manifest_inventory_and_gate_allowlist_are_exact(self):
+        with tempfile.TemporaryDirectory(prefix="phase5-p4oof-allowlist-") as temp:
+            root = Path(temp)
+            summary = self.write_json(root / "p4b_public_summary.json", {"synthetic": True})
+            oof = root / "p4b_oof_predictions.csv"
+            oof.write_text("Id,fold,task_id,method,track,actual,predicted\n", encoding="utf-8")
+            summary_sha = hashlib.sha256(summary.read_bytes()).hexdigest()
+            oof_sha = hashlib.sha256(oof.read_bytes()).hexdigest()
+            manifest = self.write_json(root / "p4b_manifest.json", {
+                "file_inventory": [
+                    {"relative_path": summary.name, "sha256": summary_sha, "is_public": True},
+                    {"relative_path": oof.name, "sha256": oof_sha, "is_public": False},
+                ],
+            })
+            manifest_sha = hashlib.sha256(manifest.read_bytes()).hexdigest()
+            gate = {"mode": "phase4_oof", "input_root": str(root), "manifest_sha256": manifest_sha,
+                    "input_allowlist": [{"path": summary.name, "sha256": summary_sha},
+                                        {"path": oof.name, "sha256": oof_sha}]}
+            expected = {"p4b_manifest.json": manifest_sha,
+                        "p4b_public_summary.json": summary_sha,
+                        "p4b_oof_predictions.csv": oof_sha}
+            with mock.patch.dict(phase5_cli.PHASE4_EVIDENCE_SHA256, expected):
+                resolved_summary, resolved_summary_sha, resolved_oof, resolved_oof_sha = phase5_cli._resolve_phase4_files(
+                    manifest, json.loads(manifest.read_text()), gate
+                )
+                self.assertEqual((resolved_summary, resolved_summary_sha), (summary.resolve(), summary_sha))
+                self.assertEqual((resolved_oof, resolved_oof_sha), (oof.resolve(), oof_sha))
+                gate["input_allowlist"].append({"path": "extra.csv", "sha256": "0" * 64})
+                with self.assertRaises(phase5_cli.CliError) as caught:
+                    phase5_cli._resolve_phase4_files(manifest, json.loads(manifest.read_text()), gate)
+                self.assertEqual(caught.exception.code, "NOT_AUTHORIZED")
 
     def test_schema_and_cross_evaluation_join_validation(self):
         result = self.export_synthetic()
