@@ -197,9 +197,10 @@ def load_reference_config(config_path: str | os.PathLike[str]) -> ReferenceConfi
         or PureWindowsPath(source_rel).drive
     ):
         raise ReferenceBaselineError("INIT B source path must be relative and portable")
-    source = (path.resolve(strict=True).parent / source_rel).resolve(strict=True)
-    if source.is_symlink() or not source.is_file():
+    source_candidate = path.resolve(strict=True).parent / source_rel
+    if source_candidate.is_symlink() or not source_candidate.is_file():
         raise ReferenceBaselineError("INIT B source must be a regular non-symlink file")
+    source = source_candidate.resolve(strict=True)
     actual_sha = _sha256(source.read_bytes())
     if actual_sha != data.get("sha256") or actual_sha != REFERENCE_TRAIN_SHA256:
         raise ReferenceBaselineError("INIT B source SHA-256 mismatch")
@@ -605,4 +606,73 @@ def run_fixed_lasso_cv(
             "mae": float(np.mean(mae)), "mae_sample_sd": float(np.std(mae, ddof=1)),
             "r2": float(np.mean(r2)), "r2_sample_sd": float(np.std(r2, ddof=1)),
         },
+    }
+
+
+def run_reference_final_fit_smoke(
+    config_path: str | os.PathLike[str], *, code_head: str, run_id: str = REFERENCE_RUN_ID
+) -> dict[str, Any]:
+    """Fit the fixed final Development estimator and smoke one in-sample inference.
+
+    The fitted objects and prediction stay in memory. No validation rows, metrics,
+    or row-level values are emitted, and this does not create a deployable model.
+    """
+    config = load_reference_config(config_path)
+    _headers, rows = read_reference_csv(config.source_csv)
+    train_indices, _validation_indices = split_reference_rows(rows)
+    development_rows = [rows[index] for index in train_indices]
+    pipeline = ReferencePhase3Pipeline()
+    batch = pipeline.fit_transform(development_rows, "final_development_fit")
+
+    from sklearn.linear_model import Lasso
+    from sklearn.preprocessing import StandardScaler
+    from threadpoolctl import threadpool_limits
+
+    X = batch.matrix.copy()
+    y = np.asarray(batch.y, dtype=np.float64)
+    scale_columns = [
+        index for index, name in enumerate(batch.feature_names)
+        if name not in STRUCTURAL_INDICATORS
+        and not name.endswith("_is_missing")
+        and not any(name.startswith(column + "_") for column in NOMINAL_COLUMNS)
+    ]
+    with threadpool_limits(limits=1):
+        if scale_columns:
+            X[:, scale_columns] = StandardScaler().fit_transform(X[:, scale_columns])
+        lasso = Lasso(alpha=REFERENCE_LASSO_ALPHA, max_iter=10000, tol=1e-4, selection="cyclic")
+        lasso.fit(X, y)
+        selected = np.flatnonzero(np.abs(lasso.coef_) > 1e-8)
+        if not len(selected) or not np.isfinite(lasso.coef_).all():
+            raise ReferenceBaselineError("fixed final Lasso did not produce a finite nonempty feature set")
+        design = np.column_stack((np.ones(len(X)), X[:, selected]))
+        coefficients, _residuals, rank, singular_values = np.linalg.lstsq(design, y, rcond=None)
+        # Engineering capability smoke only: predict one row from the Development
+        # fit population, but deliberately discard the value and all metrics.
+        prediction = float(np.r_[1.0, X[0, selected]] @ coefficients)
+    if not math.isfinite(prediction):
+        raise ReferenceBaselineError("in-memory training-population inference was non-finite")
+    return {
+        "status": "PASS",
+        "scope": "training_in_sample_engineering_smoke_only",
+        "run_id": run_id,
+        "code_head": code_head,
+        "config_sha256": config.config_sha256,
+        "source_sha256": _sha256(config.source_csv.read_bytes()),
+        "development_rows": len(development_rows),
+        "encoded_feature_count": batch.n_features,
+        "selected_feature_count": int(len(selected)),
+        "selected_feature_names_sha256": _sha256(json.dumps(
+            [batch.feature_names[index] for index in selected], ensure_ascii=False, separators=(",", ":")
+        ).encode("utf-8")),
+        "lasso_convergence": "CONVERGED" if int(lasso.n_iter_) < lasso.max_iter else "ITERATION_LIMIT_REACHED",
+        "ols_rank": int(rank),
+        "ols_nullity": int(len(selected) + 1 - rank),
+        "inference_call_count": 1,
+        "prediction_finite": True,
+        "prediction_value_emitted": False,
+        "metrics_computed": False,
+        "model_persisted": False,
+        "deployable": False,
+        "candidate_search": "NOT RUN",
+        "max_ols_singular_value": float(singular_values[0]) if len(singular_values) else None,
     }
