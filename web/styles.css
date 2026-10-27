@@ -358,6 +358,69 @@ h2 { color: #18374b; letter-spacing: -.025em; }
 .selector-button, .segmented button { min-height: 39px; border-color: #d4e1e8; border-radius: 8px; background: #fff; color: #496273; transition: all .16s ease; }
 .selector-button:hover, .segmented button:hover { border-color: #82c9c3; background: #f3fbf9; color: #0b656b; }
 .selector-button[aria-pressed="true"], .segmented button[aria-pressed="true"] { border-color: #55b9b4; background: #e7f8f5; color: #075d65; box-shadow: inset 0 0 0 1px rgba(30, 164, 157, .1); }
+
+/* Reference Case Package presentation uses the existing analysis components. */
+.reference-page { --reference-accent: #087e82; }
+.reference-summary-grid { margin: 14px 0 20px; }
+.reference-stat-card { display: grid; align-content: start; gap: 8px; min-width: 0; padding: 17px 18px; border: 1px solid #d8e5eb; border-radius: 10px; background: linear-gradient(150deg, #fff, #f7fbfc); }
+.reference-stat-card > span, .reference-stat-card > small { color: #647a8b; font-size: 10px; line-height: 1.5; }
+.reference-stat-card > strong { color: #18374b; font-size: clamp(19px, 2vw, 27px); line-height: 1.25; overflow-wrap: anywhere; }
+.reference-stat-card > strong:first-of-type:not(:only-of-type) { font-size: 15px; }
+.reference-summary-grid.grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.reference-analysis-panel { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5edf0; }
+.reference-analysis-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 16px; }
+.reference-analysis-heading h2 { margin-bottom: 0; }
+.reference-analysis-selector { margin-bottom: 18px; }
+.reference-type-summary { display: flex; flex-wrap: wrap; gap: 9px; margin: 14px 0; }
+.reference-type-summary > span { display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid #d8e5eb; border-radius: 8px; background: #f7fbfc; color: #496273; font-size: 11px; }
+.reference-type-summary strong { color: #075d65; font-size: 14px; }
+.reference-missing-bars { display: grid; gap: 11px; margin: 20px 0; }
+.reference-bar-row { display: grid; grid-template-columns: minmax(110px, .9fr) minmax(100px, 2fr) minmax(130px, .8fr); align-items: center; gap: 12px; color: #40566a; font-size: 11px; }
+.reference-bar-row > strong { text-align: right; color: #18374b; }
+.reference-bar-row small { color: #71838e; font-weight: 500; }
+.reference-bar-track { height: 14px; overflow: hidden; border-radius: 99px; background: #edf2f4; }
+.reference-bar-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #20b9ad, #83cfc5); }
+.table-scroll { width: 100%; overflow-x: auto; }
+.table-scroll table { min-width: 480px; }
+.reference-figure { margin: 20px auto; }
+.reference-page .package-figure { display: block; width: 100%; max-height: 560px; margin: 0 auto; object-fit: contain; }
+.reference-figure figcaption { margin-top: 9px; color: #536b7a; font-size: 10px; line-height: 1.55; }
+.reference-page .mock-data-table td, .reference-page .mock-data-table th, .reference-page .reference-stat-card strong { font-variant-numeric: tabular-nums; }
+.reference-page img.package-figure[src$=".svg"] { background: #fff; }
+.reference-stage-total { display: flex; align-items: baseline; gap: 12px; padding: 10px 0; }
+.reference-stage-total strong { color: #18374b; font-size: clamp(28px, 4vw, 42px); letter-spacing: -.04em; }
+.reference-stage-total span { color: #71838e; font-size: 11px; }
+.reference-stack-segment { display: block; height: 100%; border-right: 2px solid #fff; }
+.reference-split { margin-top: 26px; padding: 18px; border: 1px solid #d8e5eb; border-radius: 10px; background: linear-gradient(150deg, #fff, #f8fbfc); }
+.reference-split .row-split { overflow: hidden; border-radius: 7px; }
+.reference-fold-list { display: grid; gap: 15px; }
+.reference-fold { display: grid; gap: 6px; color: #496273; font-size: 10px; }
+.reference-fold .cv-track { overflow: hidden; border-radius: 6px; }
+.reference-fold .cv-track span { overflow: hidden; white-space: nowrap; }
+.reference-fold small { color: #71838e; }
+.reference-metrics-card { margin-top: 18px; }
+.reference-metrics-card .metrics, .reference-p5-metrics { margin: 16px 0 20px; }
+.reference-metrics-card .metric-value, .reference-p5-metrics .metric-value { font-size: clamp(23px, 2.5vw, 34px); }
+.reference-figure-card { margin-top: 18px; }
+.reference-figure-caption { color: #536b7a; font-size: 11px; line-height: 1.6; }
+.reference-note-card { margin-top: 18px; }
+.reference-note-card .disclosure { margin-top: 18px; }
+.reference-page details.disclosure { margin-top: 14px; }
+.reference-page details.disclosure summary { color: #075d65; }
+.reference-page .package-verification-note { margin-top: 18px; }
+@media (max-width: 760px) {
+  .reference-page .phase-footer { flex-direction: column; align-items: stretch; }
+  .reference-page .phase-footer .button { width: 100%; min-width: 0; }
+  .reference-summary-grid.grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reference-summary-grid.grid.three { grid-template-columns: 1fr; }
+  .reference-bar-row { grid-template-columns: minmax(94px, .8fr) minmax(70px, 1.2fr); gap: 8px; }
+  .reference-bar-row > strong { grid-column: 2; text-align: left; }
+  .reference-analysis-heading { align-items: flex-start; }
+  .reference-page .card-head, .reference-page .card-body { padding-left: 16px; padding-right: 16px; }
+  .reference-fold .cv-track span { font-size: 8px; }
+  .reference-split { padding: 13px; }
+  .reference-split .row-split span { padding: 0 5px; font-size: 8px; }
+}
 .figure-frame, .mock-figure { border-color: #d5e4e9; border-radius: 10px; background: linear-gradient(145deg, #f8fbfc, #f1f7f8); }
 .mock-stat, .mock-result-panel { border-color: #d8e5eb; border-radius: 10px; background: #fbfdfe; }
 .mock-stat strong { color: #087e82; }
