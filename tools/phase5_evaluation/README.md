@@ -13,17 +13,6 @@ python3 -m venv local/research/phase5/engineering-gate-20261027-01/venv
 local/research/phase5/engineering-gate-20261027-01/venv/bin/python -m pip install -r tools/phase5_evaluation/requirements.txt
 ```
 
-Windows PowerShell equivalent:
-
-```powershell
-py -3 -m venv local\research\phase5\engineering-gate-20261027-01\venv
-& .\local\research\phase5\engineering-gate-20261027-01\venv\Scripts\python.exe -m pip install -r tools\phase5_evaluation\requirements.txt
-& .\local\research\phase5\engineering-gate-20261027-01\venv\Scripts\python.exe tools\phase5_evaluation\cli.py export `
-  --manifest C:\approved\input-root\manifest.json `
-  --gate C:\approved\control\gate.json `
-  --output-root C:\approved\private-staging-root
-```
-
 ## Invocation
 
 ```sh
@@ -73,7 +62,6 @@ A synthetic request identifies its target and canonical identities, and referenc
 The referenced source must contain `{"fixture_kind":"synthetic","rows":[...]}`. Each row has a string `fold_id` and finite numeric `actual`/`predicted` values. At least two folds with at least two rows per fold are required. The program calculates each fold's metrics first, then the arithmetic fold mean and sample SD; pooled metrics are separately calculated over all rows. `residual = actual - predicted`. IDs and values remain synthetic and are not evidence about Ames.
 
 The gate record is an explicit local authorization envelope. Its `authorized` field must be true, `mode` must be `synthetic_only`, and `allowed_operations` must include `export`. `input_root` must match the manifest directory; `input_allowlist` must contain exactly one matching source path and digest. `output_root` must be an existing directory and exactly match `--output-root`. `host.platform`, `host.host_id`, `host.python_version`, and `host.python_executable` must match the current runtime. The CLI rejects traversal, absolute paths, symlinks in the source path, host mismatch, missing authorization, and any mismatch between manifest digest, gate digest, and source bytes.
-
 A synthetic gate record has this shape (replace the host values with the exact authorized runtime values):
 
 ```json

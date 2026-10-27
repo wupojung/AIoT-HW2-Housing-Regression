@@ -118,7 +118,7 @@ class Phase5CliTests(unittest.TestCase):
 
     def test_help_and_argument_errors(self):
         help_result = subprocess.run(
-            [sys.executable, str(CLI_PATH), "--help"], cwd=REPO_ROOT,
+            ["python3", str(CLI_PATH), "--help"], cwd=REPO_ROOT,
             text=True, capture_output=True,
         )
         self.assertEqual(help_result.returncode, 0, help_result.stderr)
