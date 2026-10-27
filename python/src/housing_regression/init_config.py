@@ -35,7 +35,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "alpha_values": [0.01, 0.1, 1.0, 10.0],
         "l1_ratio_values": [0.25, 0.5, 0.75],
     },
-    "provenance": {"config_sha256": None},
+    "provenance": {"init_config_sha256": None},
 }
 
 SAMPLE_CONFIG = """# RegScope INIT configuration template.
@@ -56,7 +56,7 @@ models:
   alpha_values: [0.01, 0.1, 1.0, 10.0]  # Regularization candidates.
   l1_ratio_values: [0.25, 0.5, 0.75]   # Elastic Net mixing candidates.
 provenance:
-  config_sha256: <computed-by-init>  # Hash of canonical config content without this field.
+  init_config_sha256: <computed-by-init>  # INIT-time fingerprint; later edits do not change it.
 """
 
 
@@ -66,14 +66,17 @@ class InitResult:
     config_path: Path
     sample_path: Path
     source_sha256: str
-    config_sha256: str
+    init_config_sha256: str
 
 
 @dataclass(frozen=True)
 class LoadedConfig:
+    """Effective config values and current/INIT fingerprints."""
+
     values: dict[str, Any]
-    config_sha256: str
+    config_sha256: str  # Current values, excluding provenance metadata.
     source_sha256: str
+    init_config_sha256: str  # Immutable fingerprint written by INIT.
 
 
 class ConfigError(ValueError):
@@ -85,11 +88,9 @@ def _sha256(content: bytes) -> str:
 
 
 def _config_sha256(values: dict[str, Any]) -> str:
-    """Hash canonical config content with the self-referential digest omitted."""
+    """Hash YAML-safe-dumped config values, excluding provenance metadata."""
     canonical = dict(values)
-    canonical_provenance = dict(values["provenance"])
-    canonical_provenance.pop("config_sha256", None)
-    canonical["provenance"] = canonical_provenance
+    canonical.pop("provenance", None)
     content = yaml.safe_dump(canonical, sort_keys=False, allow_unicode=False).encode("utf-8")
     return _sha256(content)
 
@@ -180,11 +181,11 @@ def _validate_values(values: Any) -> dict[str, Any]:
         if field == "l1_ratio_values" and any(not 0 < value <= 1 for value in candidates):
             raise ConfigError("models.l1_ratio_values must be greater than 0 and at most 1")
     provenance = values["provenance"]
-    if not isinstance(provenance, dict) or set(provenance) != {"config_sha256"}:
-        raise ConfigError("provenance must contain exactly config_sha256")
-    if not isinstance(provenance["config_sha256"], str) or not re.fullmatch(
-            r"[0-9a-f]{64}", provenance["config_sha256"]):
-        raise ConfigError("provenance.config_sha256 must be a lowercase SHA-256 digest")
+    if not isinstance(provenance, dict) or set(provenance) != {"init_config_sha256"}:
+        raise ConfigError("provenance must contain exactly init_config_sha256")
+    if not isinstance(provenance["init_config_sha256"], str) or not re.fullmatch(
+            r"[0-9a-f]{64}", provenance["init_config_sha256"]):
+        raise ConfigError("provenance.init_config_sha256 must be a lowercase SHA-256 digest")
     return values
 
 
@@ -223,9 +224,9 @@ def initialize_case(data_csv: str | os.PathLike[str], case_id: str, target: str,
                 "alpha_values": list(DEFAULT_CONFIG["models"]["alpha_values"]),
                 "l1_ratio_values": list(DEFAULT_CONFIG["models"]["l1_ratio_values"]),
             },
-            "provenance": {"config_sha256": ""},
+            "provenance": {"init_config_sha256": ""},
         }
-        values["provenance"]["config_sha256"] = _config_sha256(values)
+        values["provenance"]["init_config_sha256"] = _config_sha256(values)
         _validate_values(values)
         serialized = yaml.safe_dump(values, sort_keys=False, allow_unicode=False).encode("utf-8")
         sample_bytes = SAMPLE_CONFIG.encode("utf-8")
@@ -245,13 +246,17 @@ def initialize_case(data_csv: str | os.PathLike[str], case_id: str, target: str,
                     pass
             raise ConfigError(f"could not create config evidence: {exc.strerror or exc}") from exc
         return InitResult(output_dir, config_path, sample_path, source_sha,
-                          values["provenance"]["config_sha256"])
+                          values["provenance"]["init_config_sha256"])
     except OSError as exc:
         raise ConfigError(f"unsafe or unavailable INIT path: {exc.strerror or exc}") from exc
 
 
 def load_config(config_path: str | os.PathLike[str]) -> LoadedConfig:
-    """Load, validate, and verify source provenance without modifying config."""
+    """Load and verify config/source without rewriting the config file.
+
+    ``config_sha256`` hashes the effective YAML-safe-dumped values with provenance
+    omitted; ``init_config_sha256`` preserves the fingerprint recorded at INIT.
+    """
     path = Path(config_path)
     try:
         if path.is_symlink() or not path.is_file():
@@ -259,8 +264,7 @@ def load_config(config_path: str | os.PathLike[str]) -> LoadedConfig:
         serialized = path.read_bytes()
         values = _validate_values(yaml.safe_load(serialized.decode("utf-8")))
         config_sha = _config_sha256(values)
-        if config_sha != values["provenance"]["config_sha256"]:
-            raise ConfigError("config SHA-256 no longer matches INIT evidence")
+        init_config_sha = values["provenance"]["init_config_sha256"]
         source = path.parent / Path(values["data"]["path"])
         if source.is_symlink() or not source.is_file():
             raise ConfigError("configured CSV source must exist as a regular non-symlink file")
@@ -271,7 +275,7 @@ def load_config(config_path: str | os.PathLike[str]) -> LoadedConfig:
         _, verified_sha = _read_source(source, values["data"]["target"])
         if verified_sha != actual_sha:
             raise ConfigError("configured CSV changed while its INIT evidence was being verified")
-        return LoadedConfig(values, config_sha, actual_sha)
+        return LoadedConfig(values, config_sha, actual_sha, init_config_sha)
     except ConfigError:
         raise
     except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:

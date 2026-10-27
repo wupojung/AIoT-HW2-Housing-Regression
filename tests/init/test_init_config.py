@@ -32,7 +32,8 @@ class InitConfigTests(unittest.TestCase):
         self.assertTrue(result.sample_path.is_file())
         self.assertEqual(result.source_sha256, hashlib.sha256(self.csv_bytes).hexdigest())
         self.assertEqual(loaded.source_sha256, result.source_sha256)
-        self.assertEqual(loaded.config_sha256, result.config_sha256)
+        self.assertEqual(loaded.config_sha256, result.init_config_sha256)
+        self.assertEqual(loaded.init_config_sha256, result.init_config_sha256)
         self.assertEqual(loaded.values["case_id"], "synthetic-housing")
         self.assertEqual(loaded.values["data"]["target"], "SalePrice")
         self.assertFalse(Path(loaded.values["data"]["path"]).is_absolute())
@@ -80,7 +81,24 @@ class InitConfigTests(unittest.TestCase):
         with self.assertRaisesRegex(ConfigError, "case_dir"):
             initialize_case(self.csv_path, "valid-case", "SalePrice", case_link)
 
-    def test_rejects_invalid_saved_parameters_and_changed_source(self):
+    def test_manual_valid_edit_loads_with_current_and_init_fingerprints(self):
+        result = initialize_case(self.csv_path, "synthetic-housing", "SalePrice", self.case_dir)
+        config = yaml.safe_load(result.config_path.read_text(encoding="utf-8"))
+        original = result.config_path.read_bytes()
+        config["seed"] = 43
+        result.config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+        edited_bytes = result.config_path.read_bytes()
+
+        first = load_config(result.config_path)
+        second = load_config(result.config_path)
+        self.assertEqual(first.values["seed"], 43)
+        self.assertEqual(first.config_sha256, second.config_sha256)
+        self.assertNotEqual(first.config_sha256, first.init_config_sha256)
+        self.assertEqual(first.init_config_sha256, result.init_config_sha256)
+        self.assertEqual(result.config_path.read_bytes(), edited_bytes)
+        self.assertNotEqual(edited_bytes, original)
+
+    def test_rejects_invalid_edits_and_modified_or_missing_source(self):
         result = initialize_case(self.csv_path, "synthetic-housing", "SalePrice", self.case_dir)
         config = yaml.safe_load(result.config_path.read_text(encoding="utf-8"))
         config["cross_validation"]["folds"] = 1
@@ -89,15 +107,13 @@ class InitConfigTests(unittest.TestCase):
             load_config(result.config_path)
 
         config["cross_validation"]["folds"] = 5
-        config["seed"] = 43
-        result.config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
-        with self.assertRaisesRegex(ConfigError, "config SHA-256"):
-            load_config(result.config_path)
-
-        config["seed"] = 42
         result.config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
         self.csv_path.write_bytes(self.csv_bytes + b"2000,C,210000\n")
         with self.assertRaisesRegex(ConfigError, "SHA-256"):
+            load_config(result.config_path)
+
+        self.csv_path.unlink()
+        with self.assertRaisesRegex(ConfigError, "must exist"):
             load_config(result.config_path)
 
 
