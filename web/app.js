@@ -104,6 +104,9 @@ CASES["ames-housing"].packageMode = "mock";
 const state = {
   caseId: "ames-housing", route: "home", analysisId: "overview", perspective: "method_comparison",
   phase4RunId: "MOCK-RUN-02", phase6MockSubmitted: false,
+  referenceAnalysisId: "figure-field-decisions",
+  referenceEvaluationId: "initb-development-e2e-20261028-02.development-oof.pooled",
+  referenceFigureId: "FIG-P5-02",
   phase6InputMode: "manual", phase6Csv: null, phase6CsvMessage: "尚未選擇 CSV 檔案。",
   phase6Values: { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" },
   phase5Figure: "FIG-P5-02", p5Population: "development_oof", p5DetailsOpen: false, phase5ConfigId: "",
@@ -130,11 +133,11 @@ function esc(value) {
 }
 function qualityScaleLabel(value) { return `${value} · ${OVERALL_QUALITY_LABELS[value] || ""}`; }
 function statusLabel(status) {
-  const labels = { MOCK: "示意資料 MOCK", UNAVAILABLE: "無可用資料 UNAVAILABLE", PLANNED: "規劃中 PLANNED", PUBLISHED: "已發布 PUBLISHED", VERIFIED: "已驗證 VERIFIED", ERROR: "錯誤 ERROR", SOURCE_REPORTED_NOT_VERIFIED: "來源回報・尚未驗證 SOURCE REPORTED · NOT VERIFIED" };
+  const labels = { MOCK: "示意資料 MOCK", UNAVAILABLE: "無可用資料 UNAVAILABLE", PLANNED: "規劃中 PLANNED", PUBLISHED: "已發布 PUBLISHED", VERIFIED: "已驗證 VERIFIED", LOCAL_PRIVATE_VERIFIED: "本機私有模型已驗證 LOCAL PRIVATE VERIFIED", ERROR: "錯誤 ERROR", SOURCE_REPORTED_NOT_VERIFIED: "來源回報・尚未驗證 SOURCE REPORTED · NOT VERIFIED" };
   return labels[status] || status || "未知 UNKNOWN";
 }
 function statusClass(status) {
-  return ({ MOCK: "mock", UNAVAILABLE: "unavailable", PLANNED: "planned", PUBLISHED: "published", VERIFIED: "verified", ERROR: "error", SOURCE_REPORTED_NOT_VERIFIED: "mock" })[status] || "unavailable";
+  return ({ MOCK: "mock", UNAVAILABLE: "unavailable", PLANNED: "planned", PUBLISHED: "published", VERIFIED: "verified", LOCAL_PRIVATE_VERIFIED: "verified", ERROR: "error", SOURCE_REPORTED_NOT_VERIFIED: "mock" })[status] || "unavailable";
 }
 function badge(status) { return `<span class="status ${statusClass(status)}">${esc(statusLabel(status))}</span>`; }
 function caseData() { return CASES[state.caseId] || CASES["planned-case"]; }
@@ -146,6 +149,8 @@ function banner(caseInfo = caseData()) {
   const formalPackage = caseInfo.packageMode === "formal";
   const reason = formalPackage
     ? `Formal Case Package ${caseInfo.packageRevision} · only Phase 5 reads local staging; Phases 1–4 remain MOCK UI previews. This is not a public release.`
+    : caseInfo.packageMode === "reference"
+    ? `公開 Case Package ${caseInfo.packageRevision} · INIT B 正式 Development 計算；Phase 5 為 OOF 評估，研究發布審查仍待完成。`
     : caseInfo.status === "MOCK"
     ? `UI fixture only · package revision ${caseInfo.packageRevision} · ${SOURCE}. These values are not approved research results.`
     : "Planned placeholder only · no research package, data, or model is available.";
@@ -262,37 +267,146 @@ function renderReferencePackagePhase(phase) {
   if (!pkg || !doc) return `<div class="page">${pageHeading(`PHASE 0${phase} / REFERENCE PACKAGE`, "INIT B Reference Baseline", "Package 載入與驗證狀態。", referencePackageError ? "ERROR" : "UNAVAILABLE")}<section class="state-panel" role="${referencePackageError ? "alert" : "status"}"><h3>${referencePackageError ? "Case Package 驗證失敗" : "載入 Reference Baseline Case Package"}</h3><p>${esc(referencePackageError || "網站正從目前發布版本載入套件。")}</p></section></div>`;
   const unavailable = doc.status === "UNAVAILABLE";
   let body = "";
-  if (phase === 1 || unavailable) {
-    body = `<section class="state-panel"><h3>${esc(doc.reason_code || doc.readiness?.reason_code || "此 Phase 尚無可用資料")}</h3><p>${esc(doc.readiness?.message || "此 Case Package 將該階段標示為 UNAVAILABLE；未以示意數據補上。")}</p>${badge(doc.status)}</section>`;
-  } else if (phase === 2) {
-    body = doc.analyses.map((a) => `<section class="card"><div class="card-head"><div><p class="eyebrow">${esc(a.figure_id)}</p><h2>${esc(a.title)}</h2></div>${badge(a.status)}</div><div class="card-body"><p>${esc(a.description)}</p><p>${esc(a.finding || "")}</p>${a.image_ref ? `<img class="package-figure" src="${REFERENCE_PACKAGE_ROOT}/${encodeURI(a.image_ref)}" alt="${esc(a.title)}; ${esc(a.description)}">` : ""}<p class="stage-note">${esc(a.limitations || "")}</p></div></section>`).join("");
-  } else if (phase === 3) {
-    body = `<section class="card"><div class="card-body"><h2>資料準備與編碼</h2>${doc.stages.map((s) => `<dl class="data-row"><dt>${esc(s.label)}</dt><dd>${esc(s.total)} · ${esc(s.unit)} · ${esc(s.total_status)}</dd></dl>`).join("")}<p>Train / validation: ${doc.split.training_rows} / ${doc.split.holdout_rows}; seed ${doc.split.seed}.</p><p>Fit scope: development training only.</p></div></section>`;
-  } else if (phase === 4) {
-    const cfg = doc.configurations.find((item) => item.configuration_id === doc.default_configuration_id);
-    const metricsRef = cfg?.cv_metrics_ref;
-    const metrics = metricsRef && pkg.manifest.files.some((f) => f.path === metricsRef)
-      ? `<p>CV metrics file: <a href="${REFERENCE_PACKAGE_ROOT}/${encodeURI(metricsRef)}" target="_blank" rel="noreferrer">${esc(metricsRef)}</a></p><p>Execution: ${esc(cfg.execution_run_id)} · ${esc(cfg.method_id)} · ${esc(cfg.protocol_id)}</p>`
-      : `<p>CV metric artifact unavailable.</p>`;
-    const foldRows = pkg.cvMetrics.fold_results.map((fold) => `<tr><td>${fold.fold + 1}</td><td>${fold.validation_rows}</td><td>${fold.rmse.toFixed(6)}</td><td>${fold.mae.toFixed(6)}</td><td>${fold.r2.toFixed(8)}</td></tr>`).join("");
-    const mean = pkg.cvMetrics.mean_fold_metrics;
-    body = `<section class="card"><div class="card-body"><h2>${esc(cfg?.configuration_id || "No configuration")}</h2><p>${esc(cfg?.track_id || "")}</p><pre class="package-json">${esc(JSON.stringify(cfg?.params || {}, null, 2))}</pre>${metrics}<p>CV rows ${doc.cv.training_rows} · folds ${doc.cv.fold_count} · ${esc(doc.cv.protocol_id)}.</p><table class="mock-data-table"><thead><tr><th>Fold</th><th>Validation rows</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody>${foldRows}<tr><th>Mean</th><th>—</th><th>${mean.rmse.toFixed(6)}</th><th>${mean.mae.toFixed(6)}</th><th>${mean.r2.toFixed(8)}</th></tr></tbody></table><p>Candidate search: NOT RUN.</p><p class="stage-note">Fold metrics are read from this run’s manifest-bound Development artifact; they are not recalculated in the browser and do not represent independent generalization testing.</p></div></section>`;
-  } else if (phase === 5) {
-    const pooled = doc.evaluations.find((item) => item.evaluation_id === doc.default_evaluation_id) || doc.evaluations.find((item) => item.metric_source === "pooled_oof");
-    const fmt = (key, value) => key === "r2" ? Number(value).toFixed(8) : Number(value).toLocaleString("en-US", {minimumFractionDigits: 6, maximumFractionDigits: 6});
-    const metrics = pooled ? `<div class="mock-data-table"><table><thead><tr><th>Development OOF metric</th><th>Value</th><th>Evidence state</th></tr></thead><tbody>${["mae","rmse","r2"].map((key) => `<tr><td>${key.toUpperCase()}</td><td>${fmt(key,pooled.metrics[key].value)}</td><td>${esc(pooled.metrics[key].status)}</td></tr>`).join("")}</tbody></table></div>` : "";
-    const figures = (pooled?.figures || []).map((figure) => {
-      const listed = pkg.manifest.files.find((entry) => entry.path === figure.asset_ref);
-      const safe = safePackageRef(figure.asset_ref) && listed && listed.sha256 === figure.sha256;
-      return `<section class="card"><div class="card-head"><div><p class="eyebrow">${esc(figure.figure_id)}</p><h2>${esc(figure.alt || figure.figure_id)}</h2></div>${badge(figure.status)}</div><div class="card-body">${safe ? `<img class="package-figure" src="${REFERENCE_PACKAGE_ROOT}/${encodeURI(figure.asset_ref)}" alt="${esc(figure.alt || figure.figure_id)}">` : `<p role="alert">Figure ref failed package manifest check.</p>`}<p class="stage-note">${esc(figure.finding || "")} · ${esc(figure.publication_review)}</p></div></section>`;
-    }).join("");
-    body = `<section class="card"><div class="card-head"><div><p class="eyebrow">DEVELOPMENT OOF · ${esc(pooled?.metric_source || "UNAVAILABLE")}</p><h2>Phase 5 已計算評估 · 待研究審查</h2></div>${badge(doc.status)}</div><div class="card-body"><p>Run ${esc(pooled?.execution_run_id || "")} · Config ${esc(pooled?.configuration_id || "")} · n=${esc(pooled?.n || "—")}</p>${metrics}<p class="stage-note">指標由本次 Phase 4 三折 Development OOF 計算；屬內部交叉驗證，不是獨立泛化測試。Publication review: ${esc(doc.publication_review)}.</p><p>OOF source SHA-256: <code>${esc(pooled?.evidence?.source_artifact_sha256 || "")}</code></p></div></section>${figures}`;
-  } else if (phase === 6) {
-    const model = doc.models?.[0];
-    const smoke = pkg.phase6Smoke;
-    body = `<section class="card"><div class="card-head"><div><p class="eyebrow">LOCAL PRIVATE MODEL</p><h2>${esc(model?.model_id || "No model")}</h2></div>${badge(model?.model_status || doc.status)}</div><div class="card-body"><dl class="data-row"><dt>Source Run / Config</dt><dd>${esc(model?.source_execution_run_id || "")} / ${esc(model?.source_configuration_id || "")}</dd></dl><dl class="data-row"><dt>Model SHA-256</dt><dd><code>${esc(model?.readiness?.model_sha256 || "")}</code></dd></dl><dl class="data-row"><dt>Reload / Local inference</dt><dd>${smoke.reload_verified ? "PASS" : "FAIL"} / ${smoke.local_inference_verified ? "PASS" : "FAIL"}</dd></dl><dl class="data-row"><dt>Local inference smoke</dt><dd>${smoke.local_inference_verified ? "PASS — prediction value suppressed" : "FAIL"}</dd></dl><p class="stage-note">A Development training record was used for a private local smoke; its prediction value is not included in the public package. Remote prediction and deployment are unavailable.</p></div></section>`;
-  }
-  return `<div class="page"><div class="fixture-banner"><span><strong>Case Package · ${esc(pkg.manifest.package_revision)}</strong> · published static bundle; Phase 5 research publication review remains pending.</span>${badge(doc.status)}</div>${pageHeading(`PHASE 0${phase} / ${PHASES[phase-1][1].toUpperCase()}`, PHASES[phase-1][2], "INIT B Reference Baseline · Package-bound values and explicit unavailable states.", doc.status)}${body}<p class="stage-note">Displayed phase documents, metrics and referenced figures passed package SHA/byte verification. Package status: ${esc(pkg.manifest.package_status)}.</p></div>`;
+  if (phase === 1 || unavailable) body = renderReferencePhase1(pkg, doc);
+  else if (phase === 2) body = renderReferencePhase2(pkg, doc);
+  else if (phase === 3) body = renderReferencePhase3(pkg, doc);
+  else if (phase === 4) body = renderReferencePhase4(pkg, doc);
+  else if (phase === 5) body = renderReferencePhase5(pkg, doc);
+  else if (phase === 6) body = renderReferencePhase6(pkg, doc);
+  const phaseStatus = phase === 5 && doc.evaluations?.some((item) => Object.values(item.metrics || {}).length > 0 && Object.values(item.metrics || {}).every((metric) => metric.status === "VERIFIED")) ? "VERIFIED" : doc.status;
+  const prev = phase > 1 ? [phase - 1, PHASES[phase - 2][2]] : null;
+  const next = phase < 6 ? [phase + 1, PHASES[phase][2]] : null;
+  return `<div class="page reference-page" data-reference-phase="${phase}"><div class="fixture-banner"><span><strong>INIT B · Reference Baseline</strong> · ${esc(pkg.manifest.package_revision)} · 本頁數據來自已驗證的公開 Case Package。</span>${badge(phaseStatus)}</div>${pageHeading(`PHASE 0${phase} / ${PHASES[phase-1][1].toUpperCase()}`, PHASES[phase-1][2], referencePhaseSubtitle(phase), phaseStatus)}${body}<p class="stage-note package-verification-note">本頁資料與圖表均通過 Package SHA／bytes 驗證。Package status: ${esc(pkg.manifest.package_status)}.</p>${referenceFooterNav(prev,next)}</div>`;
+}
+
+function referencePhaseSubtitle(phase) {
+  return ({
+    1: "研究案例與資料來源；未提供的業務證據保持明確未提供。",
+    2: "探索原始資料的欄位、缺失與分布。選擇分析查看摘要與圖表。",
+    3: "追蹤從原始候選欄位、訓練集前處理到編碼特徵的轉換。",
+    4: "固定 Reference Baseline 的三折交叉驗證結果；其他模型沒有在此執行。",
+    5: "以 Phase 4 Development OOF 計算的評估；這不是獨立 Holdout 測試。",
+    6: "本機模型與推論 Smoke 已驗證；網站未提供遠端預測服務。"
+  })[phase];
+}
+function referenceFooterNav(prev, next) {
+  return `<nav class="phase-footer" aria-label="前後階段">${prev ? `<a class="button" href="#phase-${prev[0]}">← ${esc(prev[1])}</a>` : "<span></span>"}${next ? `<a class="button primary" href="#phase-${next[0]}">${esc(next[1])} →</a>` : "<span></span>"}</nav>`;
+}
+
+function parseFieldDecisions(text) {
+  if (typeof text !== "string") return [];
+  return [...text.matchAll(/([^;]+?)\s+\[([^\]]+)\]\s+(include|exclude)/g)].map((m) => ({ field: m[1].trim(), type: m[2], action: m[3] }));
+}
+function parseMissingness(text) {
+  const match = typeof text === "string" && text.match(/^Rows=(\d+); missing cells by field: (.+)$/);
+  if (!match) return null;
+  const fields = [...match[2].matchAll(/([^;=]+)=(\d+)\/(\d+)/g)].map((m) => ({ field: m[1].trim(), missing: Number(m[2]), rows: Number(m[3]) }));
+  if (!fields.length || fields.some((item) => item.rows !== Number(match[1]))) return null;
+  return { rows: Number(match[1]), fields };
+}
+function parseFeatureSummary(text) {
+  if (typeof text !== "string") return null;
+  const numeric = [...text.matchAll(/([^;]+): n=(\d+), min=([^,;]+), median=([^,;]+), max=([^;]+)/g)]
+    .map((m) => ({ field: m[1].trim(), n: Number(m[2]), min: m[3].trim(), median: m[4].trim(), max: m[5].trim() }));
+  const nominal = [...text.matchAll(/([^;:]+): (\d+) distinct/g)].map((m) => ({ field: m[1].trim(), distinct: Number(m[2]) }));
+  return numeric.length || nominal.length ? { numeric, nominal } : null;
+}
+function referenceAnalysis(pkg) {
+  const doc = pkg.docs[2];
+  return doc.analyses.find((a) => a.figure_id === state.referenceAnalysisId)
+    || doc.analyses.find((a) => a.figure_id === doc.default_analysis_id) || doc.analyses[0];
+}
+function packageFigure(pkg, ref, alt, className = "package-figure") {
+  const entry = pkg.manifest.files.find((item) => item.path === ref);
+  if (!safePackageRef(ref) || !entry || !["image/svg+xml", "image/png"].includes(entry.mime)) return "";
+  const dimensions = ref.endsWith("missingness.svg") ? [760, 575]
+    : ref.endsWith("target-distribution.svg") ? [760, 360]
+      : entry.mime === "image/png" ? [910, 650] : [760, 575];
+  return `<figure class="reference-figure"><img class="${className}" src="${REFERENCE_PACKAGE_ROOT}/${encodeURI(ref)}" alt="${esc(alt)}" width="${dimensions[0]}" height="${dimensions[1]}" loading="lazy" decoding="async"><figcaption>${esc(alt)}</figcaption></figure>`;
+}
+function renderReferencePhase1(pkg, doc) {
+  const c = pkg.caseDoc;
+  const source = c.source || {};
+  const sections = Array.isArray(doc.sections) ? doc.sections : [];
+  return `<section class="reference-summary-grid grid three"><article class="reference-stat-card"><span class="eyebrow">研究案例 CASE</span><strong>${esc(c.title)}</strong><small>Case ID · ${esc(c.case_id)}</small></article><article class="reference-stat-card"><span class="eyebrow">資料來源 SOURCE</span><strong>${esc(source.label || "未提供來源說明")}</strong><small>${esc(source.accession || "來源識別資訊未提供")}</small></article><article class="reference-stat-card"><span class="eyebrow">預測目標 TARGET</span><strong>${esc(c.target?.raw_field_id || "—")}</strong><small>${esc(c.target?.unit || "單位未提供")}</small></article></section><section class="card reference-note-card"><div class="card-head"><div><p class="eyebrow">BUSINESS UNDERSTANDING</p><h2>業務證據尚未提供</h2></div>${badge(doc.status)}</div><div class="card-body"><p>此 Package 沒有已核准的研究問題、商業目標或授權敘述。此頁只呈現 Case 文件中可追溯的來源與目標資訊。</p>${sections.length ? `<details class="disclosure"><summary>查看 Package 提供的說明</summary><div class="disclosure-body">${sections.map((item) => `<p><strong>${esc(item.title || "")}</strong><br>${esc(item.body || "")}</p>`).join("")}</div></details>` : ""}</div></section>`;
+}
+function renderReferencePhase2(pkg, doc) {
+  const analyses = Array.isArray(doc.analyses) ? doc.analyses : [];
+  const selected = referenceAnalysis(pkg);
+  if (!selected) return `<section class="state-panel"><h2>沒有可用的 Phase 2 分析</h2>${badge("UNAVAILABLE")}</section>`;
+  const buttons = analyses.map((item) => `<button type="button" class="selector-button" data-reference-analysis="${esc(item.figure_id)}" aria-pressed="${item.figure_id === selected.figure_id}">${esc(item.title)}</button>`).join("");
+  let content = `<p class="body-copy">${esc(selected.description || "")}</p>`;
+  if (selected.figure_id === "figure-field-decisions") {
+    const fields = parseFieldDecisions(selected.finding);
+    const rowSource = analyses.find((item) => item.figure_id === "figure-missingness");
+    const sourceRows = parseMissingness(rowSource?.finding)?.rows;
+    const counts = new Map();
+    for (const field of fields.filter((item) => item.action === "include")) counts.set(field.type, (counts.get(field.type) || 0) + 1);
+    content += fields.length ? `<div class="reference-summary-grid grid four">${[["資料列", sourceRows?.toLocaleString() || "—"],["原始欄位", String(fields.length)],["納入預測欄位", String(fields.filter((item) => item.action === "include").length)],["排除目標／識別欄位", String(fields.filter((item) => item.action === "exclude").length)]].map(([label,value]) => `<article class="reference-stat-card"><span>${label}</span><strong>${value}</strong></article>`).join("")}</div><div class="reference-type-summary">${["nominal","ordinal","discrete","continuous"].map((type) => `<span>${typeLabel(type)} <strong>${counts.get(type) || 0}</strong></span>`).join("")}</div><details class="disclosure"><summary>檢視欄位分類與決策 (${fields.length})</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>欄位</th><th>分類</th><th>決策</th></tr></thead><tbody>${fields.map((item) => `<tr><td>${esc(item.field)}</td><td>${esc(typeLabel(item.type))}</td><td>${item.action === "include" ? "納入" : "排除"}</td></tr>`).join("")}</tbody></table></div></details>` : `<p class="state-panel">欄位摘要格式不符合可驗證規則，未解析顯示。</p>`;
+  } else if (selected.figure_id === "figure-missingness") {
+    const missing = parseMissingness(selected.finding);
+    const sorted = missing?.fields.filter((item) => item.missing).sort((a,b) => b.missing-a.missing || a.field.localeCompare(b.field)) || [];
+    const total = missing?.fields.reduce((sum,item) => sum + item.missing, 0) || 0;
+    content += missing ? `<div class="reference-summary-grid grid three"><article class="reference-stat-card"><span>資料列 ROWS</span><strong>${missing.rows.toLocaleString()}</strong></article><article class="reference-stat-card"><span>缺失儲存格 MISSING</span><strong>${total.toLocaleString()}</strong></article><article class="reference-stat-card"><span>有缺失欄位 FIELDS</span><strong>${sorted.length}</strong></article></div><div class="reference-missing-bars">${sorted.slice(0, 8).map((item) => `<div class="reference-bar-row"><span>${esc(item.field)}</span><span class="reference-bar-track"><i style="width:${Math.min(100, item.missing / missing.rows * 100)}%"></i></span><strong>${item.missing.toLocaleString()} <small>(${(item.missing / missing.rows * 100).toFixed(1)}%)</small></strong></div>`).join("")}</div>${packageFigure(pkg, selected.image_ref, "正式資料缺失值欄位分布") }<details class="disclosure"><summary>檢視完整缺失統計 (${missing.fields.length} 欄)</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>欄位</th><th>缺失筆數</th><th>比例</th></tr></thead><tbody>${sorted.concat(missing.fields.filter((item) => !item.missing)).map((item) => `<tr><td>${esc(item.field)}</td><td>${item.missing}</td><td>${(item.missing / missing.rows * 100).toFixed(2)}%</td></tr>`).join("")}</tbody></table></div></details>` : `<p class="state-panel">缺失摘要格式不符合可驗證規則，未解析顯示。</p>`;
+  } else if (selected.figure_id === "figure-target-distribution") {
+    content += packageFigure(pkg, selected.image_ref, "正式訓練資料 SalePrice 分布圖") || `<p class="state-panel">此分析沒有可用圖表檔案。</p>`;
+    content += `<p class="stage-note">${esc(selected.finding || "")} 圖表呈現分箱分布；Package 未提供逐箱表格，因此不額外重建或推測箱內數值。</p>`;
+  } else if (selected.figure_id === "figure-feature-summary") {
+    const summary = parseFeatureSummary(selected.finding);
+    content += summary ? `<div class="reference-summary-grid grid two"><article class="reference-stat-card"><span>數值欄位摘要</span><strong>${summary.numeric.length}</strong><small>n、最小值、中位數、最大值</small></article><article class="reference-stat-card"><span>名目欄位基數</span><strong>${summary.nominal.length}</strong><small>不同類別數</small></article></div><details class="disclosure" open><summary>數值欄位摘要</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>欄位</th><th>有效筆數</th><th>最小值</th><th>中位數</th><th>最大值</th></tr></thead><tbody>${summary.numeric.map((item) => `<tr><td>${esc(item.field)}</td><td>${item.n.toLocaleString()}</td><td>${esc(item.min)}</td><td>${esc(item.median)}</td><td>${esc(item.max)}</td></tr>`).join("")}</tbody></table></div></details><details class="disclosure"><summary>名目欄位不同類別數 (${summary.nominal.length})</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>欄位</th><th>不同類別數</th></tr></thead><tbody>${summary.nominal.map((item) => `<tr><td>${esc(item.field)}</td><td>${item.distinct}</td></tr>`).join("")}</tbody></table></div></details>` : `<p class="state-panel">沒有可解析的聚合摘要。</p>`;
+  } else content += `<p>${esc(selected.finding || "")}</p>`;
+  return `<section class="card"><div class="card-head"><div><p class="eyebrow">DATA EXPLORATION</p><h2>選擇分析項目</h2></div>${badge(selected.status)}</div><div class="card-body"><div class="selector-row reference-analysis-selector" role="group" aria-label="Phase 2 analysis">${buttons}</div><p class="sr-only" aria-live="polite">${esc(selected.title)} selected.</p><section class="reference-analysis-panel"><div class="reference-analysis-heading"><div><p class="eyebrow">${esc(selected.figure_id)}</p><h2>${esc(selected.title)}</h2></div>${badge(selected.status)}</div>${content}<details class="disclosure"><summary>研究說明與限制</summary><div class="disclosure-body"><p>${esc(selected.limitations || "Package 未提供額外限制說明。")}</p><p>Phase 2 使用原始資料，尚未套用 Phase 3 補值或編碼。</p></div></details></section></div></section>`;
+}
+function typeLabel(type) { return ({ nominal: "名目", ordinal: "次序", discrete: "離散", continuous: "連續" })[type] || type; }
+function renderReferencePhase3(pkg, doc) {
+  const stages = Array.isArray(doc.stages) ? doc.stages : [];
+  const typeColors = { nominal: "#55d6c2", ordinal: "#a9df62", discrete: "#70b5e8", continuous: "#f1b45b" };
+  const stageCards = stages.map((stage,index) => {
+    const sourceSegments = stage.segments || [];
+    const segmentTotal = sourceSegments.reduce((sum,item) => sum + Number(item.count || 0), 0);
+    const segments = index < 3 && segmentTotal === stage.total && stage.total === 79 ? sourceSegments : [];
+    const track = segments.length ? `<div class="stack-track" aria-label="${esc(stage.label)} feature type distribution">${segments.map((segment) => `<span class="reference-stack-segment" style="width:${segment.count / segmentTotal * 100}%;background:${typeColors[segment.type_id] || "#aab"}" title="${esc(typeLabel(segment.type_id))}: ${segment.count}"></span>`).join("")}</div><div class="legend">${segments.map((segment) => `<span class="legend-item"><i class="legend-dot" style="--dot:${typeColors[segment.type_id] || "#aab"}"></i>${esc(typeLabel(segment.type_id))} ${segment.count}</span>`).join("")}</div>` : `<div class="reference-stage-total"><strong>${Number(stage.total).toLocaleString()}</strong><span>${esc(stage.unit)}</span></div>`;
+    return `<article class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index">0${index+1}</span><h2>${esc(stage.label)}</h2></div><span class="stage-total">${Number(stage.total).toLocaleString()} ${esc(stage.unit)} · ${esc(stage.total_status)}</span></div>${track}</article>`;
+  }).join("");
+  const split = doc.split || {};
+  const train = Number(split.training_rows) || 0, validation = Number(split.holdout_rows) || 0, total = train + validation;
+  const treatments = (doc.treatments || []).map((item) => `<div class="treatment-item"><strong>${esc(item.field_group || item.variable_type || item.strategy || "處理策略")}</strong><span>${esc(item.strategy || item.method || item.description || JSON.stringify(item))}</span></div>`).join("");
+  return `<section class="card"><div class="card-head"><div><p class="eyebrow">FEATURE TRANSFORMATION · FOUR STAGES</p><h2>資料如何轉成模型特徵</h2></div>${badge(doc.status)}</div><div class="card-body"><div class="stage-list">${stageCards}</div><p class="stage-note">前三階段的類型分布採用各階段自身的 Package segments，且總數與欄位數相符。編碼後欄位沒有可驗證的原始類型對應，因此只顯示總數，不推估比例。</p><section class="reference-split"><div class="reference-analysis-heading"><div><p class="eyebrow">DEVELOPMENT SPLIT</p><h2>固定訓練／驗證切分</h2></div><strong>Seed ${esc(split.seed)}</strong></div><div class="row-split"><span style="width:${total ? train / total * 100 : 0}%">Development · ${train.toLocaleString()}</span><span style="width:${total ? validation / total * 100 : 0}%">Validation · ${validation.toLocaleString()}</span></div><p class="stage-note">${Number(split.source_labeled_rows).toLocaleString()} labeled rows · 80/20 split · preprocessing fit scope: training data only. Validation rows are shown as split context and are not used for this page’s CV scores.</p></section>${treatments ? `<details class="disclosure"><summary>查看實際補值與編碼策略</summary><div class="treatment-list">${treatments}</div></details>` : ""}</div></section>`;
+}
+function renderReferencePhase4(pkg, doc) {
+  const cfg = doc.configurations.find((item) => item.configuration_id === doc.default_configuration_id);
+  const folds = pkg.cvMetrics.fold_results || [];
+  const mean = pkg.cvMetrics.mean_fold_metrics || {};
+  const metrics = [["RMSE",mean.rmse,"USD，越低越好"],["MAE",mean.mae,"USD，越低越好"],["R²",mean.r2,"折間平均"]];
+  const cards = metrics.map(([label,value,note]) => `<article class="metric-card"><span class="metric-label">${label}</span><strong class="metric-value">${Number(value).toLocaleString("en-US",{maximumFractionDigits:label === "R²" ? 6 : 2})}</strong><span class="metric-note">${note}</span></article>`).join("");
+  const foldRows = folds.map((fold) => `<tr><td>Fold ${fold.fold + 1}</td><td>${fold.validation_rows}</td><td>${Number(fold.rmse).toLocaleString("en-US",{maximumFractionDigits:2})}</td><td>${Number(fold.mae).toLocaleString("en-US",{maximumFractionDigits:2})}</td><td>${Number(fold.r2).toFixed(6)}</td></tr>`).join("");
+  const foldVisual = folds.map((fold) => {
+    const validationShare = Number(doc.cv.training_rows) ? fold.validation_rows / doc.cv.training_rows * 100 : 0;
+    return `<div class="reference-fold"><span>Fold ${fold.fold + 1}</span><div class="cv-track"><span class="cv-train" style="width:${100 - validationShare}%">Training folds</span><span class="cv-valid" style="width:${validationShare}%">Validation</span></div><small>${fold.validation_rows} validation rows</small></div>`;
+  }).join("");
+  const params = cfg?.params || {};
+  return `<section class="grid two reference-model-grid"><article class="card"><div class="card-head"><div><p class="eyebrow">FIXED REFERENCE MODEL</p><h2>Lasso selection → OLS</h2></div>${badge(doc.status)}</div><div class="card-body"><p class="body-copy">固定歷史設定以 Lasso α=${esc(params.alpha ?? "—")} 選擇特徵，再由 OLS 執行三折 Development CV。這裡只有一個已執行配置，不代表模型比較。</p><dl class="data-row"><dt>CV 母體</dt><dd>${Number(doc.cv.training_rows).toLocaleString()} Development rows</dd></dl><dl class="data-row"><dt>折數</dt><dd>${doc.cv.fold_count} fixed folds</dd></dl><dl class="data-row"><dt>選模搜尋</dt><dd>未執行</dd></dl></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">FOLD ROTATION</p><h2>三折交叉驗證</h2></div></div><div class="card-body reference-fold-list">${foldVisual}</div></article></section><section class="card reference-metrics-card"><div class="card-head"><div><p class="eyebrow">MEAN FOLD METRICS · DEVELOPMENT CV</p><h2>模型表現摘要</h2></div>${badge(doc.status)}</div><div class="card-body"><div class="metrics">${cards}</div><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>Fold</th><th>驗證筆數</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody>${foldRows}</tbody></table></div><p class="stage-note">指標直接來自已驗證的 Phase 4 fold-metrics 檔案。這是 Development 交叉驗證，不是獨立 Holdout 泛化評估。</p><details class="disclosure"><summary>技術細節</summary><div class="disclosure-body"><p>Configuration ${esc(cfg?.configuration_id || "—")} · Run ${esc(cfg?.execution_run_id || "—")} · Protocol ${esc(cfg?.protocol_id || "—")}</p><pre class="package-json">${esc(JSON.stringify(params,null,2))}</pre></div></details></div></section>`;
+}
+function renderReferencePhase5(pkg, doc) {
+  const evaluations = Array.isArray(doc.evaluations) ? doc.evaluations : [];
+  const selected = evaluations.find((item) => item.evaluation_id === state.referenceEvaluationId) || evaluations.find((item) => item.evaluation_id === doc.default_evaluation_id) || evaluations[0];
+  if (!selected) return `<section class="state-panel"><h2>沒有可用的 Development OOF 評估</h2>${badge("UNAVAILABLE")}</section>`;
+  const figures = selected.figures || [];
+  const figure = figures.find((item) => item.figure_id === state.referenceFigureId) || figures[0];
+  const evaluationStatus = Object.values(selected.metrics || {}).length > 0 && Object.values(selected.metrics || {}).every((metric) => metric.status === "VERIFIED") ? "VERIFIED" : (selected.status || doc.status);
+  const evalButtons = evaluations.map((item) => `<button type="button" class="selector-button" data-reference-evaluation="${esc(item.evaluation_id)}" aria-pressed="${item.evaluation_id === selected.evaluation_id}">${item.metric_source === "pooled_oof" ? "Pooled OOF" : "Mean Fold"}</button>`).join("");
+  const figureButtons = figures.map((item) => `<button type="button" class="selector-button" data-reference-figure="${esc(item.figure_id)}" aria-pressed="${item.figure_id === figure?.figure_id}">${esc(item.figure_id)} · ${esc(item.axes?.y?.label || item.alt)}</button>`).join("");
+  const fmt = (key,value) => key === "r2" ? Number(value).toFixed(6) : Number(value).toLocaleString("en-US",{maximumFractionDigits:2});
+  const metrics = ["rmse","mae","r2"].map((key) => `<article class="metric-card"><span class="metric-label">${key.toUpperCase()}</span><strong class="metric-value">${fmt(key,selected.metrics[key].value)}</strong><span class="metric-note">${selected.metrics[key].status} · ${key === "r2" ? "variance score" : "USD"}</span></article>`).join("");
+  const figureEntry = figure && pkg.manifest.files.find((item) => item.path === figure.asset_ref);
+  const figureSafe = figure && safePackageRef(figure.asset_ref) && figureEntry && figureEntry.sha256 === figure.sha256;
+  return `<section class="card"><div class="card-head"><div><p class="eyebrow">DEVELOPMENT OUT-OF-FOLD EVALUATION</p><h2>交叉驗證評估摘要</h2></div>${badge(evaluationStatus)}</div><div class="card-body"><div class="selector-row" role="group" aria-label="Evaluation population">${evalButtons}</div><p class="sr-only" aria-live="polite">Showing ${selected.metric_source === "pooled_oof" ? "pooled OOF" : "mean-fold"} metrics.</p><div class="metrics reference-p5-metrics">${metrics}</div><p class="body-copy">${selected.metric_source === "pooled_oof" ? `合併 ${Number(selected.n).toLocaleString()} 筆 Development OOF 預測計算` : "三折指標的算術平均"}。兩者的統計口徑不同，請勿混為同一數值。</p><p class="stage-note">資料只代表 Development OOF，並非獨立 Validation／Holdout。研究發布審查：${esc(doc.publication_review)}（此狀態不會隱藏已計算的指標）。</p><details class="disclosure"><summary>Run 與來源追溯</summary><div class="disclosure-body"><p>Run ${esc(selected.execution_run_id)} · Config ${esc(selected.configuration_id)} · n=${selected.n}</p><code>${esc(selected.evidence?.source_artifact_sha256 || "")}</code></div></details></div></section><section class="card reference-figure-card"><div class="card-head"><div><p class="eyebrow">OOF DIAGNOSTICS</p><h2>評估圖表</h2></div>${figure ? badge(figure.status) : badge("UNAVAILABLE")}</div><div class="card-body"><div class="selector-row" role="group" aria-label="Evaluation figure">${figureButtons}</div><p class="sr-only" aria-live="polite">${esc(figure?.alt || "No figure selected")}</p>${figure && figureSafe ? packageFigure(pkg,figure.asset_ref,figure.alt) : `<div class="state-panel"><h3>圖表未通過 Package 引用驗證</h3><p>此圖表不顯示；請檢查其檔案清單與 SHA。</p></div>`}<p class="stage-note">${esc(figure?.finding || "")} · Publication review ${esc(figure?.publication_review || doc.publication_review)}.</p></div></section>`;
+}
+function renderReferencePhase6(pkg, doc) {
+  const model = doc.models?.[0];
+  const smoke = pkg.phase6Smoke;
+  const reload = Boolean(smoke?.reload_verified), inference = Boolean(smoke?.local_inference_verified);
+  return `<section class="grid two reference-model-grid"><article class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL ARTIFACT</p><h2>Development 模型封裝</h2></div>${badge(model?.model_status || doc.status)}</div><div class="card-body"><dl class="data-row"><dt>來源配置</dt><dd>${esc(model?.source_configuration_id || "—")}</dd></dl><dl class="data-row"><dt>模型版本</dt><dd>${esc(model?.model_version || "—")}</dd></dl><dl class="data-row"><dt>重新載入</dt><dd>${reload ? "PASS" : "NOT VERIFIED"}</dd></dl><dl class="data-row"><dt>本機推論 Smoke</dt><dd>${inference ? "PASS · 預測值未公開" : "NOT VERIFIED"}</dd></dl></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">SERVING AVAILABILITY</p><h2>網站推論能力</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><p class="body-copy">這個公開網站目前只提供靜態研究套件，沒有即時模型 API。不能在此輸入房屋條件並取得模型預測。</p><div class="state-panel"><h3>遠端預測未部署</h3><p>本機模型重新載入與推論驗證，不等同於公開服務。</p></div><details class="disclosure"><summary>模型來源識別</summary><div class="disclosure-body"><p>Model ${esc(model?.model_id || "—")} · Run ${esc(model?.source_execution_run_id || "—")}</p></div></details></div></article></section>`;
 }
 function pageHeading(kicker, title, subtitle, status = caseData().status) {
   return `<div class="page-heading"><div><p class="kicker">${esc(kicker)}</p><h1>${esc(title)}</h1><p class="lede">${esc(subtitle)}</p></div><div class="page-meta">${badge(status)}</div></div>`;
@@ -691,7 +805,10 @@ function routeFromHash() {
 
 caseSelect.addEventListener("change", () => {
   state.caseId = caseSelect.value;
-  state.analysisId = CASES[state.caseId].analyses[0]?.id || "";
+  state.analysisId = CASES[state.caseId].analyses?.[0]?.id || "";
+  state.referenceAnalysisId = "figure-field-decisions";
+  state.referenceEvaluationId = "initb-development-e2e-20261028-02.development-oof.pooled";
+  state.referenceFigureId = "FIG-P5-02";
   state.phase5ConfigId = "";
   state.perspective = "method_comparison"; state.phase5Figure = "FIG-P5-02";
   state.p5Population = "development_oof"; state.phase6MockSubmitted = false; state.phase6InputMode = "manual"; state.phase6Csv = null; state.phase6Values = { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" }; resetCustom(); render();
@@ -701,9 +818,12 @@ window.addEventListener("hashchange", () => {
   if (/^#phase-[1-6]$/.test(location.hash)) window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 });
 app.addEventListener("click", (event) => {
-  const target = event.target.closest("button[data-action],button[data-analysis],button[data-perspective],button[data-p5-figure],button[data-dashboard-mode],button[data-custom-source],button[data-phase6-mode]");
+  const target = event.target.closest("button[data-action],button[data-analysis],button[data-perspective],button[data-p5-figure],button[data-dashboard-mode],button[data-custom-source],button[data-phase6-mode],button[data-reference-analysis],button[data-reference-evaluation],button[data-reference-figure]");
   if (!target) return;
-  if (target.dataset.phase6Mode) { state.phase6InputMode = target.dataset.phase6Mode; render(); }
+  if (target.dataset.referenceAnalysis) { state.referenceAnalysisId = target.dataset.referenceAnalysis; render(); }
+  else if (target.dataset.referenceEvaluation) { state.referenceEvaluationId = target.dataset.referenceEvaluation; state.referenceFigureId = "FIG-P5-02"; render(); }
+  else if (target.dataset.referenceFigure) { state.referenceFigureId = target.dataset.referenceFigure; render(); }
+  else if (target.dataset.phase6Mode) { state.phase6InputMode = target.dataset.phase6Mode; render(); }
   else if (target.dataset.action === "phase6-use-csv-row") {
     const csv = state.phase6Csv; const row = csv?.rows[csv.selectedIndex] || [];
     const value = (name) => { const index = csv?.headers.indexOf(name) ?? -1; return index < 0 ? null : row[index]?.trim() ?? ""; };
