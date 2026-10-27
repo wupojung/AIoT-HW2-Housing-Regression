@@ -3,11 +3,11 @@
 ## Live deployment
 
 - Production site: https://regscope-aiot.vercel.app
-- Vercel deployment: `regscope-1vyd1u1ki-wupojung-8919s-projects.vercel.app`, state `READY`.
-- Production branch: `deploy`; current commit `b483ae28ab7ca96d92079aabea676f2865cbb0b4`.
+- Vercel deployment: `https://regscope-i5u69t01u-wupojung-8919s-projects.vercel.app`, state `READY`; alias `https://regscope-aiot.vercel.app` points to it.
+- Production branch: `deploy`; current commit `514477f4ce109ea3a113843de71297999fe8bf64`.
 - PR #45 integrated the Core/Web work to `main` at `b6675725b161d46409cedd222dbf67fcb8cbeb5d`.
-- CI split PR #47 merged to `main` at `d3ad1a5986f27069450217c2e395bcc2fb3ba09f`.
-- PR #46 deployed `main` to `deploy` at `b483ae28ab7ca96d92079aabea676f2865cbb0b4`.
+- CI retirement PR #49 merged to `main` at `9f4444530a1c8a3d3c40ba8c51bf9e40e8e7ab1d`; it removes the formally retired Legacy P4B Windows job while preserving the required scan.
+- PR #51 merged the reviewed `main` tree into `deploy` at `514477f4ce109ea3a113843de71297999fe8bf64` after required `scan` and Vercel checks passed. No protection bypass was used.
 - The required `scan` and Vercel checks passed before the deploy merge. No branch-protection bypass was used.
 
 ## Real-data run and package
@@ -31,17 +31,17 @@
 ## Verification evidence
 
 - Required GitHub `scan`: **PASS**. It ran the tracked security scan, environment smoke check, and project tests excluding only the legacy `tests/modeling/test_p4b_runner.py` file: 191 passed, 1 skipped, 122 subtests passed.
-- CI-only PR #47 preserves old P4B tests in a separate Windows job. That job ran 39 tests and reported 9 failures from stale synthetic-runner API expectations and an existing injected-write assertion; its JUnit artifact was uploaded. The old test file and expectations were not removed or modified. These legacy failures are not the required `scan` context and did not bypass branch protection.
+- Historical CI PR #47 temporarily ran the old P4B tests in a separate Windows job; its preserved record shows 39 tests and 9 failures. Under the Owner's final ruling, this Legacy job is retired. The old source, tests, and JUnit failure artifact remain preserved; they are no longer an automatic delivery gate. Required `scan` still excludes only `tests/modeling/test_p4b_runner.py` and retains applicable Core/Web/EDA/Security checks.
 - Focused Core/E2E tests: 25 passed, 25 subtests passed. Web/Security-policy/EDA focused tests: 58 passed, 18 subtests passed. Tracked security scan, environment smoke, `pip check`, JavaScript syntax, and `git diff --check` passed.
 - W5P2 independent local Chromium QA: 35/35 PASS; public package integrity/privacy: 12/12 PASS. Report and JSON remain in ignored local evidence.
-- Production Playwright smoke on https://regscope-aiot.vercel.app: desktop case selection, Phase 1–6, Phase 2 SVGs, Phase 5 PNGs, displayed data checks, dashboard route, and mobile layout all passed. Console errors, HTTP errors, and failed requests: **0**. Browser JSON: `local/w5-browser-test/result-production-b483ae2.json`.
+- Production Playwright smoke after deploy commit `514477f`: package SHA matched the release pointer; Phase 2–5 JSON values matched the rendered values; Phase 2 SVGs and Phase 5 PNGs loaded; Phase 1–6 desktop/mobile navigation passed. Console errors, HTTP errors, failed requests, and `/local/` requests: **0**. Detailed ignored JSON: `local/w5-browser-test/result-production-514477f.json`.
 - The Vercel Preview was protected by login, so anonymous Preview assertions were not run. The Production site was tested directly after deployment.
 
 ## Reproduction and rollback
 
 Call `housing_regression.reference_e2e.run_reference_e2e()` with the verified INIT B config, its source-bound reusable Phase 2/3 package, a new empty output directory, unique Run ID, and exact code HEAD. It verifies the formal CSV SHA and refuses overwrite. Keep private run artifacts outside `web/`; export only a new validated package with `housing_regression.public_case_package.export_public_reference_package()`.
 
-Production was previously at `c29c0eb8a055dbf90ef6a4f66266d7f2ccc41971`. If rollback is needed, use Vercel’s prior READY deployment or revert the release through a normal PR to `deploy`; do not force-push or bypass checks.
+If rollback is needed, use Vercel's prior READY deployment or revert commit `514477f4ce109ea3a113843de71297999fe8bf64` through a normal PR to `deploy`; do not force-push or bypass checks.
 
 ## Remaining scope
 
