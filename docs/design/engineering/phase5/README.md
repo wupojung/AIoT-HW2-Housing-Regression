@@ -10,6 +10,8 @@ This directory is the cold-start implementation blueprint for Issue [#37](https:
 4. [Implementation blueprint](./phase5-implementation.md): decisions, interfaces, gates, test plan, and stop rules.
 5. [P4-B experiment protocol v2](../../../crisp-dm/04-modeling-p4b-experiment-protocol.md): source for fold aggregation semantics; do not edit it as part of Phase 5.
 
+6. [Cold-start review handoff](./cold-start-review-handoff.md): full pinned MOCK fixture oracle, granular engineering units, synthetic/research isolation, Phase 4 mapping blockers, review trace and unresolved gates. **PROPOSED / NOT IMPLEMENTED**.
+
 ## Authority and status
 
 The active Phase 5 JSON contract is PR #35's accepted v1.2 design at reviewed HEAD [`8d2bc4405e08e1a1b982204984f681d90975956a`](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35), specifically its `PHASE-05-DATA-CONTRACT-v1.md`, `evaluation-index.schema.json`, samples, and validation matrix. PR #35 is an open Draft PR, not merged. The schema allows exactly `mae`, `rmse`, and `r2` under `metrics`; `additionalProperties: false` makes MAPE and MedAE invalid canonical fields. The examples below therefore keep MAPE and MedAE as conditional research candidates only.
