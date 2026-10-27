@@ -228,15 +228,15 @@ class SecurityScanTests(unittest.TestCase):
                 findings = scan_build_dir(build_dir)
             self.assertTrue(any("failed to read build artifact" in f for f in findings))
 
-    def test_ci_security_workflow_gates_main_and_deploy(self):
+    def test_ci_security_workflow_is_deploy_and_manual_only(self):
         workflow_path = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "security.yml"
         self.assertTrue(workflow_path.is_file(), "security.yml must exist")
         import yaml
         workflow_data = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
         trigger_section = workflow_data.get("on") or workflow_data.get(True, {})
         pr_branches = trigger_section.get("pull_request", {}).get("branches", [])
-        self.assertIn("main", pr_branches)
-        self.assertIn("deploy", pr_branches)
+        self.assertEqual(pr_branches, ["deploy"])
+        self.assertIn("workflow_dispatch", trigger_section)
 
     def test_pre_commit_config_disables_automatic_local_scanner(self):
         config_path = Path(__file__).resolve().parents[2] / ".pre-commit-config.yaml"

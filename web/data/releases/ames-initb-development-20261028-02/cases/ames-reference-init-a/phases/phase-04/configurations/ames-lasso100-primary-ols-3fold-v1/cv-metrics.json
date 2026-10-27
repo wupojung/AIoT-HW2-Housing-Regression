@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-reference-init-a",
+  "run_id": "initb-development-e2e-20261028-02",
+  "config_sha256": "a67b42afed991d7a69f5de7fdc56657ed9fce9495316bafe89deb2deee6be05f",
+  "code_head": "ba80db58defb980d70664b1f661489f0ef7231d6",
+  "data_sha256": "2525b2e9385f9873a45d124dfd7520851234fe0a30501a69b8e5e5536403017c",
+  "fold_sha256": "2d12b0a6294055b8aac95e6055fc9095c436c472666f56fd6f33828cc683dd30",
+  "protocol": {
+    "version": "v2.0",
+    "method": "lasso",
+    "alpha": 100.0,
+    "primary_track": "selected_features_to_ols",
+    "folds": 3,
+    "seed": 42,
+    "workers": 1,
+    "threads": 1
+  },
+  "candidate_search": "NOT RUN",
+  "fold_results": [
+    {
+      "fold": 0,
+      "validation_rows": 390,
+      "status": "COMPLETED",
+      "convergence_status": "CONVERGED",
+      "rmse": 28943.434495196187,
+      "mae": 19258.304582654546,
+      "r2": 0.8301499562166021,
+      "task_id": "1e22b2d74bff4eefebe464a662e8a34d17d636790fd05b70bc0ab169d838ebf6"
+    },
+    {
+      "fold": 1,
+      "validation_rows": 389,
+      "status": "COMPLETED",
+      "convergence_status": "CONVERGED",
+      "rmse": 33319.289142866124,
+      "mae": 18416.22045301395,
+      "r2": 0.834475772568999,
+      "task_id": "e04809578b19dd1dcc39c3cd9f30f74049c57635a623a0d589ab9a88e422d7a1"
+    },
+    {
+      "fold": 2,
+      "validation_rows": 389,
+      "status": "COMPLETED",
+      "convergence_status": "CONVERGED",
+      "rmse": 43904.830047554424,
+      "mae": 20510.62150041847,
+      "r2": 0.6878516112579971,
+      "task_id": "f09e5c6638db586237db73b4170c2b8039cac3867e4c662e6e2f212413291816"
+    }
+  ],
+  "mean_fold_metrics": {
+    "mae": 19395.048845362322,
+    "rmse": 35389.184561872244,
+    "r2": 0.784159113347866,
+    "rmse_sample_sd": 7692.476161987641,
+    "mae_sample_sd": 1053.8753160976437,
+    "r2_sample_sd": 0.0834327836696778
+  }
+}

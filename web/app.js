@@ -116,6 +116,8 @@ const caseContext = document.querySelector("#case-context");
 const caseSelect = document.querySelector("#case-select");
 const WEB_BASE = location.pathname.startsWith("/web/") ? "/web" : "";
 const IS_LOCAL_STAGING_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname) && location.pathname.startsWith("/web/");
+const REFERENCE_RELEASE_INDEX = `${WEB_BASE}/data/current-release.json`;
+let REFERENCE_PACKAGE_ROOT = null;
 const PHASE5_PACKAGE_ROOT = IS_LOCAL_STAGING_PREVIEW
   ? "/local/staging/formal-data-test-20261027-01/case-package"
   : null;
@@ -158,6 +160,139 @@ function updateShell() {
   document.querySelector("[data-home-link]").setAttribute("aria-current", state.route === "home" ? "page" : "false");
   document.querySelector("[data-crisp-link]").setAttribute("aria-current", phase ? "page" : "false");
   caseSelect.innerHTML = Object.entries(CASES).map(([key, c]) => `<option value="${esc(key)}" ${key === state.caseId ? "selected" : ""}>${esc(c.title)} · ${c.packageMode === "formal" ? "FORMAL PACKAGE" : esc(c.status)}</option>`).join("");
+}
+
+// Reference packages are resolved from a small pointer to an immutable static release.
+let referencePackage = null;
+let referencePackageError = null;
+let referencePackageLoading = false;
+function safePackageRef(ref) {
+  return typeof ref === "string" && !ref.startsWith("/") && !ref.includes("\\")
+    && ref.split("/").every((part) => part && part !== "." && part !== "..");
+}
+async function loadReferencePackage() {
+  if (referencePackage || referencePackageError || referencePackageLoading) return;
+  referencePackageLoading = true;
+  try {
+    const releaseResponse = await fetch(REFERENCE_RELEASE_INDEX);
+    if (!releaseResponse.ok) throw new Error(`Release index request failed (${releaseResponse.status}).`);
+    const releaseIndex = await releaseResponse.json();
+    if (releaseIndex.schema_version !== "1.0.0" || !Array.isArray(releaseIndex.cases)) throw new Error("Invalid Case Package release index.");
+    const releaseCase = releaseIndex.cases.find((entry) => entry.case_id === "ames-reference-init-a");
+    const packageRef = releaseCase?.package_ref;
+    if (!safePackageRef(packageRef) || !packageRef.startsWith(`releases/${releaseIndex.release_id}/cases/`) || !packageRef.endsWith("/package.json")) {
+      throw new Error("Release index has no safe reference for the Ames case.");
+    }
+    const packagePath = packageRef.split("/");
+    REFERENCE_PACKAGE_ROOT = `${WEB_BASE}/data/${packagePath.slice(0, -1).join("/")}`;
+    const packageResponse = await fetch(`${WEB_BASE}/data/${packageRef}`);
+    if (!packageResponse.ok) throw new Error(`Case Package request failed (${packageResponse.status}).`);
+    const packageBytes = await packageResponse.arrayBuffer();
+    const packageDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", packageBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    if (packageDigest !== releaseCase.package_sha256 || packageBytes.byteLength !== releaseCase.package_bytes) throw new Error("Release index package digest/size mismatch.");
+    const manifest = JSON.parse(new TextDecoder().decode(packageBytes));
+    if (manifest.package_revision !== releaseIndex.release_id || manifest.package_status !== releaseCase.package_status) throw new Error("Release index and Case Package metadata disagree.");
+    if (manifest.case_id !== "ames-reference-init-a" || !Array.isArray(manifest.files)) throw new Error("Unexpected Case Package identity or file manifest.");
+    const listed = new Map(manifest.files.map((entry) => [entry.path, entry]));
+    if (listed.size !== manifest.files.length) throw new Error("Duplicate Case Package file entry.");
+    const docs = {};
+    for (const [phase, fallback] of [[1,"phases/phase-01/content.json"],[2,"phases/phase-02/analyses.json"],[3,"phases/phase-03/preparation.json"],[4,"phases/phase-04/modeling.json"],[5,"phases/phase-05/evaluations.json"],[6,"phases/phase-06/inference-catalog.json"]]) {
+      const ref = manifest.phases?.[`phase${phase}`]?.data_ref || fallback;
+      const entry = listed.get(ref);
+      if (!entry) throw new Error(`Phase ${phase} reference is not package-manifest-listed.`);
+      const response = await fetch(`${REFERENCE_PACKAGE_ROOT}/${ref}`);
+      if (!response.ok) throw new Error(`Phase ${phase} request failed (${response.status}).`);
+      const bytes = await response.arrayBuffer();
+      const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+      if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error(`Phase ${phase} manifest digest/size mismatch.`);
+      docs[phase] = JSON.parse(new TextDecoder().decode(bytes));
+      if (docs[phase].case_id !== manifest.case_id) throw new Error(`Phase ${phase} Case ID mismatch.`);
+    }
+    const caseEntry = listed.get(manifest.case_ref);
+    if (!caseEntry || !safePackageRef(manifest.case_ref)) throw new Error("Case document is not package-manifest-listed.");
+    const caseResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${manifest.case_ref}`);
+    if (!caseResponse.ok) throw new Error(`Case document request failed (${caseResponse.status}).`);
+    const caseBytes = await caseResponse.arrayBuffer();
+    const caseDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", caseBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    if (caseDigest !== caseEntry.sha256 || caseBytes.byteLength !== caseEntry.bytes) throw new Error("Case document manifest digest/size mismatch.");
+    const caseDoc = JSON.parse(new TextDecoder().decode(caseBytes));
+    if (caseDoc.case_id !== manifest.case_id || caseDoc.case_status !== manifest.package_status) throw new Error("Case document identity/status mismatch.");
+    for (const entry of manifest.files.filter((item) => ["image/svg+xml", "image/png"].includes(item.mime))) {
+      if (!safePackageRef(entry.path)) throw new Error("Unsafe figure path reference.");
+      const response = await fetch(`${REFERENCE_PACKAGE_ROOT}/${entry.path}`);
+      if (!response.ok) throw new Error(`Figure request failed (${response.status}).`);
+      const bytes = await response.arrayBuffer();
+      const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+      if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error("Figure manifest digest/size mismatch.");
+    }
+    const defaultConfig = docs[4].configurations.find((item) => item.configuration_id === docs[4].default_configuration_id);
+    const metricsRef = defaultConfig?.cv_metrics_ref;
+    const metricsEntry = manifest.files.find((entry) => entry.path === metricsRef);
+    if (!metricsEntry || !safePackageRef(metricsRef)) throw new Error("Phase 4 CV metrics reference is not package-bound.");
+    const metricsResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${metricsRef}`);
+    if (!metricsResponse.ok) throw new Error(`Phase 4 metrics request failed (${metricsResponse.status}).`);
+    const metricsBytes = await metricsResponse.arrayBuffer();
+    const metricsDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", metricsBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    if (metricsDigest !== metricsEntry.sha256 || metricsBytes.byteLength !== metricsEntry.bytes) throw new Error("Phase 4 metrics manifest digest/size mismatch.");
+    const cvMetrics = JSON.parse(new TextDecoder().decode(metricsBytes));
+    if (cvMetrics.case_id !== manifest.case_id || cvMetrics.run_id !== defaultConfig.execution_run_id) throw new Error("Phase 4 metrics identity mismatch.");
+    const smokeRef = "assets/phase6-inference-smoke.json";
+    const smokeEntry = listed.get(smokeRef);
+    if (!smokeEntry) throw new Error("Phase 6 inference smoke evidence is not package-manifest-listed.");
+    const smokeResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${smokeRef}`);
+    if (!smokeResponse.ok) throw new Error(`Phase 6 smoke evidence request failed (${smokeResponse.status}).`);
+    const smokeBytes = await smokeResponse.arrayBuffer();
+    const smokeDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", smokeBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    if (smokeDigest !== smokeEntry.sha256 || smokeBytes.byteLength !== smokeEntry.bytes) throw new Error("Phase 6 smoke evidence manifest digest/size mismatch.");
+    const phase6Smoke = JSON.parse(new TextDecoder().decode(smokeBytes));
+    referencePackage = { manifest, caseDoc, docs, cvMetrics, phase6Smoke, figurePaths: manifest.files.filter((item) => ["image/svg+xml", "image/png"].includes(item.mime)).map((item) => item.path) };
+    CASES[manifest.case_id] = { id: manifest.case_id, title: "Ames Housing — INIT B Reference Baseline", status: manifest.package_status, packageMode: "reference", packageRevision: manifest.package_revision, analyses: [] };
+  } catch (error) {
+    referencePackageError = error instanceof Error ? error.message : "Unable to verify Case Package.";
+  } finally {
+    referencePackageLoading = false;
+    updateShell();
+    if (state.caseId === "ames-reference-init-a") render();
+  }
+}
+function renderReferencePackagePhase(phase) {
+  const pkg = referencePackage;
+  const c = caseData();
+  const doc = pkg?.docs[phase];
+  if (!pkg || !doc) return `<div class="page">${pageHeading(`PHASE 0${phase} / REFERENCE PACKAGE`, "INIT B Reference Baseline", "Package 載入與驗證狀態。", referencePackageError ? "ERROR" : "UNAVAILABLE")}<section class="state-panel" role="${referencePackageError ? "alert" : "status"}"><h3>${referencePackageError ? "Case Package 驗證失敗" : "載入 Reference Baseline Case Package"}</h3><p>${esc(referencePackageError || "網站正從目前發布版本載入套件。")}</p></section></div>`;
+  const unavailable = doc.status === "UNAVAILABLE";
+  let body = "";
+  if (phase === 1 || unavailable) {
+    body = `<section class="state-panel"><h3>${esc(doc.reason_code || doc.readiness?.reason_code || "此 Phase 尚無可用資料")}</h3><p>${esc(doc.readiness?.message || "此 Case Package 將該階段標示為 UNAVAILABLE；未以示意數據補上。")}</p>${badge(doc.status)}</section>`;
+  } else if (phase === 2) {
+    body = doc.analyses.map((a) => `<section class="card"><div class="card-head"><div><p class="eyebrow">${esc(a.figure_id)}</p><h2>${esc(a.title)}</h2></div>${badge(a.status)}</div><div class="card-body"><p>${esc(a.description)}</p><p>${esc(a.finding || "")}</p>${a.image_ref ? `<img class="package-figure" src="${REFERENCE_PACKAGE_ROOT}/${encodeURI(a.image_ref)}" alt="${esc(a.title)}; ${esc(a.description)}">` : ""}<p class="stage-note">${esc(a.limitations || "")}</p></div></section>`).join("");
+  } else if (phase === 3) {
+    body = `<section class="card"><div class="card-body"><h2>資料準備與編碼</h2>${doc.stages.map((s) => `<dl class="data-row"><dt>${esc(s.label)}</dt><dd>${esc(s.total)} · ${esc(s.unit)} · ${esc(s.total_status)}</dd></dl>`).join("")}<p>Train / validation: ${doc.split.training_rows} / ${doc.split.holdout_rows}; seed ${doc.split.seed}.</p><p>Fit scope: development training only.</p></div></section>`;
+  } else if (phase === 4) {
+    const cfg = doc.configurations.find((item) => item.configuration_id === doc.default_configuration_id);
+    const metricsRef = cfg?.cv_metrics_ref;
+    const metrics = metricsRef && pkg.manifest.files.some((f) => f.path === metricsRef)
+      ? `<p>CV metrics file: <a href="${REFERENCE_PACKAGE_ROOT}/${encodeURI(metricsRef)}" target="_blank" rel="noreferrer">${esc(metricsRef)}</a></p><p>Execution: ${esc(cfg.execution_run_id)} · ${esc(cfg.method_id)} · ${esc(cfg.protocol_id)}</p>`
+      : `<p>CV metric artifact unavailable.</p>`;
+    const foldRows = pkg.cvMetrics.fold_results.map((fold) => `<tr><td>${fold.fold + 1}</td><td>${fold.validation_rows}</td><td>${fold.rmse.toFixed(6)}</td><td>${fold.mae.toFixed(6)}</td><td>${fold.r2.toFixed(8)}</td></tr>`).join("");
+    const mean = pkg.cvMetrics.mean_fold_metrics;
+    body = `<section class="card"><div class="card-body"><h2>${esc(cfg?.configuration_id || "No configuration")}</h2><p>${esc(cfg?.track_id || "")}</p><pre class="package-json">${esc(JSON.stringify(cfg?.params || {}, null, 2))}</pre>${metrics}<p>CV rows ${doc.cv.training_rows} · folds ${doc.cv.fold_count} · ${esc(doc.cv.protocol_id)}.</p><table class="mock-data-table"><thead><tr><th>Fold</th><th>Validation rows</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody>${foldRows}<tr><th>Mean</th><th>—</th><th>${mean.rmse.toFixed(6)}</th><th>${mean.mae.toFixed(6)}</th><th>${mean.r2.toFixed(8)}</th></tr></tbody></table><p>Candidate search: NOT RUN.</p><p class="stage-note">Fold metrics are read from this run’s manifest-bound Development artifact; they are not recalculated in the browser and do not represent independent generalization testing.</p></div></section>`;
+  } else if (phase === 5) {
+    const pooled = doc.evaluations.find((item) => item.evaluation_id === doc.default_evaluation_id) || doc.evaluations.find((item) => item.metric_source === "pooled_oof");
+    const fmt = (key, value) => key === "r2" ? Number(value).toFixed(8) : Number(value).toLocaleString("en-US", {minimumFractionDigits: 6, maximumFractionDigits: 6});
+    const metrics = pooled ? `<div class="mock-data-table"><table><thead><tr><th>Development OOF metric</th><th>Value</th><th>Evidence state</th></tr></thead><tbody>${["mae","rmse","r2"].map((key) => `<tr><td>${key.toUpperCase()}</td><td>${fmt(key,pooled.metrics[key].value)}</td><td>${esc(pooled.metrics[key].status)}</td></tr>`).join("")}</tbody></table></div>` : "";
+    const figures = (pooled?.figures || []).map((figure) => {
+      const listed = pkg.manifest.files.find((entry) => entry.path === figure.asset_ref);
+      const safe = safePackageRef(figure.asset_ref) && listed && listed.sha256 === figure.sha256;
+      return `<section class="card"><div class="card-head"><div><p class="eyebrow">${esc(figure.figure_id)}</p><h2>${esc(figure.alt || figure.figure_id)}</h2></div>${badge(figure.status)}</div><div class="card-body">${safe ? `<img class="package-figure" src="${REFERENCE_PACKAGE_ROOT}/${encodeURI(figure.asset_ref)}" alt="${esc(figure.alt || figure.figure_id)}">` : `<p role="alert">Figure ref failed package manifest check.</p>`}<p class="stage-note">${esc(figure.finding || "")} · ${esc(figure.publication_review)}</p></div></section>`;
+    }).join("");
+    body = `<section class="card"><div class="card-head"><div><p class="eyebrow">DEVELOPMENT OOF · ${esc(pooled?.metric_source || "UNAVAILABLE")}</p><h2>Phase 5 已計算評估 · 待研究審查</h2></div>${badge(doc.status)}</div><div class="card-body"><p>Run ${esc(pooled?.execution_run_id || "")} · Config ${esc(pooled?.configuration_id || "")} · n=${esc(pooled?.n || "—")}</p>${metrics}<p class="stage-note">指標由本次 Phase 4 三折 Development OOF 計算；屬內部交叉驗證，不是獨立泛化測試。Publication review: ${esc(doc.publication_review)}.</p><p>OOF source SHA-256: <code>${esc(pooled?.evidence?.source_artifact_sha256 || "")}</code></p></div></section>${figures}`;
+  } else if (phase === 6) {
+    const model = doc.models?.[0];
+    const smoke = pkg.phase6Smoke;
+    body = `<section class="card"><div class="card-head"><div><p class="eyebrow">LOCAL PRIVATE MODEL</p><h2>${esc(model?.model_id || "No model")}</h2></div>${badge(model?.model_status || doc.status)}</div><div class="card-body"><dl class="data-row"><dt>Source Run / Config</dt><dd>${esc(model?.source_execution_run_id || "")} / ${esc(model?.source_configuration_id || "")}</dd></dl><dl class="data-row"><dt>Model SHA-256</dt><dd><code>${esc(model?.readiness?.model_sha256 || "")}</code></dd></dl><dl class="data-row"><dt>Reload / Local inference</dt><dd>${smoke.reload_verified ? "PASS" : "FAIL"} / ${smoke.local_inference_verified ? "PASS" : "FAIL"}</dd></dl><dl class="data-row"><dt>Local inference smoke</dt><dd>${smoke.local_inference_verified ? "PASS — prediction value suppressed" : "FAIL"}</dd></dl><p class="stage-note">A Development training record was used for a private local smoke; its prediction value is not included in the public package. Remote prediction and deployment are unavailable.</p></div></section>`;
+  }
+  return `<div class="page"><div class="fixture-banner"><span><strong>Case Package · ${esc(pkg.manifest.package_revision)}</strong> · published static bundle; Phase 5 research publication review remains pending.</span>${badge(doc.status)}</div>${pageHeading(`PHASE 0${phase} / ${PHASES[phase-1][1].toUpperCase()}`, PHASES[phase-1][2], "INIT B Reference Baseline · Package-bound values and explicit unavailable states.", doc.status)}${body}<p class="stage-note">Displayed phase documents, metrics and referenced figures passed package SHA/byte verification. Package status: ${esc(pkg.manifest.package_status)}.</p></div>`;
 }
 function pageHeading(kicker, title, subtitle, status = caseData().status) {
   return `<div class="page-heading"><div><p class="kicker">${esc(kicker)}</p><h1>${esc(title)}</h1><p class="lede">${esc(subtitle)}</p></div><div class="page-meta">${badge(status)}</div></div>`;
@@ -486,6 +621,16 @@ function renderPhase6() {
 }
 function renderDashboardVerified() {
   const c = caseData();
+  if (c.packageMode === "reference") {
+    const pkg = referencePackage;
+    if (!pkg) return `<div class="state-panel"><h3>載入 Reference Baseline 摘要中</h3><p>${esc(referencePackageError || "Waiting for the static Case Package.")}</p>${badge(referencePackageError ? "ERROR" : "UNAVAILABLE")}</div>`;
+    const caseDoc = pkg.caseDoc;
+    const split = pkg.docs[3].split;
+    const evaluationDoc = pkg.docs[5];
+    const pooled = evaluationDoc.evaluations.find((item) => item.evaluation_id === evaluationDoc.default_evaluation_id);
+    const metrics = pooled ? ["mae", "rmse", "r2"].map((key) => `<dl class="data-row"><dt>${key.toUpperCase()} · Development OOF</dt><dd>${Number(pooled.metrics[key].value).toLocaleString("en-US", {maximumFractionDigits: key === "r2" ? 8 : 6})}</dd></dl>`).join("") : "<p>OOF metrics unavailable.</p>";
+    return `<div class="grid three"><article class="card"><div class="card-head"><div><p class="eyebrow">REFERENCE CASE</p><h2>${esc(caseDoc.title)}</h2></div>${badge(pkg.manifest.package_status)}</div><div class="card-body"><p>Source: ${esc(caseDoc.source.label)} · Target: ${esc(caseDoc.target.raw_field_id)}</p><p>Development rows: ${split.training_rows} · Encoded features: ${pkg.docs[3].stages.at(-1).total}</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">FIXED MODEL</p><h2>${esc(pkg.docs[4].default_configuration_id)}</h2></div>${badge(pkg.docs[4].status)}</div><div class="card-body"><p>${esc(pkg.docs[4].cv.protocol_id)} · ${pkg.docs[4].cv.fold_count} folds · candidate search disabled</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">EVALUATION</p><h2>Development OOF</h2></div>${badge(evaluationDoc.publication_review === "PENDING" ? "PLANNED" : evaluationDoc.status)}</div><div class="card-body">${metrics}<p class="stage-note">OOF metrics are calculated and independently artifact-audited; research publication review remains pending.</p></div></article></div><div class="button-row" style="margin-top:18px">${PHASES.map(([n,,zh]) => `<a class="button" href="#phase-${n}">Phase ${n} · ${esc(zh)}</a>`).join("")}</div>`;
+  }
   if (c.status === "PLANNED") return `<div class="state-panel"><h3>此案例尚無可用研究摘要</h3><p>Verified Research 僅讀取同一 Case Package。此 planned case 沒有可以展示的指標或圖表。</p>${badge("PLANNED")}</div>`;
   return `<div class="grid three"><article class="card"><div class="card-head"><div><p class="eyebrow">DATASET OVERVIEW</p><h2>${esc(c.title)}</h2></div>${badge("MOCK")}</div><div class="card-body"><p class="body-copy">Source: ${esc(c.source)}<br>Target: ${esc(c.target.column)} · ${esc(c.target.unit)}</p><p class="stage-note">Package publication not approved. This is a fixture preview, not Verified Research.</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">FEATURE SELECTION</p><h2>Methods & configuration</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><p class="body-copy">${c.methods.length} method definitions in the sample contract; ${c.configurations.length} eligible configurations.</p><p class="stage-note">No selected features, stability/frequency summaries or comparable method result is available.</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">METRICS</p><h2>MAE · RMSE · R²</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><div class="metrics"><span class="metric-value">—</span><span class="metric-value">—</span><span class="metric-value">—</span></div><p class="stage-note">No approved metric source. Scores are not calculated in the browser.</p></div></article></div><section class="card" style="margin-top:18px"><div class="card-head"><div><p class="eyebrow">VISUALIZATION</p><h2>Prediction versus actual · uncertainty</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><div class="state-panel"><h3>No approved evaluation figure</h3><p>Actual-versus-predicted and confidence/prediction interval figures remain unavailable until evidence and publication review are complete.</p></div><div class="grid two" style="margin-top:16px"><p class="stage-note">Provenance: ${esc(SOURCE)}</p><p class="stage-note">Limitations: sample package is MOCK; files[] is empty and publication is not approved.</p></div></div></section>`;
 }
@@ -503,10 +648,12 @@ function renderDashboard() {
   return `<div class="page">${banner(c)}${pageHeading("INTEGRATED REGRESSION ANALYSIS", "Dashboard", "獨立的分析工作區。Verified Research 與 Custom Dataset 互斥；兩種模式不共享研究結果。", c.status)}<div class="mode-switch" role="group" aria-label="Dashboard mode"><button type="button" data-dashboard-mode="verified" aria-pressed="${state.dashboardMode === "verified"}">Verified Research</button><button type="button" data-dashboard-mode="custom" aria-pressed="${state.dashboardMode === "custom"}">Custom Dataset</button></div><div style="margin-top:18px">${state.dashboardMode === "verified" ? renderDashboardVerified() : customPanel()}</div><div class="button-row" style="margin-top:22px"><a class="button" href="#phase-1">← Back to CRISP-DM Home</a></div></div>`;
 }
 function render() {
+  if (!referencePackage && !referencePackageError && !referencePackageLoading) loadReferencePackage();
   updateShell();
   const phase = routePhase();
   if (state.route === "home") app.innerHTML = renderHome();
   else if (state.route === "dashboard") app.innerHTML = renderDashboard();
+  else if (phase && caseData().packageMode === "reference") app.innerHTML = renderReferencePackagePhase(phase);
   else if (phase === 1) app.innerHTML = renderPhase1();
   else if (phase === 2) app.innerHTML = renderPhase2();
   else if (phase === 3) app.innerHTML = renderPhase3();

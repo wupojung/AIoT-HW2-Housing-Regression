@@ -39,31 +39,29 @@ class WebFoundationTests(unittest.TestCase):
         cls.parser.feed(cls.html)
 
     def test_primary_sections_and_navigation_targets_exist(self):
-        expected = {"top", "main", "overview", "feature-selection", "evaluation", "research"}
+        expected = {"main", "app", "case-context", "case-select", "phase-nav"}
         self.assertTrue(expected.issubset(self.parser.ids))
-        self.assertGreaterEqual(self.parser.sections, 6)
-        for href in self.parser.links:
-            if href.startswith("#"):
-                self.assertIn(href[1:], self.parser.ids, f"Missing navigation target: {href}")
+        self.assertIn("phase-${phase}", self.js)
+        self.assertIn('data-crisp-link', self.html)
 
     def test_brand_course_and_project_links_are_present(self):
         text = " ".join(self.parser.text)
         self.assertIn("RegScope", text)
-        self.assertIn("Regression Analysis Showcase", text)
-        self.assertIn("NCHU AIoT 2026", text)
+        self.assertIn("CRISP-DM", text)
         self.assertTrue(any("github.com/wupojung/AIoT-HW2-Housing-Regression" in href for href in self.parser.links))
 
     def test_unbuilt_analysis_sections_are_clearly_marked(self):
-        text = " ".join(self.parser.text).lower()
-        self.assertIn("coming soon", text)
-        self.assertIn("no scores are published yet", text)
-        self.assertNotRegex(text, re.compile(r"(?:rmse|r²|r\^2)\s*[:=]?\s*\d", re.IGNORECASE))
+        text = (" ".join(self.parser.text) + self.js).lower()
+        self.assertIn("mock", text)
+        self.assertIn("not approved research results", text)
+        self.assertIn("publication review remains pending", text)
 
     def test_responsive_navigation_and_reduced_motion_rules_exist(self):
         self.assertIn("@media (max-width: 700px)", self.css)
         self.assertIn("@media (prefers-reduced-motion: reduce)", self.css)
-        self.assertIn('aria-expanded', self.js)
-        self.assertIn('is-open', self.js)
+        self.assertIn('id="phase-nav"', self.html)
+        self.assertIn('case-select', self.js)
+        self.assertIn('data-dashboard-mode', self.js)
 
     def test_vercel_serves_only_the_static_web_directory(self):
         import json

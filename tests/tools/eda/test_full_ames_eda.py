@@ -811,7 +811,8 @@ class FullAmesEdaTests(unittest.TestCase):
             (datasets / "sample_submission.csv").write_text("Id,SalePrice\n4,200000\n")
             (datasets / "data_description.txt").write_text("GrLivArea: Area\nNeighborhood: Location\n")
 
-            run(datasets, output, "2026-10-24", True, local_root=local)
+            with patch("tools.eda.full_ames_eda.HAS_MATPLOTLIB", False):
+                run(datasets, output, "2026-10-24", True, local_root=local)
 
             fig01_svg = (output / "figures" / "fig01_dataset_overview.svg").read_text(encoding="utf-8")
             self.assertIn("<rect", fig01_svg)

@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-reference-init-a",
+  "predictor_count": 79,
+  "target_excluded": true,
+  "id_excluded": true,
+  "columns": "Canonical Ames Housing predictor columns; values are private and omitted."
+}
