@@ -1,6 +1,7 @@
 import sys
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -125,7 +126,8 @@ class Phase12CoreTests(unittest.TestCase):
 
         self.assertEqual(output["status"], "MOCK")
         self.assertEqual(output["default_analysis_id"], "field-decisions")
-        self.assertTrue((self.phase2_dir / "analyses.json").is_file())
+        analyses_path = self.phase2_dir / "phases" / "phase-02" / "analyses.json"
+        self.assertTrue(analyses_path.is_file())
         decisions = output["analyses"][0]["finding"]
         self.assertIn("Id [identifier] exclude", decisions)
         self.assertIn("SalePrice [target] exclude", decisions)
@@ -133,16 +135,56 @@ class Phase12CoreTests(unittest.TestCase):
         self.assertIn("Neighborhood [nominal] include", decisions)
         self.assertIn("MysteryColumn [unknown] exclude", decisions)
         self.assertIn("LotArea=1/3", output["analyses"][1]["finding"])
-        self.assertIn("LotArea: n=2, min=1000, median=1500, max=2000", output["analyses"][2]["finding"])
-        self.assertIn("Neighborhood: 1 distinct", output["analyses"][2]["finding"])
+        self.assertIsNotNone(output["analyses"][1]["image_ref"])
+        target_analysis = output["analyses"][2]
+        self.assertEqual(target_analysis["status"], "MOCK")
+        self.assertIsNotNone(target_analysis["image_ref"])
+        self.assertIn("LotArea: n=2, min=1000, median=1500, max=2000", output["analyses"][3]["finding"])
+        self.assertIn("Neighborhood: 1 distinct", output["analyses"][3]["finding"])
 
-        serialized = (self.phase2_dir / "analyses.json").read_text(encoding="utf-8")
+        refs = [analysis["image_ref"] for analysis in output["analyses"] if analysis["image_ref"]]
+        self.assertGreaterEqual(len(refs), 2)
+        chart_paths = []
+        for ref in refs:
+            ref_path = Path(ref)
+            self.assertFalse(ref_path.is_absolute())
+            self.assertNotIn("..", ref_path.parts)
+            chart_path = self.phase2_dir / ref_path
+            self.assertTrue(chart_path.is_file())
+            chart_paths.append(chart_path)
+            svg = chart_path.read_text(encoding="utf-8")
+            ET.fromstring(svg)
+            self.assertIn("<title", svg)
+            self.assertIn("<desc", svg)
+            self.assertIn("MOCK | SYNTHETIC DATA", svg)
+
+        serialized = analyses_path.read_text(encoding="utf-8")
+        outputs = [serialized] + [path.read_text(encoding="utf-8") for path in chart_paths]
         for private_value in (
             "9012301", "9012302", "9012303", "DO_NOT_EXPORT_ROW", "CollgCr",
-            str(self.csv_path), "/Users/", "local/",
+            "150000", "180000", "200000", str(self.csv_path), "/Users/", "local/",
         ):
             with self.subTest(private_value=private_value):
-                self.assertNotIn(private_value, serialized)
+                self.assertTrue(all(private_value not in output_text for output_text in outputs))
+
+        before = {path: path.read_bytes() for path in [analyses_path] + chart_paths}
+        with self.assertRaisesRegex(PhaseCoreError, "overwrite"):
+            build_phase2(self.config, self.phase2_dir)
+        self.assertEqual({path: path.read_bytes() for path in before}, before)
+
+        repeat_case_dir = self.root / "repeat-case"
+        repeat_case_dir.mkdir()
+        repeat_config = initialize_case(
+            self.csv_path, "synthetic-housing", "SalePrice", repeat_case_dir
+        ).config_path
+        repeat_root = self.root / "phase2-repeat"
+        repeat_root.mkdir()
+        build_phase2(repeat_config, repeat_root)
+        repeat_paths = [repeat_root / "phases" / "phase-02" / "analyses.json"] + [
+            repeat_root / ref for ref in refs
+        ]
+        for original_path, repeat_path in zip([analyses_path] + chart_paths, repeat_paths):
+            self.assertEqual(original_path.read_bytes(), repeat_path.read_bytes())
 
     def test_empty_phase2_is_unavailable_and_invalid_csv_fails_without_output(self):
         empty_dir = self.root / "empty-case"
@@ -167,7 +209,39 @@ class Phase12CoreTests(unittest.TestCase):
         malformed_output_dir.mkdir()
         with self.assertRaisesRegex(PhaseCoreError, "invalid column count"):
             build_phase2(malformed_config, malformed_output_dir)
-        self.assertFalse((malformed_output_dir / "analyses.json").exists())
+        self.assertFalse((malformed_output_dir / "phases" / "phase-02" / "analyses.json").exists())
+
+    def test_target_chart_is_unavailable_for_constant_or_invalid_values(self):
+        cases = (
+            (
+                "constant",
+                "Id,LotArea,Neighborhood,SalePrice\n1,1000,A,120000\n2,1100,B,120000\n",
+                "constant",
+            ),
+            (
+                "invalid",
+                "Id,LotArea,Neighborhood,SalePrice\n1,1000,A,high\n2,1100,B,unknown\n",
+                "non-numeric",
+            ),
+        )
+        for case_id, csv_content, expected_reason in cases:
+            with self.subTest(case_id=case_id):
+                csv_path = self.root / f"{case_id}.csv"
+                csv_path.write_text(csv_content, encoding="utf-8")
+                config_dir = self.root / f"{case_id}-case"
+                config_dir.mkdir()
+                config = initialize_case(csv_path, case_id, "SalePrice", config_dir).config_path
+                output_root = self.root / f"{case_id}-output"
+                output_root.mkdir()
+
+                output = build_phase2(config, output_root)
+                target_view = output["analyses"][2]
+                self.assertEqual(target_view["status"], "UNAVAILABLE")
+                self.assertIsNone(target_view["image_ref"])
+                self.assertIn(expected_reason, target_view["finding"])
+                self.assertFalse(
+                    (output_root / "phases" / "phase-02" / "figures" / "target-distribution.svg").exists()
+                )
 
     def test_schema_validator_reports_invalid_documents(self):
         output = build_phase1(self.config, self.phase1_dir)
