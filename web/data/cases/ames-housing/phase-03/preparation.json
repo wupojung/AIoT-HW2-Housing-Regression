@@ -21,7 +21,8 @@
         { "type_id": "discrete", "count": 11 },
         { "type_id": "continuous", "count": 14 }
       ],
-      "distribution_status": "MOCK"
+      "distribution_status": "MOCK",
+      "exclusions": []
     },
     {
       "id": "filtered",
@@ -35,7 +36,12 @@
         { "type_id": "discrete", "count": 11 },
         { "type_id": "continuous", "count": 14 }
       ],
-      "distribution_status": "MOCK"
+      "distribution_status": "MOCK",
+      "exclusions": [
+        { "category_zh": "識別欄位", "category_en": "Identifier fields", "count": 2, "reason_zh": "避免將識別碼當成可泛化的預測訊號。", "reason_en": "Avoid treating identifiers as generalizable predictive signals.", "status": "MOCK" },
+        { "category_zh": "目標洩漏疑慮", "category_en": "Potential target leakage", "count": 1, "reason_zh": "示意為與預測目標直接重疊的欄位。", "reason_en": "Illustrative field overlaps directly with the prediction target.", "status": "MOCK" },
+        { "category_zh": "缺失比例過高", "category_en": "High missingness", "count": 4, "reason_zh": "示意為缺失比例超過假設門檻的欄位。", "reason_en": "Illustrative fields exceed a hypothetical missingness threshold.", "status": "MOCK" }
+      ]
     },
     {
       "id": "processed",
@@ -68,7 +74,18 @@
       "distribution_status": "MOCK"
     }
   ],
-  "treatments": [],
+  "treatments": [
+    { "type_id": "nominal", "operation_zh": "獨熱編碼", "operation_en": "One-hot encoding", "description_zh": "將類別值展開為多個 0/1 欄位。", "description_en": "Expand category values into multiple 0/1 columns.", "status": "MOCK" },
+    { "type_id": "ordinal", "operation_zh": "保序映射", "operation_en": "Ordinal mapping", "description_zh": "依已定義順序映射成整數；順序未知時不推定。", "description_en": "Map values to integers using an explicit order; do not infer an unknown order.", "status": "MOCK" },
+    { "type_id": "discrete", "operation_zh": "整數型態保留", "operation_en": "Integer passthrough", "description_zh": "保留離散數值；僅在契約指定時才轉成類別。", "description_en": "Keep discrete numeric values unless the contract specifies categorical treatment.", "status": "MOCK" },
+    { "type_id": "continuous", "operation_zh": "中位數補值與標準化", "operation_en": "Median imputation and standardization", "description_zh": "示意先補值再縮放；實際擬合範圍需由資料流程契約確認。", "description_en": "Illustrative imputation followed by scaling; the actual fit population must be defined by the pipeline contract.", "status": "MOCK" }
+  ],
+  "lineage": [
+    { "type_id": "nominal", "source_columns": 32, "encoded_features": 172, "operation_zh": "類別展開", "operation_en": "Category expansion", "status": "MOCK" },
+    { "type_id": "ordinal", "source_columns": 15, "encoded_features": 15, "operation_zh": "保序映射", "operation_en": "Ordinal mapping", "status": "MOCK" },
+    { "type_id": "discrete", "source_columns": 11, "encoded_features": 11, "operation_zh": "整數保留", "operation_en": "Integer passthrough", "status": "MOCK" },
+    { "type_id": "continuous", "source_columns": 14, "encoded_features": 50, "operation_zh": "補值與衍生特徵示意", "operation_en": "Imputation and derived-feature illustration", "status": "MOCK" }
+  ],
   "split": {
     "source_labeled_rows": 1460,
     "training_rows": 1168,
@@ -76,5 +93,5 @@
     "seed": 42,
     "status": "SOURCE_REPORTED_NOT_VERIFIED"
   },
-  "lineage_ref": null
+  "lineage_ref": "MOCK_UI_ONLY"
 }
