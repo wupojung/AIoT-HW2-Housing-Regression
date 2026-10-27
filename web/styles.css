@@ -190,6 +190,7 @@ th { position: sticky; top: 0; background: #eef3ee; color: #45574e; }
 .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .model-state { padding: 24px; border: 1px solid #d8dfd9; background: #f6f8f5; }
 .model-state h2 { font-size: 21px; }.model-state p { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.mock-prediction-result h2 { margin: 8px 0 12px; color: var(--green-dark); font-size: clamp(30px, 3vw, 44px); font-variant-numeric: tabular-nums; }
 .footer-inner { width: min(1360px, calc(100% - 72px)); min-height: 72px; margin: auto; display: flex; align-items: center; gap: 20px; border-top: 1px solid var(--line); color: #77847d; font-size: 10px; }
 .footer-inner .brand-name { color: var(--green-dark); font-size: 13px; font-weight: 800; }.footer-inner a { margin-left: auto; color: var(--green); font-weight: 700; text-decoration: none; }
 @media (max-width: 1000px) {

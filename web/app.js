@@ -67,6 +67,7 @@ const CASES = {
       { id: "MOCK-RUN-03", method: "Elastic Net + Linear Regression", featureCount: 21, rmse: 30420, mae: 21200, r2: 0.85, selectedFeatures: ["Feature A", "Feature C", "Feature H", "Feature M"] }
     ],
     mockFeatureCurve: [{ features: 8, rmse: 34200 }, { features: 16, rmse: 31100 }, { features: 24, rmse: 29800 }, { features: 32, rmse: 30500 }, { features: 40, rmse: 31900 }],
+    mockInference: { modelId: "MOCK-MODEL-01", runId: "MOCK-RUN-02", estimate: 238500, lower: 210000, upper: 267000, target: "SalePrice", unit: "USD" },
     evaluation: { status: "MOCK", reasonCode: "MOCK_UI_ONLY", evaluations: [], figures: [
       ["FIG-P5-02", "殘差對預測值 Residual vs Predicted"], ["FIG-P5-01", "實際值對預測值 Actual vs Predicted"], ["FIG-P5-03", "殘差分布 Residual Distribution"]
     ], intervalF: "MOCK", intervalS: "MOCK", mock: {
@@ -89,7 +90,7 @@ const CASES = {
 
 const state = {
   caseId: "ames-housing", route: "home", analysisId: "overview", perspective: "method_comparison",
-  phase4RunId: "MOCK-RUN-02",
+  phase4RunId: "MOCK-RUN-02", phase6MockSubmitted: false,
   phase5Figure: "FIG-P5-02", p5Population: "development_oof", p5DetailsOpen: false,
   dashboardMode: "verified", customSource: "file", customFile: null, customUrl: "", customHeaders: [], customRows: [],
   targetField: "", featureFields: [], csvMessage: "尚未載入資料。CSV 僅在此瀏覽器本機預覽，不會上傳。", customValidated: false
@@ -341,7 +342,11 @@ function renderPhase5() {
 function renderPhase6() {
   const c = caseData();
   if (c.status === "PLANNED") return `<div class="page">${banner(c)}${pageHeading("PHASE 06 / MODEL PREDICTION LAB", "房價預測實驗室", "單筆推論需要通過核准的模型、輸入 Schema 與已部署 API。", "PLANNED")}${plannedPanel(c.inference.message)}${footerNav([5,"模型評估"],null)}</div>`;
-  return `<div class="page">${banner(c)}${pageHeading("PHASE 06 / MODEL PREDICTION LAB", "房價預測實驗室", "使用已註冊且核准的模型進行單筆推論。此 prototype 沒有 ready model、raw-input schema 或 inference API。", "UNAVAILABLE")}<section class="card"><div class="card-head"><div><p class="eyebrow">CASE / RUN CONTEXT</p><h2>${esc(c.title)}</h2></div>${badge("MOCK")}</div><div class="card-body grid three"><dl class="data-row"><dt>Target</dt><dd>${esc(c.target.label)} · ${esc(c.target.unit)}</dd></dl><dl class="data-row"><dt>Research run</dt><dd>UNAVAILABLE — no eligible configuration</dd></dl><dl class="data-row"><dt>Model selector</dt><dd><label class="control"><span class="sr-only">Registered model</span><select disabled><option>沒有核准的模型</option></select></label></dd></dl></div></section><div class="two-panel" style="margin-top:18px"><section class="card"><div class="card-head"><div><p class="eyebrow">MODEL-SPECIFIC RAW INPUT SCHEMA</p><h2>輸入住宅條件</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><div class="state-panel"><span class="state-icon" aria-hidden="true">i</span><h3>目前不提供輸入欄位</h3><p>No approved registered model or model-specific input schema is available. The UI will not guess fields or request encoded features.</p></div><div class="button-row" style="margin-top:14px"><button class="button" type="button" disabled>Validate Inputs</button><button class="button primary" type="button" disabled>Predict</button></div></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">PREDICTION RESULT</p><h2>預測結果</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><div class="model-state"><p class="eyebrow">MODEL READINESS</p><h2>此模型尚未準備好</h2><p>${esc(c.inference.message)}</p><dl class="data-row"><dt>Readiness reason</dt><dd>${esc(c.inference.reasonCode)}</dd></dl><dl class="data-row"><dt>Prediction interval</dt><dd>UNAVAILABLE — no approved interval method</dd></dl><dl class="data-row"><dt>API status</dt><dd>API_NOT_DEPLOYED</dd></dl></div><p class="stage-note">研究 CV、部署模型和預測服務是不同狀態。此頁不會訓練模型或呼叫 API。</p><div class="button-row" style="margin-top:14px"><button class="button" type="button" disabled>選擇其他可用模型</button><a class="button primary" href="#phase-4">返回 Phase 4 Modeling →</a></div></div></section></div><section class="card" style="margin-top:18px"><div class="card-body"><p class="eyebrow">PROVENANCE & LIMITATIONS</p><p class="body-copy">Case ID: ${esc(c.id)} · Model registry: ${esc(c.inference.reasonCode)} · Model artifact, fitted pipeline, raw input schema, publication review, API deployment and QA are not available.</p><a class="text-link" href="#phase-5">查看 Phase 5 evaluation 狀態 →</a></div></section>${footerNav([5,"模型評估"],null)}</div>`;
+  const mock = c.mockInference;
+  const result = state.phase6MockSubmitted
+    ? `<div class="model-state mock-prediction-result"><p class="eyebrow">合成推論結果 SYNTHETIC MOCK PREDICTION</p><h2>${mock.estimate.toLocaleString()} ${esc(mock.unit)}</h2><p>預測售價 Estimate for ${esc(mock.target)} · 僅為固定示意值，不是由輸入欄位計算。</p><dl class="data-row"><dt>示意區間 Mock range</dt><dd>${mock.lower.toLocaleString()}–${mock.upper.toLocaleString()} ${esc(mock.unit)}</dd></dl><dl class="data-row"><dt>模型 Model</dt><dd>${esc(mock.modelId)}</dd></dl>${badge("MOCK")}</div>`
+    : `<div class="state-panel"><span class="state-icon" aria-hidden="true">i</span><h3>尚未顯示示意結果 Mock preview not shown</h3><p>按下按鈕只會顯示預設合成值；不會執行推論。The button reveals a fixed mock value and does not run inference.</p>${badge("MOCK")}</div>`;
+  return `<div class="page">${banner(c)}${pageHeading("PHASE 06 / MODEL PREDICTION LAB", "房價預測實驗室", "此頁展示推論介面的合成互動；沒有註冊模型或即時推論服務。Mock UI only: no registered model or live inference service.", "MOCK")}<section class="card"><div class="card-head"><div><p class="eyebrow">案例與模型脈絡 CASE / MODEL CONTEXT</p><h2>${esc(c.title)}</h2></div>${badge("MOCK")}</div><div class="card-body grid three"><dl class="data-row"><dt>預測目標 Target</dt><dd>${esc(c.target.label)} · ${esc(c.target.unit)}</dd></dl><dl class="data-row"><dt>示意執行 Mock run</dt><dd>${esc(mock.runId)}</dd></dl><dl class="data-row"><dt>示意模型 Mock model</dt><dd>${esc(mock.modelId)}</dd></dl></div></section><div class="two-panel" style="margin-top:18px"><section class="card"><div class="card-head"><div><p class="eyebrow">輸入欄位示意 MOCK INPUT SCHEMA</p><h2>住宅條件 Housing features</h2></div>${badge("MOCK")}</div><div class="card-body"><div class="control-row"><label class="control">居住面積 Living area<input type="number" value="1800" readonly><span class="stage-note">平方英尺 sq ft</span></label><label class="control">臥室數 Bedrooms<input type="number" value="3" readonly></label><label class="control">房屋品質 Overall quality<input type="number" value="6" readonly><span class="stage-note">示意等級 Mock rating</span></label><label class="control">建成年份 Year built<input type="number" value="1998" readonly></label></div><p class="stage-note">欄位與值均為合成示例，尚未對應核准的模型輸入契約。All fields and values are synthetic; no approved model schema is linked.</p><div class="button-row" style="margin-top:14px"><button class="button primary" type="button" data-action="phase6-mock-preview">顯示示意預測 Show mock estimate</button></div></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">預測結果 PREDICTION RESULT</p><h2>合成售價示意 Synthetic estimate</h2></div>${badge("MOCK")}</div><div class="card-body">${result}<p class="stage-note">不會訓練或載入模型、不會讀取輸入值計算，也不會呼叫 API。No model is loaded or trained, inputs are not computed, and no API is called.</p></div></section></div><section class="card" style="margin-top:18px"><div class="card-body"><p class="eyebrow">來源與限制 PROVENANCE & LIMITATIONS</p><p class="body-copy">Case ID: ${esc(c.id)} · 此頁的模型識別碼、輸入欄位、預測值及區間都是合成 UI mock，不能解讀為實際推論結果。</p><p class="stage-note">Model ID, input fields, prediction and interval are synthetic UI fixtures, not real inference output.</p><a class="text-link" href="#phase-5">查看 Phase 5 評估狀態 View Phase 5 →</a></div></section>${footerNav([5,"模型評估"],null)}</div>`;
 }
 function renderDashboardVerified() {
   const c = caseData();
@@ -405,7 +410,7 @@ caseSelect.addEventListener("change", () => {
   state.caseId = caseSelect.value;
   state.analysisId = CASES[state.caseId].analyses[0]?.id || "";
   state.perspective = "method_comparison"; state.phase5Figure = "FIG-P5-02";
-  state.p5Population = "development_oof"; resetCustom(); render();
+  state.p5Population = "development_oof"; state.phase6MockSubmitted = false; resetCustom(); render();
 });
 window.addEventListener("hashchange", routeFromHash);
 app.addEventListener("click", (event) => {
@@ -414,6 +419,7 @@ app.addEventListener("click", (event) => {
   if (target.dataset.analysis) { state.analysisId = target.dataset.analysis; render(); }
   else if (target.dataset.perspective) { state.perspective = target.dataset.perspective; render(); }
   else if (target.dataset.p5Figure) { state.phase5Figure = target.dataset.p5Figure; render(); }
+  else if (target.dataset.action === "phase6-mock-preview") { state.phase6MockSubmitted = true; render(); }
   else if (target.dataset.dashboardMode) { state.dashboardMode = target.dataset.dashboardMode; resetCustom(); render(); }
   else if (target.dataset.customSource) { state.customSource = target.dataset.customSource; resetCustom(); render(); }
   else if (target.dataset.action === "validate-custom") {
