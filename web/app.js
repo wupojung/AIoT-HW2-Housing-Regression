@@ -16,10 +16,10 @@ const PHASES = [
   [6, "Deployment", "模型預測實驗室"]
 ];
 const TYPES = [
-  ["nominal", "Nominal 名目", "#b9d6c4"],
-  ["ordinal", "Ordinal 次序", "#cadba6"],
-  ["discrete", "Discrete 離散", "#b9cedd"],
-  ["continuous", "Continuous 連續", "#e8d39a"]
+  ["nominal", "名目 (Nominal)", "#b9d6c4"],
+  ["ordinal", "次序 (Ordinal)", "#cadba6"],
+  ["discrete", "離散 (Discrete)", "#b9cedd"],
+  ["continuous", "連續 (Continuous)", "#e8d39a"]
 ];
 const CASES = {
   "ames-housing": {
@@ -77,8 +77,8 @@ function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 }
 function statusLabel(status) {
-  const labels = { MOCK: "MOCK", UNAVAILABLE: "UNAVAILABLE", PLANNED: "PLANNED", VERIFIED: "VERIFIED", ERROR: "ERROR", SOURCE_REPORTED_NOT_VERIFIED: "SOURCE REPORTED · NOT VERIFIED" };
-  return labels[status] || status || "UNKNOWN";
+  const labels = { MOCK: "示意資料 MOCK", UNAVAILABLE: "無可用資料 UNAVAILABLE", PLANNED: "規劃中 PLANNED", VERIFIED: "已驗證 VERIFIED", ERROR: "錯誤 ERROR", SOURCE_REPORTED_NOT_VERIFIED: "來源回報・尚未驗證 SOURCE REPORTED · NOT VERIFIED" };
+  return labels[status] || status || "未知 UNKNOWN";
 }
 function statusClass(status) {
   return ({ MOCK: "mock", UNAVAILABLE: "unavailable", PLANNED: "planned", VERIFIED: "verified", ERROR: "error", SOURCE_REPORTED_NOT_VERIFIED: "mock" })[status] || "unavailable";
@@ -149,9 +149,9 @@ let phase3Loading = false;
 let phase3LoadError = null;
 const PHASE3_DATA_URL = "/data/cases/ames-housing/phase-03/preparation.json";
 const PHASE3_UNIT_LABELS = {
-  raw_columns: "raw columns",
-  pre_encoding_columns: "pre-encoding columns",
-  encoded_features: "encoded features"
+  raw_columns: "原始欄位 Raw columns",
+  pre_encoding_columns: "編碼前欄位 Pre-encoding columns",
+  encoded_features: "編碼後特徵 Encoded features"
 };
 
 function loadPhase3Data() {
@@ -179,33 +179,34 @@ function loadPhase3Data() {
 
 function renderSegments(stage, featureTypes) {
   const total = stage.total;
-  const colorsById = new Map(TYPES.map(([id, label, color]) => [id, { english: label.split(" ")[0], color }]));
+  const colorsById = new Map(TYPES.map(([id, label, color]) => [id, { label, color }]));
   const dataTypes = featureTypes.map((item) => {
     const type = colorsById.get(item.type_id);
-    return [item.type_id, `${type?.english || item.type_id} ${item.label}`, type?.color || "#ccc"];
+    return [item.type_id, type?.label || `${item.label} (${item.type_id})`, type?.color || "#ccc"];
   });
   const segments = Array.isArray(stage.segments) ? stage.segments : [];
   const segmentTotal = segments.reduce((sum, segment) => sum + segment.count, 0);
-  const eligible = stage.distribution_status === "VERIFIED"
-    && stage.total_status === "VERIFIED"
+  const isMock = stage.distribution_status === "MOCK";
+  const eligible = (stage.distribution_status === "VERIFIED" || isMock)
+    && (stage.total_status === "VERIFIED" || isMock)
     && Number.isInteger(total)
     && total > 0
     && segments.length > 0
     && segments.every((segment) => Number.isInteger(segment.count) && segment.count >= 0 && dataTypes.some(([id]) => id === segment.type_id))
     && segmentTotal === total;
   if (!eligible) {
-    return `<div class="stack-track is-unknown" role="img" aria-label="型態分布 ${esc(statusLabel(stage.distribution_status))}">型態分布 ${esc(statusLabel(stage.distribution_status))} · percentages unavailable</div><div class="legend">${dataTypes.map(([, label, color]) => `<span class="legend-item"><i class="legend-dot" style="--dot:${color}"></i>${esc(label)}：未知</span>`).join("")}</div>`;
+    return `<div class="stack-track is-unknown" role="img" aria-label="欄位類型分布 Feature type distribution · ${esc(statusLabel(stage.distribution_status))}">欄位類型分布 Feature type distribution · 百分比不可用 Percentages unavailable</div><div class="legend">${dataTypes.map(([, label, color]) => `<span class="legend-item"><i class="legend-dot" style="--dot:${color}"></i>${esc(label)}：未知 Unknown</span>`).join("")}</div>`;
   }
   const bars = segments.map((segment) => {
-    const type = TYPES.find(([id]) => id === segment.type_id);
+    const type = dataTypes.find(([id]) => id === segment.type_id);
     const percent = (segment.count / total) * 100;
     return `<span class="stack-segment" style="width:${percent}%;background:${type?.[2] || "#ccc"}" title="${esc(type?.[1] || segment.type_id)} ${segment.count} / ${total} (${percent.toFixed(1)}%)"></span>`;
   }).join("");
   const legend = segments.map((segment) => {
-    const type = TYPES.find(([id]) => id === segment.type_id);
+    const type = dataTypes.find(([id]) => id === segment.type_id);
     return `<span class="legend-item"><i class="legend-dot" style="--dot:${type?.[2] || "#ccc"}"></i>${esc(type?.[1] || segment.type_id)}：${segment.count} · ${(segment.count / total * 100).toFixed(1)}%</span>`;
   }).join("");
-  return `<div class="stack-track" role="img" aria-label="${esc(stage.label)}: ${segments.map((segment) => `${segment.type_id} ${segment.count}`).join(", ")}">${bars}</div><div class="legend">${legend}</div>`;
+  return `<div class="stack-track${isMock ? " is-mock" : ""}" role="img" aria-label="${esc(stage.label)}${isMock ? " · 合成示意 Synthetic UI mock" : ""}: ${segments.map((segment) => `${segment.type_id} ${segment.count}`).join(", ")}">${bars}</div><div class="legend">${legend}</div>${isMock ? `<p class="stage-note mock-data-note">合成 UI 示意 Synthetic UI mock · 非研究結果 Not research results</p>` : ""}`;
 }
 
 function renderPhase3() {
@@ -222,11 +223,11 @@ function renderPhase3() {
   const stages = data.stages.map((stage, index) => {
     const unit = PHASE3_UNIT_LABELS[stage.unit] || stage.unit;
     const note = stage.id === "raw"
-      ? `The ${stage.total ?? "unknown"} raw candidate predictor count is source-reported; feature classification is pending audit.`
+      ? `${stage.total ?? "未知 Unknown"} 個原始候選預測欄位 (raw candidate predictor columns) 為來源回報；欄位類型分布 (feature type distribution) 是合成 UI 示意。`
       : stage.id === "encoded"
-        ? `${stage.total ?? "Unknown"} encoded dimensions are source-reported; fit population, pipeline version and type lineage are unavailable.`
-        : "Retained feature total and category counts are unavailable; no zero-exclusion assumption is made.";
-    return `<section class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index">0${index + 1}</span><h2>${esc(stage.label)}</h2></div><span class="stage-total">TOTAL: ${stage.total == null ? "UNKNOWN" : esc(stage.total)} ${esc(unit)} ${badge(stage.total_status)}</span></div>${renderSegments(stage, data.feature_types)}<p class="stage-note">${esc(note)}</p>${stage.id === "filtered" ? `<details class="disclosure"><summary>顯示排除欄位與原因</summary><div class="disclosure-body">Exclusion audit pending. No excluded-column list or verified zero count is available.</div></details>` : ""}${stage.id === "processed" ? TYPES.map(([,label]) => `<details class="disclosure"><summary>${esc(label)} · UNKNOWN</summary><div class="disclosure-body">No source-backed operation or field-level treatment is provided for this type.</div></details>`).join("") : ""}${stage.id === "encoded" ? `<details class="disclosure"><summary>展開 raw-to-encoded feature mapping</summary><div class="disclosure-body">${data.lineage_ref ? esc(data.lineage_ref) : "UNAVAILABLE — no approved lineage mapping is included."}</div></details>` : ""}</section>`;
+        ? `${stage.total ?? "未知 Unknown"} 個編碼後維度 (encoded dimensions) 為來源回報；類型分布為合成 UI 示意。擬合資料範圍 (fit population)、流程版本 (pipeline version) 與類型沿革 (type lineage) 尚不可用。`
+        : "總數與類別計數皆為合成 UI 示意，並非根據研究資料推導；不代表已確認欄位排除或處理方式。";
+    return `<section class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index">0${index + 1}</span><h2>${esc(stage.label)}</h2></div><span class="stage-total">總數 Total: ${stage.total == null ? "未知 Unknown" : esc(stage.total)} ${esc(unit)} ${badge(stage.total_status)}</span></div>${renderSegments(stage, data.feature_types)}<p class="stage-note">${esc(note)}</p>${stage.id === "filtered" ? `<details class="disclosure"><summary>顯示排除欄位與原因 Excluded fields and reasons</summary><div class="disclosure-body">排除稽核尚未完成 Exclusion audit pending；沒有可驗證的排除欄位清單或數量。</div></details>` : ""}${stage.id === "processed" ? TYPES.map(([,label]) => `<details class="disclosure"><summary>${esc(label)} · 未知 UNKNOWN</summary><div class="disclosure-body">此類型沒有來源支持的操作或欄位處理方式 No source-backed operation or field-level treatment is provided.</div></details>`).join("") : ""}${stage.id === "encoded" ? `<details class="disclosure"><summary>展開原始欄位至編碼後特徵對應 Raw-to-encoded feature mapping</summary><div class="disclosure-body">${data.lineage_ref ? esc(data.lineage_ref) : "無可用且核准的對應資料 UNAVAILABLE — no approved lineage mapping is included."}</div></details>` : ""}</section>`;
   }).join("");
   const split = data.split;
   const totalRows = split.source_labeled_rows;
@@ -235,9 +236,9 @@ function renderPhase3() {
     && split.training_rows >= 0 && split.holdout_rows >= 0
     && split.training_rows + split.holdout_rows === totalRows;
   const splitContent = splitReady
-    ? `<p class="body-copy">來源回報的切分：${split.training_rows} / ${totalRows} Training Set · ${split.holdout_rows} / ${totalRows} Holdout Test Set · Random Seed ${split.seed ?? "UNKNOWN"}。比例僅依來源回報值呈現，未驗證。</p><div class="row-split" role="img" aria-label="來源回報切分比例：訓練 ${Math.round(split.training_rows / totalRows * 100)}%，保留測試 ${Math.round(split.holdout_rows / totalRows * 100)}%"><span style="width:${split.training_rows / totalRows * 100}%">Training Set · ${split.training_rows} rows · ${Math.round(split.training_rows / totalRows * 100)}%</span><span style="width:${split.holdout_rows / totalRows * 100}%">Holdout · ${split.holdout_rows} rows · ${Math.round(split.holdout_rows / totalRows * 100)}%</span></div><p class="stage-note">Phase 4 CV uses only the Training Set; Holdout is not shown as a Phase 4 result.</p>`
-    : `<div class="state-panel"><h3>UNAVAILABLE — split row counts do not reconcile.</h3><p>No split proportion is drawn unless source counts are complete and sum to the labeled row total.</p></div>`;
-  return `<div class="page">${banner(c)}${pageHeading("PHASE 03 / DATA PREPARATION", "資料準備", "四個相同量尺的特徵階段，接續一個獨立的資料列切分。分布未知時不繪製假比例。", data.status)}<div class="stage-list">${stages}<section class="card"><div class="card-head"><div><p class="eyebrow">DATASET PARTITION · ROWS, NOT FEATURES</p><h2>訓練集與保留測試集</h2></div>${badge(split.status)}</div><div class="card-body">${splitContent}</div></section></div>${footerNav([2,"資料理解"],[4,"模型建立"])}</div>`;
+    ? `<p class="body-copy">來源回報的資料切分 (data split)：${split.training_rows} / ${totalRows} 訓練集 (Training Set) · ${split.holdout_rows} / ${totalRows} 保留測試集 (Holdout Test Set) · 隨機種子 (Random Seed) ${split.seed ?? "未知 UNKNOWN"}。比例依來源回報呈現，尚未驗證。</p><div class="row-split" role="img" aria-label="來源回報切分比例：訓練集 Training Set ${Math.round(split.training_rows / totalRows * 100)}%，保留測試集 Holdout Test Set ${Math.round(split.holdout_rows / totalRows * 100)}%"><span style="width:${split.training_rows / totalRows * 100}%">訓練集 Training Set · ${split.training_rows} 筆 rows · ${Math.round(split.training_rows / totalRows * 100)}%</span><span style="width:${split.holdout_rows / totalRows * 100}%">保留測試 Holdout Test Set · ${split.holdout_rows} 筆 rows · ${Math.round(split.holdout_rows / totalRows * 100)}%</span></div><p class="stage-note">第 4 階段交叉驗證 (Cross-validation, CV) 僅使用訓練集；不把保留測試集當成第 4 階段結果。</p>`
+    : `<div class="state-panel"><h3>資料不可用 UNAVAILABLE — 切分資料列數不一致 split row counts do not reconcile。</h3><p>來源列數完整且加總相符前，不顯示切分比例 No split proportion is drawn unless source counts are complete and sum to the labeled row total.</p></div>`;
+  return `<div class="page">${banner(c)}${pageHeading("PHASE 03 / DATA PREPARATION", "資料準備", "四個特徵處理階段 (feature preparation stages)，接續獨立的資料列切分 (row split)。", data.status)}<div class="stage-list">${stages}<section class="card"><div class="card-head"><div><p class="eyebrow">資料集切分 DATASET PARTITION · 切分資料列，不是特徵 ROWS, NOT FEATURES</p><h2>訓練集與保留測試集 Training and holdout test sets</h2></div>${badge(split.status)}</div><div class="card-body">${splitContent}</div></section></div>${footerNav([2,"資料理解"],[4,"模型建立"])}</div>`;
 }
 
 function renderPhase4() {

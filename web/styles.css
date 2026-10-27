@@ -93,7 +93,7 @@ a.text-link { color: var(--green); font-size: 11px; font-weight: 700; text-decor
 .button:disabled { cursor: not-allowed; opacity: .52; }
 .button-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .phase-footer { display: flex; justify-content: space-between; gap: 18px; margin-top: 28px; }
-.phase-footer .button { min-width: 210px; }
+.phase-footer .button { display: inline-flex; align-items: center; justify-content: center; min-width: 210px; min-height: 48px; padding: 0 20px; font-size: 14px; text-align: center; }
 .phase-footer .button:last-child { margin-left: auto; }
 .state-panel { min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px; border: 1px dashed #cbd6ce; background: #f7f9f6; text-align: center; }
 .state-icon { display: grid; width: 39px; height: 39px; margin-bottom: 12px; place-items: center; border: 1px solid #cfdbd2; border-radius: 50%; color: var(--green); font-size: 15px; }
@@ -128,11 +128,13 @@ a.text-link { color: var(--green); font-size: 11px; font-weight: 700; text-decor
 .stage-title { display: flex; align-items: baseline; gap: 10px; }.stage-title .index { color: #83998c; font-size: 11px; font-weight: 800; }.stage-title h2 { margin: 0; font-size: 17px; }
 .stage-total { color: #506159; font-size: 11px; font-weight: 700; }
 .stack-track { height: 30px; display: flex; overflow: hidden; border: 1px solid #d7e0d9; background: #f0f3ef; }
+.stack-track.is-mock { outline: 1px dashed #b99a56; outline-offset: 2px; }
 .stack-track.is-unknown { align-items: center; justify-content: center; color: #7c8982; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
 .stack-segment { height: 100%; min-width: 2px; border-right: 2px solid var(--surface); }
 .legend { display: flex; flex-wrap: wrap; gap: 9px 18px; margin: 12px 0 2px; }
 .legend-item { display: flex; align-items: center; gap: 7px; color: #53635b; font-size: 10px; }
 .legend-dot { width: 9px; height: 9px; border-radius: 2px; background: var(--dot); }
+.mock-data-note { color: #806625; font-weight: 750; }
 .stage-note { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
 .row-split { height: 34px; display: flex; overflow: hidden; margin-top: 13px; border: 1px solid #d8dfd9; }
 .row-split span { display: flex; align-items: center; justify-content: center; padding: 0 10px; color: var(--green-dark); font-size: 10px; font-weight: 750; white-space: nowrap; }

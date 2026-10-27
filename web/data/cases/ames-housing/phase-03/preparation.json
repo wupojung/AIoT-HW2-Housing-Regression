@@ -15,26 +15,41 @@
       "unit": "raw_columns",
       "total": 79,
       "total_status": "SOURCE_REPORTED_NOT_VERIFIED",
-      "segments": [],
-      "distribution_status": "UNAVAILABLE"
+      "segments": [
+        { "type_id": "nominal", "count": 36 },
+        { "type_id": "ordinal", "count": 18 },
+        { "type_id": "discrete", "count": 11 },
+        { "type_id": "continuous", "count": 14 }
+      ],
+      "distribution_status": "MOCK"
     },
     {
       "id": "filtered",
       "label": "欄位排除後",
       "unit": "raw_columns",
-      "total": null,
-      "total_status": "UNAVAILABLE",
-      "segments": [],
-      "distribution_status": "UNAVAILABLE"
+      "total": 72,
+      "total_status": "MOCK",
+      "segments": [
+        { "type_id": "nominal", "count": 32 },
+        { "type_id": "ordinal", "count": 15 },
+        { "type_id": "discrete", "count": 11 },
+        { "type_id": "continuous", "count": 14 }
+      ],
+      "distribution_status": "MOCK"
     },
     {
       "id": "processed",
       "label": "資料處理後",
       "unit": "pre_encoding_columns",
-      "total": null,
-      "total_status": "UNAVAILABLE",
-      "segments": [],
-      "distribution_status": "UNAVAILABLE"
+      "total": 72,
+      "total_status": "MOCK",
+      "segments": [
+        { "type_id": "nominal", "count": 31 },
+        { "type_id": "ordinal", "count": 15 },
+        { "type_id": "discrete", "count": 11 },
+        { "type_id": "continuous", "count": 15 }
+      ],
+      "distribution_status": "MOCK"
     },
     {
       "id": "encoded",
@@ -44,8 +59,13 @@
       "total_status": "SOURCE_REPORTED_NOT_VERIFIED",
       "fit_population": null,
       "pipeline_version": null,
-      "segments": [],
-      "distribution_status": "UNAVAILABLE"
+      "segments": [
+        { "type_id": "nominal", "count": 172 },
+        { "type_id": "ordinal", "count": 15 },
+        { "type_id": "discrete", "count": 11 },
+        { "type_id": "continuous", "count": 50 }
+      ],
+      "distribution_status": "MOCK"
     }
   ],
   "treatments": [],
