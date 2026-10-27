@@ -10,8 +10,8 @@ from typing import Any, Mapping
 from housing_regression.data_prep import ALL_PREDICTOR_COLUMNS, ID_COLUMN, TARGET_COLUMN
 
 
-def load_model(model_path: str | Path) -> Any:
-    """Load the model object from a trusted Phase 4 joblib bundle.
+def load_model_bundle(model_path: str | Path) -> tuple[Any, dict[str, Any]]:
+    """Load the model and metadata from a trusted Phase 4 joblib bundle.
 
     Joblib artifacts use Python object serialization; only load files from a
     trusted source.
@@ -36,6 +36,15 @@ def load_model(model_path: str | Path) -> Any:
     model = bundle["model"]
     if not callable(getattr(model, "predict", None)):
         raise ValueError("The Phase 4 bundle's 'model' object does not provide predict().")
+    metadata = bundle.get("metadata", {})
+    if not isinstance(metadata, dict):
+        metadata = {}
+    return model, metadata
+
+
+def load_model(model_path: str | Path) -> Any:
+    """Load only the prediction object from a trusted Phase 4 bundle."""
+    model, _metadata = load_model_bundle(model_path)
     return model
 
 

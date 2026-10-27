@@ -24,9 +24,13 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
+import io
 import json
 import math
+import os
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -36,7 +40,11 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from housing_regression.data_prep import ALL_PREDICTOR_COLUMNS, ID_COLUMN, TARGET_COLUMN  # noqa: E402
-from housing_regression.phase6_inference import load_model, predict_json_text, predict_records  # noqa: E402
+from housing_regression.phase6_inference import (  # noqa: E402
+    load_model_bundle,
+    predict_json_text,
+    predict_records,
+)
 
 
 def _read_csv(input_path: Path) -> tuple[list[dict[str, str]], list[str]]:
@@ -67,39 +75,127 @@ def _read_csv(input_path: Path) -> tuple[list[dict[str, str]], list[str]]:
     return rows, headers
 
 
-def _write_csv_template(output_path: Path, force: bool) -> None:
+def _serialize_csv_template() -> bytes:
     headers = [ID_COLUMN, *ALL_PREDICTOR_COLUMNS]
-    _ensure_writable(output_path, force)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8", newline="") as stream:
-        writer = csv.writer(stream)
-        writer.writerow(headers)
+    stream = io.StringIO(newline="")
+    writer = csv.writer(stream)
+    writer.writerow(headers)
+    return stream.getvalue().encode("utf-8")
 
 
-def _ensure_writable(output_path: Path, force: bool) -> None:
-    if output_path.exists() and not force:
-        raise FileExistsError(f"Output already exists: {output_path} (use --force to overwrite it)")
-
-
-def _write_prediction_csv(
-    output_path: Path,
+def _serialize_prediction_csv(
     input_rows: Sequence[Mapping[str, Any]],
     input_headers: Sequence[str],
     predictions: Sequence[Mapping[str, Any]],
-    force: bool,
-) -> None:
-    _ensure_writable(output_path, force)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+) -> bytes:
     headers = list(input_headers)
     if TARGET_COLUMN not in headers:
         headers.append(TARGET_COLUMN)
-    with output_path.open("w", encoding="utf-8", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=headers)
-        writer.writeheader()
-        for input_row, prediction in zip(input_rows, predictions):
-            output_row = dict(input_row)
-            output_row[TARGET_COLUMN] = prediction[TARGET_COLUMN]
-            writer.writerow(output_row)
+    stream = io.StringIO(newline="")
+    writer = csv.DictWriter(stream, fieldnames=headers)
+    writer.writeheader()
+    for input_row, prediction in zip(input_rows, predictions):
+        output_row = dict(input_row)
+        output_row[TARGET_COLUMN] = prediction[TARGET_COLUMN]
+        writer.writerow(output_row)
+    return stream.getvalue().encode("utf-8")
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _commit_output_set(outputs: Mapping[Path, bytes | None], force: bool) -> None:
+    """Commit related output files with rollback and atomic per-file replacements.
+
+    A ``None`` payload removes a stale sidecar inside the same transaction.
+    Existing outputs are backed up first so an ordinary write/rename failure can
+    restore the complete previous output set.
+    """
+    normalized: dict[Path, bytes | None] = {}
+    for path, payload in outputs.items():
+        target = path.resolve()
+        if target in normalized:
+            raise ValueError("Output paths must be distinct.")
+        normalized[target] = payload
+
+    for target in normalized:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.is_dir():
+            raise IsADirectoryError(f"Output path is a directory: {target}")
+        if target.exists() and not force:
+            raise FileExistsError(f"Output already exists: {target} (use --force to overwrite it)")
+
+    temp_paths: dict[Path, Path] = {}
+    backup_paths: dict[Path, Path] = {}
+    committed: list[Path] = []
+    try:
+        for target, payload in normalized.items():
+            if payload is None:
+                continue
+            fd, temp_name = tempfile.mkstemp(prefix=f".{target.name}.tmp-", dir=target.parent)
+            temp_path = Path(temp_name)
+            temp_paths[target] = temp_path
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(payload)
+                stream.flush()
+                os.fsync(stream.fileno())
+
+        for target in normalized:
+            if not target.exists():
+                continue
+            fd, backup_name = tempfile.mkstemp(prefix=f".{target.name}.bak-", dir=target.parent)
+            os.close(fd)
+            backup_path = Path(backup_name)
+            backup_path.unlink()
+            os.replace(target, backup_path)
+            backup_paths[target] = backup_path
+
+        for target, payload in normalized.items():
+            if payload is None:
+                if target in backup_paths:
+                    committed.append(target)
+                continue
+            os.replace(temp_paths[target], target)
+            committed.append(target)
+    except Exception as exc:
+        rollback_errors: list[str] = []
+        for target in reversed(committed):
+            try:
+                target.unlink(missing_ok=True)
+            except OSError as rollback_exc:
+                rollback_errors.append(f"remove {target.name}: {rollback_exc}")
+        for target, backup_path in backup_paths.items():
+            if not backup_path.exists():
+                continue
+            try:
+                os.replace(backup_path, target)
+            except OSError as rollback_exc:
+                rollback_errors.append(f"restore {target.name}: {rollback_exc}")
+        if rollback_errors:
+            raise RuntimeError(
+                "Output transaction failed and automatic rollback was incomplete: "
+                + "; ".join(rollback_errors)
+            ) from exc
+        raise RuntimeError("Output transaction failed; previous output files were restored.") from exc
+    else:
+        cleanup_errors: list[str] = []
+        for backup_path in backup_paths.values():
+            try:
+                backup_path.unlink(missing_ok=True)
+            except OSError as cleanup_exc:
+                cleanup_errors.append(f"{backup_path.name}: {cleanup_exc}")
+        if cleanup_errors:
+            raise RuntimeError(
+                "Outputs committed, but temporary backup cleanup failed: " + "; ".join(cleanup_errors)
+            )
+    finally:
+        for temp_path in temp_paths.values():
+            temp_path.unlink(missing_ok=True)
 
 
 def _is_missing_actual(value: Any) -> bool:
@@ -121,6 +217,10 @@ def _build_evaluation_report(
     input_rows: Sequence[Mapping[str, Any]],
     predictions: Sequence[Mapping[str, Any]],
     prediction_file: str,
+    source_file_sha256: str,
+    prediction_file_sha256: str,
+    model_file_sha256: str,
+    model_metadata: Mapping[str, Any],
 ) -> dict[str, Any] | None:
     actual_values: list[float] = []
     predicted_values: list[float] = []
@@ -164,9 +264,35 @@ def _build_evaluation_report(
 
     return {
         "report_type": "prediction_error_summary",
-        "status": "COMPUTED",
+        "status": "LOCAL_DIAGNOSTIC_NOT_PHASE5",
         "target": {"column": TARGET_COLUMN, "unit": "USD"},
         "prediction_file": prediction_file,
+        "prediction_file_sha256": prediction_file_sha256,
+        "source": {
+            "kind": "caller_supplied_labeled_csv",
+            "source_id": f"sha256:{source_file_sha256}",
+            "file_sha256": source_file_sha256,
+            "rows_in_input": len(input_rows),
+            "labeled_rows": len(actual_values),
+            "authorization_status": "NOT_ASSESSED_BY_CLI",
+            "population_independence_status": "NOT_ASSESSED_BY_CLI",
+        },
+        "model": {
+            "run_id": model_metadata.get("run_id"),
+            "artifact_type": model_metadata.get("artifact_type"),
+            "code_head_commit": model_metadata.get("code_head_commit"),
+            "artifact_sha256": model_file_sha256,
+        },
+        "evaluation_scope": {
+            "population": "labeled rows present in caller-supplied CSV",
+            "phase5_evaluation": False,
+            "case_package_release_approved": False,
+            "limitations": [
+                "This is an inference-run diagnostic, not a canonical Phase 5 evaluation.",
+                "The CLI does not verify data-use authorization or population independence.",
+                "Do not publish or add this report to a Case Package without separate review.",
+            ],
+        },
         "counts": {
             "rows_predicted": len(input_rows),
             "rows_evaluated": len(actual_values),
@@ -221,22 +347,28 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.json is None and args.input_csv is None:
             output_path = args.output or Path.cwd() / "inference-input-template.csv"
-            _write_csv_template(output_path, args.force)
+            _commit_output_set({output_path: _serialize_csv_template()}, args.force)
             print(f"Input CSV template written: {output_path}")
             return 0
 
         if args.model is None:
             parser.error("--model is required when --json or --input-csv is provided.")
-        model = load_model(args.model)
+        model_path = args.model.resolve()
+        model, model_metadata = load_model_bundle(model_path)
+        model_file_sha256 = _sha256_file(model_path)
 
         if args.json is not None:
             response = predict_json_text(model, args.json)
             if args.output is None:
                 print(response)
             else:
-                _ensure_writable(args.output, args.force)
-                args.output.parent.mkdir(parents=True, exist_ok=True)
-                args.output.write_text(response + "\n", encoding="utf-8")
+                json_output_path = args.output.resolve()
+                if json_output_path == model_path:
+                    raise ValueError("JSON output must not overwrite the model artifact.")
+                _commit_output_set(
+                    {json_output_path: (response + "\n").encode("utf-8")},
+                    args.force,
+                )
             return 0
 
         input_path = args.input_csv.resolve()
@@ -248,24 +380,44 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = predict_records(model, rows_for_prediction)
         predictions = result if isinstance(result, list) else [result]
         output_path = args.output or input_path.with_name(f"{input_path.stem}-predictions.csv")
-        if output_path.resolve() == input_path:
-            raise ValueError("Output CSV must not overwrite the input CSV.")
+        output_path = output_path.resolve()
+        if output_path in {input_path, model_path}:
+            raise ValueError("Prediction output must not overwrite the input CSV or model artifact.")
         replaced_count = sum(
             row.get(TARGET_COLUMN) not in (None, "")
             and str(row.get(TARGET_COLUMN)).strip() != ""
             for row in rows
         )
-        evaluation_report = (
-            _build_evaluation_report(rows, predictions, output_path.name)
-            if TARGET_COLUMN in headers
-            else None
-        )
+        input_sha256 = _sha256_file(input_path)
+        prediction_payload = _serialize_prediction_csv(rows, headers, predictions)
+        prediction_sha256 = hashlib.sha256(prediction_payload).hexdigest()
+        evaluation_report = None
+        if TARGET_COLUMN in headers:
+            evaluation_report = _build_evaluation_report(
+                rows,
+                predictions,
+                output_path.name,
+                input_sha256,
+                prediction_sha256,
+                model_file_sha256,
+                model_metadata,
+            )
         evaluation_path = output_path.with_name(f"{output_path.stem}-evaluation.json")
         if evaluation_path.resolve() in {input_path, output_path.resolve()}:
             raise ValueError("Evaluation JSON path must be separate from the input and prediction files.")
+        if evaluation_path.resolve() == model_path:
+            raise ValueError("Evaluation JSON path must not overwrite the model artifact.")
+
+        evaluation_payload = None
         if evaluation_report is not None:
-            _ensure_writable(evaluation_path, args.force)
-        _write_prediction_csv(output_path, rows, headers, predictions, args.force)
+            evaluation_payload = (
+                json.dumps(evaluation_report, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
+            ).encode("utf-8")
+        had_evaluation_report = evaluation_path.exists()
+        output_set: dict[Path, bytes | None] = {output_path: prediction_payload}
+        if evaluation_payload is not None or had_evaluation_report:
+            output_set[evaluation_path] = evaluation_payload
+        _commit_output_set(output_set, args.force)
         print(f"Predictions written: {output_path} ({len(predictions)} rows)")
         if replaced_count:
             print(
@@ -280,16 +432,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print(f"NOTICE: Added a new {TARGET_COLUMN} prediction column; the input file was left unchanged.")
         if evaluation_report is not None:
-            evaluation_path.write_text(
-                json.dumps(evaluation_report, indent=2, ensure_ascii=False, allow_nan=False) + "\n",
-                encoding="utf-8",
-            )
             print(
                 f"Evaluation summary written: {evaluation_path} "
                 f"({evaluation_report['counts']['rows_evaluated']} labeled row(s))"
             )
         elif TARGET_COLUMN in headers:
             print(f"NOTICE: No non-missing {TARGET_COLUMN} values; no evaluation JSON was generated.")
+        if evaluation_report is None and had_evaluation_report:
+            print("NOTICE: Removed the stale evaluation summary for this prediction output.")
         return 0
     except (FileNotFoundError, FileExistsError, OSError, ValueError, RuntimeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
