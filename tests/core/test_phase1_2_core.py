@@ -186,6 +186,13 @@ class Phase12CoreTests(unittest.TestCase):
         for original_path, repeat_path in zip([analyses_path] + chart_paths, repeat_paths):
             self.assertEqual(original_path.read_bytes(), repeat_path.read_bytes())
 
+    def test_phase2_rejects_unknown_data_mode_without_writing(self):
+        output_root = self.root / "invalid-mode-output"
+        output_root.mkdir()
+        with self.assertRaisesRegex(PhaseCoreError, "data_mode"):
+            build_phase2(self.config, output_root, data_mode="verified")
+        self.assertFalse((output_root / "phases").exists())
+
     def test_empty_phase2_is_unavailable_and_invalid_csv_fails_without_output(self):
         empty_dir = self.root / "empty-case"
         empty_dir.mkdir()

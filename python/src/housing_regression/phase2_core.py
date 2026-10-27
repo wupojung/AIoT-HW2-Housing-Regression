@@ -12,7 +12,7 @@ import os
 import re
 import statistics
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from housing_regression.contracts import phase_schema_path, validate_document
 from housing_regression.core_utils import PhaseCoreError
@@ -21,6 +21,9 @@ from housing_regression.init_config import ConfigError, load_config
 
 _FIELD_NAME = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_. -]{0,63}$")
 _MISSING = {"", "na", "n/a", "nan", "null", "none"}
+SYNTHETIC_MOCK = "synthetic_mock"
+FORMAL_DEVELOPMENT = "formal_development"
+Phase2DataMode = Literal["synthetic_mock", "formal_development"]
 
 AMES_FIELD_TYPES = {
     **dict.fromkeys((
@@ -65,6 +68,7 @@ def _analysis(
     finding: str,
     image_ref: str | None = None,
     status: str = "MOCK",
+    limitations: str | None = None,
 ) -> dict[str, Any]:
     return {
         "id": analysis_id,
@@ -75,7 +79,7 @@ def _analysis(
         "table_ref": None,
         "description": description,
         "finding": finding,
-        "limitations": (
+        "limitations": limitations or (
             "MOCK from a synthetic CSV only; not an Ames research finding. "
             "Aggregate-only output; raw rows, row identifiers, and source paths are omitted."
         ),
@@ -95,20 +99,32 @@ def _svg_header(title: str, description: str, width: int, height: int) -> str:
     )
 
 
-def _missingness_svg(missing_counts: dict[str, int], row_count: int) -> str:
+def _missingness_svg(
+    missing_counts: dict[str, int], row_count: int, data_mode: Phase2DataMode
+) -> str:
     ranked = sorted(
         missing_counts.items(),
         key=lambda item: (-(item[1] / row_count), item[0]),
     )[:20]
     width = 760
     height = 100 + 25 * len(ranked)
-    description = (
-        f"Synthetic aggregate missingness percentages for {len(ranked)} of "
-        f"{len(missing_counts)} fields across {row_count} rows; no row values are shown."
-    )
-    svg = [_svg_header("MOCK synthetic missingness by field", description, width, height)]
+    if data_mode == FORMAL_DEVELOPMENT:
+        description = (
+            "Formal training engineering smoke: aggregate missingness for "
+            f"{len(ranked)} of {len(missing_counts)} fields; no row values are shown."
+        )
+        title = "Formal training missingness engineering smoke"
+        watermark = "FORMAL TRAINING | ENGINEERING SMOKE"
+    else:
+        description = (
+            f"Synthetic aggregate missingness percentages for {len(ranked)} of "
+            f"{len(missing_counts)} fields across {row_count} rows; no row values are shown."
+        )
+        title = "MOCK synthetic missingness by field"
+        watermark = "MOCK | SYNTHETIC DATA"
+    svg = [_svg_header(title, description, width, height)]
     svg.append('<text x="18" y="27" font-size="18" font-weight="bold">Missingness by field</text>\n')
-    svg.append('<text x="18" y="49" font-size="12" fill="#8a3c20">MOCK | SYNTHETIC DATA</text>\n')
+    svg.append(f'<text x="18" y="49" font-size="12" fill="#8a3c20">{watermark}</text>\n')
     plot_x, plot_width = 220, 430
     for index, (name, count) in enumerate(ranked):
         y = 73 + 25 * index
@@ -121,15 +137,19 @@ def _missingness_svg(missing_counts: dict[str, int], row_count: int) -> str:
     return "".join(svg)
 
 
-def _target_distribution_svg(target: str, values: list[float]) -> tuple[str | None, str]:
+def _target_distribution_svg(
+    target: str, values: list[float], data_mode: Phase2DataMode
+) -> tuple[str | None, str]:
+    formal = data_mode == FORMAL_DEVELOPMENT
+    unavailable_prefix = "Formal training target distribution unavailable:" if formal else "Target distribution unavailable:"
     if len(values) < 2:
-        return None, "Target distribution unavailable: fewer than two non-missing numeric values."
+        return None, f"{unavailable_prefix} fewer than two non-missing numeric values."
     minimum, maximum = min(values), max(values)
     if minimum == maximum:
-        return None, "Target distribution unavailable: target values are constant."
+        return None, f"{unavailable_prefix} target values are constant."
     span = maximum - minimum
     if not math.isfinite(span):
-        return None, "Target distribution unavailable: target range is outside the safe numeric range."
+        return None, f"{unavailable_prefix} target range is outside the safe numeric range."
 
     bins = min(10, max(3, math.ceil(math.sqrt(len(values)))))
     counts = [0] * bins
@@ -141,13 +161,31 @@ def _target_distribution_svg(target: str, values: list[float]) -> tuple[str | No
     plot_x, plot_y, plot_width, plot_height = 66, 90, 650, 205
     bar_slot = plot_width / bins
     max_count = max(counts)
-    description = (
-        f"MOCK synthetic histogram of {len(values)} non-missing numeric {target} values "
-        f"grouped into {bins} bins. Bin edges and individual values are omitted."
-    )
-    svg = [_svg_header(f"MOCK synthetic distribution of {target}", description, width, height)]
+    if formal:
+        description = (
+            f"Formal training engineering smoke histogram for {target}, grouped into {bins} bins. "
+            "Bin edges and individual values are omitted; this is not the approved empirical report."
+        )
+        title = f"Formal training target distribution engineering smoke: {target}"
+        watermark = "FORMAL TRAINING | ENGINEERING SMOKE"
+        finding = (
+            f"Formal training target distribution summarized in {bins} bins from "
+            f"{len(values)} non-missing observations; engineering smoke only."
+        )
+    else:
+        description = (
+            f"MOCK synthetic histogram of {len(values)} non-missing numeric {target} values "
+            f"grouped into {bins} bins. Bin edges and individual values are omitted."
+        )
+        title = f"MOCK synthetic distribution of {target}"
+        watermark = "MOCK | SYNTHETIC DATA"
+        finding = (
+            f"Numeric target distribution summarized in {bins} bins from "
+            f"{len(values)} non-missing synthetic observations; raw values omitted."
+        )
+    svg = [_svg_header(title, description, width, height)]
     svg.append(f'<text x="18" y="27" font-size="18" font-weight="bold">Target distribution</text>\n')
-    svg.append('<text x="18" y="49" font-size="12" fill="#8a3c20">MOCK | SYNTHETIC DATA</text>\n')
+    svg.append(f'<text x="18" y="49" font-size="12" fill="#8a3c20">{watermark}</text>\n')
     svg.append(f'<text x="18" y="70" font-size="12">Target: {html.escape(target)}; bin edges omitted</text>\n')
     svg.append(f'<line x1="{plot_x}" y1="{plot_y + plot_height}" x2="{plot_x + plot_width}" y2="{plot_y + plot_height}" stroke="#536273"/>\n')
     for index, count in enumerate(counts):
@@ -159,7 +197,7 @@ def _target_distribution_svg(target: str, values: list[float]) -> tuple[str | No
         svg.append(f'<text x="{x + bar_slot / 2 - 13:.2f}" y="{plot_y + plot_height + 20}" font-size="10">Bin {index + 1}</text>\n')
     svg.append(f'<text x="{plot_x}" y="{height - 18}" font-size="11">{len(values)} aggregated observations</text>\n')
     svg.append('</svg>\n')
-    return "".join(svg), f"Numeric target distribution summarized in {bins} bins from {len(values)} non-missing synthetic observations; raw values omitted."
+    return "".join(svg), finding
 
 
 def _emit_phase2(case_root: str | os.PathLike[str], document: dict[str, Any], assets: dict[str, str]) -> None:
@@ -208,11 +246,11 @@ def _read_rows(
 ) -> tuple[list[str], list[list[str]]]:
     source = config_path.parent / source_relative
     if source.is_symlink() or not source.is_file():
-        raise PhaseCoreError("configured synthetic CSV is unavailable or unsafe")
+        raise PhaseCoreError("configured CSV is unavailable or unsafe")
     try:
         raw = source.read_bytes()
     except OSError as exc:
-        raise PhaseCoreError("configured synthetic CSV cannot be read") from exc
+        raise PhaseCoreError("configured CSV cannot be read") from exc
     actual_sha = hashlib.sha256(raw).hexdigest()
     if actual_sha != expected_sha:
         raise PhaseCoreError("configured synthetic CSV SHA-256 changed")
@@ -221,13 +259,13 @@ def _read_rows(
         reader = csv.reader(io.StringIO(text, newline=""), strict=True)
         header = next(reader)
     except (UnicodeDecodeError, StopIteration, csv.Error) as exc:
-        raise PhaseCoreError("synthetic CSV must have a valid UTF-8 header") from exc
+        raise PhaseCoreError("CSV must have a valid UTF-8 header") from exc
     if not header or any(not column.strip() for column in header) or len(set(header)) != len(header):
-        raise PhaseCoreError("synthetic CSV header must have unique non-empty columns")
+        raise PhaseCoreError("CSV header must have unique non-empty columns")
     if any(not _FIELD_NAME.fullmatch(name) for name in header):
-        raise PhaseCoreError("synthetic CSV has a field name outside the safe public-name pattern")
+        raise PhaseCoreError("CSV has a field name outside the safe public-name pattern")
     if target not in header:
-        raise PhaseCoreError("configured target is absent from the synthetic CSV")
+        raise PhaseCoreError("configured target is absent from the CSV")
 
     rows: list[list[str]] = []
     try:
@@ -235,18 +273,36 @@ def _read_rows(
             if not row:
                 continue
             if len(row) != len(header):
-                raise PhaseCoreError(f"synthetic CSV has an invalid column count at line {line_number}")
+                raise PhaseCoreError(f"CSV has an invalid column count at line {line_number}")
             rows.append(row)
     except csv.Error as exc:
-        raise PhaseCoreError("synthetic CSV has malformed quoting") from exc
+        raise PhaseCoreError("CSV has malformed quoting") from exc
     return header, rows
 
 
 def build_phase2(
     config_path: str | os.PathLike[str],
     case_root: str | os.PathLike[str],
+    *,
+    data_mode: Phase2DataMode = SYNTHETIC_MOCK,
 ) -> dict[str, Any]:
-    """Write canonical Phase 2 JSON and aggregate SVG assets under the case root."""
+    """Write Phase 2 JSON/SVG under case_root using an explicit provenance mode.
+
+    The default ``synthetic_mock`` mode preserves the G2 fixture behavior. The
+    ``formal_development`` mode is reserved for explicitly authorized training
+    data engineering smokes and never labels the output MOCK or synthetic.
+    """
+    if data_mode not in (SYNTHETIC_MOCK, FORMAL_DEVELOPMENT):
+        raise PhaseCoreError("data_mode must be synthetic_mock or formal_development")
+    formal = data_mode == FORMAL_DEVELOPMENT
+    mode_status = "VERIFIED" if formal else "MOCK"
+    limitations = (
+        "FORMAL DEVELOPMENT engineering smoke only. The existing approved empirical "
+        "Phase 2 report remains authoritative; this output is not a research finding "
+        "or publication artifact. Raw rows, row identifiers, and source paths are omitted."
+        if formal
+        else None
+    )
     config_file = Path(config_path)
     try:
         config = load_config(config_file)
@@ -334,13 +390,17 @@ def build_phase2(
 
     missingness_ref = "phases/phase-02/figures/missingness.svg"
     target_ref = "phases/phase-02/figures/target-distribution.svg"
-    missingness_svg = _missingness_svg(missing_counts, total_rows)
+    missingness_svg = _missingness_svg(missing_counts, total_rows, data_mode)
     if invalid_target:
         target_svg = None
-        target_finding = "Target distribution unavailable: target contains non-numeric values."
+        target_finding = (
+            "Formal training target distribution unavailable: target contains non-numeric values."
+            if formal
+            else "Target distribution unavailable: target contains non-numeric values."
+        )
     else:
         target_svg, target_finding = _target_distribution_svg(
-            data_config["target"], target_values
+            data_config["target"], target_values, data_mode
         )
     assets = {"missingness.svg": missingness_svg}
     if target_svg is not None:
@@ -370,30 +430,43 @@ def build_phase2(
             "field-decisions", "Field classification and feature decisions",
             "Fixed Ames field taxonomy; target and identifier are never features, and unknown columns are excluded.",
             decision_text,
+            status=mode_status,
+            limitations=limitations,
         ),
         _analysis(
             "missingness", "Aggregate missingness",
             "Counts missing cells by field without exposing row values.",
             f"Rows={total_rows}; missing cells by field: {missing_text}",
             image_ref=missingness_ref,
+            status=mode_status,
+            limitations=limitations,
         ),
         _analysis(
-            "target-distribution", "Synthetic target distribution",
-            "A deterministic histogram of binned synthetic target values; raw values are omitted.",
+            "target-distribution",
+            "Formal training target distribution" if formal else "Synthetic target distribution",
+            (
+                "Binned numeric target distribution for a formal training engineering smoke; "
+                "the approved empirical Phase 2 report remains authoritative."
+                if formal
+                else "A deterministic histogram of binned synthetic target values; raw values are omitted."
+            ),
             target_finding,
             image_ref=target_ref if target_svg is not None else None,
-            status="MOCK" if target_svg is not None else "UNAVAILABLE",
+            status=mode_status if target_svg is not None else "UNAVAILABLE",
+            limitations=limitations,
         ),
         _analysis(
             "feature-summary", "Safe feature aggregates",
             "Numeric range summaries and nominal cardinalities for included features only.",
             summary_text,
+            status=mode_status,
+            limitations=limitations,
         ),
     ]
     document = {
         "schema_version": "1.0.0",
         "case_id": config.values["case_id"],
-        "status": "MOCK",
+        "status": mode_status,
         "default_analysis_id": analyses[0]["id"],
         "analyses": analyses,
     }
