@@ -30,6 +30,8 @@ The Phase 4 adapter may write a versioned `handoff.json` and normalized `oof.csv
 
 `evaluate-handoff` consumes that handoff root and a Phase 4 Case Package root containing `package.json`, `phases/phase-04/modeling.json`, and the empty `phases/phase-05/evaluations.json` slot. Its gate must authorize `phase5_handoff_evaluation`, bind exactly `handoff.json` and `oof.csv` by SHA-256, match the handoff and package case/run/protocol identities, and name the exact input and output roots. The CLI validates package file hashes, the pinned Phase 4 schema, configuration/task/fold joins and counts before computing Development OOF metrics. It writes a PLANNED, pending-review evaluation and assets; it does not approve publication or permit Holdout evaluation.
 
+Phase 5 retains `FIG-P5-01/02/03` as stable per-Evaluation tokens. In the package-level figure manifest, each asset is uniquely joined by `(phase, source_evaluation_id, figure_id)` and its source configuration, PNG path and SHA-256 must match that owning Evaluation. Distinct evaluations therefore keep distinct physical PNG paths even when they use the same figure token.
+
 ```sh
 local/research/phase5/engineering-gate-20261027-01/venv/bin/python tools/phase5_evaluation/cli.py evaluate-handoff \
   --handoff-root /private/phase5-gate/inputs \

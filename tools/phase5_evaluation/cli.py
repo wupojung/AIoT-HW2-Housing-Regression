@@ -1014,6 +1014,11 @@ def _evaluate_handoff(args: argparse.Namespace) -> int:
             new_files.append({"path": rel, "sha256": receipt["sha256"], "bytes": receipt["path"].stat().st_size,
                               "mime": mime})
         new_manifest["files"] = sorted(new_files, key=lambda record: record["path"])
+        if len({record["path"] for record in new_files}) != len(new_files):
+            raise CliError("JOIN_BLOCKED", "package.files contains a duplicate path", 4)
+        _validate_figure_manifest(case_id, index, figure_manifest, package_root,
+                                  {record["path"]: record for record in new_files},
+                                  figure_manifest_payload, index_payload)
         manifest_payload = (json.dumps(new_manifest, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
         original_index = current_index_path.read_bytes()
         original_package = package_path.read_bytes()
@@ -1072,6 +1077,99 @@ def _build_figure_manifest(case_id: str, index: dict[str, Any], package_root: Pa
             })
     return {"schema_version": "1.0.0", "case_id": case_id,
             "status": "PLANNED" if figures else "UNAVAILABLE", "figures": figures}
+
+
+def _validate_figure_manifest(case_id: str, index: dict[str, Any], figure_manifest: dict[str, Any],
+                              package_root: Path, package_files: dict[str, dict[str, Any]],
+                              figure_manifest_payload: bytes, index_payload: bytes) -> None:
+    package_root = package_root.resolve(strict=True)
+    if figure_manifest.get("case_id") != case_id or figure_manifest.get("schema_version") != "1.0.0":
+        raise CliError("JOIN_BLOCKED", "figure manifest case/schema identity mismatch", 4)
+    entries = figure_manifest.get("figures")
+    if not isinstance(entries, list):
+        raise CliError("JOIN_BLOCKED", "figure manifest figures must be a list", 4)
+    try:
+        if json.loads(figure_manifest_payload.decode("utf-8")) != figure_manifest:
+            raise CliError("HASH_MISMATCH", "figure manifest payload differs from validated contents", 4)
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise CliError("INVALID_INPUT", "figure manifest payload is not UTF-8 JSON", 4) from exc
+    manifest_path = package_root / "assets/figure-manifest.json"
+    if (manifest_path.is_symlink() or not manifest_path.is_file()
+            or manifest_path.read_bytes() != figure_manifest_payload):
+        raise CliError("HASH_MISMATCH", "physical figure manifest differs from its validated payload", 4)
+
+    evaluations: dict[str, dict[str, Any]] = {}
+    expected: dict[tuple[str, str], tuple[dict[str, Any], dict[str, Any]]] = {}
+    for evaluation in index.get("evaluations", []):
+        evaluation_id = evaluation.get("evaluation_id")
+        if not isinstance(evaluation_id, str) or evaluation_id in evaluations:
+            raise CliError("JOIN_BLOCKED", "evaluation IDs must be unique for figure joins", 4)
+        evaluations[evaluation_id] = evaluation
+        for figure in evaluation.get("figures", []):
+            key = (evaluation_id, figure.get("figure_id"))
+            if key in expected:
+                raise CliError("JOIN_BLOCKED", "duplicate figure token within one Evaluation", 4)
+            expected[key] = (evaluation, figure)
+
+    seen_keys: set[tuple[str, str, str]] = set()
+    seen_assets: set[str] = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise CliError("JOIN_BLOCKED", "figure manifest entries must be objects", 4)
+        evaluation_id = entry.get("source_evaluation_id")
+        figure_id = entry.get("figure_id")
+        phase = entry.get("phase")
+        if (not isinstance(phase, str) or not isinstance(evaluation_id, str)
+                or not isinstance(figure_id, str)):
+            raise CliError("JOIN_BLOCKED", "figure manifest composite identity fields must be strings", 4)
+        key = (phase, evaluation_id, figure_id)
+        if key in seen_keys:
+            raise CliError("JOIN_BLOCKED", "duplicate (phase, source_evaluation_id, figure_id) figure key", 4)
+        seen_keys.add(key)
+        pair = expected.get((evaluation_id, figure_id))
+        if phase != "phase5" or pair is None or entry.get("case_id") != case_id:
+            raise CliError("JOIN_BLOCKED", "figure manifest entry does not join to a Phase 5 Evaluation", 4)
+        evaluation, figure = pair
+        if entry.get("source_configuration_id") != evaluation.get("configuration_id"):
+            raise CliError("JOIN_BLOCKED", "figure manifest configuration does not match its owning Evaluation", 4)
+        asset_ref = entry.get("png_ref")
+        if not isinstance(asset_ref, str):
+            raise CliError("JOIN_BLOCKED", "figure manifest PNG ref must be a string", 4)
+        if asset_ref in seen_assets:
+            raise CliError("JOIN_BLOCKED", "each Evaluation figure needs its own physical PNG path", 4)
+        if asset_ref != figure.get("asset_ref"):
+            raise CliError("JOIN_BLOCKED", "figure manifest PNG refs must be unique and match the owning Evaluation", 4)
+        seen_assets.add(asset_ref)
+        rel = _safe_relative(asset_ref, label="figure manifest png_ref")
+        path = package_root / rel
+        cursor = package_root
+        for part in rel.parts:
+            cursor = cursor / part
+            if cursor.is_symlink():
+                raise CliError("PATH_BLOCKED", "figure manifest PNG path contains a symlink")
+        try:
+            path.resolve(strict=True).relative_to(package_root)
+        except (OSError, ValueError) as exc:
+            raise CliError("PATH_BLOCKED", "figure manifest PNG path escapes the Case Package", 4) from exc
+        payload = path.read_bytes()
+        digest = hashlib.sha256(payload).hexdigest()
+        record = package_files.get(asset_ref)
+        if (record is None or record.get("mime") != "image/png" or record.get("sha256") != digest
+                or record.get("bytes") != len(payload) or entry.get("sha256_png") != digest
+                or figure.get("sha256") != digest):
+            raise CliError("HASH_MISMATCH", "figure manifest, package.files, Phase 5 index and PNG digest disagree", 4)
+    if seen_keys != {("phase5", evaluation_id, figure_id) for evaluation_id, figure_id in expected}:
+        raise CliError("JOIN_BLOCKED", "figure manifest must contain exactly one entry for every Evaluation figure", 4)
+
+    manifest_record = package_files.get("assets/figure-manifest.json")
+    if (manifest_record is None or manifest_record.get("sha256") != hashlib.sha256(figure_manifest_payload).hexdigest()
+            or manifest_record.get("bytes") != len(figure_manifest_payload)
+            or manifest_record.get("mime") != "application/json"):
+        raise CliError("HASH_MISMATCH", "figure manifest is absent or mismatched in package.files", 4)
+    index_record = package_files.get("phases/phase-05/evaluations.json")
+    if (index_record is None or index_record.get("sha256") != hashlib.sha256(index_payload).hexdigest()
+            or index_record.get("bytes") != len(index_payload)):
+        raise CliError("HASH_MISMATCH", "Phase 5 index is absent or mismatched in package.files", 4)
 
 
 def _schema_validate_phase4(modeling: dict[str, Any]) -> None:

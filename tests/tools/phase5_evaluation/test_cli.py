@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import csv
 import argparse
+import copy
 import importlib.util
 import json
 import platform
@@ -274,13 +275,23 @@ class Phase5CliTests(unittest.TestCase):
         self.assertFalse(new_target.exists())
         self.assertEqual(list(new_target.parent.glob(".phase5-*.tmp")), [])
 
-    def _handoff_fixture(self):
+    def _handoff_fixture(self, config_count=1):
         package_root = self.root / "case-package"
         (package_root / "phases/phase-04").mkdir(parents=True)
         (package_root / "phases/phase-05").mkdir()
         case_id, run_id, protocol_id = "synthetic-case", "synthetic-run", "protocol-v1"
-        config_hash = hashlib.sha256(b"synthetic-config").hexdigest()
-        config_id = "cfg-" + config_hash
+        configurations = []
+        model_configs = []
+        for number in range(config_count):
+            config_hash = hashlib.sha256(f"synthetic-config-{number}".encode()).hexdigest()
+            config_id = "cfg-" + config_hash
+            configurations.append({"configuration_id": config_id, "config_hash": config_hash,
+                                   "method_id": "lasso", "track_id": "primary", "status": "COMPLETED",
+                                   "fold_tasks": [{"fold_index": 0, "task_id": f"task-{number}-0"},
+                                                  {"fold_index": 1, "task_id": f"task-{number}-1"}]})
+            model_configs.append({"configuration_id": config_id, "execution_run_id": run_id,
+                                  "method_id": "lasso", "track_id": "primary", "params": {"fixture": number},
+                                  "protocol_id": protocol_id, "status": "VERIFIED"})
         case_doc = {"schema_version": "1.0.0", "case_id": case_id}
         modeling = {"schema_version": "1.0.0", "case_id": case_id, "status": "UNAVAILABLE",
                     "cv": {"training_rows": 4, "fold_count": 2, "protocol_id": protocol_id,
@@ -288,10 +299,7 @@ class Phase5CliTests(unittest.TestCase):
                     "methods": [{"method_id": "lasso", "label": "Lasso", "parameters": []}],
                     "execution_runs": [{"execution_run_id": run_id, "source_manifest_sha256": "a" * 64,
                                          "status": "UNAVAILABLE"}],
-                    "configurations": [{"configuration_id": config_id, "execution_run_id": run_id,
-                                        "method_id": "lasso", "track_id": "primary", "params": {},
-                                        "protocol_id": protocol_id, "status": "VERIFIED"}],
-                    "default_configuration_id": None, "charts": []}
+                    "configurations": model_configs, "default_configuration_id": None, "charts": []}
         empty = phase5_cli._build_empty({"case_id": case_id})
         payloads = {"case.json": case_doc, "phases/phase-04/modeling.json": modeling,
                     "phases/phase-05/evaluations.json": empty}
@@ -312,11 +320,14 @@ class Phase5CliTests(unittest.TestCase):
         handoff_root = self.root / "handoff"
         handoff_root.mkdir()
         csv_path = handoff_root / "oof.csv"
-        csv_path.write_text("row_id,configuration_id,fold_index,task_id,actual,predicted\n"
-                            f"r1,{config_id},0,t0,10,12\n"
-                            f"r2,{config_id},0,t0,20,19\n"
-                            f"r3,{config_id},1,t1,30,29\n"
-                            f"r4,{config_id},1,t1,40,42\n", encoding="utf-8")
+        with csv_path.open("w", encoding="utf-8", newline="") as stream:
+            writer = csv.writer(stream, lineterminator="\n")
+            writer.writerow(["row_id", "configuration_id", "fold_index", "task_id", "actual", "predicted"])
+            for number, config in enumerate(configurations):
+                for fold, values in ((0, ((10, 12), (20, 19))), (1, ((30, 29), (40, 42)))):
+                    for row_number, (actual, predicted) in enumerate(values):
+                        writer.writerow([f"c{number}-r{fold}-{row_number}", config["configuration_id"], fold,
+                                         f"task-{number}-{fold}", actual, predicted])
         csv_sha = hashlib.sha256(csv_path.read_bytes()).hexdigest()
         handoff = {"schema_version": "1.0.0", "case_id": case_id, "execution_run_id": run_id,
                    "protocol_id": protocol_id, "protocol_version": "p4b-v2", "population": "development_oof",
@@ -325,11 +336,8 @@ class Phase5CliTests(unittest.TestCase):
                                          "oof_sha256": "c" * 64},
                    "csv": {"path": "oof.csv", "sha256": csv_sha,
                            "columns": ["row_id", "configuration_id", "fold_index", "task_id", "actual", "predicted"]},
-                   "row_count": 4, "n_per_configuration": 4, "expected_fold_ids": [0, 1],
-                   "configurations": [{"configuration_id": config_id, "config_hash": config_hash,
-                                        "method_id": "lasso", "track_id": "primary", "status": "COMPLETED",
-                                        "fold_tasks": [{"fold_index": 0, "task_id": "t0"},
-                                                       {"fold_index": 1, "task_id": "t1"}]}]}
+                   "row_count": config_count * 4, "n_per_configuration": 4, "expected_fold_ids": [0, 1],
+                   "configurations": configurations}
         handoff_path = self.write_json(handoff_root / "handoff.json", handoff)
         handoff_sha = hashlib.sha256(handoff_path.read_bytes()).hexdigest()
         gate = {"gate_id": "synthetic-handoff-gate", "authorized": True,
@@ -377,6 +385,90 @@ class Phase5CliTests(unittest.TestCase):
             artifact = package_root / relative
             self.assertEqual(record["bytes"], artifact.stat().st_size)
             self.assertEqual(record["sha256"], hashlib.sha256(artifact.read_bytes()).hexdigest())
+
+    def test_multi_configuration_reuses_stable_tokens_with_distinct_asset_joins(self):
+        package_root, handoff_root, gate = self._handoff_fixture(config_count=2)
+        result = self.run_cli("evaluate-handoff", "--package-root", package_root,
+                              "--handoff-root", handoff_root, "--gate", gate)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        index = json.loads((package_root / "phases/phase-05/evaluations.json").read_text(encoding="utf-8"))
+        manifest_path = package_root / "assets/figure-manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        pooled = {item["evaluation_id"]: item for item in index["evaluations"]
+                  if item["metric_source"] == "pooled_oof"}
+        self.assertEqual(len(pooled), 2)
+        self.assertEqual(len(manifest["figures"]), 6)
+        self.assertEqual({figure["figure_id"] for figure in manifest["figures"]},
+                         {"FIG-P5-01", "FIG-P5-02", "FIG-P5-03"})
+        composite_keys = [(figure["phase"], figure["source_evaluation_id"], figure["figure_id"])
+                          for figure in manifest["figures"]]
+        self.assertEqual(len(composite_keys), len(set(composite_keys)))
+        png_refs = [figure["png_ref"] for figure in manifest["figures"]]
+        self.assertEqual(len(png_refs), len(set(png_refs)))
+        for entry in manifest["figures"]:
+            owner = pooled[entry["source_evaluation_id"]]
+            owned_figure = next(item for item in owner["figures"] if item["figure_id"] == entry["figure_id"])
+            self.assertEqual(entry["source_configuration_id"], owner["configuration_id"])
+            self.assertEqual(entry["png_ref"], owned_figure["asset_ref"])
+            self.assertEqual(entry["sha256_png"], owned_figure["sha256"])
+
+    def test_figure_manifest_rejects_duplicate_wrong_join_shared_path_and_bad_digest(self):
+        package_root, handoff_root, gate = self._handoff_fixture(config_count=2)
+        result = self.run_cli("evaluate-handoff", "--package-root", package_root,
+                              "--handoff-root", handoff_root, "--gate", gate)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        index_path = package_root / "phases/phase-05/evaluations.json"
+        index_bytes = index_path.read_bytes()
+        index = json.loads(index_bytes)
+        manifest_path = package_root / "assets/figure-manifest.json"
+        original_payload = manifest_path.read_bytes()
+        original_manifest = json.loads(original_payload)
+        package = json.loads((package_root / "package.json").read_text(encoding="utf-8"))
+        records = {record["path"]: dict(record) for record in package["files"]}
+
+        duplicate_index = copy.deepcopy(index)
+        pooled_index_eval = next(item for item in duplicate_index["evaluations"]
+                                 if item["metric_source"] == "pooled_oof")
+        pooled_index_eval["figures"].append(copy.deepcopy(pooled_index_eval["figures"][0]))
+        with self.assertRaises(phase5_cli.CliError) as duplicate_error:
+            phase5_cli._validate_figure_manifest("synthetic-case", duplicate_index, original_manifest,
+                                                 package_root, records, original_payload, index_bytes)
+        self.assertEqual(duplicate_error.exception.code, "JOIN_BLOCKED")
+
+        mutations = []
+        duplicate = copy.deepcopy(original_manifest)
+        duplicate["figures"].append(copy.deepcopy(duplicate["figures"][0]))
+        mutations.append(("same-evaluation duplicate token", duplicate, "JOIN_BLOCKED"))
+
+        wrong_join = copy.deepcopy(original_manifest)
+        different_evaluation = next(entry["source_evaluation_id"] for entry in wrong_join["figures"]
+                                    if entry["source_configuration_id"] != wrong_join["figures"][0]["source_configuration_id"])
+        wrong_join["figures"][0]["source_evaluation_id"] = different_evaluation
+        mutations.append(("cross-evaluation/configuration misbinding", wrong_join, "JOIN_BLOCKED"))
+
+        shared_path = copy.deepcopy(original_manifest)
+        shared_path["figures"][1]["png_ref"] = shared_path["figures"][0]["png_ref"]
+        mutations.append(("shared physical path", shared_path, "JOIN_BLOCKED"))
+
+        wrong_digest = copy.deepcopy(original_manifest)
+        wrong_digest["figures"][0]["sha256_png"] = "0" * 64
+        mutations.append(("bad digest", wrong_digest, "HASH_MISMATCH"))
+
+        try:
+            for label, manifest, expected_code in mutations:
+                with self.subTest(label=label):
+                    payload = (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+                    manifest_path.write_bytes(payload)
+                    test_records = {path: dict(record) for path, record in records.items()}
+                    test_records["assets/figure-manifest.json"] = {
+                        "path": "assets/figure-manifest.json", "sha256": hashlib.sha256(payload).hexdigest(),
+                        "bytes": len(payload), "mime": "application/json"}
+                    with self.assertRaises(phase5_cli.CliError) as caught:
+                        phase5_cli._validate_figure_manifest("synthetic-case", index, manifest,
+                                                             package_root, test_records, payload, index_bytes)
+                    self.assertEqual(caught.exception.code, expected_code)
+        finally:
+            manifest_path.write_bytes(original_payload)
 
     def test_evaluate_handoff_rejects_tampered_csv_without_package_change(self):
         package_root, handoff_root, gate = self._handoff_fixture()
