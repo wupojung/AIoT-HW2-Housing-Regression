@@ -39,7 +39,7 @@
         "alpha": 10.0
       },
       "candidate_order": 2,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -69,7 +69,7 @@
         "alpha": 100.0
       },
       "candidate_order": 3,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,

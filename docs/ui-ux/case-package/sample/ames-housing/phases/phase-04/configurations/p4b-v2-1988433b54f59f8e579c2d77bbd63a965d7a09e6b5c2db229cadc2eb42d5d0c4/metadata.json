@@ -10,7 +10,7 @@
   },
   "candidate_order": 0,
   "protocol_id": "p4b-v2.0-development-3fold-rs42",
-  "status": "VERIFIED",
+  "status": "SOURCE_REPORTED_NOT_VERIFIED",
   "winner_eligible": true,
   "method_winner": false,
   "five_method_winner": false,

@@ -40,7 +40,7 @@
         "l1_ratio": 0.8
       },
       "candidate_order": 2,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -71,7 +71,7 @@
         "l1_ratio": 0.5
       },
       "candidate_order": 4,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -102,7 +102,7 @@
         "l1_ratio": 0.8
       },
       "candidate_order": 8,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -133,7 +133,7 @@
         "l1_ratio": 0.8
       },
       "candidate_order": 11,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -164,7 +164,7 @@
         "l1_ratio": 0.2
       },
       "candidate_order": 3,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -195,7 +195,7 @@
         "l1_ratio": 0.5
       },
       "candidate_order": 1,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -226,7 +226,7 @@
         "l1_ratio": 0.2
       },
       "candidate_order": 0,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -257,7 +257,7 @@
         "l1_ratio": 0.8
       },
       "candidate_order": 5,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -288,7 +288,7 @@
         "l1_ratio": 0.5
       },
       "candidate_order": 10,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -319,7 +319,7 @@
         "l1_ratio": 0.2
       },
       "candidate_order": 6,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -350,7 +350,7 @@
         "l1_ratio": 0.2
       },
       "candidate_order": 9,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,
@@ -381,7 +381,7 @@
         "l1_ratio": 0.5
       },
       "candidate_order": 7,
-      "status": "VERIFIED",
+      "status": "SOURCE_REPORTED_NOT_VERIFIED",
       "winner_eligible": true,
       "fold_count": 3,
       "n": 1168,

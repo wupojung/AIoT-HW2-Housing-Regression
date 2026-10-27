@@ -6,7 +6,7 @@
     "training_rows": 1168,
     "fold_count": 3,
     "protocol_id": "p4b-v2.0-development-3fold-rs42",
-    "status": "VERIFIED"
+    "status": "SOURCE_REPORTED_NOT_VERIFIED"
   },
   "methods": [
     {
@@ -93,7 +93,7 @@
         "l1_ratio": 0.2
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-dd45a0b3f79edae79eaa99d9a592757df83e7874b21f1acaea413103928dbdc0",
@@ -105,7 +105,7 @@
         "l1_ratio": 0.5
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-279a8a5b1c1fa1fa93991dc3691c7f22800aeeaa5633b8a4a21e60490cab2efb",
@@ -117,7 +117,7 @@
         "l1_ratio": 0.8
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-9fa4d99608f14f862026ee988a079004de547e0d713a17b25c36f41a7ac225e3",
@@ -129,7 +129,7 @@
         "l1_ratio": 0.2
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-2cc6e4b57a1018be232ca3b4836764386064679c764d0213a5bfaff33b899206",
@@ -141,7 +141,7 @@
         "l1_ratio": 0.5
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-1c73870379fcd6a39c7137064f4cd21cc1b0b0424e5dc48fa0216806af0061db",
@@ -153,7 +153,7 @@
         "l1_ratio": 0.8
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-52f2eeb3d7721d8f4b0ae42ab242efb5c5aa4ac12906532d932958c14c2f7ae8",
@@ -165,7 +165,7 @@
         "l1_ratio": 0.2
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-d0247c0be6fbd0ab346b7d3d5c45583bf3d37d27c45e8d1d432a5cf88d569192",
@@ -177,7 +177,7 @@
         "l1_ratio": 0.5
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-20363ce2a7f8d58f4e840e81b72590fe8de7d1b0dbf47a124fa71e5f3bcf02de",
@@ -189,7 +189,7 @@
         "l1_ratio": 0.8
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-1098e27f34125c296e9331aae6fa1ffec6075f3986b7577cfa813850951d3b53",
@@ -201,7 +201,7 @@
         "l1_ratio": 0.2
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-d29012556273bf48ab5997cb33861acd9454e5879dac80f885a7a721a2494460",
@@ -213,7 +213,7 @@
         "l1_ratio": 0.5
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-d7202991dc8fee11e65aac3b0532ac68b63599a6b0ec87eec5544eb13ad8c0f3",
@@ -225,7 +225,7 @@
         "l1_ratio": 0.8
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-15ccb59109160556416da1913608b6e4f089d47dd839e20eb4d4b89b1b4fce2b",
@@ -258,7 +258,7 @@
         "alpha": 10.0
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
@@ -269,7 +269,7 @@
         "alpha": 100.0
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-b87169fc4edca859fb91775a40d668145f81e926620d949aadbb38b4272fc6a3",
@@ -280,7 +280,7 @@
         "requested_k": 2
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-f8964bbe4d91e2b423d244942a1c96bdee2b15c2376af1d4c24b708f6d6ddb20",
@@ -291,7 +291,7 @@
         "requested_k": 3
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-fe67d806a6c09274e96d968e73b93f31c694d678af46ee7aede9abfe4a49c2d0",
@@ -302,7 +302,7 @@
         "requested_k": 5
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-c79851bf9d83e7280f5c3f42d39ad330d2742267e109de1c802b1c4761f78480",
@@ -313,7 +313,7 @@
         "requested_k": 10
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-b33c6189b8aefebafc09f538fa426395a77a1ea2b6f2ca24c7cc854aa0be11b5",
@@ -324,7 +324,7 @@
         "requested_k": 20
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298",
@@ -333,7 +333,7 @@
       "track_id": "all_features_ols",
       "params": {},
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-47c2ce66ecde074a5358fe1b6538988bb7912d7fd40e4bd75bc00263f9aa4007",
@@ -344,7 +344,7 @@
         "requested_k": 2
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-05a42a840e86417500b7b074f48d18b215aed5e569852838928ef4a5d7dcc7c7",
@@ -355,7 +355,7 @@
         "requested_k": 3
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-76875a54b9938060c533ef3a3a95cf0f3deff80daf1872f079f3df63ba40c03f",
@@ -366,7 +366,7 @@
         "requested_k": 5
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-4c0e705bb36a73081152863b4338858994672e53cad4b8ec3f0a60a881c1451a",
@@ -377,7 +377,7 @@
         "requested_k": 10
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-fb8b057e667700b125e73b488fedd95dcb3356c5a51b8dc746896fc66671d72d",
@@ -388,7 +388,7 @@
         "requested_k": 20
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-1988433b54f59f8e579c2d77bbd63a965d7a09e6b5c2db229cadc2eb42d5d0c4",
@@ -399,7 +399,7 @@
         "requested_k": 2
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-5209c529b590f46510d92d4477a0919257f4fc0eede444f3f7bf2d571cce282d",
@@ -410,7 +410,7 @@
         "requested_k": 3
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-55d847e58f1bed76947d8912dbd3441e3d05ddc96f3d0c0e4728919118befb42",
@@ -421,7 +421,7 @@
         "requested_k": 5
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-67e3f996e959abae53745d268e5801e8b11fe386218827b9324285c06e06c5e7",
@@ -432,7 +432,7 @@
         "requested_k": 10
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     },
     {
       "configuration_id": "p4b-v2-616569f18d0fb28c9e7d1fda84ccfb2e65740a7f8f51b8fbc53b2cf892750fa8",
@@ -443,7 +443,7 @@
         "requested_k": 20
       },
       "protocol_id": "p4b-v2.0-development-3fold-rs42",
-      "status": "VERIFIED"
+      "status": "PLANNED"
     }
   ],
   "default_configuration_id": "p4b-v2-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
