@@ -1,0 +1,329 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-reference-init-a",
+  "release_id": "ames-initb-development-20261028-02",
+  "generated_at": null,
+  "status": "PLANNED",
+  "reason_code": "PUBLICATION_REVIEW_PENDING",
+  "publication_review": "PENDING",
+  "default_evaluation_id": "initb-development-e2e-20261028-02.development-oof.pooled",
+  "evaluations": [
+    {
+      "evaluation_id": "initb-development-e2e-20261028-02.development-oof.cv-mean",
+      "execution_run_id": "initb-development-e2e-20261028-02",
+      "configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+      "final_fit_id": null,
+      "model_id": "ames-reference-local-ols",
+      "model_version": "initb-development-e2e-20261028-02",
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_fixed_cv_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 19395.048845362322,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 35389.184561872244,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.784159113347866,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1053.8753160976437,
+          "rmse": 7692.476161987641,
+          "r2": 0.0834327836696778
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "4a610750b97e042212f51c018d48e3521257fbb81608af8cba337d4101815445",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "initb-development-e2e-20261028-02.development-oof.pooled"
+      ]
+    },
+    {
+      "evaluation_id": "initb-development-e2e-20261028-02.development-oof.pooled",
+      "execution_run_id": "initb-development-e2e-20261028-02",
+      "configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+      "final_fit_id": null,
+      "model_id": "ames-reference-local-ols",
+      "model_version": "initb-development-e2e-20261028-02",
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_fixed_cv_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 19394.931769794934,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 35936.820129461055,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7825137235978141,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1053.8753160976437,
+          "rmse": 7692.476161987641,
+          "r2": 0.0834327836696778
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "initb-development-e2e-20261028-02.development-oof.pooled",
+          "configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_fixed_cv_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/actual-vs-predicted.png",
+          "sha256": "9eb4a3c302677dba9f2c14d71c0401e1a0342b2405cab7d4b8695c5a76252ae5",
+          "accessible_table_ref": "phases/phase-05/fold-metrics.json",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual SalePrice",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "OOF prediction SalePrice",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "alt": "Actual vs Predicted scatter plot for 1168 Development out-of-fold predictions; local draft, pending review.",
+          "finding": "Computed from this run's fixed three-fold Development OOF records; not an independent holdout result.",
+          "limitations": [
+            "Development OOF only",
+            "Local engineering output pending independent review",
+            "Not publication-approved"
+          ],
+          "source_digest": "4a610750b97e042212f51c018d48e3521257fbb81608af8cba337d4101815445",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "initb-development-e2e-20261028-02.development-oof.pooled",
+          "configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_fixed_cv_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/residual-vs-predicted.png",
+          "sha256": "f936a70d9a837a5d41b168db4e2f3834fc26e4bfda17d85a4febfcac7164eaee",
+          "accessible_table_ref": "phases/phase-05/fold-metrics.json",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "OOF prediction SalePrice",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual − predicted SalePrice",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "alt": "Residual vs Predicted scatter plot for 1168 Development out-of-fold predictions; local draft, pending review.",
+          "finding": "Computed from this run's fixed three-fold Development OOF records; not an independent holdout result.",
+          "limitations": [
+            "Development OOF only",
+            "Local engineering output pending independent review",
+            "Not publication-approved"
+          ],
+          "source_digest": "4a610750b97e042212f51c018d48e3521257fbb81608af8cba337d4101815445",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "initb-development-e2e-20261028-02.development-oof.pooled",
+          "configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_fixed_cv_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/residual-distribution.png",
+          "sha256": "94c4acdaf4dd2724a11587bee46ea6e7eaf5ac9a4811de13609b88f208898cef",
+          "accessible_table_ref": "phases/phase-05/assets/residual-histogram.json",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Actual − predicted SalePrice",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "alt": "Thirty-bin histogram of Development OOF residuals, actual minus predicted; local draft, pending review.",
+          "finding": "Histogram counts derive from this run's Development OOF residuals.",
+          "limitations": [
+            "Development OOF only",
+            "Local engineering output pending independent review",
+            "Not publication-approved"
+          ],
+          "source_digest": "4a610750b97e042212f51c018d48e3521257fbb81608af8cba337d4101815445",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "phases/phase-05/assets/residual-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "4a610750b97e042212f51c018d48e3521257fbb81608af8cba337d4101815445",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "PENDING_REVIEW",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "initb-development-e2e-20261028-02.development-oof.cv-mean"
+      ]
+    }
+  ],
+  "ui": {
+    "default_population": "development_oof",
+    "population_options": [
+      {
+        "id": "development_oof",
+        "label": "Development OOF"
+      },
+      {
+        "id": "holdout",
+        "label": "Validation aggregate"
+      },
+      {
+        "id": "training_in_sample",
+        "label": "Training in-sample"
+      }
+    ],
+    "figure_tabs": [
+      {
+        "figure_id": "FIG-P5-01",
+        "label": "Actual vs predicted",
+        "kind": "actual_vs_predicted"
+      },
+      {
+        "figure_id": "FIG-P5-02",
+        "label": "Residual vs predicted",
+        "kind": "residual_vs_predicted"
+      },
+      {
+        "figure_id": "FIG-P5-03",
+        "label": "Residual distribution",
+        "kind": "residual_distribution"
+      }
+    ],
+    "metric_order": [
+      "mae",
+      "rmse",
+      "r2"
+    ],
+    "interval_figure_id": "FIG-P5-04"
+  }
+}

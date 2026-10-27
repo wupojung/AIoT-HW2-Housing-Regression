@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.1.0",
+  "case_id": "ames-reference-init-a",
+  "status": "VERIFIED",
+  "cv": {
+    "training_rows": 1168,
+    "fold_count": 3,
+    "protocol_id": "historical-p4b-v2-fixed-lasso100",
+    "status": "VERIFIED"
+  },
+  "methods": [
+    {
+      "method_id": "lasso-selected-primary-ols",
+      "label": "Lasso selection → primary OLS",
+      "parameters": [
+        {
+          "parameter_id": "alpha",
+          "label": "Lasso alpha",
+          "data_type": "number"
+        },
+        {
+          "parameter_id": "max_iter",
+          "label": "Maximum iterations",
+          "data_type": "integer"
+        },
+        {
+          "parameter_id": "tol",
+          "label": "Tolerance",
+          "data_type": "number"
+        },
+        {
+          "parameter_id": "seed",
+          "label": "Fold seed",
+          "data_type": "integer"
+        }
+      ]
+    }
+  ],
+  "execution_runs": [
+    {
+      "execution_run_id": "initb-development-e2e-20261028-02",
+      "source_manifest_sha256": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e",
+      "status": "VERIFIED"
+    }
+  ],
+  "configurations": [
+    {
+      "configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+      "execution_run_id": "initb-development-e2e-20261028-02",
+      "method_id": "lasso-selected-primary-ols",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 100.0,
+        "max_iter": 10000,
+        "tol": 0.0001,
+        "selection": "cyclic",
+        "seed": 42,
+        "selection_search": "disabled"
+      },
+      "protocol_id": "historical-p4b-v2-fixed-lasso100",
+      "status": "VERIFIED",
+      "metadata_ref": "phases/phase-04/configurations/ames-lasso100-primary-ols-3fold-v1/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/ames-lasso100-primary-ols-3fold-v1/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/ames-lasso100-primary-ols-3fold-v1/cv-metrics.json"
+    }
+  ],
+  "default_configuration_id": "ames-lasso100-primary-ols-3fold-v1",
+  "source_reported_candidate_configuration_id": null,
+  "charts": []
+}
