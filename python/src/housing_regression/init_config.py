@@ -83,6 +83,26 @@ class ConfigError(ValueError):
     """Raised when INIT inputs or a saved config are unsafe or invalid."""
 
 
+class _UniqueKeySafeLoader(yaml.SafeLoader):
+    """Safe YAML loader that rejects duplicate keys in every mapping."""
+
+    def construct_mapping(self, node: yaml.MappingNode, deep: bool = False) -> dict[Any, Any]:
+        self.flatten_mapping(node)
+        mapping: dict[Any, Any] = {}
+        for key_node, value_node in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            try:
+                duplicate = key in mapping
+            except TypeError as exc:
+                raise ConfigError("YAML mapping keys must be hashable") from exc
+            if duplicate:
+                line = key_node.start_mark.line + 1
+                raise ConfigError(f"duplicate YAML mapping key {key!r} at line {line}")
+            value = self.construct_object(value_node, deep=deep)
+            mapping[key] = value
+        return mapping
+
+
 def _sha256(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
 
@@ -262,7 +282,7 @@ def load_config(config_path: str | os.PathLike[str]) -> LoadedConfig:
         if path.is_symlink() or not path.is_file():
             raise ConfigError("config path must be a regular file and not a symbolic link")
         serialized = path.read_bytes()
-        values = _validate_values(yaml.safe_load(serialized.decode("utf-8")))
+        values = _validate_values(yaml.load(serialized.decode("utf-8"), Loader=_UniqueKeySafeLoader))
         config_sha = _config_sha256(values)
         init_config_sha = values["provenance"]["init_config_sha256"]
         source = path.parent / Path(values["data"]["path"])

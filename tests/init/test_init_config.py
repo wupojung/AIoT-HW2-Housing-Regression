@@ -98,6 +98,24 @@ class InitConfigTests(unittest.TestCase):
         self.assertEqual(result.config_path.read_bytes(), edited_bytes)
         self.assertNotEqual(edited_bytes, original)
 
+    def test_rejects_duplicate_top_level_and_nested_yaml_keys_without_rewriting(self):
+        cases = (
+            ("top-level", lambda text: text + "seed: 43\n"),
+            ("nested", lambda text: text.replace("  folds: 5\n", "  folds: 5\n  folds: 6\n", 1)),
+        )
+        for case_id, add_duplicate in cases:
+            with self.subTest(case_id=case_id):
+                case_dir = self.root / case_id
+                case_dir.mkdir()
+                result = initialize_case(self.csv_path, f"duplicate-{case_id}", "SalePrice", case_dir)
+                config_text = result.config_path.read_text(encoding="utf-8")
+                result.config_path.write_text(add_duplicate(config_text), encoding="utf-8")
+                duplicate_bytes = result.config_path.read_bytes()
+
+                with self.assertRaisesRegex(ConfigError, "duplicate YAML mapping key"):
+                    load_config(result.config_path)
+                self.assertEqual(result.config_path.read_bytes(), duplicate_bytes)
+
     def test_rejects_invalid_edits_and_modified_or_missing_source(self):
         result = initialize_case(self.csv_path, "synthetic-housing", "SalePrice", self.case_dir)
         config = yaml.safe_load(result.config_path.read_text(encoding="utf-8"))
