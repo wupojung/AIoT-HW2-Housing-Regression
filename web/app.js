@@ -1,4 +1,4 @@
-const SOURCE = "PR #35 HEAD 8d2bc4405e08e1a1b982204984f681d90975956a";
+const SOURCE = "PR #35 HEAD 08413d08f5cabbbf519b8ceee4ed68b7187d2669";
 const REF = {
   phase1: "docs/ui-ux/case-package/sample/ames-housing/phases/phase-01/content.json",
   phase2: "docs/ui-ux/case-package/sample/ames-housing/phases/phase-02/analyses.json",
@@ -21,6 +21,11 @@ const TYPES = [
   ["discrete", "離散 (Discrete)", "#70b5e8"],
   ["continuous", "連續 (Continuous)", "#f1b45b"]
 ];
+const AMES_NEIGHBORHOODS = ["Blmngtn", "Blueste", "BrDale", "BrkSide", "ClearCr", "CollgCr", "Crawfor", "Edwards", "Gilbert", "IDOTRR", "MeadowV", "Mitchel", "NAmes", "NPkVill", "NWAmes", "NoRidge", "NridgHt", "OldTown", "SWISU", "Sawyer", "SawyerW", "Somerst", "StoneBr", "Timber", "Veenker"];
+const OVERALL_QUALITY_LABELS = {
+  1: "Very Poor · 非常差", 2: "Poor · 差", 3: "Fair · 尚可", 4: "Below Average · 低於平均", 5: "Average · 平均",
+  6: "Above Average · 高於平均", 7: "Good · 良好", 8: "Very Good · 非常好", 9: "Excellent · 優秀", 10: "Very Excellent · 極佳"
+};
 const CASES = {
   "ames-housing": {
     id: "ames-housing", title: "Ames Housing — MOCK UI Sample", status: "MOCK",
@@ -87,11 +92,21 @@ const CASES = {
     inference: { status: "UNAVAILABLE", models: [], reasonCode: "NO_APPROVED_MODEL", message: "此案例尚無研究成果或可用模型。" }
   }
 };
+CASES["ames-housing-formal"] = {
+  ...CASES["ames-housing"],
+  title: "Ames Housing — Formal Case Package · Phase 5",
+  packageStatus: "VERIFIED",
+  packageMode: "formal",
+  packageRevision: "local-staging-p5-formal-data-test-20261027-01"
+};
+CASES["ames-housing"].packageMode = "mock";
 
 const state = {
   caseId: "ames-housing", route: "home", analysisId: "overview", perspective: "method_comparison",
   phase4RunId: "MOCK-RUN-02", phase6MockSubmitted: false,
-  phase5Figure: "FIG-P5-02", p5Population: "development_oof", p5DetailsOpen: false,
+  phase6InputMode: "manual", phase6Csv: null, phase6CsvMessage: "尚未選擇 CSV 檔案。",
+  phase6Values: { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" },
+  phase5Figure: "FIG-P5-02", p5Population: "development_oof", p5DetailsOpen: false, phase5ConfigId: "",
   dashboardMode: "verified", customSource: "file", customFile: null, customUrl: "", customHeaders: [], customRows: [],
   targetField: "", featureFields: [], csvMessage: "尚未載入資料。CSV 僅在此瀏覽器本機預覽，不會上傳。", customValidated: false
 };
@@ -99,16 +114,24 @@ const app = document.querySelector("#app");
 const phaseNav = document.querySelector("#phase-nav");
 const caseContext = document.querySelector("#case-context");
 const caseSelect = document.querySelector("#case-select");
+const IS_LOCAL_STAGING_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname) && location.pathname.startsWith("/web/");
+const PHASE5_PACKAGE_ROOT = IS_LOCAL_STAGING_PREVIEW
+  ? "/local/staging/formal-data-test-20261027-01/case-package"
+  : null;
+let phase5PackageData = null;
+let phase5PackageLoading = false;
+let phase5PackageLoadError = null;
 
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 }
+function qualityScaleLabel(value) { return `${value} · ${OVERALL_QUALITY_LABELS[value] || ""}`; }
 function statusLabel(status) {
-  const labels = { MOCK: "示意資料 MOCK", UNAVAILABLE: "無可用資料 UNAVAILABLE", PLANNED: "規劃中 PLANNED", VERIFIED: "已驗證 VERIFIED", ERROR: "錯誤 ERROR", SOURCE_REPORTED_NOT_VERIFIED: "來源回報・尚未驗證 SOURCE REPORTED · NOT VERIFIED" };
+  const labels = { MOCK: "示意資料 MOCK", UNAVAILABLE: "無可用資料 UNAVAILABLE", PLANNED: "規劃中 PLANNED", PUBLISHED: "已發布 PUBLISHED", VERIFIED: "已驗證 VERIFIED", ERROR: "錯誤 ERROR", SOURCE_REPORTED_NOT_VERIFIED: "來源回報・尚未驗證 SOURCE REPORTED · NOT VERIFIED" };
   return labels[status] || status || "未知 UNKNOWN";
 }
 function statusClass(status) {
-  return ({ MOCK: "mock", UNAVAILABLE: "unavailable", PLANNED: "planned", VERIFIED: "verified", ERROR: "error", SOURCE_REPORTED_NOT_VERIFIED: "mock" })[status] || "unavailable";
+  return ({ MOCK: "mock", UNAVAILABLE: "unavailable", PLANNED: "planned", PUBLISHED: "published", VERIFIED: "verified", ERROR: "error", SOURCE_REPORTED_NOT_VERIFIED: "mock" })[status] || "unavailable";
 }
 function badge(status) { return `<span class="status ${statusClass(status)}">${esc(statusLabel(status))}</span>`; }
 function caseData() { return CASES[state.caseId] || CASES["planned-case"]; }
@@ -117,10 +140,14 @@ function routePhase() { return isPhaseRoute() ? Number(state.route.slice(6)) || 
 function setRoute(route) { location.hash = route; }
 function setPhase(phase) { setRoute(`phase-${phase}`); }
 function banner(caseInfo = caseData()) {
-  const reason = caseInfo.status === "MOCK"
+  const formalPackage = caseInfo.packageMode === "formal";
+  const reason = formalPackage
+    ? `Formal Case Package ${caseInfo.packageRevision} · Phase 5 index is loaded from this package; other phase UI remains preview-only.`
+    : caseInfo.status === "MOCK"
     ? `UI fixture only · package revision ${caseInfo.packageRevision} · ${SOURCE}. These values are not approved research results.`
     : "Planned placeholder only · no research package, data, or model is available.";
-  return `<div class="fixture-banner"><span><strong>${caseInfo.status === "MOCK" ? "Fixture preview" : "Planned case"}</strong> · ${esc(reason)}</span>${badge(caseInfo.status)}</div>`;
+  const bannerStatus = formalPackage ? caseInfo.packageStatus : caseInfo.status;
+  return `<div class="fixture-banner"><span><strong>${formalPackage ? "Formal package preview" : caseInfo.status === "MOCK" ? "Fixture preview" : "Planned case"}</strong> · ${esc(reason)}</span>${badge(bannerStatus)}</div>`;
 }
 function updateShell() {
   const phase = routePhase();
@@ -129,7 +156,7 @@ function updateShell() {
   phaseNav.innerHTML = PHASES.map(([n, en, zh]) => `<a class="phase-tab" href="#phase-${n}" ${phase === n ? 'aria-current="page"' : ""}><span class="num">0${n}</span><span class="phase-zh">${esc(zh)}</span><span class="phase-en">${esc(en)}</span></a>`).join("");
   document.querySelector("[data-home-link]").setAttribute("aria-current", state.route === "home" ? "page" : "false");
   document.querySelector("[data-crisp-link]").setAttribute("aria-current", phase ? "page" : "false");
-  caseSelect.innerHTML = Object.values(CASES).map((c) => `<option value="${esc(c.id)}" ${c.id === state.caseId ? "selected" : ""}>${esc(c.title)} · ${esc(c.status)}</option>`).join("");
+  caseSelect.innerHTML = Object.entries(CASES).map(([key, c]) => `<option value="${esc(key)}" ${key === state.caseId ? "selected" : ""}>${esc(c.title)} · ${c.packageMode === "formal" ? "FORMAL PACKAGE" : esc(c.status)}</option>`).join("");
 }
 function pageHeading(kicker, title, subtitle, status = caseData().status) {
   return `<div class="page-heading"><div><p class="kicker">${esc(kicker)}</p><h1>${esc(title)}</h1><p class="lede">${esc(subtitle)}</p></div><div class="page-meta">${badge(status)}</div></div>`;
@@ -138,19 +165,27 @@ function footerNav(prev, next) {
   const phase = routePhase();
   const samplePath = phase === 3
     ? "web/data/cases/ames-housing/phase-03/preparation.json"
-    : REF[`phase${phase}`];
+    : phase === 5 && PHASE5_PACKAGE_ROOT
+      ? `${PHASE5_PACKAGE_ROOT}/phases/phase-05/evaluations.json`
+      : REF[`phase${phase}`];
   const schemaPath = phase === 5
     ? "docs/ui-ux/case-package/phase-05/evaluation-index.schema.json"
     : `docs/design/data-contracts/schemas/phase-0${phase}.schema.json`;
-  const fileUrl = (path) => `https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/8d2bc4405e08e1a1b982204984f681d90975956a/${path}`;
-  const source = `<div class="source-note"><span>Fixture / contract provenance · ${esc(SOURCE)}</span><a href="${fileUrl(samplePath)}" target="_blank" rel="noreferrer">Sample JSON ↗</a><a href="${fileUrl(schemaPath)}" target="_blank" rel="noreferrer">Schema ↗</a></div>`;
+  const fileUrl = (path) => path?.startsWith("/")
+    ? path
+    : path?.startsWith("web/")
+      ? `/${path.slice(4)}`
+      : path ? `https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/08413d08f5cabbbf519b8ceee4ed68b7187d2669/${path}` : null;
+  const provenanceLabel = phase === 5 ? "Case Package files · Phase 5 formal reference" : `Fixture / contract provenance · ${SOURCE}`;
+  const manifestLabel = "Schema ↗";
+  const source = `<div class="source-note"><span>${esc(provenanceLabel)}</span>${fileUrl(samplePath) ? `<a href="${fileUrl(samplePath)}" target="_blank" rel="noreferrer">${phase === 5 ? "Evaluation index ↗" : "Sample JSON ↗"}</a>` : ""}${fileUrl(schemaPath) ? `<a href="${fileUrl(schemaPath)}" target="_blank" rel="noreferrer">${manifestLabel}</a>` : ""}</div>`;
   return `${source}<nav class="phase-footer" aria-label="前後階段">${prev ? `<a class="button" href="#phase-${prev[0]}">← ${esc(prev[1])}</a>` : `<span></span>`}${next ? `<a class="button primary" href="#phase-${next[0]}">${esc(next[1])} →</a>` : `<span></span>`}</nav>`;
 }
 function plannedPanel(message = "此案例目前沒有可用的研究資料。") {
   return `<section class="state-panel"><span class="state-icon" aria-hidden="true">i</span><h3>此階段尚未提供資料</h3><p>${esc(message)}切換至此案例不會沿用 Ames 的文字、圖表或狀態。</p>${badge("PLANNED")}</section>`;
 }
 function renderHome() {
-  return `<div class="page home-page"><section class="home-hero"><div><p class="kicker">研究入口 · RESEARCH WORKSPACE</p><h1>從研究問題<br>走向可追溯的證據</h1><p class="home-en-title">From research questions to traceable evidence</p><p>以清楚可追溯的方式呈現住宅迴歸研究。<br>Explore housing regression research through a clear, traceable workflow.</p><a class="button" href="#phase-1">進入 CRISP-DM · Enter CRISP-DM →</a></div></section></div>`;
+  return `<div class="page home-page"><section class="home-hero"><div class="home-copy"><p class="kicker">研究入口 · RESEARCH WORKSPACE</p><h1>從研究問題<br>走向可追溯的證據</h1><p class="home-en-title">From research questions to traceable evidence</p><p>以清楚可追溯的方式呈現住宅迴歸研究。<br>Explore housing regression research through a clear, traceable workflow.</p><a class="button" href="#phase-1">進入 CRISP-DM · Enter CRISP-DM <span aria-hidden="true">→</span></a></div><div class="home-visual" aria-hidden="true"><svg viewBox="0 0 440 390" role="presentation"><circle class="home-orbit home-orbit-outer" cx="220" cy="195" r="145"/><circle class="home-orbit home-orbit-inner" cx="220" cy="195" r="93"/><path class="home-trace" d="M92 113 169 160 268 117 344 177 290 270 177 251 92 113M169 160 177 251M268 117 290 270"/><circle class="home-trace-node" cx="92" cy="113" r="8"/><circle class="home-trace-node" cx="169" cy="160" r="7"/><circle class="home-trace-node" cx="268" cy="117" r="7"/><circle class="home-trace-node" cx="344" cy="177" r="8"/><circle class="home-trace-node" cx="290" cy="270" r="7"/><circle class="home-trace-node" cx="177" cy="251" r="7"/></svg><div class="home-visual-core"><span>RESEARCH</span><b>→</b><span>EVIDENCE</span></div><span class="home-visual-label label-a">01 · CASE</span><span class="home-visual-label label-b">02 · DATA</span><span class="home-visual-label label-c">03 · MODEL</span><span class="home-visual-label label-d">04 · RESULT</span></div></section></div>`;
 }
 function renderPhase1() {
   const c = caseData();
@@ -203,7 +238,63 @@ function loadPhase3Data() {
     })
     .finally(() => {
       phase3Loading = false;
-      if (state.route === "phase-3" && state.caseId === "ames-housing") render();
+      if (["phase-3", "phase-4"].includes(state.route) && caseData().id === "ames-housing") render();
+    });
+}
+
+function loadPhase5Package() {
+  if (phase5PackageLoading || phase5PackageData || phase5PackageLoadError) return;
+  phase5PackageLoading = true;
+  Promise.all([
+    fetch(`${PHASE5_PACKAGE_ROOT}/package.json`).then((response) => {
+      if (!response.ok) throw new Error(`Case Package manifest request failed (${response.status})`);
+      return response.json();
+    }),
+    fetch(`${PHASE5_PACKAGE_ROOT}/phases/phase-05/evaluations.json`).then((response) => {
+      if (!response.ok) throw new Error(`Phase 5 evaluation index request failed (${response.status})`);
+      return response.json();
+    })
+  ])
+    .then(([manifest, index]) => {
+      if (manifest.case_id !== "ames-housing" || index.case_id !== manifest.case_id || index.schema_version !== "1.0.0") {
+        throw new Error("The formal Case Package has an unexpected case or schema version.");
+      }
+      if (manifest.phases?.phase5?.data_ref !== "phases/phase-05/evaluations.json" || !Array.isArray(index.evaluations)) {
+        throw new Error("The Phase 5 package reference is missing or malformed.");
+      }
+      const evaluationIds = new Map();
+      const configurations = new Map();
+      for (const record of index.evaluations) {
+        if (!record.evaluation_id || !record.configuration_id || evaluationIds.has(record.evaluation_id)) {
+          throw new Error("The Phase 5 index has a missing or duplicate evaluation ID.");
+        }
+        evaluationIds.set(record.evaluation_id, record);
+        if (!record.metrics || !["mae", "rmse", "r2"].every((key) => Number.isFinite(record.metrics[key]?.value))) {
+          throw new Error("A Phase 5 evaluation has missing or invalid metric values.");
+        }
+        const pair = configurations.get(record.configuration_id) || [];
+        pair.push(record);
+        configurations.set(record.configuration_id, pair);
+      }
+      for (const [configurationId, records] of configurations) {
+        const sources = records.map((record) => record.metric_source).sort().join("|");
+        if (records.length !== 2 || sources !== "cv_fold_mean|pooled_oof") {
+          throw new Error(`Configuration ${configurationId} is missing its paired evaluation sources.`);
+        }
+      }
+      for (const record of index.evaluations) {
+        if (!Array.isArray(record.linked_evaluation_ids) || record.linked_evaluation_ids.some((id) => evaluationIds.get(id)?.configuration_id !== record.configuration_id)) {
+          throw new Error(`Evaluation ${record.evaluation_id} has an unresolved linked evaluation.`);
+        }
+      }
+      phase5PackageData = { manifest, index, configurationIds: [...configurations.keys()].sort() };
+    })
+    .catch((error) => {
+      phase5PackageLoadError = error instanceof Error ? error.message : "Unable to load the formal Phase 5 package.";
+    })
+    .finally(() => {
+      phase5PackageLoading = false;
+      if (state.route === "phase-5" && caseData().packageMode === "formal") render();
     });
 }
 
@@ -267,7 +358,7 @@ function renderPhase3() {
     const lineage = stage.id === "encoded"
       ? `<details class="disclosure"><summary>展開原始欄位至編碼後特徵對應 Raw-to-encoded feature mapping</summary><div class="treatment-list">${data.lineage.map((item) => { const type = TYPES.find(([id]) => id === item.type_id); return `<div class="treatment-item"><strong>${esc(type?.[1] || item.type_id)}</strong><span>${item.source_columns} 個來源欄位 Source columns → ${item.encoded_features} 個編碼後特徵 Encoded features</span><span>${esc(item.operation_zh)} (${esc(item.operation_en)})</span><em>${esc(statusLabel(item.status))}</em></div>`; }).join("")}</div></details>`
       : "";
-    return `<section class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index">0${index + 1}</span><h2>${esc(stage.label)}</h2></div><span class="stage-total">總數 Total: ${stage.total == null ? "未知 Unknown" : esc(stage.total)} ${esc(unit)} ${badge(stage.total_status)}</span></div>${renderSegments(stage, data.feature_types)}<p class="stage-note">${esc(note)}</p>${exclusions}${treatmentAccordion}${lineage}</section>`;
+    return `<section class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index" aria-label="步驟 ${index + 1} Step ${index + 1}"><span>步驟 · STEP</span><b>0${index + 1}</b></span><h2>${esc(stage.label)}</h2></div><span class="stage-total">總數 Total: ${stage.total == null ? "未知 Unknown" : esc(stage.total)} ${esc(unit)} ${badge(stage.total_status)}</span></div>${renderSegments(stage, data.feature_types)}<p class="stage-note">${esc(note)}</p>${exclusions}${treatmentAccordion}${lineage}</section>`;
   }).join("");
   const split = data.split;
   const totalRows = split.source_labeled_rows;
@@ -284,6 +375,11 @@ function renderPhase3() {
 function renderPhase4() {
   const c = caseData();
   if (c.status === "PLANNED") return `<div class="page">${banner(c)}${pageHeading("PHASE 04 / MODELING", "模型建立", "只呈現實際完成且可核對的模型實驗。", "PLANNED")}${plannedPanel()}${footerNav([3,"資料準備"],[5,"模型評估"])}</div>`;
+  if (!phase3Data && !phase3LoadError) loadPhase3Data();
+  const split = phase3Data?.case_id === c.id ? phase3Data.split : null;
+  const splitReady = split && Number.isInteger(split.source_labeled_rows) && split.source_labeled_rows > 0
+    && Number.isInteger(split.training_rows) && Number.isInteger(split.holdout_rows)
+    && split.training_rows + split.holdout_rows === split.source_labeled_rows;
   const foldNames = ["Fold A", "Fold B", "Fold C"];
   const folds = Array.from({ length: 3 }, (_, iteration) => {
     const blocks = foldNames.map((foldName, foldIndex) => {
@@ -291,8 +387,11 @@ function renderPhase4() {
       const role = isValidation ? "Validation" : "Training";
       return `<span class="${isValidation ? "cv-valid" : "cv-train"}" style="width:33.333%">${foldName} · ${role}</span>`;
     }).join("");
-    return `<div class="cv-row"><span class="cv-label">CV iteration ${iteration + 1}</span><div class="cv-track" role="img" aria-label="CV iteration ${iteration + 1}: ${foldNames.map((name, index) => `${name} ${index === iteration ? "validation" : "training"}`).join(", ")}">${blocks}</div></div>`;
+    return `<div class="cv-row"><span class="cv-label">第 ${iteration + 1} 折 · CV iteration ${iteration + 1}</span><div class="cv-track" role="img" aria-label="CV iteration ${iteration + 1}: ${foldNames.map((name, index) => `${name} ${index === iteration ? "validation" : "training"}`).join(", ")}">${blocks}</div></div>`;
   }).join("");
+  const splitReference = splitReady
+    ? `<p class="body-copy">Phase 3 資料切分參照 Data split reference：${split.training_rows} / ${split.source_labeled_rows} 訓練集 Training Set · ${split.holdout_rows} / ${split.source_labeled_rows} 測試集 Test Set · 來源回報 Source-reported</p><div class="row-split" role="img" aria-label="與 Phase 3 相同的資料切分：訓練集 Training Set ${Math.round(split.training_rows / split.source_labeled_rows * 100)}%，測試集 Test Set ${Math.round(split.holdout_rows / split.source_labeled_rows * 100)}%"><span style="width:${split.training_rows / split.source_labeled_rows * 100}%">訓練集 Training Set · ${split.training_rows} 筆 rows · ${Math.round(split.training_rows / split.source_labeled_rows * 100)}%</span><span style="width:${split.holdout_rows / split.source_labeled_rows * 100}%">測試集 Test Set · ${split.holdout_rows} 筆 rows · ${Math.round(split.holdout_rows / split.source_labeled_rows * 100)}%</span></div><div class="cv-scope" style="grid-template-columns:${split.training_rows}fr ${split.holdout_rows}fr"><div class="cv-training-scope">${folds}</div><div class="cv-holdout-scope"><strong>測試集 Test Set</strong><span>不參與 CV<br>Excluded from CV</span></div></div>`
+    : `<div class="state-panel"><h3>Phase 3 切分資料不可用 UNAVAILABLE</h3><p>無法載入或核對 Phase 3 的訓練集與測試集比例，因此不繪製比例圖，也不推定 CV 範圍。</p></div>`;
   const methodOptions = c.methods.map((m) => `<option value="${esc(m.id)}">${esc(m.label)}</option>`).join("");
   const perspectives = [["method_comparison","方法比較 Method comparison"],["selected_features","選取特徵 Selected features"],["feature_count_vs_cv","特徵數與 CV RMSE Feature count vs CV RMSE"]].map(([id,label]) => `<button class="selector-button" type="button" data-perspective="${id}" aria-pressed="${state.perspective === id}">${label}</button>`).join("");
   const runs = c.mockModelRuns;
@@ -305,10 +404,40 @@ function renderPhase4() {
     : state.perspective === "selected_features"
       ? `<p class="body-copy">示意配置 Mock run ${selectedRun.id} · ${esc(selectedRun.method)} · ${selectedRun.featureCount} 個特徵 Features</p><div class="feature-chip-list">${selectedRun.selectedFeatures.map((feature) => `<span class="feature-chip">${esc(feature)}</span>`).join("")}</div>`
     : `<div class="mock-bar-list">${featureCurve.map((point) => { const scale = Math.round(point.rmse / maxError * 100); return `<div class="mock-bar-row"><span class="mock-bar-label">${point.features} 個特徵 Features</span><span class="mock-bar-track"><i style="width:${Math.max(4, scale)}%"></i></span><strong>RMSE ${point.rmse.toLocaleString()}</strong></div>`; }).join("")}</div>`;
-  return `<div class="page">${banner(c)}${pageHeading("PHASE 04 / MODELING", "模型建立與特徵選擇", "以下模型與分數是合成 UI 示意，僅供檢視頁面功能，不代表實際實驗。", "MOCK")}<section class="card"><div class="card-head"><div><p class="eyebrow">01 · 三折交叉驗證 3-FOLD CROSS-VALIDATION</p><h2>訓練集專用 Training Set only</h2></div>${badge(c.cv.status)}</div><div class="cv-block"><p class="body-copy">訓練集 Training Set：${c.cv.trainingRows} 筆來源回報資料列 source-reported rows · 折數 Fold count：${c.cv.foldCount} · 評估指標 Metric：均方根誤差 RMSE (root mean squared error)，越低越好。</p>${folds}<div class="legend"><span class="legend-item"><i class="legend-dot" style="--dot:#d8e5ec"></i>訓練折 Training folds</span><span class="legend-item"><i class="legend-dot" style="--dot:#b9d8c8"></i>驗證折輪替 Validation fold rotates</span></div><p class="stage-note">示意圖 Schematic only · 每列顯示三個近似等寬資料折 (folds)。實際折數與流程設定未確認。測試集 Test Set（留出測試集 Holdout Test Set；292 筆來源回報資料列） 不參與此交叉驗證。</p><details class="disclosure"><summary>展開交叉驗證方法 Cross-validation methodology</summary><div class="disclosure-body">此處的模型比較分數是合成 UI mock。實際切分器、亂序、隨機種子、折內數量與資料隔離流程仍未知。</div></details></div></section><section class="card explorer"><div class="card-head"><div><p class="eyebrow">02 · 特徵選擇與模型瀏覽器 FEATURE SELECTION & MODEL EXPLORER</p><h2>切換示意研究視角 Choose a mock view</h2></div>${badge("MOCK")}</div><div class="card-body"><div class="selector-row" role="group" aria-label="研究視角 Research perspective">${perspectives}</div><div class="control-row"><label class="control">特徵選擇方法 Feature-selection method<select disabled><option>合成配置 Synthetic configuration</option>${methodOptions}</select></label><label class="control">示意執行 Mock run<select id="p4-run">${runOptions}</select></label></div><section class="mock-result-panel"><div class="mock-result-head"><strong>${state.perspective === "method_comparison" ? "方法比較 Method comparison" : state.perspective === "selected_features" ? "選取特徵 Selected features" : "特徵數與交叉驗證分數 Feature count vs cross-validation score"}</strong>${badge("MOCK")}</div>${mockPanel}</section><p class="stage-note">所有數值、特徵名稱及配置都是人工合成的 UI 示意；不能當成實際模型結果。 All metrics, features, and configurations are synthetic UI fixtures.</p><div class="button-row" style="margin-top:18px"><a class="button" href="#phase-5">查看 Phase 5 評估狀態 →</a><a class="button" href="#phase-6">查詢 Phase 6 模型就緒狀態 →</a></div></div></section>${footerNav([3,"資料準備"],[5,"模型評估"])}</div>`;
+  return `<div class="page">${banner(c)}${pageHeading("PHASE 04 / MODELING", "模型建立與特徵選擇", "以下模型與分數是合成 UI 示意，僅供檢視頁面功能，不代表實際實驗。", "MOCK")}<section class="card"><div class="card-head"><div><p class="eyebrow">01 · 三折交叉驗證 3-FOLD CROSS-VALIDATION</p><h2>訓練集專用 Training Set only</h2></div>${badge(c.cv.status)}</div><div class="cv-block"><p class="body-copy">交叉驗證 Cross-validation 使用 Phase 3 訓練集 Training Set：${splitReady ? split.training_rows : "—"} 筆來源回報資料列 source-reported rows · 折數 Fold count：${c.cv.foldCount} · 評估指標 Metric：均方根誤差 RMSE (root mean squared error)，越低越好。</p>${splitReference}<div class="legend"><span class="legend-item"><i class="legend-dot" style="--dot:#70b5e8"></i>訓練折 Training folds</span><span class="legend-item"><i class="legend-dot" style="--dot:#55d6c2"></i>驗證折輪替 Validation fold rotates</span><span class="legend-item"><i class="legend-dot" style="--dot:#f1b45b"></i>留出測試集 Holdout test set</span></div><p class="stage-note">示意圖 Schematic only · 每列顯示三個近似等寬資料折 (folds)。實際折數與流程設定未確認。右側測試集不參與 CV。</p><details class="disclosure"><summary>展開交叉驗證方法 Cross-validation methodology</summary><div class="disclosure-body">此處的模型比較分數是合成 UI mock。實際切分器、亂序、隨機種子、折內數量與資料隔離流程仍未知。</div></details></div></section><section class="card explorer"><div class="card-head"><div><p class="eyebrow">02 · 特徵選擇與模型瀏覽器 FEATURE SELECTION & MODEL EXPLORER</p><h2>切換示意研究視角 Choose a mock view</h2></div>${badge("MOCK")}</div><div class="card-body"><div class="selector-row" role="group" aria-label="研究視角 Research perspective">${perspectives}</div><div class="control-row"><label class="control">特徵選擇方法 Feature-selection method<select disabled><option>合成配置 Synthetic configuration</option>${methodOptions}</select></label><label class="control">示意執行 Mock run<select id="p4-run">${runOptions}</select></label></div><section class="mock-result-panel"><div class="mock-result-head"><strong>${state.perspective === "method_comparison" ? "方法比較 Method comparison" : state.perspective === "selected_features" ? "選取特徵 Selected features" : "特徵數與交叉驗證分數 Feature count vs cross-validation score"}</strong>${badge("MOCK")}</div>${mockPanel}</section><p class="stage-note">所有數值、特徵名稱及配置都是人工合成的 UI 示意；不能當成實際模型結果。 All metrics, features, and configurations are synthetic UI fixtures.</p><div class="button-row" style="margin-top:18px"><a class="button" href="#phase-5">查看 Phase 5 評估狀態 →</a><a class="button" href="#phase-6">查詢 Phase 6 模型就緒狀態 →</a></div></div></section>${footerNav([3,"資料準備"],[5,"模型評估"])}</div>`;
 }
+function renderPhase5Formal(c, packageData) {
+  const { manifest, index, configurationIds } = packageData;
+  const selectedConfigId = configurationIds.includes(state.phase5ConfigId) ? state.phase5ConfigId : configurationIds[0];
+  const selected = index.evaluations.filter((record) => record.configuration_id === selectedConfigId);
+  const cvMean = selected.find((record) => record.metric_source === "cv_fold_mean");
+  const pooledOof = selected.find((record) => record.metric_source === "pooled_oof");
+  const options = configurationIds.map((id, i) => `<option value="${esc(id)}" ${id === selectedConfigId ? "selected" : ""}>設定 Configuration ${String(i + 1).padStart(2, "0")} · ${esc(id.slice(0, 20))}…</option>`).join("");
+  const metricDefinitions = [
+    ["mae", "MAE", "平均絕對誤差", "Mean Absolute Error", "USD · 越低越好 Lower is better"],
+    ["rmse", "RMSE", "均方根誤差", "Root Mean Squared Error", "USD · 越低越好 Lower is better"],
+    ["r2", "R²", "決定係數", "Coefficient of Determination", "無單位 Dimensionless"]
+  ];
+  const formatMetric = (key, value) => key === "r2" ? Number(value).toFixed(4) : Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const sourceCard = (record, sourceLabel, sourceEn) => `<section class="card p5-source-card"><div class="card-head"><div><p class="eyebrow">${sourceLabel} · ${sourceEn}</p><h2>${sourceLabel}</h2></div>${badge(record.review_status)}</div><div class="card-body"><div class="metrics">${metricDefinitions.map(([key, acronym, labelZh, labelEn, note]) => { const metric = record.metrics[key]; return `<article class="metric-card"><div class="metric-name"><strong class="metric-acronym">${acronym}</strong><span class="metric-label">${labelZh}<small>${labelEn}</small></span></div><strong class="metric-value">${formatMetric(key, metric.value)}</strong><span class="metric-note">${badge(metric.status)} · ${note}</span></article>`; }).join("")}</div><details class="disclosure p5-id-details"><summary>查看追溯識別 Traceability IDs</summary><dl class="data-row"><dt>Evaluation ID</dt><dd><code>${esc(record.evaluation_id)}</code></dd></dl><dl class="data-row"><dt>Execution Run</dt><dd><code>${esc(record.execution_run_id)}</code></dd></dl><dl class="data-row"><dt>Linked Evaluation</dt><dd><code>${esc(record.linked_evaluation_ids?.[0])}</code></dd></dl></details></div></section>`;
+  const phase5Path = `${PHASE5_PACKAGE_ROOT}/phases/phase-05/evaluations.json`;
+  const packagePath = `${PHASE5_PACKAGE_ROOT}/package.json`;
+  const figureState = [...new Set(selected.map((record) => record.asset_status))].join(" · ");
+  return `<div class="page">${banner(c)}${pageHeading("PHASE 05 / EVALUATION", "模型評估", "此頁直接讀取正式 Case Package 的 Phase 5 索引；指標與索引審查狀態分開呈現。", index.status)}<section class="card"><div class="card-head"><div><p class="eyebrow">正式 CASE PACKAGE · ${esc(manifest.package_revision)}</p><h2>套件資料來源與評估設定 Package source & evaluation selection</h2></div>${badge(manifest.package_status)}</div><div class="card-body p5-package-grid"><div><dl class="data-row"><dt>Package ID</dt><dd><code>${esc(manifest.package_id)}</code></dd></dl><dl class="data-row"><dt>Package revision</dt><dd><code>${esc(manifest.package_revision)}</code></dd></dl><dl class="data-row"><dt>Phase 5 index</dt><dd>${index.evaluations.length} 筆 evaluations · ${configurationIds.length} 組 configurations</dd></dl><dl class="data-row"><dt>索引審查 Index review</dt><dd>${esc(index.status)} · ${esc(index.reason_code)} · ${esc(index.publication_review)}</dd></dl><div class="p5-package-links"><a class="text-link" href="${phase5Path}" target="_blank" rel="noreferrer">開啟 Phase 5 Evaluation JSON ↗</a><a class="text-link" href="${packagePath}" target="_blank" rel="noreferrer">開啟 Package Manifest ↗</a></div></div><div><label class="control" for="p5-config">設定 Configuration</label><select id="p5-config">${options}</select><p class="stage-note">套件未指定預設 Evaluation ID；目前顯示排序後第一組設定。The package has no default Evaluation ID; showing the first sorted configuration.</p><dl class="data-row"><dt>Configuration ID</dt><dd><code>${esc(selectedConfigId)}</code></dd></dl><dl class="data-row"><dt>Evaluation population</dt><dd>Development OOF · no holdout records in this index</dd></dl></div></div><p class="stage-note">目前案例選單中的 MOCK 仍是獨立預覽項目。這個正式套件選項只接入 Phase 5；其他 Phase 頁仍維持其原有預覽內容。</p></section><div class="p5-source-compare">${sourceCard(cvMean, "折均值交叉驗證", "CV fold mean")}${sourceCard(pooledOof, "OOF 合併計算", "Pooled OOF")}</div><section class="card p5-diagnostics"><div class="card-head"><div><p class="eyebrow">診斷圖 DIAGNOSTIC FIGURES</p><h2>目前沒有連結到這組評估的診斷圖</h2></div>${badge(figureState || "UNAVAILABLE")}</div><div class="card-body"><p class="body-copy">此設定的 Evaluation records 沒有圖表參照，asset status 為 ${esc(figureState || "UNAVAILABLE")}。套件內圖資標記為 PLANNED，尚未連結至這組評估，因此此處不以圖資或 MOCK 圖替代。</p><p class="stage-note">單項指標狀態依索引呈現；索引本身仍為 ${esc(index.status)} · ${esc(index.reason_code)}。</p></div></section>${footerNav([4,"返回模型建立"],[6,"模型就緒狀態"])}</div>`;
+}
+
 function renderPhase5() {
   const c = caseData();
+  if (c.packageMode === "formal") {
+    if (!PHASE5_PACKAGE_ROOT) return `<div class="page">${banner(c)}${pageHeading("PHASE 05 / EVALUATION", "模型評估", "正式 Case Package 尚未進入公開 release。", "PLANNED")}<section class="state-panel"><h3>目前沒有已發布的 Case Package</h3><p>正式資料保存在私有 staging；完成獨立審查與發布後，網站才會從不可變 release 路徑讀取。</p>${badge("PLANNED")}</section>${footerNav([4,"模型建立"],[6,"模型預測實驗室"])}</div>`;
+    if (!phase5PackageData && !phase5PackageLoadError) loadPhase5Package();
+    if (phase5PackageLoadError) return `<div class="page">${banner(c)}${pageHeading("PHASE 05 / EVALUATION", "模型評估", "正式 Case Package 無法載入。", "ERROR")}<section class="state-panel" role="alert"><h3>Phase 5 資料載入失敗</h3><p>${esc(phase5PackageLoadError)}</p></section>${footerNav([4,"模型建立"],[6,"模型預測實驗室"])}</div>`;
+    if (!phase5PackageData) {
+      loadPhase5Package();
+      return `<div class="page">${banner(c)}${pageHeading("PHASE 05 / EVALUATION", "模型評估", "正在讀取正式 Case Package。", "PLANNED")}<section class="state-panel"><h3>載入 Phase 5 資料中 Loading package data…</h3><p>${esc(PHASE5_PACKAGE_ROOT)}</p></section>${footerNav([4,"模型建立"],[6,"模型預測實驗室"])}</div>`;
+    }
+    return renderPhase5Formal(c, phase5PackageData);
+  }
   if (c.status === "PLANNED") return `<div class="page">${banner(c)}${pageHeading("PHASE 05 / EVALUATION", "模型評估", "只有符合指定評估母體並通過審核的結果才會顯示。", "PLANNED")}${plannedPanel()}${footerNav([4,"模型建立"],[6,"模型預測實驗室"])}</div>`;
   const figures = c.evaluation.figures.map(([id,label]) => `<button class="selector-button" type="button" data-p5-figure="${id}" aria-pressed="${state.phase5Figure === id}">${id} · ${label}</button>`).join("");
   const mock = c.evaluation.mock;
@@ -333,7 +462,11 @@ function renderPhase5() {
   const mockChart = state.phase5Figure === "FIG-P5-03"
     ? `<svg class="mock-svg" viewBox="0 0 680 330" role="img" aria-label="合成殘差分布直方圖 Synthetic residual distribution histogram"><line x1="50" y1="270" x2="640" y2="270"/><line x1="50" y1="40" x2="50" y2="270"/>${histogramBars}<text x="340" y="325" text-anchor="middle">殘差區間 Residual range</text></svg>`
     : `<svg class="mock-svg" viewBox="0 0 680 330" role="img" aria-label="合成診斷散佈圖 Synthetic diagnostic scatter plot"><line x1="60" y1="280" x2="630" y2="280"/><line x1="60" y1="35" x2="60" y2="280"/>${state.phase5Figure === "FIG-P5-02" ? `<line class="mock-zero-line" x1="60" y1="155" x2="630" y2="155"/>` : `<line class="mock-diagonal" x1="60" y1="280" x2="620" y2="35"/>`}${plotPoints}<text x="340" y="320" text-anchor="middle">預測售價 Predicted price</text><text transform="translate(18 165) rotate(-90)" text-anchor="middle">${state.phase5Figure === "FIG-P5-02" ? "殘差 Residual" : "實際售價 Actual price"}</text></svg>`;
-  const metricCards = [["MAE 平均絕對誤差", metrics.mae, "USD · 越低越好 Lower is better"], ["RMSE 均方根誤差", metrics.rmse, "USD · 越低越好 Lower is better"], ["R² 決定係數", metrics.r2.toFixed(2), "無單位 Dimensionless"]].map(([name, value, note]) => `<article class="metric-card"><span class="metric-label">${name}</span><strong class="metric-value">${typeof value === "number" ? value.toLocaleString() : value}</strong><span class="metric-note">合成示意 MOCK · ${note}</span></article>`).join("");
+  const metricCards = [
+    ["MAE", "平均絕對誤差", "Mean Absolute Error", metrics.mae, "USD · 越低越好 Lower is better"],
+    ["RMSE", "均方根誤差", "Root Mean Squared Error", metrics.rmse, "USD · 越低越好 Lower is better"],
+    ["R²", "決定係數", "Coefficient of Determination", metrics.r2.toFixed(2), "無單位 Dimensionless"]
+  ].map(([acronym, labelZh, labelEn, value, note]) => `<article class="metric-card"><div class="metric-name"><strong class="metric-acronym">${acronym}</strong><span class="metric-label">${labelZh}<small>${labelEn}</small></span></div><strong class="metric-value">${typeof value === "number" ? value.toLocaleString("en-US") : value}</strong><span class="metric-note">合成示意 MOCK · ${note}</span></article>`).join("");
   const chartTable = predictionPoints.map((point, i) => `<tr><td>${i + 1}</td><td>${point.actual.toLocaleString()}</td><td>${point.predicted.toLocaleString()}</td><td>${residuals[i].toLocaleString()}</td></tr>`).join("");
   return `<div class="page">${banner(c)}${pageHeading("PHASE 05 / MODEL EVALUATION", "模型評估", "以下指標與圖表為合成 UI 示意，只用來預覽評估頁面，不代表實際模型評估結果。", "MOCK")}<section class="card"><div class="card-head"><div><p class="eyebrow">01 · 評估範圍與識別 EVALUATION CONTEXT</p><h2>評估設定與身分 Evaluation setup and identity</h2></div>${badge("MOCK")}</div><div class="card-body grid two"><div><dl class="data-row"><dt>示意配置 Mock configuration</dt><dd>${esc(mock.configId)}</dd></dl><dl class="data-row"><dt>示意執行 Mock execution</dt><dd>${esc(mock.runId)}</dd></dl><dl class="data-row"><dt>示意評估 Mock evaluation</dt><dd>${esc(mock.evaluationId)}</dd></dl></div><div><label class="control">評估母體 Evaluation population<select id="p5-population"><option value="development_oof" ${!holdout ? "selected" : ""}>開發資料 OOF Development OOF</option><option value="holdout" ${holdout ? "selected" : ""}>測試集 Test set（留出集 Holdout）</option></select></label><p class="stage-note">母體切換會顯示不同的合成示意數值；無真實評估資料。Population switch changes mock values only.</p></div></div></section><div class="metrics" style="margin-top:18px">${metricCards}</div><section class="card explorer"><div class="card-head"><div><p class="eyebrow">03 · 核心診斷圖 Core diagnostics</p><h2>${esc(c.evaluation.figures.find(([id]) => id === state.phase5Figure)?.[1] || "Residual vs Predicted")}</h2></div>${badge("MOCK")}</div><div class="card-body"><div class="selector-row" role="group" aria-label="診斷圖選擇 Diagnostic figure">${figures}</div><div class="mock-figure" style="margin-top:16px">${mockChart}</div><table class="mock-data-table"><thead><tr><th>示意列 Mock row</th><th>實際值 Actual (USD)</th><th>預測值 Predicted (USD)</th><th>殘差 Residual (USD)</th></tr></thead><tbody>${chartTable}</tbody></table><p class="stage-note">六筆合成資料列 Synthetic rows · 僅供繪圖預覽，不是實際觀測值。</p></div></section><div class="grid two" style="margin-top:18px"><section class="card"><div class="card-head"><div><p class="eyebrow">04 · 信賴區間與預測區間 CONFIDENCE / PREDICTION INTERVAL</p><h2>合成區間示意 Mock interval illustration</h2></div>${badge("MOCK")}</div><div class="card-body"><dl class="data-row"><dt>示意方法 Mock method</dt><dd>${esc(mock.intervals.method)}</dd></dl><dl class="data-row"><dt>示意區間 Mock range</dt><dd>${mock.intervals.lower.toLocaleString()}–${mock.intervals.upper.toLocaleString()} USD</dd></dl><dl class="data-row"><dt>示意涵蓋率 Mock coverage</dt><dd>${Math.round(mock.intervals.coverage * 100)}%</dd></dl><p class="stage-note">此區間與涵蓋率均為合成值，不具統計推論效力。Synthetic values; no inferential claim.</p></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">05 · 可追溯性 TRACEABILITY</p><h2>來源、方法與限制 Source, method, and limits</h2></div>${badge("MOCK")}</div><div class="card-body"><p class="body-copy">此頁評估 ID、樣本數、預測值與圖表都為合成 UI 資料；沒有連結到真實研究執行或已發布證據。</p><p class="stage-note">Evaluation identity, samples, predictions and figures are synthetic fixtures; no published evidence is linked.</p></div></section></div>${footerNav([4,"返回模型建立"],[6,"模型就緒狀態"])}</div>`;
 }
@@ -341,10 +474,14 @@ function renderPhase6() {
   const c = caseData();
   if (c.status === "PLANNED") return `<div class="page">${banner(c)}${pageHeading("PHASE 06 / MODEL PREDICTION LAB", "房價預測實驗室", "單筆推論需要通過核准的模型、輸入 Schema 與已部署 API。", "PLANNED")}${plannedPanel(c.inference.message)}${footerNav([5,"模型評估"],null)}</div>`;
   const mock = c.mockInference;
+  const neighborhoodOptions = AMES_NEIGHBORHOODS.map((value) => `<option value="${value}" ${value === state.phase6Values.neighborhood ? "selected" : ""}>${value}</option>`).join("");
+  const qualityTicks = Array.from({ length: 10 }, (_, index) => `<span>${index + 1}</span>`).join("");
+  const csv = state.phase6Csv;
+  const csvPanel = csv ? `<div class="upload-zone p6-upload-zone"><div class="p6-csv-summary"><strong>${esc(csv.fileName)}</strong><span>${csv.rows.length.toLocaleString()} rows · ${csv.headers.length} columns</span></div><label class="control">更換 CSV 檔案 Choose another CSV<input id="p6-csv-file" type="file" accept=".csv,text/csv"></label><p class="stage-note" role="status">${esc(state.phase6CsvMessage)} 檔案只在此瀏覽器本機讀取，不會上傳或保存。</p><div class="control-row p6-csv-controls"><label class="control">選擇資料列 Select row<select id="p6-csv-row">${csv.rows.map((_, index) => `<option value="${index}" ${index === csv.selectedIndex ? "selected" : ""}>Row ${index + 1}</option>`).join("")}</select></label><div class="p6-map-status"><strong>欄位對應 Field mapping</strong><span>${["Neighborhood","OverallQual","BedroomAbvGr","GrLivArea"].filter((name) => csv.headers.includes(name)).length}/4 exact-name fields recognized</span><small>${["Neighborhood","OverallQual","BedroomAbvGr","GrLivArea"].map((name) => `${csv.headers.includes(name) ? "✓" : "○"} ${name}`).join(" · ")}</small></div></div><div class="csv-preview p6-csv-preview"><table><thead><tr><th>Row</th>${csv.headers.map((header) => `<th>${esc(header)}</th>`).join("")}</tr></thead><tbody>${csv.rows.slice(0,8).map((row,index)=>`<tr class="${index===csv.selectedIndex?"selected":""}"><td>${index+1}</td>${csv.headers.map((_,column)=>`<td>${esc(row[column]??"")}</td>`).join("")}</tr>`).join("")}</tbody></table></div><div class="button-row" style="margin-top:14px"><button type="button" class="button primary" data-action="phase6-use-csv-row" ${["Neighborhood","OverallQual","BedroomAbvGr","GrLivArea"].some((name) => csv.headers.includes(name)) ? "" : "disabled"}>將此列帶入手動欄位 Use row in manual form</button></div><p class="stage-note">僅依完全相符的欄名帶入，不猜測欄位；無正式模型，不能由 CSV 產生真實預測。</p></div>` : `<div class="upload-zone p6-upload-zone"><label class="control">選擇 CSV 檔案 Choose CSV file<input id="p6-csv-file" type="file" accept=".csv,text/csv"></label><p class="stage-note" role="status">${esc(state.phase6CsvMessage)} CSV stays in this browser only; no upload or persistence.</p></div>`;
   const result = state.phase6MockSubmitted
     ? `<div class="model-state mock-prediction-result"><p class="eyebrow">合成推論結果 SYNTHETIC MOCK PREDICTION</p><h2>${mock.estimate.toLocaleString()} ${esc(mock.unit)}</h2><p>預測售價 Estimate for ${esc(mock.target)} · 僅為固定示意值，不是由輸入欄位計算。</p><dl class="data-row"><dt>示意區間 Mock range</dt><dd>${mock.lower.toLocaleString()}–${mock.upper.toLocaleString()} ${esc(mock.unit)}</dd></dl><dl class="data-row"><dt>模型 Model</dt><dd>${esc(mock.modelId)}</dd></dl>${badge("MOCK")}</div>`
     : `<div class="state-panel"><span class="state-icon" aria-hidden="true">i</span><h3>尚未顯示示意結果 Mock preview not shown</h3><p>按下按鈕只會顯示預設合成值；不會執行推論。The button reveals a fixed mock value and does not run inference.</p>${badge("MOCK")}</div>`;
-  return `<div class="page">${banner(c)}${pageHeading("PHASE 06 / MODEL PREDICTION LAB", "房價預測實驗室", "此頁展示推論介面的合成互動；沒有註冊模型或即時推論服務。Mock UI only: no registered model or live inference service.", "MOCK")}<section class="card"><div class="card-head"><div><p class="eyebrow">案例與模型脈絡 CASE / MODEL CONTEXT</p><h2>${esc(c.title)}</h2></div>${badge("MOCK")}</div><div class="card-body grid three"><dl class="data-row"><dt>預測目標 Target</dt><dd>${esc(c.target.label)} · ${esc(c.target.unit)}</dd></dl><dl class="data-row"><dt>示意執行 Mock run</dt><dd>${esc(mock.runId)}</dd></dl><dl class="data-row"><dt>示意模型 Mock model</dt><dd>${esc(mock.modelId)}</dd></dl></div></section><div class="two-panel" style="margin-top:18px"><section class="card"><div class="card-head"><div><p class="eyebrow">輸入欄位示意 MOCK INPUT SCHEMA</p><h2>住宅條件 Housing features</h2></div>${badge("MOCK")}</div><div class="card-body"><div class="control-row"><label class="control">居住面積 Living area<input type="number" value="1800" readonly><span class="stage-note">平方英尺 sq ft</span></label><label class="control">臥室數 Bedrooms<input type="number" value="3" readonly></label><label class="control">房屋品質 Overall quality<input type="number" value="6" readonly><span class="stage-note">示意等級 Mock rating</span></label><label class="control">建成年份 Year built<input type="number" value="1998" readonly></label></div><p class="stage-note">欄位與值均為合成示例，尚未對應核准的模型輸入契約。All fields and values are synthetic; no approved model schema is linked.</p><div class="button-row" style="margin-top:14px"><button class="button primary" type="button" data-action="phase6-mock-preview">顯示示意預測 Show mock estimate</button></div></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">預測結果 PREDICTION RESULT</p><h2>合成售價示意 Synthetic estimate</h2></div>${badge("MOCK")}</div><div class="card-body">${result}<p class="stage-note">不會訓練或載入模型、不會讀取輸入值計算，也不會呼叫 API。No model is loaded or trained, inputs are not computed, and no API is called.</p></div></section></div><section class="card" style="margin-top:18px"><div class="card-body"><p class="eyebrow">來源與限制 PROVENANCE & LIMITATIONS</p><p class="body-copy">Case ID: ${esc(c.id)} · 此頁的模型識別碼、輸入欄位、預測值及區間都是合成 UI mock，不能解讀為實際推論結果。</p><p class="stage-note">Model ID, input fields, prediction and interval are synthetic UI fixtures, not real inference output.</p><a class="text-link" href="#phase-5">查看 Phase 5 評估狀態 View Phase 5 →</a></div></section>${footerNav([5,"模型評估"],null)}</div>`;
+  return `<div class="page">${banner(c)}${pageHeading("PHASE 06 / MODEL PREDICTION LAB", "房價預測實驗室", "此頁展示推論介面的合成互動；沒有註冊模型或即時推論服務。Mock UI only: no registered model or live inference service.", "MOCK")}<section class="card"><div class="card-head"><div><p class="eyebrow">案例與模型脈絡 CASE / MODEL CONTEXT</p><h2>${esc(c.title)}</h2></div>${badge("MOCK")}</div><div class="card-body grid three"><dl class="data-row"><dt>預測目標 Target</dt><dd>${esc(c.target.label)} · ${esc(c.target.unit)}</dd></dl><dl class="data-row"><dt>示意執行 Mock run</dt><dd>${esc(mock.runId)}</dd></dl><dl class="data-row"><dt>示意模型 Mock model</dt><dd>${esc(mock.modelId)}</dd></dl></div></section><div class="two-panel phase6-panels" style="margin-top:18px"><section class="card"><div class="card-head"><div><p class="eyebrow">輸入欄位示意 MOCK INPUT SCHEMA</p><h2>住宅條件 Housing features</h2></div>${badge("MOCK")}</div><div class="card-body ${state.phase6InputMode === "csv" ? "phase6-csv-mode" : ""}"><p class="body-copy">欄位依 Phase 3 的資料型態分類，並使用相應控制方式。 Field controls follow the Phase 3 measurement types.</p><div class="mode-switch p6-mode-switch" role="group" aria-label="Input method"><button type="button" data-phase6-mode="manual" aria-pressed="${state.phase6InputMode === "manual"}">手動輸入 Manual entry</button><button type="button" data-phase6-mode="csv" aria-pressed="${state.phase6InputMode === "csv"}">CSV 上傳 CSV upload</button></div>${state.phase6InputMode === "csv" ? csvPanel : ""}<div class="p6-feature-grid"><article class="p6-feature-card"><span class="p6-type-tag nominal">名目 · NOMINAL</span><label class="p6-field-label" for="p6-neighborhood"><strong>住宅區位 Neighborhood</strong><span>25 個本機資料類別 · 類別選單 Categorical choice</span></label><select id="p6-neighborhood">${neighborhoodOptions}</select><p class="p6-field-note">區位名稱沒有大小順序，使用下拉選單。Nominal values have no rank order.</p></article><article class="p6-feature-card"><span class="p6-type-tag ordinal">次序 · ORDINAL</span><label class="p6-field-label" for="p6-overall-quality"><strong>房屋整體品質 OverallQual</strong><span>建材與裝修評級 · 有序尺度 Ordered scale</span></label><input id="p6-overall-quality" class="p6-range" type="range" min="1" max="10" step="1" value="${esc(state.phase6Values.quality)}" aria-label="Overall quality, scale 1 to 10"><div class="p6-scale-ticks" aria-hidden="true">${qualityTicks}</div><div class="p6-scale-labels"><span>1 · 非常差<br>Very Poor</span><output id="p6-quality-output" for="p6-overall-quality">${qualityScaleLabel(state.phase6Values.quality)}</output><span>10 · 極佳<br>Very Excellent</span></div><p class="p6-field-note">資料定義的 1–10 等級；拖動尺度可切換示意值。The range follows the source rating scale.</p></article><article class="p6-feature-card"><span class="p6-type-tag discrete">離散 · DISCRETE</span><label class="p6-field-label" for="p6-bedroom-count"><strong>地上臥室數 BedroomAbvGr</strong><span>地下室臥室不計 · 整數計數 Integer count</span></label><div class="p6-number-field"><input id="p6-bedroom-count" type="number" min="0" max="8" step="1" value="${esc(state.phase6Values.bedrooms)}"><span>間 bedrooms</span></div><p class="p6-field-note">本機資料觀察範圍：0–8 間。Observed range: 0–8.</p></article><article class="p6-feature-card"><span class="p6-type-tag continuous">連續 · CONTINUOUS</span><label class="p6-field-label" for="p6-living-area"><strong>地上居住面積 GrLivArea</strong><span>平方英尺 · 面積數值 Area in square feet</span></label><div class="p6-number-field"><input id="p6-living-area" type="number" min="334" max="5642" step="1" value="${esc(state.phase6Values.area)}"><span>sq ft</span></div><p class="p6-field-note">本機資料觀察範圍：334–5,642 平方英尺。Observed range: 334–5,642 sq ft.</p></article></div><p class="stage-note">欄位型態與可用類別／範圍依本機 1,460 筆訓練資料核對；預設值是介面示意，不是單一資料列，也不會輸入模型計算。Feature types and observed options/ranges were checked against the local 1,460-row training file; defaults are UI fixtures, not a record or model input.</p><div class="button-row" style="margin-top:14px"><button class="button primary" type="button" data-action="phase6-mock-preview">顯示示意預測 Show mock estimate</button></div></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">預測結果 PREDICTION RESULT</p><h2>合成售價示意 Synthetic estimate</h2></div>${badge("MOCK")}</div><div class="card-body">${result}<p class="stage-note">不會訓練或載入模型、不會讀取輸入值計算，也不會呼叫 API。No model is loaded or trained, inputs are not computed, and no API is called.</p></div></section></div><section class="card" style="margin-top:18px"><div class="card-body"><p class="eyebrow">來源與限制 PROVENANCE & LIMITATIONS</p><p class="body-copy">Case ID: ${esc(c.id)} · 此頁的模型識別碼、輸入欄位、預測值及區間都是合成 UI mock，不能解讀為實際推論結果。</p><p class="stage-note">Model ID, input fields, prediction and interval are synthetic UI fixtures, not real inference output.</p><a class="text-link" href="#phase-5">查看 Phase 5 評估狀態 View Phase 5 →</a></div></section>${footerNav([5,"模型評估"],null)}</div>`;
 }
 function renderDashboardVerified() {
   const c = caseData();
@@ -407,14 +544,29 @@ function routeFromHash() {
 caseSelect.addEventListener("change", () => {
   state.caseId = caseSelect.value;
   state.analysisId = CASES[state.caseId].analyses[0]?.id || "";
+  state.phase5ConfigId = "";
   state.perspective = "method_comparison"; state.phase5Figure = "FIG-P5-02";
-  state.p5Population = "development_oof"; state.phase6MockSubmitted = false; resetCustom(); render();
+  state.p5Population = "development_oof"; state.phase6MockSubmitted = false; state.phase6InputMode = "manual"; state.phase6Csv = null; state.phase6Values = { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" }; resetCustom(); render();
 });
-window.addEventListener("hashchange", routeFromHash);
+window.addEventListener("hashchange", () => {
+  routeFromHash();
+  if (/^#phase-[1-6]$/.test(location.hash)) window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+});
 app.addEventListener("click", (event) => {
-  const target = event.target.closest("button[data-action],button[data-analysis],button[data-perspective],button[data-p5-figure],button[data-dashboard-mode],button[data-custom-source]");
+  const target = event.target.closest("button[data-action],button[data-analysis],button[data-perspective],button[data-p5-figure],button[data-dashboard-mode],button[data-custom-source],button[data-phase6-mode]");
   if (!target) return;
-  if (target.dataset.analysis) { state.analysisId = target.dataset.analysis; render(); }
+  if (target.dataset.phase6Mode) { state.phase6InputMode = target.dataset.phase6Mode; render(); }
+  else if (target.dataset.action === "phase6-use-csv-row") {
+    const csv = state.phase6Csv; const row = csv?.rows[csv.selectedIndex] || [];
+    const value = (name) => { const index = csv?.headers.indexOf(name) ?? -1; return index < 0 ? null : row[index]?.trim() ?? ""; };
+    const neighborhood = value("Neighborhood"); const quality = value("OverallQual"); const bedrooms = value("BedroomAbvGr"); const area = value("GrLivArea");
+    if (neighborhood && AMES_NEIGHBORHOODS.includes(neighborhood)) state.phase6Values.neighborhood = neighborhood;
+    if (quality && Number(quality) >= 1 && Number(quality) <= 10) state.phase6Values.quality = String(Number(quality));
+    if (bedrooms !== null && bedrooms !== "" && Number.isInteger(Number(bedrooms)) && Number(bedrooms) >= 0 && Number(bedrooms) <= 8) state.phase6Values.bedrooms = String(Number(bedrooms));
+    if (area && Number(area) >= 334 && Number(area) <= 5642) state.phase6Values.area = String(Number(area));
+    state.phase6InputMode = "manual"; state.phase6MockSubmitted = false; render();
+  }
+  else if (target.dataset.analysis) { state.analysisId = target.dataset.analysis; render(); }
   else if (target.dataset.perspective) { state.perspective = target.dataset.perspective; render(); }
   else if (target.dataset.p5Figure) { state.phase5Figure = target.dataset.p5Figure; render(); }
   else if (target.dataset.action === "phase6-mock-preview") { state.phase6MockSubmitted = true; render(); }
@@ -428,7 +580,25 @@ app.addEventListener("click", (event) => {
   }
 });
 app.addEventListener("change", (event) => {
-  if (event.target.id === "csv-file") {
+  if (event.target.id === "p6-csv-file") {
+    const file = event.target.files?.[0]; if (!file) return;
+    state.phase6Csv = null; state.phase6MockSubmitted = false;
+    if (!file.name.toLowerCase().endsWith(".csv") || file.size === 0 || file.size > 20 * 1024 * 1024) { state.phase6CsvMessage = "請選擇非空且小於 20 MB 的 .csv 檔案。Choose a non-empty CSV under 20 MB."; render(); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const parsed = csvRows(String(reader.result || "").replace(/^\uFEFF/, ""));
+      if (parsed.length < 2 || !parsed[0].some((cell) => cell.trim())) { state.phase6CsvMessage = "CSV 需要標題列與至少一筆資料。CSV needs a header and at least one data row."; }
+      else {
+        const headers = parsed[0].map((cell,index) => cell.trim() || `Column ${index+1}`);
+        if (new Set(headers).size !== headers.length) state.phase6CsvMessage = "欄名重複，請先整理 CSV 標題列。Duplicate column names; please make headers unique.";
+        else { state.phase6Csv = { fileName: file.name, headers, rows: parsed.slice(1).map((row)=>headers.map((_,i)=>row[i]??"")), selectedIndex: 0 }; state.phase6CsvMessage = "CSV 已載入本機預覽。CSV loaded for local preview."; }
+      }
+      render();
+    };
+    reader.onerror = () => { state.phase6CsvMessage = "無法讀取此本機檔案。Unable to read local file."; render(); };
+    reader.readAsText(file);
+  } else if (event.target.id === "p6-csv-row") { if (state.phase6Csv) state.phase6Csv.selectedIndex = Number(event.target.value); render(); }
+  else if (event.target.id === "csv-file") {
     const file = event.target.files?.[0]; if (!file) return;
     state.customFile = file.name; state.customHeaders = []; state.customRows = []; state.targetField = ""; state.featureFields = []; state.customValidated = false;
     if (!file.name.toLowerCase().endsWith(".csv") || file.size === 0) { state.csvMessage = "Please choose a non-empty .csv file."; render(); return; }
@@ -444,8 +614,13 @@ app.addEventListener("change", (event) => {
   } else if (event.target.id === "custom-target") { state.targetField = event.target.value; state.featureFields = state.featureFields.filter(field => field !== state.targetField); state.customValidated = false; }
   else if (event.target.id === "custom-features") { state.featureFields = [...event.target.selectedOptions].map(option => option.value); state.customValidated = false; }
   else if (event.target.id === "csv-url") { state.customUrl = event.target.value; state.customValidated = false; }
+  else if (["p6-neighborhood","p6-overall-quality","p6-bedroom-count","p6-living-area"].includes(event.target.id)) {
+    const map = { "p6-neighborhood": "neighborhood", "p6-overall-quality": "quality", "p6-bedroom-count": "bedrooms", "p6-living-area": "area" };
+    state.phase6Values[map[event.target.id]] = event.target.value;
+  }
   else if (event.target.id === "p4-run") { state.phase4RunId = event.target.value; render(); }
   else if (event.target.id === "p5-population") { state.p5Population = event.target.value; render(); }
+  else if (event.target.id === "p5-config") { state.phase5ConfigId = event.target.value; render(); }
 });
 app.addEventListener("input", (event) => {
   if (event.target.id === "csv-url") {
@@ -453,6 +628,9 @@ app.addEventListener("input", (event) => {
     const urlOk = /^https:\/\//i.test(state.customUrl);
     state.csvMessage = urlOk ? "HTTPS URL format accepted; remote loading is disabled in this prototype." : "Enter an HTTPS URL. Remote loading is disabled in this prototype.";
     const status = app.querySelector(".upload-zone [role=status]"); if (status) status.textContent = state.csvMessage;
+  } else if (event.target.id === "p6-overall-quality") {
+    const output = app.querySelector("#p6-quality-output");
+    if (output) output.textContent = qualityScaleLabel(event.target.value);
   }
 });
 
