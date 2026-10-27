@@ -200,7 +200,8 @@ function renderSegments(stage, featureTypes) {
   const bars = segments.map((segment) => {
     const type = dataTypes.find(([id]) => id === segment.type_id);
     const percent = (segment.count / total) * 100;
-    return `<span class="stack-segment" style="width:${percent}%;background:${type?.[2] || "#ccc"}" title="${esc(type?.[1] || segment.type_id)} ${segment.count} / ${total} (${percent.toFixed(1)}%)"></span>`;
+    const shortLabel = type?.[1]?.split(" ")[0] || segment.type_id;
+    return `<span class="stack-segment" style="width:${percent}%;background:${type?.[2] || "#ccc"}" title="${esc(type?.[1] || segment.type_id)} ${segment.count} / ${total} (${percent.toFixed(1)}%)"><span>${esc(shortLabel)}</span><span>${percent.toFixed(1)}%</span></span>`;
   }).join("");
   const legend = segments.map((segment) => {
     const type = dataTypes.find(([id]) => id === segment.type_id);
@@ -227,7 +228,10 @@ function renderPhase3() {
       : stage.id === "encoded"
         ? `${stage.total ?? "未知 Unknown"} 個編碼後維度 (encoded dimensions) 為來源回報；類型分布為合成 UI 示意。擬合資料範圍 (fit population)、流程版本 (pipeline version) 與類型沿革 (type lineage) 尚不可用。`
         : "總數與類別計數皆為合成 UI 示意，並非根據研究資料推導；不代表已確認欄位排除或處理方式。";
-    return `<section class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index">0${index + 1}</span><h2>${esc(stage.label)}</h2></div><span class="stage-total">總數 Total: ${stage.total == null ? "未知 Unknown" : esc(stage.total)} ${esc(unit)} ${badge(stage.total_status)}</span></div>${renderSegments(stage, data.feature_types)}<p class="stage-note">${esc(note)}</p>${stage.id === "filtered" ? `<details class="disclosure"><summary>顯示排除欄位與原因 Excluded fields and reasons</summary><div class="disclosure-body">排除稽核尚未完成 Exclusion audit pending；沒有可驗證的排除欄位清單或數量。</div></details>` : ""}${stage.id === "processed" ? TYPES.map(([,label]) => `<details class="disclosure"><summary>${esc(label)} · 未知 UNKNOWN</summary><div class="disclosure-body">此類型沒有來源支持的操作或欄位處理方式 No source-backed operation or field-level treatment is provided.</div></details>`).join("") : ""}${stage.id === "encoded" ? `<details class="disclosure"><summary>展開原始欄位至編碼後特徵對應 Raw-to-encoded feature mapping</summary><div class="disclosure-body">${data.lineage_ref ? esc(data.lineage_ref) : "無可用且核准的對應資料 UNAVAILABLE — no approved lineage mapping is included."}</div></details>` : ""}</section>`;
+    const treatmentAccordion = stage.id === "processed"
+      ? `<details class="disclosure treatment-accordion"><summary>展開四種欄位類型處理方式 Expand four feature type treatments</summary><div class="treatment-list">${TYPES.map(([, label]) => `<div class="treatment-item"><strong>${esc(label)}</strong><span>尚無來源支持的處理方式 No source-backed treatment is available.</span></div>`).join("")}</div></details>`
+      : "";
+    return `<section class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index">0${index + 1}</span><h2>${esc(stage.label)}</h2></div><span class="stage-total">總數 Total: ${stage.total == null ? "未知 Unknown" : esc(stage.total)} ${esc(unit)} ${badge(stage.total_status)}</span></div>${renderSegments(stage, data.feature_types)}<p class="stage-note">${esc(note)}</p>${stage.id === "filtered" ? `<details class="disclosure"><summary>顯示排除欄位與原因 Excluded fields and reasons</summary><div class="disclosure-body">排除稽核尚未完成 Exclusion audit pending；沒有可驗證的排除欄位清單或數量。</div></details>` : ""}${treatmentAccordion}${stage.id === "encoded" ? `<details class="disclosure"><summary>展開原始欄位至編碼後特徵對應 Raw-to-encoded feature mapping</summary><div class="disclosure-body">${data.lineage_ref ? esc(data.lineage_ref) : "無可用且核准的對應資料 UNAVAILABLE — no approved lineage mapping is included."}</div></details>` : ""}</section>`;
   }).join("");
   const split = data.split;
   const totalRows = split.source_labeled_rows;

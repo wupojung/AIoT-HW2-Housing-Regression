@@ -127,10 +127,10 @@ a.text-link { color: var(--green); font-size: 11px; font-weight: 700; text-decor
 .stage-head { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 14px; }
 .stage-title { display: flex; align-items: baseline; gap: 10px; }.stage-title .index { color: #83998c; font-size: 11px; font-weight: 800; }.stage-title h2 { margin: 0; font-size: 17px; }
 .stage-total { color: #506159; font-size: 11px; font-weight: 700; }
-.stack-track { height: 30px; display: flex; overflow: hidden; border: 1px solid #d7e0d9; background: #f0f3ef; }
+.stack-track { height: 46px; display: flex; overflow: hidden; border: 1px solid #d7e0d9; background: #f0f3ef; }
 .stack-track.is-mock { outline: 1px dashed #b99a56; outline-offset: 2px; }
 .stack-track.is-unknown { align-items: center; justify-content: center; color: #7c8982; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
-.stack-segment { height: 100%; min-width: 2px; border-right: 2px solid var(--surface); }
+.stack-segment { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 2px; height: 100%; overflow: hidden; border-right: 2px solid var(--surface); color: #29453c; font-size: 9px; font-weight: 800; line-height: 1.1; white-space: nowrap; }
 .legend { display: flex; flex-wrap: wrap; gap: 9px 18px; margin: 12px 0 2px; }
 .legend-item { display: flex; align-items: center; gap: 7px; color: #53635b; font-size: 10px; }
 .legend-dot { width: 9px; height: 9px; border-radius: 2px; background: var(--dot); }
@@ -143,6 +143,9 @@ details.disclosure { border-top: 1px solid #e6ebe6; }
 details.disclosure:first-of-type { margin-top: 12px; }
 details.disclosure summary { padding: 12px 0; color: var(--green-dark); cursor: pointer; font-size: 11px; font-weight: 700; }
 .disclosure-body { padding: 0 0 12px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.treatment-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding-bottom: 14px; }
+.treatment-item { display: grid; gap: 5px; padding: 12px 14px; border: 1px solid var(--line); background: var(--surface-2); font-size: 11px; }
+.treatment-item span { color: var(--muted); line-height: 1.5; }
 /* Phase 4-5 */
 .cv-block { padding: 21px 22px; }
 .cv-row { display: grid; grid-template-columns: 55px 1fr; align-items: center; gap: 14px; margin: 11px 0; }
