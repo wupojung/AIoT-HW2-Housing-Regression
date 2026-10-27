@@ -3,7 +3,7 @@
 ## Current state
 
 - Worktree: `AIoT-HW2-Housing-Regression-regscope-core-e2e`, branch `feat/regscope-core-e2e-v1`.
-- PR: [#45](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/45), Draft. The earlier three local commits were pushed after Owner clarified that isolated Vercel Preview is acceptable. Vercel reported `target=preview`; no production alias was created. Verify the remote PR head after this checkpoint commit is pushed.
+- PR: [#45](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/45), Draft and open. Latest synced HEAD: `152310e8a85feea3fb0e684b2c0f6152314e4493`. Vercel reported a Ready `target=preview` build for this HEAD; it has a branch-specific alias and no production alias.
 - No merge, production deploy, schema change, Holdout access, or history rewrite.
 - INIT A remains intact. INIT B is a separate reference-baseline configuration.
 
@@ -12,6 +12,7 @@
 - Verified local backup: `local/worktree-archive/overnight-20261028-01/`.
 - The selected local INIT B config/package/reconciliation/audit evidence and prior E2E evidence were copied without changing originals; raw CSV and model binaries were excluded.
 - Per-file SHA-256 and byte counts are in `backup-manifest.json`; Git bundle `regscope-core.bundle` verified with `git bundle verify` (SHA-256 `b8b3458ed1ba7138b6860335ac2b030015cfc165d4ea9aada058e32c1567c50d`).
+- Updated recovery bundle and evidence snapshot: `local/worktree-archive/overnight-20261028-02/`; 110 files / 9,454,191 bytes, every manifest-listed file rehashed successfully, and bundle `list-heads` contains this branch at `152310e8a85feea3fb0e684b2c0f6152314e4493` (bundle SHA-256 `16bf71caf710cfde29a9f040140a7fb30789a05c27d5d828b63d50b2ab0ac804`).
 
 ## INIT B and historical reconciliation
 
@@ -34,7 +35,7 @@
 | Gate | Result | Evidence / limitation |
 |---|---|---|
 | Backup integrity | PASS | Per-file manifest and Git bundle verification |
-| Safe PR sync | PASS for prior HEAD | Remote PR #45 matched `7726be05d26670db597a28176ca1cf3444ad7a60`; Vercel target was Preview. This checkpoint commit still requires sync/remote recheck. |
+| Safe PR sync | PASS | Remote PR #45 matches `152310e8a85feea3fb0e684b2c0f6152314e4493`; Vercel target is Preview, no production alias. |
 | Package/schema/bundle | PASS (prior R3) | Existing local R3 validator report; no schema modified |
 | Local Web browser smoke | PASS | `local/w5-browser-test/result.json`; Chromium, no console/page/request errors |
 | Phase 5 Development evaluation | NOT RUN / BLOCKED | No OOF rows/artifact are package-bound; fold aggregates alone cannot create pooled OOF metrics |
