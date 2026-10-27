@@ -17,10 +17,21 @@ _EVIDENCE_FIELDS = (
     ("license_or_rights", "data-rights", "Data rights"),
 )
 _PRIVATE_PATH = re.compile(
-    r"(?:[A-Za-z]:[\\/]|(?<!/)/(?!/)[A-Za-z0-9._-]+(?:/[^\s]*)?|"
-    r"(?<![A-Za-z0-9_.-])(?:\./)?local/)",
+    r"(?:\bfile://|(?<![A-Za-z0-9_.-])[A-Za-z]:(?:\\|/(?!/))|"
+    r"(?<![A-Za-z0-9_.-])/(?!/)[A-Za-z0-9._-]+(?:/[^\s]*)?|"
+    r"\\\\[^\s\\/]+[\\/][^\s]+|(?<![A-Za-z0-9_.-])//[^\s/]+/[^\s]+|"
+    r"(?<![A-Za-z0-9_.-])~[^\\/\s]*[\\/]|"
+    r"(?<![A-Za-z0-9_.-])(?:\./)?local[\\/])",
     re.IGNORECASE,
 )
+_PUBLIC_HTTPS_URL = re.compile(r"https://[^\s]+", re.IGNORECASE)
+
+
+def _contains_private_path(text: str) -> bool:
+    if re.search(r"\bfile://", text, re.IGNORECASE):
+        return True
+    without_public_urls = _PUBLIC_HTTPS_URL.sub("", text)
+    return _PRIVATE_PATH.search(without_public_urls) is not None
 
 
 def build_phase1(
@@ -50,7 +61,7 @@ def build_phase1(
         if all(isinstance(value, str) and value.strip() for value in supplied.values()):
             for field, section_id, title in _EVIDENCE_FIELDS:
                 body = supplied[field].strip()
-                if len(body) > 1000 or _PRIVATE_PATH.search(body):
+                if len(body) > 1000 or _contains_private_path(body):
                     raise PhaseCoreError("business evidence is too long or contains a private path")
                 sections.append({"section_id": section_id, "title": title, "body": body})
             status = "MOCK"

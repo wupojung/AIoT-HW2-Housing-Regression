@@ -66,18 +66,58 @@ class Phase12CoreTests(unittest.TestCase):
         self.assertEqual(partial["sections"], [])
         validate_document(partial, phase_schema_path(1))
 
-        path_evidence_dir = self.root / "phase1-path-evidence"
-        path_evidence_dir.mkdir()
-        with self.assertRaisesRegex(PhaseCoreError, "private path"):
+    def test_phase1_path_guard_allows_https_and_rejects_local_paths(self):
+        https_dir = self.root / "phase1-public-https"
+        https_dir.mkdir()
+        public = build_phase1(
+            self.config,
+            https_dir,
+            {
+                "business_question": "Describe a synthetic example.",
+                "source_description": "Public source reference: https://example.org/data.csv; ratio 1/2.",
+                "license_or_rights": "Synthetic fixture; no external rights claim.",
+            },
+        )
+        self.assertEqual(public["status"], "MOCK")
+        self.assertIn("https://example.org/data.csv", public["sections"][1]["body"])
+        validate_document(public, phase_schema_path(1))
+        original = (https_dir / "content.json").read_bytes()
+        with self.assertRaisesRegex(PhaseCoreError, "overwrite"):
             build_phase1(
                 self.config,
-                path_evidence_dir,
+                https_dir,
                 {
                     "business_question": "Describe a synthetic example.",
-                    "source_description": f"Input: {self.csv_path}",
+                    "source_description": "https://example.org/data.csv",
                     "license_or_rights": "Synthetic fixture.",
                 },
             )
+        self.assertEqual((https_dir / "content.json").read_bytes(), original)
+
+        private_paths = (
+            "/tmp/data.csv",
+            "~/data.csv",
+            "~alice/data.csv",
+            r"C:\Users\x\data.csv",
+            r"\\server\share\data.csv",
+            "file:///private.csv",
+            "../local/data.csv",
+        )
+        for index, source_reference in enumerate(private_paths):
+            with self.subTest(source_reference=source_reference):
+                output_dir = self.root / f"phase1-private-{index}"
+                output_dir.mkdir()
+                with self.assertRaisesRegex(PhaseCoreError, "private path"):
+                    build_phase1(
+                        self.config,
+                        output_dir,
+                        {
+                            "business_question": "Describe a synthetic example.",
+                            "source_description": f"Source reference: {source_reference}",
+                            "license_or_rights": "Synthetic fixture.",
+                        },
+                    )
+                self.assertFalse((output_dir / "content.json").exists())
 
     def test_phase2_profiles_aggregates_and_excludes_ids_target_and_unknowns(self):
         output = build_phase2(self.config, self.phase2_dir)
