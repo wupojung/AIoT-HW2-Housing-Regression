@@ -60,4 +60,4 @@ From this worktree, validate the committed/public release bundle with the projec
 **Worktree:** dedicated branch worktree; local absolute path is retained only in the ignored handoff.
 **Branch:** `feat/regscope-full-model-exploration-20261028`
 **Base:** `52dfc23719638f42b9651811d9c10eec0f91501a`
-**Current code HEAD:** recorded by Git after local commit; not yet published.
+**Initial implementation commit:** `023c02600a12521f6f2f3715255d7490602fffb9` (local only at checkpoint creation).
