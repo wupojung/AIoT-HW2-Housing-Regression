@@ -1,0 +1,5144 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "release_id": "ames-full-model-exploration-20261028-02",
+  "generated_at": null,
+  "status": "PLANNED",
+  "reason_code": "PUBLICATION_REVIEW_PENDING",
+  "publication_review": "PENDING",
+  "default_evaluation_id": null,
+  "evaluations": [
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-1098e27f3412.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-1098e27f3412",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 21979.224627845677,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 39989.70095495329,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7224908724550794,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1747.5862410106574,
+          "rmse": 8204.711791502217,
+          "r2": 0.10709409668025804
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-1098e27f3412.cv-mean",
+        "development_20261026_01.hist-elastic-net-1098e27f3412.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-1098e27f3412.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-1098e27f3412",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 21979.05146582404,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40542.52140652569,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7231949077919828,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1747.5862410106574,
+          "rmse": 8204.711791502217,
+          "r2": 0.10709409668025804
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-1098e27f3412.cv-mean",
+        "development_20261026_01.hist-elastic-net-1098e27f3412.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-1c73870379fc.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-1c73870379fc",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22034.999362608145,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40160.71894424053,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7209532086311238,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1593.5841890180989,
+          "rmse": 7967.8261191652855,
+          "r2": 0.1030137014363623
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-1c73870379fc.cv-mean",
+        "development_20261026_01.hist-elastic-net-1c73870379fc.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-1c73870379fc.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-1c73870379fc",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22034.782540629636,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40679.67788890565,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7213188610737734,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1593.5841890180989,
+          "rmse": 7967.8261191652855,
+          "r2": 0.1030137014363623
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-1c73870379fc.cv-mean",
+        "development_20261026_01.hist-elastic-net-1c73870379fc.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-20363ce2a7f8.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-20363ce2a7f8",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 21895.526619861907,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 39588.40062346258,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.72844826235583,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1717.6329894001467,
+          "rmse": 8481.320893211127,
+          "r2": 0.10770409983751322
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-20363ce2a7f8.cv-mean",
+        "development_20261026_01.hist-elastic-net-20363ce2a7f8.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-20363ce2a7f8.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-20363ce2a7f8",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 21895.146660626182,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40184.41008968356,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.728063339209059,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1717.6329894001467,
+          "rmse": 8481.320893211127,
+          "r2": 0.10770409983751322
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-20363ce2a7f8.cv-mean",
+        "development_20261026_01.hist-elastic-net-20363ce2a7f8.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-279a8a5b1c1f.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-279a8a5b1c1f",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22059.288178344985,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40171.75225830986,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7207988463245204,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1594.9646962448696,
+          "rmse": 7953.87551406253,
+          "r2": 0.10290400320356985
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-279a8a5b1c1f.cv-mean",
+        "development_20261026_01.hist-elastic-net-279a8a5b1c1f.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-279a8a5b1c1f.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-279a8a5b1c1f",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22059.103428197606,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40688.77003387681,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7211942734365095,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1594.9646962448696,
+          "rmse": 7953.87551406253,
+          "r2": 0.10290400320356985
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-279a8a5b1c1f.cv-mean",
+        "development_20261026_01.hist-elastic-net-279a8a5b1c1f.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-2cc6e4b57a10.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-2cc6e4b57a10",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22052.42779072313,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40160.36070822103,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7209603818269962,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1596.4005601783251,
+          "rmse": 7965.031425952495,
+          "r2": 0.1029773983055095
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-2cc6e4b57a10.cv-mean",
+        "development_20261026_01.hist-elastic-net-2cc6e4b57a10.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-2cc6e4b57a10.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-2cc6e4b57a10",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22052.231293336677,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40678.961744702116,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7213286730553781,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1596.4005601783251,
+          "rmse": 7965.031425952495,
+          "r2": 0.1029773983055095
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-2cc6e4b57a10.cv-mean",
+        "development_20261026_01.hist-elastic-net-2cc6e4b57a10.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-52f2eeb3d772.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-52f2eeb3d772",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22036.931154107577,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40142.96164740567,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7211248834774353,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1622.8262437833446,
+          "rmse": 7976.552563544549,
+          "r2": 0.10325261739595873
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-52f2eeb3d772.cv-mean",
+        "development_20261026_01.hist-elastic-net-52f2eeb3d772.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-52f2eeb3d772.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-52f2eeb3d772",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22036.75850361332,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40663.318663742066,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.721542957774665,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1622.8262437833446,
+          "rmse": 7976.552563544549,
+          "r2": 0.10325261739595873
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-52f2eeb3d772.cv-mean",
+        "development_20261026_01.hist-elastic-net-52f2eeb3d772.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-9fa4d99608f1.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-9fa4d99608f1",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22029.3123745692,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40148.97955033059,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7211216123172682,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1601.878054166064,
+          "rmse": 7976.210319980443,
+          "r2": 0.10305136018171322
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-9fa4d99608f1.cv-mean",
+        "development_20261026_01.hist-elastic-net-9fa4d99608f1.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-9fa4d99608f1.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-9fa4d99608f1",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22029.076295990704,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40669.16961679684,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7214628189001638,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1601.878054166064,
+          "rmse": 7976.210319980443,
+          "r2": 0.10305136018171322
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-9fa4d99608f1.cv-mean",
+        "development_20261026_01.hist-elastic-net-9fa4d99608f1.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-d0247c0be6fb.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-d0247c0be6fb",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22116.566466580713,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40429.628603601486,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7164820533297291,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1837.9387317282903,
+          "rmse": 8642.090933824953,
+          "r2": 0.11289689126022424
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-d0247c0be6fb.cv-mean",
+        "development_20261026_01.hist-elastic-net-d0247c0be6fb.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-d0247c0be6fb.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-d0247c0be6fb",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22116.124313362343,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 41035.76472122735,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7164186744825265,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1837.9387317282903,
+          "rmse": 8642.090933824953,
+          "r2": 0.11289689126022424
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-d0247c0be6fb.cv-mean",
+        "development_20261026_01.hist-elastic-net-d0247c0be6fb.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-d29012556273.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-d29012556273",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 21949.616273118972,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40105.64852985529,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7219766220758661,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1711.5036077933578,
+          "rmse": 7274.633610479925,
+          "r2": 0.09500632481211621
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-d29012556273.cv-mean",
+        "development_20261026_01.hist-elastic-net-d29012556273.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-d29012556273.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-d29012556273",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 21949.633209117714,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40539.25473658279,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7232395125385389,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1711.5036077933578,
+          "rmse": 7274.633610479925,
+          "r2": 0.09500632481211621
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-d29012556273.cv-mean",
+        "development_20261026_01.hist-elastic-net-d29012556273.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-d7202991dc8f.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-d7202991dc8f",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 21747.55235686453,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 38108.091255656356,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7502479911036722,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1324.6683634608892,
+          "rmse": 7059.401758548815,
+          "r2": 0.08317850787095193
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-d7202991dc8f.cv-mean",
+        "development_20261026_01.hist-elastic-net-d7202991dc8f.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-d7202991dc8f.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-d7202991dc8f",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 21747.615534198216,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 38536.94858714711,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7499037308541324,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1324.6683634608892,
+          "rmse": 7059.401758548815,
+          "r2": 0.08317850787095193
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-d7202991dc8f.cv-mean",
+        "development_20261026_01.hist-elastic-net-d7202991dc8f.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-d8d37e65bf41.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-d8d37e65bf41",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22052.250546635925,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40160.069288470586,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7209645121731473,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1596.438811885919,
+          "rmse": 7965.317253767736,
+          "r2": 0.10297928424631993
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-d8d37e65bf41.cv-mean",
+        "development_20261026_01.hist-elastic-net-d8d37e65bf41.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-d8d37e65bf41.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-d8d37e65bf41",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22052.05374574932,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40678.7109228227,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7213321095565806,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1596.438811885919,
+          "rmse": 7965.317253767736,
+          "r2": 0.10297928424631993
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-d8d37e65bf41.cv-mean",
+        "development_20261026_01.hist-elastic-net-d8d37e65bf41.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-dd45a0b3f79e.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-dd45a0b3f79e",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22052.250546635925,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40160.069288470586,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7209645121731473,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1596.438811885919,
+          "rmse": 7965.317253767736,
+          "r2": 0.10297928424631993
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-dd45a0b3f79e.cv-mean",
+        "development_20261026_01.hist-elastic-net-dd45a0b3f79e.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-elastic-net-dd45a0b3f79e.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-elastic-net-dd45a0b3f79e",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22052.05374574932,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40678.7109228227,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7213321095565806,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1596.438811885919,
+          "rmse": 7965.317253767736,
+          "r2": 0.10297928424631993
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-elastic-net-dd45a0b3f79e.cv-mean",
+        "development_20261026_01.hist-elastic-net-dd45a0b3f79e.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-lasso-23fac5e0453b.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-lasso-23fac5e0453b",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 19395.048844977035,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 35389.18456107843,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7841591133550846,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1053.8753165510327,
+          "rmse": 7692.476162629342,
+          "r2": 0.08343278368205118
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-lasso-23fac5e0453b.cv-mean",
+        "development_20261026_01.hist-lasso-23fac5e0453b.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-lasso-23fac5e0453b.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-lasso-23fac5e0453b",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 19394.93176940998,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 35936.820128771506,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7825137236061604,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1053.8753165510327,
+          "rmse": 7692.476162629342,
+          "r2": 0.08343278368205118
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-lasso-23fac5e0453b.cv-mean",
+        "development_20261026_01.hist-lasso-23fac5e0453b.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-lasso-d0ea8d1b5d1d.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-lasso-d0ea8d1b5d1d",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 21517.336501839654,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 38292.53481595476,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7465069919035022,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1629.7265771688162,
+          "rmse": 8255.467739323229,
+          "r2": 0.09966190160541662
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-lasso-d0ea8d1b5d1d.cv-mean",
+        "development_20261026_01.hist-lasso-d0ea8d1b5d1d.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-lasso-d0ea8d1b5d1d.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-lasso-d0ea8d1b5d1d",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 21516.908462938005,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 38875.94170238046,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7454843978611528,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1629.7265771688162,
+          "rmse": 8255.467739323229,
+          "r2": 0.09966190160541662
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-lasso-d0ea8d1b5d1d.cv-mean",
+        "development_20261026_01.hist-lasso-d0ea8d1b5d1d.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-mutual-information-b33c6189b8ae.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-mutual-information-b33c6189b8ae",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 23510.51328705125,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 37208.2782358083,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7653452560956394,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 465.9633727932281,
+          "rmse": 6243.802693549466,
+          "r2": 0.055193631865791584
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-mutual-information-b33c6189b8ae.cv-mean",
+        "development_20261026_01.hist-mutual-information-b33c6189b8ae.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-mutual-information-b33c6189b8ae.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-mutual-information-b33c6189b8ae",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 23510.556799555176,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 37550.378531391536,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7625450624524726,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 465.9633727932281,
+          "rmse": 6243.802693549466,
+          "r2": 0.055193631865791584
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-mutual-information-b33c6189b8ae.cv-mean",
+        "development_20261026_01.hist-mutual-information-b33c6189b8ae.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-mutual-information-b87169fc4edc.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-mutual-information-b87169fc4edc",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 28265.222677340455,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 41549.52607675625,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7080980099126949,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 711.8164636311562,
+          "rmse": 4663.48924854844,
+          "r2": 0.03469921884596127
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-mutual-information-b87169fc4edc.cv-mean",
+        "development_20261026_01.hist-mutual-information-b87169fc4edc.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-mutual-information-b87169fc4edc.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-mutual-information-b87169fc4edc",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 28264.52674713219,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 41719.30384661835,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.706892675140941,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 711.8164636311562,
+          "rmse": 4663.48924854844,
+          "r2": 0.03469921884596127
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-mutual-information-b87169fc4edc.cv-mean",
+        "development_20261026_01.hist-mutual-information-b87169fc4edc.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-mutual-information-c79851bf9d83.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-mutual-information-c79851bf9d83",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 23589.258642931018,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 37527.43522632216,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7616321091146014,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 443.60323385671694,
+          "rmse": 5680.559619157279,
+          "r2": 0.04750265204943735
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-mutual-information-c79851bf9d83.cv-mean",
+        "development_20261026_01.hist-mutual-information-c79851bf9d83.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-mutual-information-c79851bf9d83.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-mutual-information-c79851bf9d83",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 23589.495137746013,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 37807.86235605648,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7592774294819357,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 443.60323385671694,
+          "rmse": 5680.559619157279,
+          "r2": 0.04750265204943735
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-mutual-information-c79851bf9d83.cv-mean",
+        "development_20261026_01.hist-mutual-information-c79851bf9d83.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-mutual-information-f8964bbe4d91.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-mutual-information-f8964bbe4d91",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 26303.528398642036,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40657.56457082416,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.720181294361988,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 764.1711477218519,
+          "rmse": 5770.583839295363,
+          "r2": 0.05168077758822443
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-mutual-information-f8964bbe4d91.cv-mean",
+        "development_20261026_01.hist-mutual-information-f8964bbe4d91.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-mutual-information-f8964bbe4d91.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-mutual-information-f8964bbe4d91",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 26303.235066840265,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40924.48842608688,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7179545588311663,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 764.1711477218519,
+          "rmse": 5770.583839295363,
+          "r2": 0.05168077758822443
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-mutual-information-f8964bbe4d91.cv-mean",
+        "development_20261026_01.hist-mutual-information-f8964bbe4d91.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-mutual-information-fe67d806a6c0.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-mutual-information-fe67d806a6c0",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 25514.78287896191,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 39569.69348351081,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7350895121597136,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 853.9250585018582,
+          "rmse": 5608.46182828632,
+          "r2": 0.047658830029954385
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-mutual-information-fe67d806a6c0.cv-mean",
+        "development_20261026_01.hist-mutual-information-fe67d806a6c0.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-mutual-information-fe67d806a6c0.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-mutual-information-fe67d806a6c0",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 25514.8390862149,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 39828.709259750765,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7328562422820608,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 853.9250585018582,
+          "rmse": 5608.46182828632,
+          "r2": 0.047658830029954385
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-mutual-information-fe67d806a6c0.cv-mean",
+        "development_20261026_01.hist-mutual-information-fe67d806a6c0.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ols-baseline-67211c3848f8.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ols-baseline-67211c3848f8",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22167.835718447255,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40628.988626233804,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7141847678830092,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1583.9792491848796,
+          "rmse": 7535.171942694206,
+          "r2": 0.10052347717193387
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ols-baseline-67211c3848f8.cv-mean",
+        "development_20261026_01.hist-ols-baseline-67211c3848f8.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ols-baseline-67211c3848f8.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ols-baseline-67211c3848f8",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 22167.8368373754,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 41088.3603536318,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7156912749743729,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 1583.9792491848796,
+          "rmse": 7535.171942694206,
+          "r2": 0.10052347717193387
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ols-baseline-67211c3848f8.cv-mean",
+        "development_20261026_01.hist-ols-baseline-67211c3848f8.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-pearson-05a42a840e86.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-pearson-05a42a840e86",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 27256.836771805643,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 39849.593057764985,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7314899318975652,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 254.595783097258,
+          "rmse": 4186.518765570992,
+          "r2": 0.027876604730202762
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-pearson-05a42a840e86.cv-mean",
+        "development_20261026_01.hist-pearson-05a42a840e86.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-pearson-05a42a840e86.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-pearson-05a42a840e86",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 27256.5861659508,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 39992.01379265052,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7306610808528322,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 254.595783097258,
+          "rmse": 4186.518765570992,
+          "r2": 0.027876604730202762
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-pearson-05a42a840e86.cv-mean",
+        "development_20261026_01.hist-pearson-05a42a840e86.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-pearson-47c2ce66ecde.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-pearson-47c2ce66ecde",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 29529.68742665515,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 43427.890297865255,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.6823873759355416,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 2538.6187378980867,
+          "rmse": 6401.804244512194,
+          "r2": 0.04494150871968727
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-pearson-47c2ce66ecde.cv-mean",
+        "development_20261026_01.hist-pearson-47c2ce66ecde.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-pearson-47c2ce66ecde.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-pearson-47c2ce66ecde",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 29527.908906764256,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 43735.506442782826,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.6778776300431364,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 2538.6187378980867,
+          "rmse": 6401.804244512194,
+          "r2": 0.04494150871968727
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-pearson-47c2ce66ecde.cv-mean",
+        "development_20261026_01.hist-pearson-47c2ce66ecde.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-pearson-4c0e705bb36a.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-pearson-4c0e705bb36a",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 23896.460841230553,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 37623.0236419121,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.760520352567239,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 688.1493053105233,
+          "rmse": 5507.540566720266,
+          "r2": 0.044889328181986515
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-pearson-4c0e705bb36a.cv-mean",
+        "development_20261026_01.hist-pearson-4c0e705bb36a.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-pearson-4c0e705bb36a.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-pearson-4c0e705bb36a",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 23896.514118716565,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 37885.82707924756,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7582836034205321,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 688.1493053105233,
+          "rmse": 5507.540566720266,
+          "r2": 0.044889328181986515
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-pearson-4c0e705bb36a.cv-mean",
+        "development_20261026_01.hist-pearson-4c0e705bb36a.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-pearson-76875a54b993.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-pearson-76875a54b993",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 25902.705771055906,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 38596.54293261736,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7484339601432645,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 752.0154261243734,
+          "rmse": 4753.863454350181,
+          "r2": 0.03156311383907882
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-pearson-76875a54b993.cv-mean",
+        "development_20261026_01.hist-pearson-76875a54b993.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-pearson-76875a54b993.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-pearson-76875a54b993",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 25902.136319154226,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 38786.75669585957,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7466508230520871,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 752.0154261243734,
+          "rmse": 4753.863454350181,
+          "r2": 0.03156311383907882
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-pearson-76875a54b993.cv-mean",
+        "development_20261026_01.hist-pearson-76875a54b993.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-pearson-fb8b057e6677.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-pearson-fb8b057e6677",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 23379.76055428339,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 36918.472529716695,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7688358444482523,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 327.5919001532378,
+          "rmse": 6235.749334900129,
+          "r2": 0.05582239617352005
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-pearson-fb8b057e6677.cv-mean",
+        "development_20261026_01.hist-pearson-fb8b057e6677.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-pearson-fb8b057e6677.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-pearson-fb8b057e6677",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 23379.445375936986,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 37262.440496500305,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7661727311871236,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 327.5919001532378,
+          "rmse": 6235.749334900129,
+          "r2": 0.05582239617352005
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-pearson-fb8b057e6677.cv-mean",
+        "development_20261026_01.hist-pearson-fb8b057e6677.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ridge-rfe-1988433b54f5.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ridge-rfe-1988433b54f5",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 53233.03340098433,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 74000.81914360402,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.062061406578001965,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 3366.6982022777424,
+          "rmse": 4023.302141116442,
+          "r2": 0.16167811371672966
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ridge-rfe-1988433b54f5.cv-mean",
+        "development_20261026_01.hist-ridge-rfe-1988433b54f5.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ridge-rfe-1988433b54f5.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ridge-rfe-1988433b54f5",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 53233.40824472022,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 74072.17411886866,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.07601961904841559,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 3366.6982022777424,
+          "rmse": 4023.302141116442,
+          "r2": 0.16167811371672966
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ridge-rfe-1988433b54f5.cv-mean",
+        "development_20261026_01.hist-ridge-rfe-1988433b54f5.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ridge-rfe-5209c529b590.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ridge-rfe-5209c529b590",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 53151.00553052633,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 74055.95824217157,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.06046131796632522,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 3381.4239894332563,
+          "rmse": 4243.184722634905,
+          "r2": 0.16483952447674857
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ridge-rfe-5209c529b590.cv-mean",
+        "development_20261026_01.hist-ridge-rfe-5209c529b590.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ridge-rfe-5209c529b590.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ridge-rfe-5209c529b590",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 53151.454459682456,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 74135.3790960771,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.07444210156029007,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 3381.4239894332563,
+          "rmse": 4243.184722634905,
+          "r2": 0.16483952447674857
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ridge-rfe-5209c529b590.cv-mean",
+        "development_20261026_01.hist-ridge-rfe-5209c529b590.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ridge-rfe-55d847e58f1b.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ridge-rfe-55d847e58f1b",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 49765.242131773884,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 69384.42648409263,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.17344101982660576,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 2251.9901210495036,
+          "rmse": 3658.338439034194,
+          "r2": 0.15751107448401935
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ridge-rfe-55d847e58f1b.cv-mean",
+        "development_20261026_01.hist-ridge-rfe-55d847e58f1b.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ridge-rfe-55d847e58f1b.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ridge-rfe-55d847e58f1b",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 49765.18816563054,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 69448.06322567763,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.18778156383749822,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 2251.9901210495036,
+          "rmse": 3658.338439034194,
+          "r2": 0.15751107448401935
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ridge-rfe-55d847e58f1b.cv-mean",
+        "development_20261026_01.hist-ridge-rfe-55d847e58f1b.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ridge-rfe-616569f18d0f.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ridge-rfe-616569f18d0f",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 26744.64428120067,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 40704.14419998816,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.7165010676923899,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 845.3295407017887,
+          "rmse": 5607.648188782953,
+          "r2": 0.06980872154147973
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ridge-rfe-616569f18d0f.cv-mean",
+        "development_20261026_01.hist-ridge-rfe-616569f18d0f.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ridge-rfe-616569f18d0f.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ridge-rfe-616569f18d0f",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 26744.3588494085,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 40957.258057629646,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.7175026912113938,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 845.3295407017887,
+          "rmse": 5607.648188782953,
+          "r2": 0.06980872154147973
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ridge-rfe-616569f18d0f.cv-mean",
+        "development_20261026_01.hist-ridge-rfe-616569f18d0f.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ridge-rfe-67e3f996e959.cv-mean",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ridge-rfe-67e3f996e959",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "cv_fold_mean",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 41579.93364533977,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "rmse": {
+          "value": 56076.71966740654,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        },
+        "r2": {
+          "value": 0.46978981773276,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/fold-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 7907.1976508903535,
+          "rmse": 9759.798722271775,
+          "r2": 0.10690327141958789
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ridge-rfe-67e3f996e959.cv-mean",
+        "development_20261026_01.hist-ridge-rfe-67e3f996e959.pooled-oof"
+      ]
+    },
+    {
+      "evaluation_id": "development_20261026_01.hist-ridge-rfe-67e3f996e959.pooled-oof",
+      "execution_run_id": "development_20261026_01",
+      "configuration_id": "hist-ridge-rfe-67e3f996e959",
+      "final_fit_id": null,
+      "model_id": null,
+      "model_version": null,
+      "evaluation_population": "development_oof",
+      "prediction_origin": "phase4_historical_oof",
+      "metric_source": "pooled_oof",
+      "n": 1168,
+      "target": {
+        "column": "SalePrice",
+        "unit": "USD"
+      },
+      "metrics": {
+        "mae": {
+          "value": 41572.11650382577,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "rmse": {
+          "value": 56631.04394058629,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        },
+        "r2": {
+          "value": 0.4599155156706898,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json"
+        }
+      },
+      "fold_summary": {
+        "fold_count": 3,
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "sample_sd": {
+          "mae": 7907.1976508903535,
+          "rmse": 9759.798722271775,
+          "r2": 0.10690327141958789
+        },
+        "fold_values_ref": "phases/phase-05/fold-metrics.json"
+      },
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NOT_COMPUTED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+        "source_ref": null,
+        "protocol_version": "v2.0",
+        "review_url": null
+      },
+      "asset_status": "UNAVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "Development OOF is internal resampling, not independent generalization testing.",
+        "Historical run-state metadata records an earlier failed attempt followed by successful finalization.",
+        "Prediction rows remain private; diagnostic figures have not been generated for this release.",
+        "Research publication review is pending."
+      ],
+      "linked_evaluation_ids": [
+        "development_20261026_01.hist-ridge-rfe-67e3f996e959.cv-mean",
+        "development_20261026_01.hist-ridge-rfe-67e3f996e959.pooled-oof"
+      ]
+    }
+  ],
+  "ui": {
+    "default_population": "development_oof",
+    "population_options": [
+      {
+        "id": "development_oof",
+        "label": "Development OOF"
+      }
+    ],
+    "figure_tabs": [
+      {
+        "figure_id": "FIG-P5-01",
+        "label": "Actual vs Predicted",
+        "kind": "actual_vs_predicted"
+      },
+      {
+        "figure_id": "FIG-P5-02",
+        "label": "Residual vs Predicted",
+        "kind": "residual_vs_predicted"
+      },
+      {
+        "figure_id": "FIG-P5-03",
+        "label": "Residual Distribution",
+        "kind": "residual_distribution"
+      }
+    ],
+    "metric_order": [
+      "mae",
+      "rmse",
+      "r2"
+    ],
+    "interval_figure_id": "FIG-P5-04"
+  }
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import mimetypes
+import math
 import os
 import re
 import shutil
@@ -348,18 +349,99 @@ def validate_model_exploration_package(package_root: str | Path, repository_root
             raise ExplorationPackageError("Phase 4 chart points are not package-bound")
 
     phase5 = documents[5]
+    fold_ref = "phases/phase-05/fold-metrics.json"
+    pooled_ref = "phases/phase-05/pooled-oof-metrics.json"
+    if fold_ref not in indexed or pooled_ref not in indexed:
+        raise ExplorationPackageError("Phase 5 aggregate evidence is not package-bound")
+    fold_evidence = _read_json(root / fold_ref)
+    pooled_evidence = _read_json(root / pooled_ref)
+    if fold_evidence.get("run_id") != pooled_evidence.get("run_id"):
+        raise ExplorationPackageError("Phase 5 aggregate evidence run identities disagree")
+    source_oof_sha = fold_evidence.get("source_oof_sha256")
+    data_sha = fold_evidence.get("development_data_sha256")
+    fold_sha = fold_evidence.get("fold_sha256")
+    if (not isinstance(source_oof_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", source_oof_sha)
+            or not isinstance(data_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", data_sha)
+            or not isinstance(fold_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", fold_sha)):
+        raise ExplorationPackageError("Phase 5 OOF/data/fold evidence digests are invalid")
+    if any(evidence.get(key) != value for evidence in (pooled_evidence,)
+           for key, value in (("source_oof_sha256", source_oof_sha),
+                              ("development_data_sha256", data_sha), ("fold_sha256", fold_sha))):
+        raise ExplorationPackageError("Phase 5 OOF/data/fold evidence identities disagree")
+    run_by_id = {item["execution_run_id"]: item for item in phase4["execution_runs"]}
+    if fold_evidence.get("run_id") not in run_by_id:
+        raise ExplorationPackageError("Phase 5 evidence run does not resolve to Phase 4")
+    execution_manifest = _read_json(root / "assets/execution-manifest.json")
+    if (execution_manifest.get("phase_runs", {}).get("phase4") != fold_evidence.get("run_id")
+            or execution_manifest.get("phase_runs", {}).get("phase5") != fold_evidence.get("run_id")):
+        raise ExplorationPackageError("Phase 4/5 execution manifest binding is inconsistent")
+
+    phase4_by_id = {item["configuration_id"]: item for item in phase4["configurations"]}
+    fold_configs = {item.get("configuration_id"): item for item in fold_evidence.get("configurations", [])}
+    pooled_configs = {item.get("configuration_id"): item for item in pooled_evidence.get("configurations", [])}
+    if len(fold_configs) != len(fold_evidence.get("configurations", [])) or set(fold_configs) != set(pooled_configs):
+        raise ExplorationPackageError("Phase 5 aggregate configuration coverage is inconsistent")
+    for configuration_id, fold_config in fold_configs.items():
+        config = phase4_by_id.get(configuration_id)
+        if not config or config.get("status") != "VERIFIED" or config.get("execution_run_id") != fold_evidence.get("run_id"):
+            raise ExplorationPackageError("Phase 5 aggregate configuration does not bind to verified Phase 4")
+        metadata = _read_json(root / config["metadata_ref"])
+        cv_metrics = _read_json(root / config["cv_metrics_ref"])
+        if fold_config.get("config_hash") != metadata.get("historical_config_hash"):
+            raise ExplorationPackageError("Phase 5 fold configuration identity is inconsistent")
+        if any(evidence.get(key) != value for evidence in (metadata, cv_metrics)
+               for key, value in (("data_sha256", data_sha), ("fold_sha256", fold_sha))):
+            raise ExplorationPackageError("Phase 5 data/fold digests do not match Phase 4")
+        cv_folds = {item.get("fold"): item for item in cv_metrics.get("fold_results", [])}
+        reported_folds = {item.get("fold"): item for item in fold_config.get("folds", [])}
+        if set(cv_folds) != {0, 1, 2} or set(reported_folds) != {0, 1, 2}:
+            raise ExplorationPackageError("Phase 5 fold metrics do not cover the Phase 4 folds")
+        for fold_id, reported in reported_folds.items():
+            for metric in ("rmse", "mae", "r2"):
+                if not math.isclose(reported.get(metric, float("nan")), cv_folds[fold_id].get(metric, float("nan")),
+                                    rel_tol=1e-10, abs_tol=1e-6):
+                    raise ExplorationPackageError("Phase 5 fold metric does not match Phase 4")
+        phase4_means = cv_metrics.get("mean_fold_metrics", {})
+        for metric in ("rmse", "mae", "r2"):
+            if not math.isclose(phase4_means.get(metric, float("nan")),
+                                math.fsum(item[metric] for item in reported_folds.values()) / 3,
+                                rel_tol=1e-10, abs_tol=1e-6):
+                raise ExplorationPackageError("Phase 5 mean metric does not match Phase 4 folds")
+        pooled_config = pooled_configs[configuration_id]
+        if pooled_config.get("config_hash") != metadata.get("historical_config_hash"):
+            raise ExplorationPackageError("Phase 5 pooled metric configuration identity is inconsistent")
+
     evaluation_ids = {item["evaluation_id"] for item in phase5["evaluations"]}
+    evaluation_by_key = {(item.get("configuration_id"), item.get("metric_source")): item
+                         for item in phase5["evaluations"]}
+    if len(evaluation_by_key) != len(phase5["evaluations"]):
+        raise ExplorationPackageError("Phase 5 evaluation configuration/source pair is duplicated")
     for evaluation in phase5["evaluations"]:
-        if evaluation["configuration_id"] not in config_ids or evaluation["execution_run_id"] not in run_ids:
+        if (evaluation["configuration_id"] not in config_ids
+                or evaluation["execution_run_id"] != fold_evidence.get("run_id")
+                or evaluation["execution_run_id"] not in run_ids):
             raise ExplorationPackageError("Phase 5 evaluation does not bind to Phase 4")
         if evaluation.get("evidence", {}).get("source_ref") is not None:
             raise ExplorationPackageError("public Phase 5 cannot expose OOF row references")
+        if evaluation.get("evidence", {}).get("source_artifact_sha256") != source_oof_sha:
+            raise ExplorationPackageError("Phase 5 evaluation OOF source digest is inconsistent")
         for metric in evaluation["metrics"].values():
             ref = metric.get("evidence_ref")
             if ref and ref not in indexed:
                 raise ExplorationPackageError("Phase 5 metric evidence reference is unresolved")
         if any(link not in evaluation_ids for link in evaluation["linked_evaluation_ids"]):
             raise ExplorationPackageError("Phase 5 linked evaluation is unresolved")
+        metric_source = evaluation.get("metric_source")
+        if metric_source == "cv_fold_mean":
+            expected = _read_json(root / phase4_by_id[evaluation["configuration_id"]]["cv_metrics_ref"])["mean_fold_metrics"]
+        elif metric_source == "pooled_oof":
+            expected = pooled_configs[evaluation["configuration_id"]].get("pooled_oof_metrics", {})
+        else:
+            raise ExplorationPackageError("Phase 5 metric source is unsupported")
+        for metric in ("mae", "rmse", "r2"):
+            actual = evaluation["metrics"][metric]["value"]
+            if not math.isclose(actual, expected.get(metric, float("nan")), rel_tol=1e-10, abs_tol=1e-6):
+                raise ExplorationPackageError("Phase 5 evaluation value does not match its bound evidence")
     if documents[6]["models"] or documents[6]["readiness"]["predict_enabled"]:
         raise ExplorationPackageError("exploration case cannot claim a model without matching final-fit evidence")
     return {"status": "PASS", "case_id": case_id, "file_count": len(indexed),

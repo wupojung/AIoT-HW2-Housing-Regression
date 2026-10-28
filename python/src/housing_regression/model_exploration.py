@@ -527,6 +527,12 @@ def build_phase5_exploration(
         raise ModelExplorationError("Phase 5 OOF run is not bound to a Phase 4 execution run")
     if oof_reconciliation.get("oof_publication") != "PRIVATE_SOURCE_ROWS_NOT_INCLUDED":
         raise ModelExplorationError("Phase 5 source privacy status is missing")
+    source_oof_sha256 = oof_reconciliation.get("source_oof_sha256")
+    data_sha256 = oof_reconciliation.get("development_data_sha256")
+    fold_sha256 = oof_reconciliation.get("fold_sha256")
+    if any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value)
+           for value in (source_oof_sha256, data_sha256, fold_sha256)):
+        raise ModelExplorationError("Phase 5 OOF, Development data, and fold digests must be SHA-256 values")
     config_by_hash = {}
     for item in phase4.get("configurations", []):
         if item.get("status") != "VERIFIED":
@@ -535,14 +541,32 @@ def build_phase5_exploration(
         historical_hash = metadata.get("historical_config_hash")
         if not isinstance(historical_hash, str) or historical_hash in config_by_hash:
             raise ModelExplorationError("Phase 4 configuration hash binding is missing or duplicated")
+        metrics_ref = item.get("cv_metrics_ref")
+        cv_metrics = phase4_artifacts.get(metrics_ref, {})
+        if (metadata.get("run_id") != run_id or cv_metrics.get("run_id") != run_id
+                or metadata.get("configuration_id") != item.get("configuration_id")
+                or cv_metrics.get("configuration_id") != item.get("configuration_id")):
+            raise ModelExplorationError("Phase 4 configuration evidence identity does not match the OOF run")
+        for source in (metadata, cv_metrics):
+            if source.get("data_sha256") != data_sha256 or source.get("fold_sha256") != fold_sha256:
+                raise ModelExplorationError("Phase 5 OOF data/fold digest does not match Phase 4")
         config_by_hash[historical_hash] = item
     if len(config_by_hash) != 30:
         raise ModelExplorationError("Phase 5 requires all 30 valid Phase 4 configurations")
     evaluations: list[dict[str, Any]] = []
     fold_values: list[dict[str, Any]] = []
     pooled_summaries: list[dict[str, Any]] = []
-    for config_result in oof_reconciliation.get("configurations", []):
-        config = config_by_hash.get(config_result.get("config_hash"))
+    reconciliation_configs = oof_reconciliation.get("configurations", [])
+    if len(reconciliation_configs) != len(config_by_hash):
+        raise ModelExplorationError("Phase 5 OOF configuration coverage does not match Phase 4")
+    seen_hashes: set[str] = set()
+    all_fold_metrics = oof_reconciliation.get("fold_metrics", [])
+    for config_result in reconciliation_configs:
+        config_hash = config_result.get("config_hash")
+        if config_hash in seen_hashes:
+            raise ModelExplorationError("Phase 5 OOF configuration is duplicated")
+        seen_hashes.add(config_hash)
+        config = config_by_hash.get(config_hash)
         if not config:
             raise ModelExplorationError("Phase 5 OOF configuration does not resolve to Phase 4")
         config_id = config["configuration_id"]
@@ -550,6 +574,22 @@ def build_phase5_exploration(
         pooled_eval_id = f"{run_id}.{config_id}.pooled-oof"
         mean_metrics = config_result.get("mean_fold_metrics", {})
         pooled_metrics = config_result.get("pooled_oof_metrics", {})
+        phase4_cv = phase4_artifacts[config["cv_metrics_ref"]]
+        expected_mean = phase4_cv.get("mean_fold_metrics", {})
+        config_folds = [item for item in all_fold_metrics if item.get("config_hash") == config_hash]
+        if len(config_folds) != EXPECTED_FOLDS or {item.get("fold") for item in config_folds} != set(range(EXPECTED_FOLDS)):
+            raise ModelExplorationError("Phase 5 OOF fold coverage does not match Phase 4")
+        for metric in ("rmse", "mae", "r2"):
+            actual = mean_metrics.get(metric)
+            expected = expected_mean.get(metric)
+            calculated = mean(item[metric] for item in config_folds)
+            if (not isinstance(actual, (int, float)) or not isinstance(expected, (int, float))
+                    or not math.isclose(actual, expected, rel_tol=1e-10, abs_tol=1e-6)
+                    or not math.isclose(actual, calculated, rel_tol=1e-10, abs_tol=1e-6)):
+                raise ModelExplorationError(f"Phase 5 mean-fold {metric} does not match Phase 4 fold metrics")
+        for metric in ("rmse", "mae", "r2"):
+            if not isinstance(pooled_metrics.get(metric), (int, float)):
+                raise ModelExplorationError("Phase 5 pooled OOF metrics are incomplete")
         sample_sd = {
             "mae": config_result.get("mean_fold_sample_sd", {}).get("mae"),
             "rmse": config_result.get("mean_fold_sample_sd", {}).get("rmse"),
@@ -557,12 +597,13 @@ def build_phase5_exploration(
         }
         fold_values.append({
             "configuration_id": config_id,
+            "config_hash": config_hash,
             "method_id": config["method_id"],
-            "folds": [item for item in oof_reconciliation["fold_metrics"]
-                      if item["config_hash"] == config_result["config_hash"]],
+            "folds": config_folds,
         })
         pooled_summaries.append({
             "configuration_id": config_id,
+            "config_hash": config_hash,
             "method_id": config["method_id"],
             "candidate": config["params"],
             "pooled_oof_metrics": pooled_metrics,
@@ -605,7 +646,7 @@ def build_phase5_exploration(
                               "asset_ref": None, "coverage_evidence": None, "review_url": None},
                 },
                 "evidence": {
-                    "source_artifact_sha256": oof_reconciliation["source_oof_sha256"],
+                    "source_artifact_sha256": source_oof_sha256,
                     "source_ref": None,
                     "protocol_version": "v2.0",
                     "review_url": None,
@@ -645,17 +686,17 @@ def build_phase5_exploration(
     assets = {
         "phases/phase-05/fold-metrics.json": {
             "schema_version": "1.0.0", "case_id": case_id,
-            "run_id": run_id, "source_oof_sha256": oof_reconciliation["source_oof_sha256"],
-            "development_data_sha256": oof_reconciliation["development_data_sha256"],
-            "fold_sha256": oof_reconciliation["fold_sha256"],
+            "run_id": run_id, "source_oof_sha256": source_oof_sha256,
+            "development_data_sha256": data_sha256,
+            "fold_sha256": fold_sha256,
             "aggregation": "per-fold RMSE/MAE/R2 recomputed independently from private Development OOF; sample SD uses ddof=1",
             "configurations": fold_values,
         },
         "phases/phase-05/pooled-oof-metrics.json": {
             "schema_version": "1.0.0", "case_id": case_id,
-            "run_id": run_id, "source_oof_sha256": oof_reconciliation["source_oof_sha256"],
-            "development_data_sha256": oof_reconciliation["development_data_sha256"],
-            "fold_sha256": oof_reconciliation["fold_sha256"],
+            "run_id": run_id, "source_oof_sha256": source_oof_sha256,
+            "development_data_sha256": data_sha256,
+            "fold_sha256": fold_sha256,
             "aggregation": "pooled metrics recomputed over each 1,168-row Development OOF configuration",
             "configurations": pooled_summaries,
         },

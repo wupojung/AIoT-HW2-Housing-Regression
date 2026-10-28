@@ -5,9 +5,9 @@
 ## Case and provenance
 
 - Case: `ames-full-model-exploration` — Ames Housing — Full Model Exploration.
-- Immutable package revision: `ames-full-model-exploration-20261028-01`.
-- Package SHA-256: `af4dbbf26c86ee81cd1af412077d808a7e29b409dce7bdb3437cc4b948fff863` (`package.json`, 35,859 bytes).
-- Package bundle: 144 manifest-listed files, 4,667,757 bytes; `PARTIAL`; Phase 1 `UNAVAILABLE`, Phase 2/3/4 `VERIFIED`, Phase 5 `PLANNED` / publication `PENDING`, Phase 6 `UNAVAILABLE`.
+- Current immutable package revision: `ames-full-model-exploration-20261028-02` (revision `-01` is retained unchanged).
+- Current `package.json` SHA-256: `1c0d1aa109305cdbe15b7e6d76bc3f479832ed230be985a5589c40f16309902e` (35,859 bytes; revision `-01` SHA is retained in Git history and its immutable directory).
+- Package bundle: 144 manifest-listed files; current package SHA-256 `1c0d1aa109305cdbe15b7e6d76bc3f479832ed230be985a5589c40f16309902e`; `PARTIAL`; Phase 1 `UNAVAILABLE`, Phase 2/3/4 `VERIFIED`, Phase 5 `PLANNED` / publication `PENDING`, Phase 6 `UNAVAILABLE`.
 - Phase 2/3 documents are reused from the distinct INIT B package, with source package/run identity retained in the execution manifest. Phase 4 is historical Run `development_20261026_01`, code HEAD `f30a9293f12dba221a36d62f35abd7cb45acbab5`, dataset digest `2525b2e9385f9873a45d124dfd7520851234fe0a30501a69b8e5e5536403017c`, fold digest `2d12b0a6294055b8aac95e6055fc9095c436c472666f56fd6f33828cc683dd30`. This is not represented as one execution run across Phases 1–6.
 - The official training CSV SHA-256 was verified during the local audit as `1e18addf81e5e4d347cc17ee6075bbe4a42b7fa26b9e5b063e8f692a5f929d41`; no raw rows were added to the release.
 
@@ -39,16 +39,17 @@ Historical run-state evidence remains contradictory: early runner metadata recor
 
 ## Validation evidence
 
-- Python focused tests: `tests.core.test_model_exploration` — 5 PASS.
+- Python focused tests: `tests.core.test_model_exploration` plus `tests.test_web_foundation` — 14 PASS after Phase 5 binding fix.
 - Public bundle validator: PASS — 144 files, 32 configurations, 60 Phase 5 evaluations, no raw OOF or model binary.
 - Browser smoke: `local/phase4-model-exploration-20261028/browser-smoke.json`; local Chromium exercised all six phases, Mock/INIT B/Exploration case switching, both Phase 2 figures, Model Explorer views/configuration selectors, selected-feature list, Phase 5 aggregation switching, Phase 6 unavailable state, desktop/mobile layout and Package-to-UI numeric consistency. Result: no console, request-failure or HTTP errors.
+- Exact-HEAD QA finding remediation: Phase 5 builder now binds OOF source, Development data, fold identity, per-fold metrics, and mean-fold values to Phase 4 evidence. Package validation independently rechecks those bindings and Phase 5 metric values. Negative tests cover mismatched data/fold digests and metrics. Revision `-02` was rebuilt from the existing aggregate reconciliation; no model run was repeated and revision `-01` was preserved.
 - `node --check web/app.js` and `git diff --check`: PASS at the latest local check.
 - Production/Preview browser, CI/security scan, PR review, merge and deployment: `NOT RUN`.
 
 ## Remaining work and risks
 
 1. The historical run-state/finalization/fit-accounting contradiction remains unresolved; the case is a historical source-reconciled exploration, not a fresh current-Core model run.
-2. Phase 5 values are verified Development metrics but remain publication `PENDING`; no public row-level residuals/plots are included.
+2. Phase 5 values are verified Development metrics but remain publication `PENDING`; no public row-level residuals/plots are included. The later package validator fix confirms metric and provenance consistency but does not change this research publication status.
 3. Phase 6 is unavailable because there is no per-configuration final refit model. No model was fit during this task.
 4. Phase 2/3 are reused from INIT B and carry a separate source identity; do not label the entire case a single-run pipeline.
 5. No PR, push, merge or Production deployment has been performed in this worktree yet.

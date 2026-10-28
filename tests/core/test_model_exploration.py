@@ -1,6 +1,8 @@
 import hashlib
 import json
 import statistics
+import tempfile
+import shutil
 import unittest
 from pathlib import Path
 
@@ -10,6 +12,10 @@ from housing_regression.model_exploration import (
     ModelExplorationError,
     build_phase5_exploration,
     build_phase4_exploration,
+)
+from housing_regression.model_exploration_package import (
+    ExplorationPackageError,
+    validate_model_exploration_package,
 )
 
 
@@ -124,6 +130,11 @@ def historical_fixture():
 
 
 class HistoricalModelExplorationTests(unittest.TestCase):
+    def _current_exploration_package(self):
+        index = json.loads(Path("web/data/current-release.json").read_text(encoding="utf-8"))
+        item = next(entry for entry in index["cases"] if entry["case_id"] == "ames-full-model-exploration")
+        return Path("web/data") / Path(item["package_ref"]).parent
+
     def test_exports_only_complete_historical_aggregate_views(self):
         summary, manifest, summary_bytes, manifest_bytes = historical_fixture()
         phase4, artifacts = build_phase4_exploration(
@@ -160,7 +171,7 @@ class HistoricalModelExplorationTests(unittest.TestCase):
         with self.assertRaisesRegex(ModelExplorationError, "membership digest"):
             build_phase4_exploration(summary, manifest, summary_bytes, manifest_bytes, "case")
 
-    def test_phase5_keeps_verified_metrics_separate_from_publication_review(self):
+    def _phase5_documents(self):
         summary, manifest, summary_bytes, manifest_bytes = historical_fixture()
         phase4, phase4_artifacts = build_phase4_exploration(
             summary, manifest, summary_bytes, manifest_bytes, "ames-full-model-exploration"
@@ -172,23 +183,33 @@ class HistoricalModelExplorationTests(unittest.TestCase):
             if config["status"] != "VERIFIED":
                 continue
             metrics = phase4_artifacts[config["cv_metrics_ref"]]["mean_fold_metrics"]
+            cv_folds = phase4_artifacts[config["cv_metrics_ref"]]["fold_results"]
             results.append({
                 "config_hash": metadata["historical_config_hash"],
                 "method": config["method_id"],
                 "candidate": config["params"],
                 "mean_fold_metrics": {key: metrics[key] for key in ("rmse", "mae", "r2")},
                 "mean_fold_sample_sd": {key: metrics[f"{key}_sample_sd"] for key in ("rmse", "mae", "r2")},
-                "pooled_oof_metrics": {"n": 1168, "rmse": metrics["rmse"], "mae": metrics["mae"], "r2": metrics["r2"]},
+                "pooled_oof_metrics": {"n": 1168, "rmse": metrics["rmse"] + 0.5,
+                                       "mae": metrics["mae"] + 0.25, "r2": metrics["r2"] - 0.01},
             })
-            for fold in (0, 1, 2):
+            for fold_row in cv_folds:
+                fold = fold_row["fold"]
                 folds.append({"config_hash": metadata["historical_config_hash"], "method": config["method_id"],
-                              "fold": fold, "n": 389, "rmse": metrics["rmse"], "mae": metrics["mae"], "r2": metrics["r2"]})
+                              "fold": fold, "n": 389,
+                              **{metric: fold_row[metric] for metric in ("rmse", "mae", "r2")}})
         oof = {"run_id": "development_20261026_01", "oof_publication": "PRIVATE_SOURCE_ROWS_NOT_INCLUDED",
-               "source_oof_sha256": "f" * 64, "development_data_sha256": "d" * 64,
-               "fold_sha256": "e" * 64, "configurations": results, "fold_metrics": folds}
+               "source_oof_sha256": "f" * 64,
+               "development_data_sha256": manifest["dataset_provenance"]["canonical_development_dataset_sha256"],
+               "fold_sha256": manifest["dataset_provenance"]["outer_fold_digest_expected"],
+               "configurations": results, "fold_metrics": folds}
         document, _assets = build_phase5_exploration(
             phase4, phase4_artifacts, oof, "ames-full-model-exploration", "ames-full-model-exploration-20261028-01"
         )
+        return phase4, phase4_artifacts, oof, document, _assets
+
+    def test_phase5_keeps_verified_metrics_separate_from_publication_review(self):
+        phase4, phase4_artifacts, oof, document, _assets = self._phase5_documents()
         self.assertEqual("PLANNED", document["status"])
         self.assertEqual("PENDING", document["publication_review"])
         self.assertEqual(60, len(document["evaluations"]))
@@ -199,6 +220,64 @@ class HistoricalModelExplorationTests(unittest.TestCase):
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(document))
         self.assertEqual([], errors)
+        cv = next(item for item in document["evaluations"] if item["metric_source"] == "cv_fold_mean")
+        pooled = next(item for item in document["evaluations"] if item["metric_source"] == "pooled_oof")
+        self.assertNotEqual(cv["metrics"]["rmse"]["value"], pooled["metrics"]["rmse"]["value"])
+
+    def test_phase5_rejects_oof_data_or_fold_digest_mismatch(self):
+        phase4, artifacts, oof, _document, _assets = self._phase5_documents()
+        for key in ("development_data_sha256", "fold_sha256"):
+            mismatched = dict(oof)
+            mismatched[key] = "d" * 64 if key.startswith("development") else "e" * 64
+            with self.subTest(key=key), self.assertRaisesRegex(ModelExplorationError, "digest"):
+                build_phase5_exploration(phase4, artifacts, mismatched, "ames-full-model-exploration", "release-01")
+
+    def test_phase5_rejects_mean_metrics_that_do_not_match_phase4_folds(self):
+        phase4, artifacts, oof, _document, _assets = self._phase5_documents()
+        mutated = json.loads(json.dumps(oof))
+        mutated["configurations"][0]["mean_fold_metrics"]["rmse"] += 1
+        with self.assertRaisesRegex(ModelExplorationError, "mean-fold rmse"):
+            build_phase5_exploration(phase4, artifacts, mutated, "ames-full-model-exploration", "release-01")
+
+    def test_package_validator_rejects_mismatched_phase5_digest(self):
+        case_root = self._current_exploration_package()
+        with tempfile.TemporaryDirectory() as temporary:
+            copied = Path(temporary) / "case"
+            shutil.copytree(case_root, copied)
+            fold_path = copied / "phases/phase-05/fold-metrics.json"
+            fold_doc = json.loads(fold_path.read_text(encoding="utf-8"))
+            fold_doc["development_data_sha256"] = "d" * 64
+            fold_path.write_text(json.dumps(fold_doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            package_path = copied / "package.json"
+            package = json.loads(package_path.read_text(encoding="utf-8"))
+            entry = next(item for item in package["files"] if item["path"] == "phases/phase-05/fold-metrics.json")
+            payload = fold_path.read_bytes()
+            entry["bytes"] = len(payload)
+            entry["sha256"] = hashlib.sha256(payload).hexdigest()
+            package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ExplorationPackageError, "identities disagree|data/fold digests"):
+                validate_model_exploration_package(copied, Path("."))
+
+    def test_package_validator_rejects_phase5_mean_metric_mismatch(self):
+        case_root = self._current_exploration_package()
+        with tempfile.TemporaryDirectory() as temporary:
+            copied = Path(temporary) / "case"
+            shutil.copytree(case_root, copied)
+            eval_path = copied / "phases/phase-05/evaluations.json"
+            evaluation_doc = json.loads(eval_path.read_text(encoding="utf-8"))
+            cv_evaluation = next(item for item in evaluation_doc["evaluations"]
+                                 if item["metric_source"] == "cv_fold_mean")
+            cv_evaluation["metrics"]["rmse"]["value"] += 10
+            eval_path.write_text(json.dumps(evaluation_doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            package_path = copied / "package.json"
+            package = json.loads(package_path.read_text(encoding="utf-8"))
+            entry = next(item for item in package["files"] if item["path"] == "phases/phase-05/evaluations.json")
+            payload = eval_path.read_bytes()
+            entry["bytes"] = len(payload)
+            entry["sha256"] = hashlib.sha256(payload).hexdigest()
+            package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ExplorationPackageError, "evaluation value"):
+                validate_model_exploration_package(copied, Path("."))
 
 
 if __name__ == "__main__":

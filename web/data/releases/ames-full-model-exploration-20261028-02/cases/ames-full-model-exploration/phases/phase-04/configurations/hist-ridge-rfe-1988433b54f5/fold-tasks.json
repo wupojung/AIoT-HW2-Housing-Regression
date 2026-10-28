@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "configuration_id": "hist-ridge-rfe-1988433b54f5",
+  "fold_count": 3,
+  "folds": [
+    {
+      "fold": 0,
+      "status": "COMPLETED",
+      "rmse": 72273.48168450795,
+      "mae": 53670.85088451605,
+      "r2": -0.05906712795738733,
+      "task_id": "task_0f2a7a7db47bac4bb5f20546569aaee3"
+    },
+    {
+      "fold": 1,
+      "status": "COMPLETED",
+      "rmse": 71129.62655102578,
+      "mae": 49668.84534747847,
+      "r2": 0.24565299213712943,
+      "task_id": "task_1db711e07404def29ccc6197e671a9a9"
+    },
+    {
+      "fold": 2,
+      "status": "COMPLETED",
+      "rmse": 78599.34919527832,
+      "mae": 56359.40397095847,
+      "r2": -0.0004016444457362045,
+      "task_id": "task_2efc54408d9d303c7b5917d97208e213"
+    }
+  ],
+  "fold_size_evidence": "not present in the public candidate aggregate; see common protocol and fold digest",
+  "selection_metric": "mean of per-fold RMSE; selection score, not independent generalization"
+}
