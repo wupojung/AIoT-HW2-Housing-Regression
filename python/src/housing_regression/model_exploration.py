@@ -579,6 +579,20 @@ def build_phase5_exploration(
         config_folds = [item for item in all_fold_metrics if item.get("config_hash") == config_hash]
         if len(config_folds) != EXPECTED_FOLDS or {item.get("fold") for item in config_folds} != set(range(EXPECTED_FOLDS)):
             raise ModelExplorationError("Phase 5 OOF fold coverage does not match Phase 4")
+        expected_folds = {item.get("fold"): item for item in phase4_cv.get("fold_results", [])}
+        if set(expected_folds) != set(range(EXPECTED_FOLDS)):
+            raise ModelExplorationError("Phase 4 fold metrics are incomplete")
+        for fold_result in config_folds:
+            phase4_fold = expected_folds[fold_result["fold"]]
+            for metric in ("rmse", "mae", "r2"):
+                actual = fold_result.get(metric)
+                expected = phase4_fold.get(metric)
+                if (not isinstance(actual, (int, float)) or isinstance(actual, bool)
+                        or not isinstance(expected, (int, float)) or isinstance(expected, bool)
+                        or not math.isclose(actual, expected, rel_tol=1e-10, abs_tol=1e-6)):
+                    raise ModelExplorationError(
+                        f"Phase 5 fold {fold_result['fold']} {metric} does not match Phase 4"
+                    )
         for metric in ("rmse", "mae", "r2"):
             actual = mean_metrics.get(metric)
             expected = expected_mean.get(metric)

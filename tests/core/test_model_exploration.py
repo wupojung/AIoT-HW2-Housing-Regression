@@ -239,6 +239,18 @@ class HistoricalModelExplorationTests(unittest.TestCase):
         with self.assertRaisesRegex(ModelExplorationError, "mean-fold rmse"):
             build_phase5_exploration(phase4, artifacts, mutated, "ames-full-model-exploration", "release-01")
 
+    def test_phase5_rejects_fold_metric_mismatch_even_when_mean_is_unchanged(self):
+        phase4, artifacts, oof, _document, _assets = self._phase5_documents()
+        mutated = json.loads(json.dumps(oof))
+        config_hash = mutated["configurations"][0]["config_hash"]
+        fold_rows = [item for item in mutated["fold_metrics"] if item["config_hash"] == config_hash]
+        original_mean = statistics.mean(item["rmse"] for item in fold_rows)
+        fold_rows[0]["rmse"] += 1
+        fold_rows[1]["rmse"] -= 1
+        self.assertEqual(original_mean, statistics.mean(item["rmse"] for item in fold_rows))
+        with self.assertRaisesRegex(ModelExplorationError, "fold 0 rmse"):
+            build_phase5_exploration(phase4, artifacts, mutated, "ames-full-model-exploration", "release-01")
+
     def test_package_validator_rejects_mismatched_phase5_digest(self):
         case_root = self._current_exploration_package()
         with tempfile.TemporaryDirectory() as temporary:
