@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "release_id": "ames-initb-development-20261028-02",
+  "release_id": "ames-case-collection-20261028-01",
   "cases": [
     {
       "case_id": "ames-reference-init-a",
@@ -8,6 +8,13 @@
       "package_status": "PARTIAL",
       "package_sha256": "623c6cc968a65df02b3c6c676758b2fdca25031049cf5013980612cac8ac513f",
       "package_bytes": 5704
+    },
+    {
+      "case_id": "ames-full-model-exploration",
+      "package_ref": "releases/ames-full-model-exploration-20261028-01/cases/ames-full-model-exploration/package.json",
+      "package_status": "PARTIAL",
+      "package_sha256": "af4dbbf26c86ee81cd1af412077d808a7e29b409dce7bdb3437cc4b948fff863",
+      "package_bytes": 35859
     }
   ]
 }

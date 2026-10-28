@@ -1,0 +1,654 @@
+{
+  "schema_version": "1.1.0",
+  "case_id": "ames-full-model-exploration",
+  "status": "VERIFIED",
+  "cv": {
+    "training_rows": 1168,
+    "fold_count": 3,
+    "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+    "status": "VERIFIED"
+  },
+  "methods": [
+    {
+      "method_id": "ols_baseline",
+      "label": "All-feature OLS baseline",
+      "parameters": []
+    },
+    {
+      "method_id": "pearson",
+      "label": "Pearson filter → OLS",
+      "parameters": [
+        {
+          "parameter_id": "k",
+          "label": "Selected encoded feature count K",
+          "data_type": "integer"
+        }
+      ]
+    },
+    {
+      "method_id": "mutual_information",
+      "label": "Mutual Information → OLS",
+      "parameters": [
+        {
+          "parameter_id": "k",
+          "label": "Selected encoded feature count K",
+          "data_type": "integer"
+        }
+      ]
+    },
+    {
+      "method_id": "lasso",
+      "label": "Lasso selection → OLS",
+      "parameters": [
+        {
+          "parameter_id": "alpha",
+          "label": "Alpha",
+          "data_type": "number"
+        }
+      ]
+    },
+    {
+      "method_id": "elastic_net",
+      "label": "ElasticNet selection → OLS",
+      "parameters": [
+        {
+          "parameter_id": "alpha",
+          "label": "Alpha",
+          "data_type": "number"
+        },
+        {
+          "parameter_id": "l1_ratio",
+          "label": "L1 ratio",
+          "data_type": "number"
+        }
+      ]
+    },
+    {
+      "method_id": "ridge_rfe",
+      "label": "Ridge RFE → OLS",
+      "parameters": [
+        {
+          "parameter_id": "k",
+          "label": "Selected encoded feature count K",
+          "data_type": "integer"
+        }
+      ]
+    }
+  ],
+  "execution_runs": [
+    {
+      "execution_run_id": "development_20261026_01",
+      "source_manifest_sha256": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e",
+      "status": "VERIFIED"
+    }
+  ],
+  "configurations": [
+    {
+      "configuration_id": "hist-ols-baseline-67211c3848f8",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ols_baseline",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "features": "all"
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-ols-baseline-67211c3848f8/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-ols-baseline-67211c3848f8/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-ols-baseline-67211c3848f8/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-ols-baseline-67211c3848f8/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-pearson-fb8b057e6677",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "pearson",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-pearson-fb8b057e6677/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-pearson-fb8b057e6677/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-pearson-fb8b057e6677/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-pearson-fb8b057e6677/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-pearson-76875a54b993",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "pearson",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-pearson-76875a54b993/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-pearson-76875a54b993/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-pearson-76875a54b993/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-pearson-76875a54b993/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-pearson-4c0e705bb36a",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "pearson",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-pearson-4c0e705bb36a/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-pearson-4c0e705bb36a/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-pearson-4c0e705bb36a/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-pearson-4c0e705bb36a/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-pearson-47c2ce66ecde",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "pearson",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-pearson-47c2ce66ecde/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-pearson-47c2ce66ecde/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-pearson-47c2ce66ecde/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-pearson-47c2ce66ecde/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-pearson-05a42a840e86",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "pearson",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-pearson-05a42a840e86/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-pearson-05a42a840e86/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-pearson-05a42a840e86/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-pearson-05a42a840e86/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-mutual-information-b33c6189b8ae",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "mutual_information",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-mutual-information-b33c6189b8ae/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-mutual-information-b33c6189b8ae/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-mutual-information-b33c6189b8ae/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-mutual-information-b33c6189b8ae/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-mutual-information-fe67d806a6c0",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "mutual_information",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-mutual-information-fe67d806a6c0/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-mutual-information-fe67d806a6c0/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-mutual-information-fe67d806a6c0/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-mutual-information-fe67d806a6c0/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-mutual-information-c79851bf9d83",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "mutual_information",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-mutual-information-c79851bf9d83/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-mutual-information-c79851bf9d83/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-mutual-information-c79851bf9d83/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-mutual-information-c79851bf9d83/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-mutual-information-b87169fc4edc",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "mutual_information",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-mutual-information-b87169fc4edc/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-mutual-information-b87169fc4edc/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-mutual-information-b87169fc4edc/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-mutual-information-b87169fc4edc/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-mutual-information-f8964bbe4d91",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "mutual_information",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-mutual-information-f8964bbe4d91/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-mutual-information-f8964bbe4d91/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-mutual-information-f8964bbe4d91/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-mutual-information-f8964bbe4d91/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-lasso-15ccb5910916",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "lasso",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 0.1,
+        "candidate_order": 0
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-lasso-15ccb5910916/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-lasso-15ccb5910916/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-lasso-15ccb5910916/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-lasso-15ccb5910916/selected-features.json",
+      "status": "ERROR"
+    },
+    {
+      "configuration_id": "hist-lasso-d0ea8d1b5d1d",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "lasso",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 10.0,
+        "candidate_order": 2
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-lasso-d0ea8d1b5d1d/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-lasso-d0ea8d1b5d1d/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-lasso-d0ea8d1b5d1d/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-lasso-d0ea8d1b5d1d/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-lasso-e0ae972743a4",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "lasso",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 1.0,
+        "candidate_order": 1
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-lasso-e0ae972743a4/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-lasso-e0ae972743a4/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-lasso-e0ae972743a4/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-lasso-e0ae972743a4/selected-features.json",
+      "status": "ERROR"
+    },
+    {
+      "configuration_id": "hist-lasso-23fac5e0453b",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "lasso",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 100.0,
+        "candidate_order": 3
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-lasso-23fac5e0453b/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-lasso-23fac5e0453b/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-lasso-23fac5e0453b/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-lasso-23fac5e0453b/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-279a8a5b1c1f",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.8,
+        "candidate_order": 2
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-279a8a5b1c1f/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-279a8a5b1c1f/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-279a8a5b1c1f/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-279a8a5b1c1f/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-2cc6e4b57a10",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 1.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 4
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-2cc6e4b57a10/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-2cc6e4b57a10/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-2cc6e4b57a10/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-2cc6e4b57a10/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-20363ce2a7f8",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 10.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 8
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-20363ce2a7f8/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-20363ce2a7f8/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-20363ce2a7f8/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-20363ce2a7f8/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-d7202991dc8f",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 100.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 11
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-d7202991dc8f/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-d7202991dc8f/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-d7202991dc8f/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-d7202991dc8f/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-9fa4d99608f1",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 1.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 3
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-9fa4d99608f1/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-9fa4d99608f1/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-9fa4d99608f1/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-9fa4d99608f1/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-dd45a0b3f79e",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.5,
+        "candidate_order": 1
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-dd45a0b3f79e/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-dd45a0b3f79e/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-dd45a0b3f79e/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-dd45a0b3f79e/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-d8d37e65bf41",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.2,
+        "candidate_order": 0
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-d8d37e65bf41/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-d8d37e65bf41/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-d8d37e65bf41/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-d8d37e65bf41/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-1c73870379fc",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 1.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 5
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-1c73870379fc/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-1c73870379fc/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-1c73870379fc/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-1c73870379fc/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-d29012556273",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 100.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 10
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-d29012556273/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-d29012556273/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-d29012556273/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-d29012556273/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-52f2eeb3d772",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 10.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 6
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-52f2eeb3d772/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-52f2eeb3d772/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-52f2eeb3d772/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-52f2eeb3d772/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-1098e27f3412",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 100.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 9
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-1098e27f3412/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-1098e27f3412/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-1098e27f3412/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-1098e27f3412/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-d0247c0be6fb",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "elastic_net",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "alpha": 10.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 7
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-elastic-net-d0247c0be6fb/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-elastic-net-d0247c0be6fb/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-elastic-net-d0247c0be6fb/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-elastic-net-d0247c0be6fb/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-616569f18d0f",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ridge_rfe",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-ridge-rfe-616569f18d0f/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-ridge-rfe-616569f18d0f/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-ridge-rfe-616569f18d0f/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-ridge-rfe-616569f18d0f/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-55d847e58f1b",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ridge_rfe",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-ridge-rfe-55d847e58f1b/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-ridge-rfe-55d847e58f1b/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-ridge-rfe-55d847e58f1b/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-ridge-rfe-55d847e58f1b/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-67e3f996e959",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ridge_rfe",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-ridge-rfe-67e3f996e959/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-ridge-rfe-67e3f996e959/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-ridge-rfe-67e3f996e959/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-ridge-rfe-67e3f996e959/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-1988433b54f5",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ridge_rfe",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-ridge-rfe-1988433b54f5/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-ridge-rfe-1988433b54f5/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-ridge-rfe-1988433b54f5/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-ridge-rfe-1988433b54f5/selected-features.json",
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-5209c529b590",
+      "execution_run_id": "development_20261026_01",
+      "method_id": "ridge_rfe",
+      "track_id": "selected_features_to_primary_ols",
+      "params": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+      "metadata_ref": "phases/phase-04/configurations/hist-ridge-rfe-5209c529b590/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/hist-ridge-rfe-5209c529b590/fold-tasks.json",
+      "cv_metrics_ref": "phases/phase-04/configurations/hist-ridge-rfe-5209c529b590/cv-metrics.json",
+      "selected_features_ref": "phases/phase-04/configurations/hist-ridge-rfe-5209c529b590/selected-features.json",
+      "status": "VERIFIED"
+    }
+  ],
+  "default_configuration_id": null,
+  "source_reported_candidate_configuration_id": "hist-lasso-23fac5e0453b",
+  "charts": [
+    {
+      "chart_id": "method-comparison",
+      "chart_type": "method-comparison",
+      "points_ref": "phases/phase-04/charts/method-comparison.json",
+      "axes": {
+        "x": "method_id",
+        "y": "rmse_mean_fold"
+      },
+      "comparison_protocol": {
+        "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+        "fold_count": 3,
+        "track_id": "selected_features_to_primary_ols",
+        "metric_source": "historical aggregate summary",
+        "metric": "rmse_mean_fold",
+        "target_unit": "USD",
+        "lower_is_better": true,
+        "status": "SOURCE_REPORTED_VERIFIED_MATCH"
+      },
+      "status": "VERIFIED"
+    },
+    {
+      "chart_id": "feature-count-vs-cv-rmse",
+      "chart_type": "feature-count-vs-cv-rmse",
+      "points_ref": "phases/phase-04/charts/feature-count-vs-cv-rmse.json",
+      "axes": {
+        "x": "feature_count_mean",
+        "y": "rmse_mean_fold"
+      },
+      "comparison_protocol": {
+        "protocol_id": "historical-p4b-v2-development-3fold-seed42",
+        "fold_count": 3,
+        "track_id": "selected_features_to_primary_ols",
+        "metric_source": "historical aggregate summary",
+        "metric": "rmse_mean_fold",
+        "target_unit": "USD",
+        "lower_is_better": true,
+        "status": "SOURCE_REPORTED_VERIFIED_MATCH"
+      },
+      "status": "VERIFIED"
+    }
+  ]
+}

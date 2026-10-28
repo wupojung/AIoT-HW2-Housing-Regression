@@ -403,6 +403,16 @@ h2 { color: #18374b; letter-spacing: -.025em; }
 .reference-metrics-card .metric-value, .reference-p5-metrics .metric-value { font-size: clamp(23px, 2.5vw, 34px); }
 .reference-figure-card { margin-top: 18px; }
 .reference-figure-caption { color: #536b7a; font-size: 11px; line-height: 1.6; }
+.exploration-chart { min-height: 260px; }
+.exploration-view .mock-data-table td,
+.exploration-view .mock-data-table th,
+.exploration-chart + figcaption { font-variant-numeric: tabular-nums; }
+.feature-name-list { columns: 2; max-height: 28rem; overflow: auto; padding-inline-start: 1.25rem; font-variant-numeric: tabular-nums; }
+.feature-name-list li { break-inside: avoid; content-visibility: auto; padding-inline-end: 0.5rem; overflow-wrap: anywhere; }
+@media (max-width: 680px) {
+  .feature-name-list { columns: 1; max-height: 22rem; }
+  .exploration-view .table-scroll { max-width: 100%; }
+}
 .reference-note-card { margin-top: 18px; }
 .reference-note-card .disclosure { margin-top: 18px; }
 .reference-page details.disclosure { margin-top: 14px; }

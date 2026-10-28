@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "status": "UNAVAILABLE",
+  "models": [],
+  "readiness": {
+    "predict_enabled": false,
+    "reason_code": "NO_FINAL_MODEL_FOR_EXPLORATION_RUN",
+    "message": "This exploration run has no matching final-fit model for its selected configurations; local and online prediction are unavailable."
+  }
+}

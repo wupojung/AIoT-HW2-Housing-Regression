@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "release_id": "ames-full-model-exploration-20261028-01",
+  "source_data_sha256": "1e18addf81e5e4d347cc17ee6075bbe4a42b7fa26b9e5b063e8f692a5f929d41",
+  "phase_runs": {
+    "phase1": null,
+    "phase2": null,
+    "phase3": null,
+    "phase4": "development_20261026_01",
+    "phase5": "development_20261026_01",
+    "phase6": null
+  },
+  "phase2_source_case_id": "ames-reference-init-a",
+  "phase2_source_package_sha256": "623c6cc968a65df02b3c6c676758b2fdca25031049cf5013980612cac8ac513f",
+  "phase4_source_summary_sha256": "3d1b60ae9cb43a34eff9646b56950531217dc791fcafe4d1ba3cdfeb151f942e",
+  "phase4_candidate_count": 32,
+  "phase5_metric_evaluation_count": 60
+}
