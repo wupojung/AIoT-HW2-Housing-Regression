@@ -1,0 +1,4587 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "configuration_id": "hist-lasso-23fac5e0453b",
+  "selection_unit": "encoded_feature",
+  "summary": "Selections are fold-local. No final all-Development refit feature list is asserted for this candidate.",
+  "folds": [
+    {
+      "fold": 0,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 104,
+      "raw_source_count": 68,
+      "selected_encoded_names": [
+        "LotFrontage",
+        "LotArea",
+        "OverallQual",
+        "OverallCond",
+        "YearBuilt",
+        "MasVnrArea",
+        "BsmtFinSF1",
+        "TotalBsmtSF",
+        "2ndFlrSF",
+        "LowQualFinSF",
+        "GrLivArea",
+        "BsmtFullBath",
+        "BsmtHalfBath",
+        "FullBath",
+        "HalfBath",
+        "BedroomAbvGr",
+        "KitchenAbvGr",
+        "TotRmsAbvGrd",
+        "Fireplaces",
+        "GarageYrBlt",
+        "GarageCars",
+        "WoodDeckSF",
+        "OpenPorchSF",
+        "EnclosedPorch",
+        "3SsnPorch",
+        "ScreenPorch",
+        "PoolArea",
+        "MiscVal",
+        "MoSold",
+        "YrSold",
+        "HasBasement",
+        "ExterQual",
+        "ExterCond",
+        "BsmtQual",
+        "BsmtCond",
+        "BsmtExposure",
+        "BsmtFinType1",
+        "BsmtFinType2",
+        "HeatingQC",
+        "KitchenQual",
+        "Functional",
+        "FireplaceQu",
+        "GarageFinish",
+        "GarageQual",
+        "PavedDrive",
+        "PoolQC",
+        "Fence",
+        "LotShape",
+        "LandSlope",
+        "MSSubClass_120",
+        "MSSubClass_20",
+        "MSZoning_C (all)",
+        "LandContour_Bnk",
+        "LandContour_HLS",
+        "LotConfig_CulDSac",
+        "LotConfig_Inside",
+        "Neighborhood_BrkSide",
+        "Neighborhood_CollgCr",
+        "Neighborhood_Crawfor",
+        "Neighborhood_Edwards",
+        "Neighborhood_Gilbert",
+        "Neighborhood_MeadowV",
+        "Neighborhood_NAmes",
+        "Neighborhood_NWAmes",
+        "Neighborhood_NoRidge",
+        "Neighborhood_NridgHt",
+        "Neighborhood_OldTown",
+        "Neighborhood_Sawyer",
+        "Neighborhood_StoneBr",
+        "Condition1_Norm",
+        "Condition1_RRAn",
+        "Condition2_PosN",
+        "BldgType_1Fam",
+        "BldgType_Twnhs",
+        "BldgType_TwnhsE",
+        "HouseStyle_1.5Fin",
+        "HouseStyle_1Story",
+        "RoofStyle_Flat",
+        "RoofStyle_Gable",
+        "RoofMatl_ClyTile",
+        "RoofMatl_WdShngl",
+        "Exterior1st_BrkFace",
+        "Exterior1st_CemntBd",
+        "Exterior1st_HdBoard",
+        "Exterior1st_Wd Sdng",
+        "Exterior1st_WdShing",
+        "Exterior2nd_BrkFace",
+        "Exterior2nd_HdBoard",
+        "Exterior2nd_VinylSd",
+        "Exterior2nd_Wd Sdng",
+        "Exterior2nd_Wd Shng",
+        "MasVnrType_BrkFace",
+        "MasVnrType_None",
+        "Foundation_BrkTil",
+        "Foundation_PConc",
+        "Foundation_Slab",
+        "CentralAir_N",
+        "Electrical_FuseA",
+        "GarageType_Attchd",
+        "GarageType_BuiltIn",
+        "SaleType_New",
+        "SaleCondition_Abnorml",
+        "SaleCondition_Family",
+        "SaleCondition_Partial"
+      ],
+      "selected_raw_sources": [
+        "2ndFlrSF",
+        "3SsnPorch",
+        "BedroomAbvGr",
+        "BldgType",
+        "BsmtCond",
+        "BsmtExposure",
+        "BsmtFinSF1",
+        "BsmtFinType1",
+        "BsmtFinType2",
+        "BsmtFullBath",
+        "BsmtHalfBath",
+        "BsmtQual",
+        "CentralAir",
+        "Condition1",
+        "Condition2",
+        "Electrical",
+        "EnclosedPorch",
+        "ExterCond",
+        "ExterQual",
+        "Exterior1st",
+        "Exterior2nd",
+        "Fence",
+        "FireplaceQu",
+        "Fireplaces",
+        "Foundation",
+        "FullBath",
+        "Functional",
+        "GarageCars",
+        "GarageFinish",
+        "GarageQual",
+        "GarageType",
+        "GarageYrBlt",
+        "GrLivArea",
+        "HalfBath",
+        "HeatingQC",
+        "HouseStyle",
+        "KitchenAbvGr",
+        "KitchenQual",
+        "LandContour",
+        "LandSlope",
+        "LotArea",
+        "LotConfig",
+        "LotFrontage",
+        "LotShape",
+        "LowQualFinSF",
+        "MSSubClass",
+        "MSZoning",
+        "MasVnrArea",
+        "MasVnrType",
+        "MiscVal",
+        "MoSold",
+        "Neighborhood",
+        "OpenPorchSF",
+        "OverallCond",
+        "OverallQual",
+        "PavedDrive",
+        "PoolArea",
+        "PoolQC",
+        "RoofMatl",
+        "RoofStyle",
+        "SaleCondition",
+        "SaleType",
+        "ScreenPorch",
+        "TotRmsAbvGrd",
+        "TotalBsmtSF",
+        "WoodDeckSF",
+        "YearBuilt",
+        "YrSold"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "LotFrontage",
+          "raw_source_columns": [
+            "LotFrontage"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotFrontage"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotArea",
+          "raw_source_columns": [
+            "LotArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "OverallQual",
+          "raw_source_columns": [
+            "OverallQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "OverallCond",
+          "raw_source_columns": [
+            "OverallCond"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallCond"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearBuilt",
+          "raw_source_columns": [
+            "YearBuilt"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearBuilt"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrArea",
+          "raw_source_columns": [
+            "MasVnrArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFinSF1",
+          "raw_source_columns": [
+            "BsmtFinSF1"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFinSF1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotalBsmtSF",
+          "raw_source_columns": [
+            "TotalBsmtSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotalBsmtSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "2ndFlrSF",
+          "raw_source_columns": [
+            "2ndFlrSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "2ndFlrSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LowQualFinSF",
+          "raw_source_columns": [
+            "LowQualFinSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LowQualFinSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GrLivArea",
+          "raw_source_columns": [
+            "GrLivArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GrLivArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFullBath",
+          "raw_source_columns": [
+            "BsmtFullBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFullBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtHalfBath",
+          "raw_source_columns": [
+            "BsmtHalfBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtHalfBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FullBath",
+          "raw_source_columns": [
+            "FullBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FullBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HalfBath",
+          "raw_source_columns": [
+            "HalfBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HalfBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BedroomAbvGr",
+          "raw_source_columns": [
+            "BedroomAbvGr"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BedroomAbvGr"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "KitchenAbvGr",
+          "raw_source_columns": [
+            "KitchenAbvGr"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "KitchenAbvGr"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotRmsAbvGrd",
+          "raw_source_columns": [
+            "TotRmsAbvGrd"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotRmsAbvGrd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Fireplaces",
+          "raw_source_columns": [
+            "Fireplaces"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Fireplaces"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageYrBlt",
+          "raw_source_columns": [
+            "GarageYrBlt"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageYrBlt"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageCars",
+          "raw_source_columns": [
+            "GarageCars"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageCars"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "WoodDeckSF",
+          "raw_source_columns": [
+            "WoodDeckSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "WoodDeckSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "OpenPorchSF",
+          "raw_source_columns": [
+            "OpenPorchSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OpenPorchSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "EnclosedPorch",
+          "raw_source_columns": [
+            "EnclosedPorch"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "EnclosedPorch"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "3SsnPorch",
+          "raw_source_columns": [
+            "3SsnPorch"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "3SsnPorch"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "ScreenPorch",
+          "raw_source_columns": [
+            "ScreenPorch"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ScreenPorch"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "PoolArea",
+          "raw_source_columns": [
+            "PoolArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "PoolArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MiscVal",
+          "raw_source_columns": [
+            "MiscVal"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MiscVal"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MoSold",
+          "raw_source_columns": [
+            "MoSold"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MoSold"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YrSold",
+          "raw_source_columns": [
+            "YrSold"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YrSold"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HasBasement",
+          "raw_source_columns": [
+            "BsmtQual",
+            "TotalBsmtSF"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "BsmtQual",
+            "TotalBsmtSF"
+          ]
+        },
+        {
+          "encoded_name": "ExterQual",
+          "raw_source_columns": [
+            "ExterQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ExterQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "ExterCond",
+          "raw_source_columns": [
+            "ExterCond"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ExterCond"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtQual",
+          "raw_source_columns": [
+            "BsmtQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtCond",
+          "raw_source_columns": [
+            "BsmtCond"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtCond"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtExposure",
+          "raw_source_columns": [
+            "BsmtExposure"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtExposure"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFinType1",
+          "raw_source_columns": [
+            "BsmtFinType1"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFinType1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFinType2",
+          "raw_source_columns": [
+            "BsmtFinType2"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFinType2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HeatingQC",
+          "raw_source_columns": [
+            "HeatingQC"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HeatingQC"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "KitchenQual",
+          "raw_source_columns": [
+            "KitchenQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "KitchenQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Functional",
+          "raw_source_columns": [
+            "Functional"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Functional"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FireplaceQu",
+          "raw_source_columns": [
+            "FireplaceQu"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FireplaceQu"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageFinish",
+          "raw_source_columns": [
+            "GarageFinish"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageFinish"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageQual",
+          "raw_source_columns": [
+            "GarageQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "PavedDrive",
+          "raw_source_columns": [
+            "PavedDrive"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "PavedDrive"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "PoolQC",
+          "raw_source_columns": [
+            "PoolQC"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "PoolQC"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Fence",
+          "raw_source_columns": [
+            "Fence"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Fence"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotShape",
+          "raw_source_columns": [
+            "LotShape"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotShape"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandSlope",
+          "raw_source_columns": [
+            "LandSlope"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandSlope"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSSubClass_120",
+          "raw_source_columns": [
+            "MSSubClass"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSSubClass"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSSubClass_20",
+          "raw_source_columns": [
+            "MSSubClass"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSSubClass"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSZoning_C (all)",
+          "raw_source_columns": [
+            "MSZoning"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSZoning"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandContour_Bnk",
+          "raw_source_columns": [
+            "LandContour"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandContour"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandContour_HLS",
+          "raw_source_columns": [
+            "LandContour"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandContour"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotConfig_CulDSac",
+          "raw_source_columns": [
+            "LotConfig"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotConfig"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotConfig_Inside",
+          "raw_source_columns": [
+            "LotConfig"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotConfig"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_BrkSide",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_CollgCr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Crawfor",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Edwards",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Gilbert",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_MeadowV",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NAmes",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NWAmes",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NoRidge",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NridgHt",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_OldTown",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Sawyer",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_StoneBr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Condition1_Norm",
+          "raw_source_columns": [
+            "Condition1"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Condition1_RRAn",
+          "raw_source_columns": [
+            "Condition1"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Condition2_PosN",
+          "raw_source_columns": [
+            "Condition2"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BldgType_1Fam",
+          "raw_source_columns": [
+            "BldgType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BldgType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BldgType_Twnhs",
+          "raw_source_columns": [
+            "BldgType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BldgType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BldgType_TwnhsE",
+          "raw_source_columns": [
+            "BldgType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BldgType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HouseStyle_1.5Fin",
+          "raw_source_columns": [
+            "HouseStyle"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HouseStyle"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HouseStyle_1Story",
+          "raw_source_columns": [
+            "HouseStyle"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HouseStyle"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofStyle_Flat",
+          "raw_source_columns": [
+            "RoofStyle"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofStyle"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofStyle_Gable",
+          "raw_source_columns": [
+            "RoofStyle"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofStyle"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_ClyTile",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_WdShngl",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_BrkFace",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_CemntBd",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_HdBoard",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_Wd Sdng",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_WdShing",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_BrkFace",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_HdBoard",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_VinylSd",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_Wd Sdng",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_Wd Shng",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrType_BrkFace",
+          "raw_source_columns": [
+            "MasVnrType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrType_None",
+          "raw_source_columns": [
+            "MasVnrType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Foundation_BrkTil",
+          "raw_source_columns": [
+            "Foundation"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Foundation"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Foundation_PConc",
+          "raw_source_columns": [
+            "Foundation"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Foundation"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Foundation_Slab",
+          "raw_source_columns": [
+            "Foundation"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Foundation"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "CentralAir_N",
+          "raw_source_columns": [
+            "CentralAir"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "CentralAir"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Electrical_FuseA",
+          "raw_source_columns": [
+            "Electrical"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Electrical"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageType_Attchd",
+          "raw_source_columns": [
+            "GarageType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageType_BuiltIn",
+          "raw_source_columns": [
+            "GarageType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleType_New",
+          "raw_source_columns": [
+            "SaleType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleCondition_Abnorml",
+          "raw_source_columns": [
+            "SaleCondition"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleCondition"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleCondition_Family",
+          "raw_source_columns": [
+            "SaleCondition"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleCondition"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleCondition_Partial",
+          "raw_source_columns": [
+            "SaleCondition"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleCondition"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    },
+    {
+      "fold": 1,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 103,
+      "raw_source_count": 67,
+      "selected_encoded_names": [
+        "LotFrontage",
+        "LotArea",
+        "OverallQual",
+        "OverallCond",
+        "YearBuilt",
+        "MasVnrArea",
+        "BsmtFinSF1",
+        "BsmtFinSF2",
+        "TotalBsmtSF",
+        "1stFlrSF",
+        "LowQualFinSF",
+        "GrLivArea",
+        "BsmtFullBath",
+        "BsmtHalfBath",
+        "FullBath",
+        "HalfBath",
+        "BedroomAbvGr",
+        "KitchenAbvGr",
+        "TotRmsAbvGrd",
+        "Fireplaces",
+        "GarageYrBlt",
+        "GarageCars",
+        "GarageArea",
+        "WoodDeckSF",
+        "OpenPorchSF",
+        "EnclosedPorch",
+        "3SsnPorch",
+        "ScreenPorch",
+        "MiscVal",
+        "MoSold",
+        "YrSold",
+        "HasBasement",
+        "HasFireplace",
+        "ExterQual",
+        "ExterCond",
+        "BsmtQual",
+        "BsmtCond",
+        "BsmtExposure",
+        "BsmtFinType2",
+        "HeatingQC",
+        "KitchenQual",
+        "Functional",
+        "FireplaceQu",
+        "GarageFinish",
+        "GarageQual",
+        "PavedDrive",
+        "PoolQC",
+        "Fence",
+        "LotShape",
+        "LandSlope",
+        "MSSubClass_120",
+        "MSSubClass_190",
+        "MSSubClass_30",
+        "MSSubClass_60",
+        "MSZoning_C (all)",
+        "MSZoning_FV",
+        "MSZoning_RM",
+        "LandContour_Bnk",
+        "LandContour_HLS",
+        "LotConfig_CulDSac",
+        "LotConfig_Inside",
+        "Neighborhood_BrkSide",
+        "Neighborhood_CollgCr",
+        "Neighborhood_Crawfor",
+        "Neighborhood_Edwards",
+        "Neighborhood_Gilbert",
+        "Neighborhood_NAmes",
+        "Neighborhood_NWAmes",
+        "Neighborhood_NoRidge",
+        "Neighborhood_NridgHt",
+        "Neighborhood_StoneBr",
+        "Neighborhood_Veenker",
+        "Condition1_Artery",
+        "Condition1_Norm",
+        "Condition1_RRAe",
+        "Condition1_RRAn",
+        "BldgType_1Fam",
+        "BldgType_2fmCon",
+        "BldgType_Twnhs",
+        "HouseStyle_1Story",
+        "RoofStyle_Hip",
+        "RoofMatl_ClyTile",
+        "RoofMatl_CompShg",
+        "Exterior1st_BrkFace",
+        "Exterior1st_HdBoard",
+        "Exterior1st_Wd Sdng",
+        "Exterior1st_WdShing",
+        "Exterior2nd_CmentBd",
+        "Exterior2nd_Plywood",
+        "Exterior2nd_Wd Sdng",
+        "Exterior2nd_Wd Shng",
+        "MasVnrType_BrkCmn",
+        "MasVnrType_BrkFace",
+        "MasVnrType_None",
+        "MasVnrType_Stone",
+        "Foundation_PConc",
+        "CentralAir_N",
+        "GarageType_BuiltIn",
+        "GarageType_Detchd",
+        "MiscFeature_Shed",
+        "SaleType_COD",
+        "SaleType_New",
+        "SaleCondition_Normal"
+      ],
+      "selected_raw_sources": [
+        "1stFlrSF",
+        "3SsnPorch",
+        "BedroomAbvGr",
+        "BldgType",
+        "BsmtCond",
+        "BsmtExposure",
+        "BsmtFinSF1",
+        "BsmtFinSF2",
+        "BsmtFinType2",
+        "BsmtFullBath",
+        "BsmtHalfBath",
+        "BsmtQual",
+        "CentralAir",
+        "Condition1",
+        "EnclosedPorch",
+        "ExterCond",
+        "ExterQual",
+        "Exterior1st",
+        "Exterior2nd",
+        "Fence",
+        "FireplaceQu",
+        "Fireplaces",
+        "Foundation",
+        "FullBath",
+        "Functional",
+        "GarageArea",
+        "GarageCars",
+        "GarageFinish",
+        "GarageQual",
+        "GarageType",
+        "GarageYrBlt",
+        "GrLivArea",
+        "HalfBath",
+        "HeatingQC",
+        "HouseStyle",
+        "KitchenAbvGr",
+        "KitchenQual",
+        "LandContour",
+        "LandSlope",
+        "LotArea",
+        "LotConfig",
+        "LotFrontage",
+        "LotShape",
+        "LowQualFinSF",
+        "MSSubClass",
+        "MSZoning",
+        "MasVnrArea",
+        "MasVnrType",
+        "MiscFeature",
+        "MiscVal",
+        "MoSold",
+        "Neighborhood",
+        "OpenPorchSF",
+        "OverallCond",
+        "OverallQual",
+        "PavedDrive",
+        "PoolQC",
+        "RoofMatl",
+        "RoofStyle",
+        "SaleCondition",
+        "SaleType",
+        "ScreenPorch",
+        "TotRmsAbvGrd",
+        "TotalBsmtSF",
+        "WoodDeckSF",
+        "YearBuilt",
+        "YrSold"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "LotFrontage",
+          "raw_source_columns": [
+            "LotFrontage"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotFrontage"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotArea",
+          "raw_source_columns": [
+            "LotArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "OverallQual",
+          "raw_source_columns": [
+            "OverallQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "OverallCond",
+          "raw_source_columns": [
+            "OverallCond"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallCond"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearBuilt",
+          "raw_source_columns": [
+            "YearBuilt"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearBuilt"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrArea",
+          "raw_source_columns": [
+            "MasVnrArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFinSF1",
+          "raw_source_columns": [
+            "BsmtFinSF1"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFinSF1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFinSF2",
+          "raw_source_columns": [
+            "BsmtFinSF2"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFinSF2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotalBsmtSF",
+          "raw_source_columns": [
+            "TotalBsmtSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotalBsmtSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "1stFlrSF",
+          "raw_source_columns": [
+            "1stFlrSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "1stFlrSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LowQualFinSF",
+          "raw_source_columns": [
+            "LowQualFinSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LowQualFinSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GrLivArea",
+          "raw_source_columns": [
+            "GrLivArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GrLivArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFullBath",
+          "raw_source_columns": [
+            "BsmtFullBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFullBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtHalfBath",
+          "raw_source_columns": [
+            "BsmtHalfBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtHalfBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FullBath",
+          "raw_source_columns": [
+            "FullBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FullBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HalfBath",
+          "raw_source_columns": [
+            "HalfBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HalfBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BedroomAbvGr",
+          "raw_source_columns": [
+            "BedroomAbvGr"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BedroomAbvGr"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "KitchenAbvGr",
+          "raw_source_columns": [
+            "KitchenAbvGr"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "KitchenAbvGr"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotRmsAbvGrd",
+          "raw_source_columns": [
+            "TotRmsAbvGrd"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotRmsAbvGrd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Fireplaces",
+          "raw_source_columns": [
+            "Fireplaces"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Fireplaces"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageYrBlt",
+          "raw_source_columns": [
+            "GarageYrBlt"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageYrBlt"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageCars",
+          "raw_source_columns": [
+            "GarageCars"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageCars"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageArea",
+          "raw_source_columns": [
+            "GarageArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "WoodDeckSF",
+          "raw_source_columns": [
+            "WoodDeckSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "WoodDeckSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "OpenPorchSF",
+          "raw_source_columns": [
+            "OpenPorchSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OpenPorchSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "EnclosedPorch",
+          "raw_source_columns": [
+            "EnclosedPorch"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "EnclosedPorch"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "3SsnPorch",
+          "raw_source_columns": [
+            "3SsnPorch"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "3SsnPorch"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "ScreenPorch",
+          "raw_source_columns": [
+            "ScreenPorch"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ScreenPorch"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MiscVal",
+          "raw_source_columns": [
+            "MiscVal"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MiscVal"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MoSold",
+          "raw_source_columns": [
+            "MoSold"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MoSold"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YrSold",
+          "raw_source_columns": [
+            "YrSold"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YrSold"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HasBasement",
+          "raw_source_columns": [
+            "BsmtQual",
+            "TotalBsmtSF"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "BsmtQual",
+            "TotalBsmtSF"
+          ]
+        },
+        {
+          "encoded_name": "HasFireplace",
+          "raw_source_columns": [
+            "Fireplaces",
+            "FireplaceQu"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "Fireplaces",
+            "FireplaceQu"
+          ]
+        },
+        {
+          "encoded_name": "ExterQual",
+          "raw_source_columns": [
+            "ExterQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ExterQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "ExterCond",
+          "raw_source_columns": [
+            "ExterCond"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ExterCond"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtQual",
+          "raw_source_columns": [
+            "BsmtQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtCond",
+          "raw_source_columns": [
+            "BsmtCond"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtCond"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtExposure",
+          "raw_source_columns": [
+            "BsmtExposure"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtExposure"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFinType2",
+          "raw_source_columns": [
+            "BsmtFinType2"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFinType2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HeatingQC",
+          "raw_source_columns": [
+            "HeatingQC"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HeatingQC"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "KitchenQual",
+          "raw_source_columns": [
+            "KitchenQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "KitchenQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Functional",
+          "raw_source_columns": [
+            "Functional"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Functional"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FireplaceQu",
+          "raw_source_columns": [
+            "FireplaceQu"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FireplaceQu"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageFinish",
+          "raw_source_columns": [
+            "GarageFinish"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageFinish"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageQual",
+          "raw_source_columns": [
+            "GarageQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "PavedDrive",
+          "raw_source_columns": [
+            "PavedDrive"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "PavedDrive"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "PoolQC",
+          "raw_source_columns": [
+            "PoolQC"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "PoolQC"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Fence",
+          "raw_source_columns": [
+            "Fence"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Fence"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotShape",
+          "raw_source_columns": [
+            "LotShape"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotShape"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandSlope",
+          "raw_source_columns": [
+            "LandSlope"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandSlope"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSSubClass_120",
+          "raw_source_columns": [
+            "MSSubClass"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSSubClass"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSSubClass_190",
+          "raw_source_columns": [
+            "MSSubClass"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSSubClass"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSSubClass_30",
+          "raw_source_columns": [
+            "MSSubClass"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSSubClass"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSSubClass_60",
+          "raw_source_columns": [
+            "MSSubClass"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSSubClass"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSZoning_C (all)",
+          "raw_source_columns": [
+            "MSZoning"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSZoning"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSZoning_FV",
+          "raw_source_columns": [
+            "MSZoning"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSZoning"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSZoning_RM",
+          "raw_source_columns": [
+            "MSZoning"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSZoning"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandContour_Bnk",
+          "raw_source_columns": [
+            "LandContour"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandContour"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandContour_HLS",
+          "raw_source_columns": [
+            "LandContour"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandContour"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotConfig_CulDSac",
+          "raw_source_columns": [
+            "LotConfig"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotConfig"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotConfig_Inside",
+          "raw_source_columns": [
+            "LotConfig"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotConfig"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_BrkSide",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_CollgCr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Crawfor",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Edwards",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Gilbert",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NAmes",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NWAmes",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NoRidge",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NridgHt",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_StoneBr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Veenker",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Condition1_Artery",
+          "raw_source_columns": [
+            "Condition1"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Condition1_Norm",
+          "raw_source_columns": [
+            "Condition1"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Condition1_RRAe",
+          "raw_source_columns": [
+            "Condition1"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Condition1_RRAn",
+          "raw_source_columns": [
+            "Condition1"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BldgType_1Fam",
+          "raw_source_columns": [
+            "BldgType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BldgType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BldgType_2fmCon",
+          "raw_source_columns": [
+            "BldgType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BldgType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BldgType_Twnhs",
+          "raw_source_columns": [
+            "BldgType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BldgType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HouseStyle_1Story",
+          "raw_source_columns": [
+            "HouseStyle"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HouseStyle"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofStyle_Hip",
+          "raw_source_columns": [
+            "RoofStyle"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofStyle"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_ClyTile",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_CompShg",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_BrkFace",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_HdBoard",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_Wd Sdng",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_WdShing",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_CmentBd",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_Plywood",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_Wd Sdng",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_Wd Shng",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrType_BrkCmn",
+          "raw_source_columns": [
+            "MasVnrType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrType_BrkFace",
+          "raw_source_columns": [
+            "MasVnrType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrType_None",
+          "raw_source_columns": [
+            "MasVnrType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrType_Stone",
+          "raw_source_columns": [
+            "MasVnrType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Foundation_PConc",
+          "raw_source_columns": [
+            "Foundation"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Foundation"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "CentralAir_N",
+          "raw_source_columns": [
+            "CentralAir"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "CentralAir"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageType_BuiltIn",
+          "raw_source_columns": [
+            "GarageType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageType_Detchd",
+          "raw_source_columns": [
+            "GarageType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MiscFeature_Shed",
+          "raw_source_columns": [
+            "MiscFeature"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MiscFeature"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleType_COD",
+          "raw_source_columns": [
+            "SaleType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleType_New",
+          "raw_source_columns": [
+            "SaleType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleCondition_Normal",
+          "raw_source_columns": [
+            "SaleCondition"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleCondition"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    },
+    {
+      "fold": 2,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 102,
+      "raw_source_count": 67,
+      "selected_encoded_names": [
+        "LotArea",
+        "OverallQual",
+        "OverallCond",
+        "YearBuilt",
+        "YearRemodAdd",
+        "MasVnrArea",
+        "BsmtFinSF1",
+        "BsmtFinSF2",
+        "TotalBsmtSF",
+        "2ndFlrSF",
+        "LowQualFinSF",
+        "GrLivArea",
+        "BsmtFullBath",
+        "FullBath",
+        "HalfBath",
+        "BedroomAbvGr",
+        "KitchenAbvGr",
+        "TotRmsAbvGrd",
+        "Fireplaces",
+        "GarageYrBlt",
+        "GarageCars",
+        "GarageArea",
+        "WoodDeckSF",
+        "OpenPorchSF",
+        "EnclosedPorch",
+        "ScreenPorch",
+        "PoolArea",
+        "MiscVal",
+        "MoSold",
+        "YrSold",
+        "HasBasement",
+        "HasFireplace",
+        "HasAlley",
+        "ExterQual",
+        "ExterCond",
+        "BsmtQual",
+        "BsmtCond",
+        "BsmtExposure",
+        "BsmtFinType1",
+        "BsmtFinType2",
+        "HeatingQC",
+        "KitchenQual",
+        "Functional",
+        "FireplaceQu",
+        "GarageFinish",
+        "GarageQual",
+        "GarageCond",
+        "Fence",
+        "LotShape",
+        "LandSlope",
+        "MSSubClass_120",
+        "MSSubClass_60",
+        "MSZoning_RL",
+        "MSZoning_RM",
+        "Alley_None",
+        "LandContour_Bnk",
+        "LandContour_HLS",
+        "LandContour_Low",
+        "LandContour_Lvl",
+        "LotConfig_Corner",
+        "LotConfig_CulDSac",
+        "LotConfig_FR2",
+        "Neighborhood_BrkSide",
+        "Neighborhood_CollgCr",
+        "Neighborhood_Crawfor",
+        "Neighborhood_Edwards",
+        "Neighborhood_Gilbert",
+        "Neighborhood_NAmes",
+        "Neighborhood_NWAmes",
+        "Neighborhood_NoRidge",
+        "Neighborhood_NridgHt",
+        "Neighborhood_Sawyer",
+        "Neighborhood_Somerst",
+        "Neighborhood_StoneBr",
+        "Neighborhood_Timber",
+        "Condition1_Norm",
+        "Condition2_PosN",
+        "BldgType_1Fam",
+        "BldgType_TwnhsE",
+        "HouseStyle_1Story",
+        "RoofStyle_Hip",
+        "RoofMatl_WdShngl",
+        "Exterior1st_CemntBd",
+        "Exterior1st_HdBoard",
+        "Exterior1st_MetalSd",
+        "Exterior1st_Wd Sdng",
+        "Exterior2nd_HdBoard",
+        "Exterior2nd_MetalSd",
+        "Exterior2nd_Wd Sdng",
+        "Exterior2nd_Wd Shng",
+        "MasVnrType_Stone",
+        "Foundation_PConc",
+        "Electrical_SBrkr",
+        "GarageType_Attchd",
+        "GarageType_BuiltIn",
+        "GarageType_Detchd",
+        "SaleType_COD",
+        "SaleType_CWD",
+        "SaleType_New",
+        "SaleType_WD",
+        "SaleCondition_Abnorml",
+        "SaleCondition_Alloca"
+      ],
+      "selected_raw_sources": [
+        "2ndFlrSF",
+        "Alley",
+        "BedroomAbvGr",
+        "BldgType",
+        "BsmtCond",
+        "BsmtExposure",
+        "BsmtFinSF1",
+        "BsmtFinSF2",
+        "BsmtFinType1",
+        "BsmtFinType2",
+        "BsmtFullBath",
+        "BsmtQual",
+        "Condition1",
+        "Condition2",
+        "Electrical",
+        "EnclosedPorch",
+        "ExterCond",
+        "ExterQual",
+        "Exterior1st",
+        "Exterior2nd",
+        "Fence",
+        "FireplaceQu",
+        "Fireplaces",
+        "Foundation",
+        "FullBath",
+        "Functional",
+        "GarageArea",
+        "GarageCars",
+        "GarageCond",
+        "GarageFinish",
+        "GarageQual",
+        "GarageType",
+        "GarageYrBlt",
+        "GrLivArea",
+        "HalfBath",
+        "HeatingQC",
+        "HouseStyle",
+        "KitchenAbvGr",
+        "KitchenQual",
+        "LandContour",
+        "LandSlope",
+        "LotArea",
+        "LotConfig",
+        "LotShape",
+        "LowQualFinSF",
+        "MSSubClass",
+        "MSZoning",
+        "MasVnrArea",
+        "MasVnrType",
+        "MiscVal",
+        "MoSold",
+        "Neighborhood",
+        "OpenPorchSF",
+        "OverallCond",
+        "OverallQual",
+        "PoolArea",
+        "RoofMatl",
+        "RoofStyle",
+        "SaleCondition",
+        "SaleType",
+        "ScreenPorch",
+        "TotRmsAbvGrd",
+        "TotalBsmtSF",
+        "WoodDeckSF",
+        "YearBuilt",
+        "YearRemodAdd",
+        "YrSold"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "LotArea",
+          "raw_source_columns": [
+            "LotArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "OverallQual",
+          "raw_source_columns": [
+            "OverallQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "OverallCond",
+          "raw_source_columns": [
+            "OverallCond"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallCond"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearBuilt",
+          "raw_source_columns": [
+            "YearBuilt"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearBuilt"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearRemodAdd",
+          "raw_source_columns": [
+            "YearRemodAdd"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearRemodAdd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrArea",
+          "raw_source_columns": [
+            "MasVnrArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFinSF1",
+          "raw_source_columns": [
+            "BsmtFinSF1"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFinSF1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFinSF2",
+          "raw_source_columns": [
+            "BsmtFinSF2"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFinSF2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotalBsmtSF",
+          "raw_source_columns": [
+            "TotalBsmtSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotalBsmtSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "2ndFlrSF",
+          "raw_source_columns": [
+            "2ndFlrSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "2ndFlrSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LowQualFinSF",
+          "raw_source_columns": [
+            "LowQualFinSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LowQualFinSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GrLivArea",
+          "raw_source_columns": [
+            "GrLivArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GrLivArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFullBath",
+          "raw_source_columns": [
+            "BsmtFullBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFullBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FullBath",
+          "raw_source_columns": [
+            "FullBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FullBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HalfBath",
+          "raw_source_columns": [
+            "HalfBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HalfBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BedroomAbvGr",
+          "raw_source_columns": [
+            "BedroomAbvGr"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BedroomAbvGr"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "KitchenAbvGr",
+          "raw_source_columns": [
+            "KitchenAbvGr"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "KitchenAbvGr"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotRmsAbvGrd",
+          "raw_source_columns": [
+            "TotRmsAbvGrd"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotRmsAbvGrd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Fireplaces",
+          "raw_source_columns": [
+            "Fireplaces"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Fireplaces"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageYrBlt",
+          "raw_source_columns": [
+            "GarageYrBlt"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageYrBlt"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageCars",
+          "raw_source_columns": [
+            "GarageCars"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageCars"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageArea",
+          "raw_source_columns": [
+            "GarageArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "WoodDeckSF",
+          "raw_source_columns": [
+            "WoodDeckSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "WoodDeckSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "OpenPorchSF",
+          "raw_source_columns": [
+            "OpenPorchSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OpenPorchSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "EnclosedPorch",
+          "raw_source_columns": [
+            "EnclosedPorch"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "EnclosedPorch"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "ScreenPorch",
+          "raw_source_columns": [
+            "ScreenPorch"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ScreenPorch"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "PoolArea",
+          "raw_source_columns": [
+            "PoolArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "PoolArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MiscVal",
+          "raw_source_columns": [
+            "MiscVal"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MiscVal"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MoSold",
+          "raw_source_columns": [
+            "MoSold"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MoSold"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YrSold",
+          "raw_source_columns": [
+            "YrSold"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YrSold"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HasBasement",
+          "raw_source_columns": [
+            "BsmtQual",
+            "TotalBsmtSF"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "BsmtQual",
+            "TotalBsmtSF"
+          ]
+        },
+        {
+          "encoded_name": "HasFireplace",
+          "raw_source_columns": [
+            "Fireplaces",
+            "FireplaceQu"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "Fireplaces",
+            "FireplaceQu"
+          ]
+        },
+        {
+          "encoded_name": "HasAlley",
+          "raw_source_columns": [
+            "Alley"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "Alley"
+          ]
+        },
+        {
+          "encoded_name": "ExterQual",
+          "raw_source_columns": [
+            "ExterQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ExterQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "ExterCond",
+          "raw_source_columns": [
+            "ExterCond"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ExterCond"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtQual",
+          "raw_source_columns": [
+            "BsmtQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtCond",
+          "raw_source_columns": [
+            "BsmtCond"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtCond"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtExposure",
+          "raw_source_columns": [
+            "BsmtExposure"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtExposure"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFinType1",
+          "raw_source_columns": [
+            "BsmtFinType1"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFinType1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtFinType2",
+          "raw_source_columns": [
+            "BsmtFinType2"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtFinType2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HeatingQC",
+          "raw_source_columns": [
+            "HeatingQC"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HeatingQC"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "KitchenQual",
+          "raw_source_columns": [
+            "KitchenQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "KitchenQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Functional",
+          "raw_source_columns": [
+            "Functional"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Functional"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FireplaceQu",
+          "raw_source_columns": [
+            "FireplaceQu"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FireplaceQu"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageFinish",
+          "raw_source_columns": [
+            "GarageFinish"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageFinish"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageQual",
+          "raw_source_columns": [
+            "GarageQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageCond",
+          "raw_source_columns": [
+            "GarageCond"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageCond"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Fence",
+          "raw_source_columns": [
+            "Fence"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Fence"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotShape",
+          "raw_source_columns": [
+            "LotShape"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotShape"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandSlope",
+          "raw_source_columns": [
+            "LandSlope"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandSlope"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSSubClass_120",
+          "raw_source_columns": [
+            "MSSubClass"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSSubClass"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSSubClass_60",
+          "raw_source_columns": [
+            "MSSubClass"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSSubClass"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSZoning_RL",
+          "raw_source_columns": [
+            "MSZoning"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSZoning"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSZoning_RM",
+          "raw_source_columns": [
+            "MSZoning"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSZoning"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Alley_None",
+          "raw_source_columns": [
+            "Alley"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Alley"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandContour_Bnk",
+          "raw_source_columns": [
+            "LandContour"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandContour"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandContour_HLS",
+          "raw_source_columns": [
+            "LandContour"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandContour"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandContour_Low",
+          "raw_source_columns": [
+            "LandContour"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandContour"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LandContour_Lvl",
+          "raw_source_columns": [
+            "LandContour"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LandContour"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotConfig_Corner",
+          "raw_source_columns": [
+            "LotConfig"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotConfig"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotConfig_CulDSac",
+          "raw_source_columns": [
+            "LotConfig"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotConfig"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "LotConfig_FR2",
+          "raw_source_columns": [
+            "LotConfig"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "LotConfig"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_BrkSide",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_CollgCr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Crawfor",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Edwards",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Gilbert",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NAmes",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NWAmes",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NoRidge",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NridgHt",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Sawyer",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Somerst",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_StoneBr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_Timber",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Condition1_Norm",
+          "raw_source_columns": [
+            "Condition1"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition1"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Condition2_PosN",
+          "raw_source_columns": [
+            "Condition2"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BldgType_1Fam",
+          "raw_source_columns": [
+            "BldgType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BldgType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BldgType_TwnhsE",
+          "raw_source_columns": [
+            "BldgType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BldgType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HouseStyle_1Story",
+          "raw_source_columns": [
+            "HouseStyle"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HouseStyle"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofStyle_Hip",
+          "raw_source_columns": [
+            "RoofStyle"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofStyle"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_WdShngl",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_CemntBd",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_HdBoard",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_MetalSd",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_Wd Sdng",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_HdBoard",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_MetalSd",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_Wd Sdng",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior2nd_Wd Shng",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrType_Stone",
+          "raw_source_columns": [
+            "MasVnrType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Foundation_PConc",
+          "raw_source_columns": [
+            "Foundation"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Foundation"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Electrical_SBrkr",
+          "raw_source_columns": [
+            "Electrical"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Electrical"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageType_Attchd",
+          "raw_source_columns": [
+            "GarageType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageType_BuiltIn",
+          "raw_source_columns": [
+            "GarageType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageType_Detchd",
+          "raw_source_columns": [
+            "GarageType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleType_COD",
+          "raw_source_columns": [
+            "SaleType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleType_CWD",
+          "raw_source_columns": [
+            "SaleType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleType_New",
+          "raw_source_columns": [
+            "SaleType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleType_WD",
+          "raw_source_columns": [
+            "SaleType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleType"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleCondition_Abnorml",
+          "raw_source_columns": [
+            "SaleCondition"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleCondition"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleCondition_Alloca",
+          "raw_source_columns": [
+            "SaleCondition"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleCondition"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    }
+  ]
+}

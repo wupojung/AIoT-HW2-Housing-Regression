@@ -1,0 +1,952 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "configuration_id": "hist-pearson-fb8b057e6677",
+  "selection_unit": "encoded_feature",
+  "summary": "Selections are fold-local. No final all-Development refit feature list is asserted for this candidate.",
+  "folds": [
+    {
+      "fold": 0,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 20,
+      "raw_source_count": 19,
+      "selected_encoded_names": [
+        "OverallQual",
+        "GrLivArea",
+        "ExterQual",
+        "KitchenQual",
+        "GarageCars",
+        "GarageArea",
+        "BsmtQual",
+        "TotRmsAbvGrd",
+        "FullBath",
+        "1stFlrSF",
+        "TotalBsmtSF",
+        "GarageFinish",
+        "YearBuilt",
+        "FireplaceQu",
+        "YearRemodAdd",
+        "Foundation_PConc",
+        "MasVnrArea",
+        "HasFireplace",
+        "Fireplaces",
+        "Neighborhood_NridgHt"
+      ],
+      "selected_raw_sources": [
+        "1stFlrSF",
+        "BsmtQual",
+        "ExterQual",
+        "FireplaceQu",
+        "Fireplaces",
+        "Foundation",
+        "FullBath",
+        "GarageArea",
+        "GarageCars",
+        "GarageFinish",
+        "GrLivArea",
+        "KitchenQual",
+        "MasVnrArea",
+        "Neighborhood",
+        "OverallQual",
+        "TotRmsAbvGrd",
+        "TotalBsmtSF",
+        "YearBuilt",
+        "YearRemodAdd"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "OverallQual",
+          "raw_source_columns": [
+            "OverallQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GrLivArea",
+          "raw_source_columns": [
+            "GrLivArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GrLivArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "ExterQual",
+          "raw_source_columns": [
+            "ExterQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ExterQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "KitchenQual",
+          "raw_source_columns": [
+            "KitchenQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "KitchenQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageCars",
+          "raw_source_columns": [
+            "GarageCars"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageCars"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageArea",
+          "raw_source_columns": [
+            "GarageArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtQual",
+          "raw_source_columns": [
+            "BsmtQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotRmsAbvGrd",
+          "raw_source_columns": [
+            "TotRmsAbvGrd"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotRmsAbvGrd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FullBath",
+          "raw_source_columns": [
+            "FullBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FullBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "1stFlrSF",
+          "raw_source_columns": [
+            "1stFlrSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "1stFlrSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotalBsmtSF",
+          "raw_source_columns": [
+            "TotalBsmtSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotalBsmtSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageFinish",
+          "raw_source_columns": [
+            "GarageFinish"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageFinish"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearBuilt",
+          "raw_source_columns": [
+            "YearBuilt"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearBuilt"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FireplaceQu",
+          "raw_source_columns": [
+            "FireplaceQu"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FireplaceQu"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearRemodAdd",
+          "raw_source_columns": [
+            "YearRemodAdd"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearRemodAdd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Foundation_PConc",
+          "raw_source_columns": [
+            "Foundation"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Foundation"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrArea",
+          "raw_source_columns": [
+            "MasVnrArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HasFireplace",
+          "raw_source_columns": [
+            "Fireplaces",
+            "FireplaceQu"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "Fireplaces",
+            "FireplaceQu"
+          ]
+        },
+        {
+          "encoded_name": "Fireplaces",
+          "raw_source_columns": [
+            "Fireplaces"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Fireplaces"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NridgHt",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    },
+    {
+      "fold": 1,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 20,
+      "raw_source_count": 19,
+      "selected_encoded_names": [
+        "OverallQual",
+        "ExterQual",
+        "GrLivArea",
+        "GarageCars",
+        "GarageArea",
+        "KitchenQual",
+        "1stFlrSF",
+        "TotalBsmtSF",
+        "BsmtQual",
+        "FullBath",
+        "YearBuilt",
+        "GarageFinish",
+        "YearRemodAdd",
+        "Foundation_PConc",
+        "TotRmsAbvGrd",
+        "FireplaceQu",
+        "HasFireplace",
+        "MasVnrArea",
+        "Fireplaces",
+        "HeatingQC"
+      ],
+      "selected_raw_sources": [
+        "1stFlrSF",
+        "BsmtQual",
+        "ExterQual",
+        "FireplaceQu",
+        "Fireplaces",
+        "Foundation",
+        "FullBath",
+        "GarageArea",
+        "GarageCars",
+        "GarageFinish",
+        "GrLivArea",
+        "HeatingQC",
+        "KitchenQual",
+        "MasVnrArea",
+        "OverallQual",
+        "TotRmsAbvGrd",
+        "TotalBsmtSF",
+        "YearBuilt",
+        "YearRemodAdd"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "OverallQual",
+          "raw_source_columns": [
+            "OverallQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "ExterQual",
+          "raw_source_columns": [
+            "ExterQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ExterQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GrLivArea",
+          "raw_source_columns": [
+            "GrLivArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GrLivArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageCars",
+          "raw_source_columns": [
+            "GarageCars"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageCars"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageArea",
+          "raw_source_columns": [
+            "GarageArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "KitchenQual",
+          "raw_source_columns": [
+            "KitchenQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "KitchenQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "1stFlrSF",
+          "raw_source_columns": [
+            "1stFlrSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "1stFlrSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotalBsmtSF",
+          "raw_source_columns": [
+            "TotalBsmtSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotalBsmtSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtQual",
+          "raw_source_columns": [
+            "BsmtQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FullBath",
+          "raw_source_columns": [
+            "FullBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FullBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearBuilt",
+          "raw_source_columns": [
+            "YearBuilt"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearBuilt"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageFinish",
+          "raw_source_columns": [
+            "GarageFinish"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageFinish"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearRemodAdd",
+          "raw_source_columns": [
+            "YearRemodAdd"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearRemodAdd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Foundation_PConc",
+          "raw_source_columns": [
+            "Foundation"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Foundation"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotRmsAbvGrd",
+          "raw_source_columns": [
+            "TotRmsAbvGrd"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotRmsAbvGrd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FireplaceQu",
+          "raw_source_columns": [
+            "FireplaceQu"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FireplaceQu"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HasFireplace",
+          "raw_source_columns": [
+            "Fireplaces",
+            "FireplaceQu"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "Fireplaces",
+            "FireplaceQu"
+          ]
+        },
+        {
+          "encoded_name": "MasVnrArea",
+          "raw_source_columns": [
+            "MasVnrArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Fireplaces",
+          "raw_source_columns": [
+            "Fireplaces"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Fireplaces"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HeatingQC",
+          "raw_source_columns": [
+            "HeatingQC"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HeatingQC"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    },
+    {
+      "fold": 2,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 20,
+      "raw_source_count": 19,
+      "selected_encoded_names": [
+        "OverallQual",
+        "GrLivArea",
+        "ExterQual",
+        "GarageArea",
+        "GarageCars",
+        "KitchenQual",
+        "TotalBsmtSF",
+        "1stFlrSF",
+        "FullBath",
+        "BsmtQual",
+        "GarageFinish",
+        "TotRmsAbvGrd",
+        "FireplaceQu",
+        "YearRemodAdd",
+        "YearBuilt",
+        "MasVnrArea",
+        "Foundation_PConc",
+        "HasFireplace",
+        "Fireplaces",
+        "HeatingQC"
+      ],
+      "selected_raw_sources": [
+        "1stFlrSF",
+        "BsmtQual",
+        "ExterQual",
+        "FireplaceQu",
+        "Fireplaces",
+        "Foundation",
+        "FullBath",
+        "GarageArea",
+        "GarageCars",
+        "GarageFinish",
+        "GrLivArea",
+        "HeatingQC",
+        "KitchenQual",
+        "MasVnrArea",
+        "OverallQual",
+        "TotRmsAbvGrd",
+        "TotalBsmtSF",
+        "YearBuilt",
+        "YearRemodAdd"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "OverallQual",
+          "raw_source_columns": [
+            "OverallQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "OverallQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GrLivArea",
+          "raw_source_columns": [
+            "GrLivArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GrLivArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "ExterQual",
+          "raw_source_columns": [
+            "ExterQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "ExterQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageArea",
+          "raw_source_columns": [
+            "GarageArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageCars",
+          "raw_source_columns": [
+            "GarageCars"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageCars"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "KitchenQual",
+          "raw_source_columns": [
+            "KitchenQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "KitchenQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotalBsmtSF",
+          "raw_source_columns": [
+            "TotalBsmtSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotalBsmtSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "1stFlrSF",
+          "raw_source_columns": [
+            "1stFlrSF"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "1stFlrSF"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FullBath",
+          "raw_source_columns": [
+            "FullBath"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FullBath"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "BsmtQual",
+          "raw_source_columns": [
+            "BsmtQual"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "BsmtQual"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GarageFinish",
+          "raw_source_columns": [
+            "GarageFinish"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GarageFinish"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "TotRmsAbvGrd",
+          "raw_source_columns": [
+            "TotRmsAbvGrd"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "TotRmsAbvGrd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "FireplaceQu",
+          "raw_source_columns": [
+            "FireplaceQu"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "FireplaceQu"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearRemodAdd",
+          "raw_source_columns": [
+            "YearRemodAdd"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearRemodAdd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "YearBuilt",
+          "raw_source_columns": [
+            "YearBuilt"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "YearBuilt"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MasVnrArea",
+          "raw_source_columns": [
+            "MasVnrArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MasVnrArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Foundation_PConc",
+          "raw_source_columns": [
+            "Foundation"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Foundation"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HasFireplace",
+          "raw_source_columns": [
+            "Fireplaces",
+            "FireplaceQu"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "Fireplaces",
+            "FireplaceQu"
+          ]
+        },
+        {
+          "encoded_name": "Fireplaces",
+          "raw_source_columns": [
+            "Fireplaces"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Fireplaces"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HeatingQC",
+          "raw_source_columns": [
+            "HeatingQC"
+          ],
+          "is_derived": false,
+          "encoding_type": "ordinal",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HeatingQC"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    }
+  ]
+}

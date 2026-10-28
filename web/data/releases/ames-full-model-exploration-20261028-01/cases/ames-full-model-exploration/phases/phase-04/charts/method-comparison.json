@@ -1,0 +1,438 @@
+{
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "status": "VERIFIED",
+  "points": [
+    {
+      "configuration_id": "hist-ols-baseline-67211c3848f8",
+      "method_id": "ols_baseline",
+      "candidate": {
+        "features": "all"
+      },
+      "feature_count_mean": 240.33333333333334,
+      "rmse_mean_fold": 40628.988626233804,
+      "mae_mean_fold": 22167.835718447255,
+      "r2_mean_fold": 0.7141847678830092,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-pearson-fb8b057e6677",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "feature_count_mean": 20.0,
+      "rmse_mean_fold": 36918.472529716695,
+      "mae_mean_fold": 23379.76055428339,
+      "r2_mean_fold": 0.7688358444482523,
+      "method_winner": true,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-pearson-76875a54b993",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "feature_count_mean": 5.0,
+      "rmse_mean_fold": 38596.54293261736,
+      "mae_mean_fold": 25902.705771055906,
+      "r2_mean_fold": 0.7484339601432645,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-pearson-4c0e705bb36a",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "feature_count_mean": 10.0,
+      "rmse_mean_fold": 37623.0236419121,
+      "mae_mean_fold": 23896.460841230553,
+      "r2_mean_fold": 0.760520352567239,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-pearson-47c2ce66ecde",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "feature_count_mean": 2.0,
+      "rmse_mean_fold": 43427.890297865255,
+      "mae_mean_fold": 29529.68742665515,
+      "r2_mean_fold": 0.6823873759355416,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-pearson-05a42a840e86",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "feature_count_mean": 3.0,
+      "rmse_mean_fold": 39849.593057764985,
+      "mae_mean_fold": 27256.836771805643,
+      "r2_mean_fold": 0.7314899318975652,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-mutual-information-b33c6189b8ae",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "feature_count_mean": 20.0,
+      "rmse_mean_fold": 37208.2782358083,
+      "mae_mean_fold": 23510.51328705125,
+      "r2_mean_fold": 0.7653452560956394,
+      "method_winner": true,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-mutual-information-fe67d806a6c0",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "feature_count_mean": 5.0,
+      "rmse_mean_fold": 39569.69348351081,
+      "mae_mean_fold": 25514.78287896191,
+      "r2_mean_fold": 0.7350895121597136,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-mutual-information-c79851bf9d83",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "feature_count_mean": 10.0,
+      "rmse_mean_fold": 37527.43522632216,
+      "mae_mean_fold": 23589.258642931018,
+      "r2_mean_fold": 0.7616321091146014,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-mutual-information-b87169fc4edc",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "feature_count_mean": 2.0,
+      "rmse_mean_fold": 41549.52607675625,
+      "mae_mean_fold": 28265.222677340455,
+      "r2_mean_fold": 0.7080980099126949,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-mutual-information-f8964bbe4d91",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "feature_count_mean": 3.0,
+      "rmse_mean_fold": 40657.56457082416,
+      "mae_mean_fold": 26303.528398642036,
+      "r2_mean_fold": 0.720181294361988,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-lasso-d0ea8d1b5d1d",
+      "method_id": "lasso",
+      "candidate": {
+        "alpha": 10.0,
+        "candidate_order": 2
+      },
+      "feature_count_mean": 186.0,
+      "rmse_mean_fold": 38292.53481595476,
+      "mae_mean_fold": 21517.336501839654,
+      "r2_mean_fold": 0.7465069919035022,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-lasso-23fac5e0453b",
+      "method_id": "lasso",
+      "candidate": {
+        "alpha": 100.0,
+        "candidate_order": 3
+      },
+      "feature_count_mean": 103.0,
+      "rmse_mean_fold": 35389.18456107843,
+      "mae_mean_fold": 19395.048844977035,
+      "r2_mean_fold": 0.7841591133550846,
+      "method_winner": true,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-279a8a5b1c1f",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 0.1,
+        "l1_ratio": 0.8,
+        "candidate_order": 2
+      },
+      "feature_count_mean": 239.66666666666666,
+      "rmse_mean_fold": 40171.75225830986,
+      "mae_mean_fold": 22059.288178344985,
+      "r2_mean_fold": 0.7207988463245204,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-2cc6e4b57a10",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 1.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 4
+      },
+      "feature_count_mean": 239.66666666666666,
+      "rmse_mean_fold": 40160.36070822103,
+      "mae_mean_fold": 22052.42779072313,
+      "r2_mean_fold": 0.7209603818269962,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-20363ce2a7f8",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 10.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 8
+      },
+      "feature_count_mean": 233.0,
+      "rmse_mean_fold": 39588.40062346258,
+      "mae_mean_fold": 21895.526619861907,
+      "r2_mean_fold": 0.72844826235583,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-d7202991dc8f",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 100.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 11
+      },
+      "feature_count_mean": 207.0,
+      "rmse_mean_fold": 38108.091255656356,
+      "mae_mean_fold": 21747.55235686453,
+      "r2_mean_fold": 0.7502479911036722,
+      "method_winner": true,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-9fa4d99608f1",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 1.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 3
+      },
+      "feature_count_mean": 239.66666666666666,
+      "rmse_mean_fold": 40148.97955033059,
+      "mae_mean_fold": 22029.3123745692,
+      "r2_mean_fold": 0.7211216123172682,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-dd45a0b3f79e",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 0.1,
+        "l1_ratio": 0.5,
+        "candidate_order": 1
+      },
+      "feature_count_mean": 240.0,
+      "rmse_mean_fold": 40160.069288470586,
+      "mae_mean_fold": 22052.250546635925,
+      "r2_mean_fold": 0.7209645121731473,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-d8d37e65bf41",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 0.1,
+        "l1_ratio": 0.2,
+        "candidate_order": 0
+      },
+      "feature_count_mean": 240.0,
+      "rmse_mean_fold": 40160.069288470586,
+      "mae_mean_fold": 22052.250546635925,
+      "r2_mean_fold": 0.7209645121731473,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-1c73870379fc",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 1.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 5
+      },
+      "feature_count_mean": 239.33333333333334,
+      "rmse_mean_fold": 40160.71894424053,
+      "mae_mean_fold": 22034.999362608145,
+      "r2_mean_fold": 0.7209532086311238,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-d29012556273",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 100.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 10
+      },
+      "feature_count_mean": 227.33333333333334,
+      "rmse_mean_fold": 40105.64852985529,
+      "mae_mean_fold": 21949.616273118972,
+      "r2_mean_fold": 0.7219766220758661,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-52f2eeb3d772",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 10.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 6
+      },
+      "feature_count_mean": 239.0,
+      "rmse_mean_fold": 40142.96164740567,
+      "mae_mean_fold": 22036.931154107577,
+      "r2_mean_fold": 0.7211248834774353,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-1098e27f3412",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 100.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 9
+      },
+      "feature_count_mean": 234.33333333333334,
+      "rmse_mean_fold": 39989.70095495329,
+      "mae_mean_fold": 21979.224627845677,
+      "r2_mean_fold": 0.7224908724550794,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-elastic-net-d0247c0be6fb",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 10.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 7
+      },
+      "feature_count_mean": 236.33333333333334,
+      "rmse_mean_fold": 40429.628603601486,
+      "mae_mean_fold": 22116.566466580713,
+      "r2_mean_fold": 0.7164820533297291,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-616569f18d0f",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "feature_count_mean": 20.0,
+      "rmse_mean_fold": 40704.14419998816,
+      "mae_mean_fold": 26744.64428120067,
+      "r2_mean_fold": 0.7165010676923899,
+      "method_winner": true,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-55d847e58f1b",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "feature_count_mean": 5.0,
+      "rmse_mean_fold": 69384.42648409263,
+      "mae_mean_fold": 49765.242131773884,
+      "r2_mean_fold": 0.17344101982660576,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-67e3f996e959",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "feature_count_mean": 10.0,
+      "rmse_mean_fold": 56076.71966740654,
+      "mae_mean_fold": 41579.93364533977,
+      "r2_mean_fold": 0.46978981773276,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-1988433b54f5",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "feature_count_mean": 2.0,
+      "rmse_mean_fold": 74000.81914360402,
+      "mae_mean_fold": 53233.03340098433,
+      "r2_mean_fold": 0.062061406578001965,
+      "method_winner": false,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-5209c529b590",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "feature_count_mean": 3.0,
+      "rmse_mean_fold": 74055.95824217157,
+      "mae_mean_fold": 53151.00553052633,
+      "r2_mean_fold": 0.06046131796632522,
+      "method_winner": false,
+      "status": "VERIFIED"
+    }
+  ]
+}

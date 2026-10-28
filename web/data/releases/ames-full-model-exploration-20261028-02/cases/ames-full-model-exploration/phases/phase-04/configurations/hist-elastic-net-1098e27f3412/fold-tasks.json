@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "configuration_id": "hist-elastic-net-1098e27f3412",
+  "fold_count": 3,
+  "folds": [
+    {
+      "fold": 0,
+      "status": "COMPLETED",
+      "rmse": 35007.37284270214,
+      "mae": 21776.971386571964,
+      "r2": 0.7515239270078493,
+      "task_id": "task_fa019450ec8508c17efe76b42853a102"
+    },
+    {
+      "fold": 1,
+      "status": "COMPLETED",
+      "rmse": 35502.35510437102,
+      "mae": 20341.564921884157,
+      "r2": 0.8120750505137804,
+      "task_id": "task_156302f50a8a9d641f2c4f622c8ccd8b"
+    },
+    {
+      "fold": 2,
+      "status": "COMPLETED",
+      "rmse": 49459.3749177867,
+      "mae": 23819.137575080906,
+      "r2": 0.6038736398436086,
+      "task_id": "task_0e754fa7c1ac9c485dc60c19ebf32bfa"
+    }
+  ],
+  "fold_size_evidence": "not present in the public candidate aggregate; see common protocol and fold digest",
+  "selection_metric": "mean of per-fold RMSE; selection score, not independent generalization"
+}

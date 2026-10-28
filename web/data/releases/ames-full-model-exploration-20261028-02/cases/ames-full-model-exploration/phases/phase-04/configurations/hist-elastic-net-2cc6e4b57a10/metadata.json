@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "configuration_id": "hist-elastic-net-2cc6e4b57a10",
+  "historical_config_hash": "2cc6e4b57a1018be232ca3b4836764386064679c764d0213a5bfaff33b899206",
+  "candidate": {
+    "alpha": 1.0,
+    "l1_ratio": 0.5,
+    "candidate_order": 4
+  },
+  "candidate_status": "COMPLETED",
+  "winner_in_source_run": false,
+  "source_summary_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "source_code_head": "f30a9293f12dba221a36d62f35abd7cb45acbab5",
+  "data_sha256": "2525b2e9385f9873a45d124dfd7520851234fe0a30501a69b8e5e5536403017c",
+  "fold_sha256": "2d12b0a6294055b8aac95e6055fc9095c436c472666f56fd6f33828cc683dd30",
+  "execution_status_note": "Historical aggregate evidence; run metadata records an earlier failed attempt and a later successful finalization.",
+  "primary_track": "selected_features_to_primary_ols",
+  "native_diagnostic_cv_rmse": 34324.390246479896,
+  "mean_selected_encoded_count": 239.66666666666666,
+  "valid_fold_count": 3,
+  "invalid_reasons": []
+}

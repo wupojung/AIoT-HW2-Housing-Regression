@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "configuration_id": "hist-ridge-rfe-67e3f996e959",
+  "historical_config_hash": "67e3f996e959abae53745d268e5801e8b11fe386218827b9324285c06e06c5e7",
+  "candidate": {
+    "k": 10,
+    "candidate_order": 3
+  },
+  "candidate_status": "COMPLETED",
+  "winner_in_source_run": false,
+  "source_summary_sha256": "293333f133de0f31cf36d5c3db373e9fb60ae81abf1dbb6f9f13db84b5e84afc",
+  "source_code_head": "f30a9293f12dba221a36d62f35abd7cb45acbab5",
+  "data_sha256": "2525b2e9385f9873a45d124dfd7520851234fe0a30501a69b8e5e5536403017c",
+  "fold_sha256": "2d12b0a6294055b8aac95e6055fc9095c436c472666f56fd6f33828cc683dd30",
+  "execution_status_note": "Historical aggregate evidence; run metadata records an earlier failed attempt and a later successful finalization.",
+  "primary_track": "selected_features_to_primary_ols",
+  "native_diagnostic_cv_rmse": null,
+  "mean_selected_encoded_count": 10.0,
+  "valid_fold_count": 3,
+  "invalid_reasons": []
+}

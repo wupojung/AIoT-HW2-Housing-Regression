@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="chart-title chart-description" width="760" height="575" viewBox="0 0 760 575">
+<title id="chart-title">Formal training missingness engineering smoke</title>
+<desc id="chart-description">Formal training engineering smoke: aggregate missingness for 19 of 81 fields; no row values are shown.</desc>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:Arial,sans-serif;fill:#243447}.bar{fill:#3977a8}</style>
+<text x="18" y="27" font-size="18" font-weight="bold">Missingness by field</text>
+<text x="18" y="49" font-size="12" fill="#8a3c20">FORMAL TRAINING | ENGINEERING SMOKE</text>
+<text x="18" y="87" font-size="12">PoolQC</text>
+<rect class="bar" x="220" y="73" width="427.94" height="16"/>
+<text x="658" y="86" font-size="11">99.5%</text>
+<text x="18" y="112" font-size="12">MiscFeature</text>
+<rect class="bar" x="220" y="98" width="414.10" height="16"/>
+<text x="658" y="111" font-size="11">96.3%</text>
+<text x="18" y="137" font-size="12">Alley</text>
+<rect class="bar" x="220" y="123" width="403.20" height="16"/>
+<text x="658" y="136" font-size="11">93.8%</text>
+<text x="18" y="162" font-size="12">Fence</text>
+<rect class="bar" x="220" y="148" width="347.24" height="16"/>
+<text x="658" y="161" font-size="11">80.8%</text>
+<text x="18" y="187" font-size="12">FireplaceQu</text>
+<rect class="bar" x="220" y="173" width="203.22" height="16"/>
+<text x="658" y="186" font-size="11">47.3%</text>
+<text x="18" y="212" font-size="12">LotFrontage</text>
+<rect class="bar" x="220" y="198" width="76.28" height="16"/>
+<text x="658" y="211" font-size="11">17.7%</text>
+<text x="18" y="237" font-size="12">GarageCond</text>
+<rect class="bar" x="220" y="223" width="23.86" height="16"/>
+<text x="658" y="236" font-size="11">5.5%</text>
+<text x="18" y="262" font-size="12">GarageFinish</text>
+<rect class="bar" x="220" y="248" width="23.86" height="16"/>
+<text x="658" y="261" font-size="11">5.5%</text>
+<text x="18" y="287" font-size="12">GarageQual</text>
+<rect class="bar" x="220" y="273" width="23.86" height="16"/>
+<text x="658" y="286" font-size="11">5.5%</text>
+<text x="18" y="312" font-size="12">GarageType</text>
+<rect class="bar" x="220" y="298" width="23.86" height="16"/>
+<text x="658" y="311" font-size="11">5.5%</text>
+<text x="18" y="337" font-size="12">GarageYrBlt</text>
+<rect class="bar" x="220" y="323" width="23.86" height="16"/>
+<text x="658" y="336" font-size="11">5.5%</text>
+<text x="18" y="362" font-size="12">BsmtExposure</text>
+<rect class="bar" x="220" y="348" width="11.19" height="16"/>
+<text x="658" y="361" font-size="11">2.6%</text>
+<text x="18" y="387" font-size="12">BsmtFinType2</text>
+<rect class="bar" x="220" y="373" width="11.19" height="16"/>
+<text x="658" y="386" font-size="11">2.6%</text>
+<text x="18" y="412" font-size="12">BsmtCond</text>
+<rect class="bar" x="220" y="398" width="10.90" height="16"/>
+<text x="658" y="411" font-size="11">2.5%</text>
+<text x="18" y="437" font-size="12">BsmtFinType1</text>
+<rect class="bar" x="220" y="423" width="10.90" height="16"/>
+<text x="658" y="436" font-size="11">2.5%</text>
+<text x="18" y="462" font-size="12">BsmtQual</text>
+<rect class="bar" x="220" y="448" width="10.90" height="16"/>
+<text x="658" y="461" font-size="11">2.5%</text>
+<text x="18" y="487" font-size="12">MasVnrArea</text>
+<rect class="bar" x="220" y="473" width="2.36" height="16"/>
+<text x="658" y="486" font-size="11">0.5%</text>
+<text x="18" y="512" font-size="12">MasVnrType</text>
+<rect class="bar" x="220" y="498" width="2.36" height="16"/>
+<text x="658" y="511" font-size="11">0.5%</text>
+<text x="18" y="537" font-size="12">Electrical</text>
+<rect class="bar" x="220" y="523" width="0.29" height="16"/>
+<text x="658" y="536" font-size="11">0.1%</text>
+</svg>

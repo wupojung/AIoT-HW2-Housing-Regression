@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "status": "UNAVAILABLE",
+  "prediction_value_included": false,
+  "reason_code": "NO_MATCHING_FINAL_MODEL"
+}
