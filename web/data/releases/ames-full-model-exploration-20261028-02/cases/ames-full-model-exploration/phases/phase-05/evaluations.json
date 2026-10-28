@@ -139,7 +139,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-1098e27f3412.pooled-oof",
+          "configuration_id": "hist-elastic-net-1098e27f3412",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-1098e27f3412-fig-p5-02.png",
+          "sha256": "5f4d75210fe17f5a2759bfb0d7df4490168b01a4cbc08d40aab26d48d4210af7",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-1098e27f3412.pooled-oof",
+          "configuration_id": "hist-elastic-net-1098e27f3412",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-1098e27f3412-fig-p5-01.png",
+          "sha256": "9f89dc7e417d533e467afa98d25436ff655172524301dd61e28d2b29b8a4fca1",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-1098e27f3412.pooled-oof",
+          "configuration_id": "hist-elastic-net-1098e27f3412",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-1098e27f3412-fig-p5-03.png",
+          "sha256": "7f5eebf3e0669d627bf1d59f635287f973b82e8b9978c6699eff9b82a0114420",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-1098e27f34125c296e9331aae6fa1ffec6075f3986b7577cfa813850951d3b53-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -165,7 +272,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -309,7 +416,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-1c73870379fc.pooled-oof",
+          "configuration_id": "hist-elastic-net-1c73870379fc",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-1c73870379fc-fig-p5-02.png",
+          "sha256": "ca3f9347547e28e3a9e1c94fa472228fad7ef53690cba7401fa89834d5952a0d",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-1c73870379fc.pooled-oof",
+          "configuration_id": "hist-elastic-net-1c73870379fc",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-1c73870379fc-fig-p5-01.png",
+          "sha256": "b00215c7528a97bc50e9cb2b38b683483354c8d5c3819d1011ca248bb7358177",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-1c73870379fc.pooled-oof",
+          "configuration_id": "hist-elastic-net-1c73870379fc",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-1c73870379fc-fig-p5-03.png",
+          "sha256": "630b7ebc4b290deec90a0eda07b5725b1b0568fef16a86e60900098bec67d768",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-1c73870379fcd6a39c7137064f4cd21cc1b0b0424e5dc48fa0216806af0061db-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -335,7 +549,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -479,7 +693,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-20363ce2a7f8.pooled-oof",
+          "configuration_id": "hist-elastic-net-20363ce2a7f8",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-20363ce2a7f8-fig-p5-02.png",
+          "sha256": "5e75ecf6bc1afc6b121be9fb3f481ec417a8f3b95813feaa00c6ff318b69f4aa",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-20363ce2a7f8.pooled-oof",
+          "configuration_id": "hist-elastic-net-20363ce2a7f8",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-20363ce2a7f8-fig-p5-01.png",
+          "sha256": "4490911d7711c5183db04a20649fdc02ccd9861526494e8336d7360fc4d20ba4",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-20363ce2a7f8.pooled-oof",
+          "configuration_id": "hist-elastic-net-20363ce2a7f8",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-20363ce2a7f8-fig-p5-03.png",
+          "sha256": "997f35c0e1b89d740ef613813b3ee27ea0fcdf2580465e1e6d617cc573b9086c",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-20363ce2a7f8d58f4e840e81b72590fe8de7d1b0dbf47a124fa71e5f3bcf02de-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -505,7 +826,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -649,7 +970,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-279a8a5b1c1f.pooled-oof",
+          "configuration_id": "hist-elastic-net-279a8a5b1c1f",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-279a8a5b1c1f-fig-p5-02.png",
+          "sha256": "78df298b54f7878e737ad88a4949578f3431151c782209af33022c9fe5a7f5a6",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-279a8a5b1c1f.pooled-oof",
+          "configuration_id": "hist-elastic-net-279a8a5b1c1f",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-279a8a5b1c1f-fig-p5-01.png",
+          "sha256": "a389fa65510e52d674fbd9d4561a1eae93d95f7dbe842f59efe2967209122fb2",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-279a8a5b1c1f.pooled-oof",
+          "configuration_id": "hist-elastic-net-279a8a5b1c1f",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-279a8a5b1c1f-fig-p5-03.png",
+          "sha256": "e84466ab7680c5566a195bfca506935195a42ecbf0517fef1f38fd233dda482b",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-279a8a5b1c1fa1fa93991dc3691c7f22800aeeaa5633b8a4a21e60490cab2efb-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -675,7 +1103,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -819,7 +1247,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-2cc6e4b57a10.pooled-oof",
+          "configuration_id": "hist-elastic-net-2cc6e4b57a10",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-2cc6e4b57a10-fig-p5-02.png",
+          "sha256": "7b65f8d339470ed4b8f243c73cf8999347743b8bd2e9d68c803a4d4da1a9123f",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-2cc6e4b57a10.pooled-oof",
+          "configuration_id": "hist-elastic-net-2cc6e4b57a10",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-2cc6e4b57a10-fig-p5-01.png",
+          "sha256": "87aebf447930ed60b2779eed5374cb45f82bd0c089ed6f4b3518c85d25c4ec7b",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-2cc6e4b57a10.pooled-oof",
+          "configuration_id": "hist-elastic-net-2cc6e4b57a10",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-2cc6e4b57a10-fig-p5-03.png",
+          "sha256": "e84466ab7680c5566a195bfca506935195a42ecbf0517fef1f38fd233dda482b",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-2cc6e4b57a1018be232ca3b4836764386064679c764d0213a5bfaff33b899206-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -845,7 +1380,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -989,7 +1524,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-52f2eeb3d772.pooled-oof",
+          "configuration_id": "hist-elastic-net-52f2eeb3d772",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-52f2eeb3d772-fig-p5-02.png",
+          "sha256": "8a7b77eb2a833d1539854a888e250d9790c23c069ec628c15930d7034be1aee4",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-52f2eeb3d772.pooled-oof",
+          "configuration_id": "hist-elastic-net-52f2eeb3d772",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-52f2eeb3d772-fig-p5-01.png",
+          "sha256": "4cc976cc85fc0148d11b3ff51a1458cb3f42c843ba786f57e5b9c204926933b0",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-52f2eeb3d772.pooled-oof",
+          "configuration_id": "hist-elastic-net-52f2eeb3d772",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-52f2eeb3d772-fig-p5-03.png",
+          "sha256": "888bf49a04737d5bffe7496031b8cd078d65a647dab84d06e4acbf88820d91fa",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-52f2eeb3d7721d8f4b0ae42ab242efb5c5aa4ac12906532d932958c14c2f7ae8-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -1015,7 +1657,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -1159,7 +1801,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-9fa4d99608f1.pooled-oof",
+          "configuration_id": "hist-elastic-net-9fa4d99608f1",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-9fa4d99608f1-fig-p5-02.png",
+          "sha256": "cd28e9b4dc41690ae04327161449381458580618bcdadc75cb8fc0f3a1ebb438",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-9fa4d99608f1.pooled-oof",
+          "configuration_id": "hist-elastic-net-9fa4d99608f1",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-9fa4d99608f1-fig-p5-01.png",
+          "sha256": "1b59b4171936a9d2282422ee541fcd47a5d4846ae8e7001e2f3a9e87f010631c",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-9fa4d99608f1.pooled-oof",
+          "configuration_id": "hist-elastic-net-9fa4d99608f1",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-9fa4d99608f1-fig-p5-03.png",
+          "sha256": "1201879d475e14bc50d9ffd10155b5d1358822395934f3b67229c0deea688fbe",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-9fa4d99608f14f862026ee988a079004de547e0d713a17b25c36f41a7ac225e3-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -1185,7 +1934,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -1329,7 +2078,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d0247c0be6fb.pooled-oof",
+          "configuration_id": "hist-elastic-net-d0247c0be6fb",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d0247c0be6fb-fig-p5-02.png",
+          "sha256": "f6dcbf1e3059ec58eb93db2931b7f0e4fe7b472563955c4d40de59ca7ab9db45",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d0247c0be6fb.pooled-oof",
+          "configuration_id": "hist-elastic-net-d0247c0be6fb",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d0247c0be6fb-fig-p5-01.png",
+          "sha256": "82e96bd1ffb4b7d6a92ff42058f58ba710a2ca23a87efa1b43d98fb0d5c834d7",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d0247c0be6fb.pooled-oof",
+          "configuration_id": "hist-elastic-net-d0247c0be6fb",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d0247c0be6fb-fig-p5-03.png",
+          "sha256": "f49697f50720b82df6985cf508039ce8131cfa025d414154cb16882a183fece0",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-d0247c0be6fbd0ab346b7d3d5c45583bf3d37d27c45e8d1d432a5cf88d569192-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -1355,7 +2211,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -1499,7 +2355,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d29012556273.pooled-oof",
+          "configuration_id": "hist-elastic-net-d29012556273",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d29012556273-fig-p5-02.png",
+          "sha256": "fac0da01bfbd03895fbc5073d39b1f702e538caea17bc34505d25bab280893c4",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d29012556273.pooled-oof",
+          "configuration_id": "hist-elastic-net-d29012556273",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d29012556273-fig-p5-01.png",
+          "sha256": "6d93777917f31f79c85db3e4b008dff7d91ab52a742a1be5daf1881197fd59be",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d29012556273.pooled-oof",
+          "configuration_id": "hist-elastic-net-d29012556273",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d29012556273-fig-p5-03.png",
+          "sha256": "40839050f0f6b2e7694af4dbb5be8f1d576417bad81ffd27796a37e22c22a6e9",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-d29012556273bf48ab5997cb33861acd9454e5879dac80f885a7a721a2494460-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -1525,7 +2488,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -1669,7 +2632,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d7202991dc8f.pooled-oof",
+          "configuration_id": "hist-elastic-net-d7202991dc8f",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d7202991dc8f-fig-p5-02.png",
+          "sha256": "22d44b112cc42d036577123ac23241a076982e78689032867bc334224ce5c28d",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d7202991dc8f.pooled-oof",
+          "configuration_id": "hist-elastic-net-d7202991dc8f",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d7202991dc8f-fig-p5-01.png",
+          "sha256": "ddd713c8974ab53b0dd25cf92996efdc23a3401686f54c096e5b8f398e374153",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d7202991dc8f.pooled-oof",
+          "configuration_id": "hist-elastic-net-d7202991dc8f",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d7202991dc8f-fig-p5-03.png",
+          "sha256": "5bf6bba02acb96eb15c3daa3f3717d0f973374f40dc09849c2eefba9bfd27c15",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-d7202991dc8fee11e65aac3b0532ac68b63599a6b0ec87eec5544eb13ad8c0f3-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -1695,7 +2765,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -1839,7 +2909,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d8d37e65bf41.pooled-oof",
+          "configuration_id": "hist-elastic-net-d8d37e65bf41",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d8d37e65bf41-fig-p5-02.png",
+          "sha256": "7b65f8d339470ed4b8f243c73cf8999347743b8bd2e9d68c803a4d4da1a9123f",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d8d37e65bf41.pooled-oof",
+          "configuration_id": "hist-elastic-net-d8d37e65bf41",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d8d37e65bf41-fig-p5-01.png",
+          "sha256": "34a0accdae44b5ae29fc10959a3ba16f09548fcf45da4c2ac5208f9d84aa69ad",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-d8d37e65bf41.pooled-oof",
+          "configuration_id": "hist-elastic-net-d8d37e65bf41",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-d8d37e65bf41-fig-p5-03.png",
+          "sha256": "e84466ab7680c5566a195bfca506935195a42ecbf0517fef1f38fd233dda482b",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-d8d37e65bf4102eb0c9aea0edd336d66f0b8557d5f280634ff59ad0fd44f3e89-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -1865,7 +3042,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -2009,7 +3186,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-dd45a0b3f79e.pooled-oof",
+          "configuration_id": "hist-elastic-net-dd45a0b3f79e",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-dd45a0b3f79e-fig-p5-02.png",
+          "sha256": "7b65f8d339470ed4b8f243c73cf8999347743b8bd2e9d68c803a4d4da1a9123f",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-dd45a0b3f79e.pooled-oof",
+          "configuration_id": "hist-elastic-net-dd45a0b3f79e",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-dd45a0b3f79e-fig-p5-01.png",
+          "sha256": "34a0accdae44b5ae29fc10959a3ba16f09548fcf45da4c2ac5208f9d84aa69ad",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-elastic-net-dd45a0b3f79e.pooled-oof",
+          "configuration_id": "hist-elastic-net-dd45a0b3f79e",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-elastic-net-dd45a0b3f79e-fig-p5-03.png",
+          "sha256": "e84466ab7680c5566a195bfca506935195a42ecbf0517fef1f38fd233dda482b",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-dd45a0b3f79edae79eaa99d9a592757df83e7874b21f1acaea413103928dbdc0-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -2035,7 +3319,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -2179,7 +3463,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-lasso-23fac5e0453b.pooled-oof",
+          "configuration_id": "hist-lasso-23fac5e0453b",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-lasso-23fac5e0453b-fig-p5-02.png",
+          "sha256": "f86148adb379d7f558ef901947fced58a604b92be6e3493af7c2bdbcda78614d",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-lasso-23fac5e0453b.pooled-oof",
+          "configuration_id": "hist-lasso-23fac5e0453b",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-lasso-23fac5e0453b-fig-p5-01.png",
+          "sha256": "a7c132c0f6d9bb6fbfbaac2f019742885094a5d9c656db52ce136df2ec0a3f61",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-lasso-23fac5e0453b.pooled-oof",
+          "configuration_id": "hist-lasso-23fac5e0453b",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-lasso-23fac5e0453b-fig-p5-03.png",
+          "sha256": "6ae110dfa66d442207cd1bd825eef481eff06d80cf3d8bd5ea67987bc8ea17a9",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -2205,7 +3596,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -2349,7 +3740,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-lasso-d0ea8d1b5d1d.pooled-oof",
+          "configuration_id": "hist-lasso-d0ea8d1b5d1d",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-lasso-d0ea8d1b5d1d-fig-p5-02.png",
+          "sha256": "03ab46c4111681d80e625a314ba565a28d0e113fa446c93964bafa0943cc819c",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-lasso-d0ea8d1b5d1d.pooled-oof",
+          "configuration_id": "hist-lasso-d0ea8d1b5d1d",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-lasso-d0ea8d1b5d1d-fig-p5-01.png",
+          "sha256": "9f3172b89dbde2f496bcd8c2a2f11024e2ba19aed177262a20d54dde50061a3d",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-lasso-d0ea8d1b5d1d.pooled-oof",
+          "configuration_id": "hist-lasso-d0ea8d1b5d1d",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-lasso-d0ea8d1b5d1d-fig-p5-03.png",
+          "sha256": "4dd8922affe379cb580c20ee8b94e47541127c9796f05733c90b7ff092cb5d82",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-d0ea8d1b5d1d55b5b429a30fa8f7bdf406832c945cbc17b0153747fd681e0925-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -2375,7 +3873,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -2519,7 +4017,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-b33c6189b8ae.pooled-oof",
+          "configuration_id": "hist-mutual-information-b33c6189b8ae",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-b33c6189b8ae-fig-p5-02.png",
+          "sha256": "6bc129fd48887c1b831f0f2fa3bfdb25bb29ad22984aa69ffca42da911d62879",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-b33c6189b8ae.pooled-oof",
+          "configuration_id": "hist-mutual-information-b33c6189b8ae",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-b33c6189b8ae-fig-p5-01.png",
+          "sha256": "c29cadf738f8cb1778719ee7b3c2ac11934677164272516c099f438a4f7520a2",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-b33c6189b8ae.pooled-oof",
+          "configuration_id": "hist-mutual-information-b33c6189b8ae",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-b33c6189b8ae-fig-p5-03.png",
+          "sha256": "442850a3be9b0e557849abc6ff18e33631015dd3b6f5bc334f1a1db75ee9c472",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-b33c6189b8aefebafc09f538fa426395a77a1ea2b6f2ca24c7cc854aa0be11b5-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -2545,7 +4150,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -2689,7 +4294,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-b87169fc4edc.pooled-oof",
+          "configuration_id": "hist-mutual-information-b87169fc4edc",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-b87169fc4edc-fig-p5-02.png",
+          "sha256": "4b5ffdcb8ba86e3868650293981eaee490c4b6d4677ec22e1a948df52dab9483",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-b87169fc4edc.pooled-oof",
+          "configuration_id": "hist-mutual-information-b87169fc4edc",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-b87169fc4edc-fig-p5-01.png",
+          "sha256": "d7887a065731351003b35ffbeafa245a05603421a97857ae3681c510aa63f57d",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-b87169fc4edc.pooled-oof",
+          "configuration_id": "hist-mutual-information-b87169fc4edc",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-b87169fc4edc-fig-p5-03.png",
+          "sha256": "ac3103432d35be6aaedb1d25995b2f9c0049037784f3cfde0fd7d26b6cf37c59",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-b87169fc4edca859fb91775a40d668145f81e926620d949aadbb38b4272fc6a3-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -2715,7 +4427,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -2859,7 +4571,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-c79851bf9d83.pooled-oof",
+          "configuration_id": "hist-mutual-information-c79851bf9d83",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-c79851bf9d83-fig-p5-02.png",
+          "sha256": "b6fea1625f9bb4181945d5581ea816d50aaa4e15efdeaa2c75ff16efa5f40e05",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-c79851bf9d83.pooled-oof",
+          "configuration_id": "hist-mutual-information-c79851bf9d83",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-c79851bf9d83-fig-p5-01.png",
+          "sha256": "1129b0687dad95affd00a487960cfb2271db700543020c0ff4b4edc4bc5ad912",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-c79851bf9d83.pooled-oof",
+          "configuration_id": "hist-mutual-information-c79851bf9d83",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-c79851bf9d83-fig-p5-03.png",
+          "sha256": "ed23440af73848113af1606bf7dbc01fa37b639f6f9933316eebd270b287e96a",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-c79851bf9d83e7280f5c3f42d39ad330d2742267e109de1c802b1c4761f78480-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -2885,7 +4704,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -3029,7 +4848,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-f8964bbe4d91.pooled-oof",
+          "configuration_id": "hist-mutual-information-f8964bbe4d91",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-f8964bbe4d91-fig-p5-02.png",
+          "sha256": "ae1073d7b30e3527bc24e003bce01e1a6a4d87e66ad1c5a5c7a04965a43e5c81",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-f8964bbe4d91.pooled-oof",
+          "configuration_id": "hist-mutual-information-f8964bbe4d91",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-f8964bbe4d91-fig-p5-01.png",
+          "sha256": "4b926e01b2aac87e1e7473133404f905654e6522b42a869b50d03ce53c6c4442",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-f8964bbe4d91.pooled-oof",
+          "configuration_id": "hist-mutual-information-f8964bbe4d91",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-f8964bbe4d91-fig-p5-03.png",
+          "sha256": "5efefbc567b18bc5b6d898121475c0c45b5cbb996793fcc0aadfa8a03a0b3f57",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-f8964bbe4d91e2b423d244942a1c96bdee2b15c2376af1d4c24b708f6d6ddb20-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -3055,7 +4981,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -3199,7 +5125,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-fe67d806a6c0.pooled-oof",
+          "configuration_id": "hist-mutual-information-fe67d806a6c0",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-fe67d806a6c0-fig-p5-02.png",
+          "sha256": "b34b51d90a0a1e1ecc56635e042cb5dfa4d099b7a9d6b4401be28bd4377506df",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-fe67d806a6c0.pooled-oof",
+          "configuration_id": "hist-mutual-information-fe67d806a6c0",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-fe67d806a6c0-fig-p5-01.png",
+          "sha256": "011011174836bc143b1288c8bde85c3ade53831483ca73074e4ed94ffbcbe95f",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-mutual-information-fe67d806a6c0.pooled-oof",
+          "configuration_id": "hist-mutual-information-fe67d806a6c0",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-mutual-information-fe67d806a6c0-fig-p5-03.png",
+          "sha256": "4c5443c201ac76a613f65f69751d2434082f1ec13beeda49f9b9b832355920eb",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-fe67d806a6c09274e96d968e73b93f31c694d678af46ee7aede9abfe4a49c2d0-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -3225,7 +5258,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -3369,7 +5402,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-ols-baseline-67211c3848f8.pooled-oof",
+          "configuration_id": "hist-ols-baseline-67211c3848f8",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ols-baseline-67211c3848f8-fig-p5-02.png",
+          "sha256": "95f67c6cb89a22f7fbf623cc997138d404682e58502282d3001de1c7a6c2f71a",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-ols-baseline-67211c3848f8.pooled-oof",
+          "configuration_id": "hist-ols-baseline-67211c3848f8",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ols-baseline-67211c3848f8-fig-p5-01.png",
+          "sha256": "068971ae74ae92311a1cb5bd80a87587bb379b8fa1510200b9ac68641e15fa70",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-ols-baseline-67211c3848f8.pooled-oof",
+          "configuration_id": "hist-ols-baseline-67211c3848f8",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ols-baseline-67211c3848f8-fig-p5-03.png",
+          "sha256": "81ef3b3191b48a7fb322de46ea4386ec2ca2393a63c7a56ad2a234b15c5cc076",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -3395,7 +5535,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -3539,7 +5679,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-pearson-05a42a840e86.pooled-oof",
+          "configuration_id": "hist-pearson-05a42a840e86",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-05a42a840e86-fig-p5-02.png",
+          "sha256": "3ad37b2cb621fee5d353fb60e800c8128ad8182a68da955f7a2548bc79ce3bbc",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-pearson-05a42a840e86.pooled-oof",
+          "configuration_id": "hist-pearson-05a42a840e86",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-05a42a840e86-fig-p5-01.png",
+          "sha256": "389ab4011b185cf8c2d0b4246f65367999dcfc470d956e3974228b9e97ecf89f",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-pearson-05a42a840e86.pooled-oof",
+          "configuration_id": "hist-pearson-05a42a840e86",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-05a42a840e86-fig-p5-03.png",
+          "sha256": "be93ccbe67f8ba9a9254494eaa56c591584366be9dd769d3f089c2404237a5e5",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-05a42a840e86417500b7b074f48d18b215aed5e569852838928ef4a5d7dcc7c7-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -3565,7 +5812,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -3709,7 +5956,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-pearson-47c2ce66ecde.pooled-oof",
+          "configuration_id": "hist-pearson-47c2ce66ecde",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-47c2ce66ecde-fig-p5-02.png",
+          "sha256": "ec29f254cb69cd142c196543ab18f2e13c2e73381626539ac0d03afc35eb25dd",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-pearson-47c2ce66ecde.pooled-oof",
+          "configuration_id": "hist-pearson-47c2ce66ecde",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-47c2ce66ecde-fig-p5-01.png",
+          "sha256": "3a6eedd3cb9e37c73a3d0271d7460febaa7498b1d1690b7665d810815fa65f6e",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-pearson-47c2ce66ecde.pooled-oof",
+          "configuration_id": "hist-pearson-47c2ce66ecde",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-47c2ce66ecde-fig-p5-03.png",
+          "sha256": "a17a89bba59e05f3c742894b81857b4c5e1abf81a35d926c4681bed000e749f9",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-47c2ce66ecde074a5358fe1b6538988bb7912d7fd40e4bd75bc00263f9aa4007-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -3735,7 +6089,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -3879,7 +6233,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-pearson-4c0e705bb36a.pooled-oof",
+          "configuration_id": "hist-pearson-4c0e705bb36a",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-4c0e705bb36a-fig-p5-02.png",
+          "sha256": "ac2029b81b2e60ae97506bb789da2c5eee6412eea86b74405e7c4e379554542d",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-pearson-4c0e705bb36a.pooled-oof",
+          "configuration_id": "hist-pearson-4c0e705bb36a",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-4c0e705bb36a-fig-p5-01.png",
+          "sha256": "e9d4be7394d6806958118103dfeae756a1ab4783defd9496117738b3bd11ad98",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-pearson-4c0e705bb36a.pooled-oof",
+          "configuration_id": "hist-pearson-4c0e705bb36a",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-4c0e705bb36a-fig-p5-03.png",
+          "sha256": "f1840cb02cb02fb2520e459d969af665fb5cb95755313cd643bece34f4788b49",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-4c0e705bb36a73081152863b4338858994672e53cad4b8ec3f0a60a881c1451a-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -3905,7 +6366,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -4049,7 +6510,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-pearson-76875a54b993.pooled-oof",
+          "configuration_id": "hist-pearson-76875a54b993",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-76875a54b993-fig-p5-02.png",
+          "sha256": "2618393d43170a170db7c8ace861f86c7e120b130ec14bebaf942c1ee458c7ee",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-pearson-76875a54b993.pooled-oof",
+          "configuration_id": "hist-pearson-76875a54b993",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-76875a54b993-fig-p5-01.png",
+          "sha256": "404c432bd727d81caa2629c1388fdf7e121080ffb3e52bab8262f93e6513cf60",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-pearson-76875a54b993.pooled-oof",
+          "configuration_id": "hist-pearson-76875a54b993",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-76875a54b993-fig-p5-03.png",
+          "sha256": "9dbbde1d50909b3905b0f285ccb0cd1e5d423745a062a651ff83ed266d9431de",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-76875a54b9938060c533ef3a3a95cf0f3deff80daf1872f079f3df63ba40c03f-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -4075,7 +6643,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -4219,7 +6787,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-pearson-fb8b057e6677.pooled-oof",
+          "configuration_id": "hist-pearson-fb8b057e6677",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-fb8b057e6677-fig-p5-02.png",
+          "sha256": "af2536b5bbcafda3c3c7b78a5ad8421f80553e2bec07782a56191da66e15da14",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-pearson-fb8b057e6677.pooled-oof",
+          "configuration_id": "hist-pearson-fb8b057e6677",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-fb8b057e6677-fig-p5-01.png",
+          "sha256": "8d5360114b0c836b10e5ec6089fde35218cbd2e38ed5c050e196c1f392071cfd",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-pearson-fb8b057e6677.pooled-oof",
+          "configuration_id": "hist-pearson-fb8b057e6677",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-pearson-fb8b057e6677-fig-p5-03.png",
+          "sha256": "d6c1e756c9716bf78bb860b1b748cf697187fb95982a58d4580bff0b0f1aa9c9",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-fb8b057e667700b125e73b488fedd95dcb3356c5a51b8dc746896fc66671d72d-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -4245,7 +6920,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -4389,7 +7064,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-1988433b54f5.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-1988433b54f5",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-1988433b54f5-fig-p5-02.png",
+          "sha256": "8d7bd508905cd992266a93e56f56f61b587a297da14383ca87a190a9f040043d",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-1988433b54f5.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-1988433b54f5",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-1988433b54f5-fig-p5-01.png",
+          "sha256": "65c25ed0382ba402632480b5a08181ab85a0fe9c93695d48de84cfba8eed8243",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-1988433b54f5.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-1988433b54f5",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-1988433b54f5-fig-p5-03.png",
+          "sha256": "7fd5837b4ecc96594d9f5c456e5fe541db611996b2ab509a86211529e463da55",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-1988433b54f59f8e579c2d77bbd63a965d7a09e6b5c2db229cadc2eb42d5d0c4-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -4415,7 +7197,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -4559,7 +7341,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-5209c529b590.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-5209c529b590",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-5209c529b590-fig-p5-02.png",
+          "sha256": "a1afc39223dab389504546831ca5df2b57a25e9b6108f9dae72a57f87e034831",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-5209c529b590.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-5209c529b590",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-5209c529b590-fig-p5-01.png",
+          "sha256": "73ecaae61ee582f37ea57caf1ed455643730760d900da4d34831c51b87ff5d20",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-5209c529b590.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-5209c529b590",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-5209c529b590-fig-p5-03.png",
+          "sha256": "94f65a02eb353c2be7a994dcb4e7eb550d7aa5ddbe08841725a3b8c6d86f27c4",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-5209c529b590f46510d92d4477a0919257f4fc0eede444f3f7bf2d571cce282d-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -4585,7 +7474,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -4729,7 +7618,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-55d847e58f1b.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-55d847e58f1b",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-55d847e58f1b-fig-p5-02.png",
+          "sha256": "bad4b44d913c7fd517f4ae36d881cf4e146f8b55ddf758807548bcda3b0ff61c",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-55d847e58f1b.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-55d847e58f1b",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-55d847e58f1b-fig-p5-01.png",
+          "sha256": "2c7d3753f420dc8734301b0fa282f9470a14bcb46c6a71d972237e510128d351",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-55d847e58f1b.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-55d847e58f1b",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-55d847e58f1b-fig-p5-03.png",
+          "sha256": "420160e2bfce5dcc307c9f4fca40248f7b879da5e963d28e34d4f2ce79a8c3d9",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-55d847e58f1bed76947d8912dbd3441e3d05ddc96f3d0c0e4728919118befb42-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -4755,7 +7751,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -4899,7 +7895,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-616569f18d0f.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-616569f18d0f",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-616569f18d0f-fig-p5-02.png",
+          "sha256": "26e613b20814281390b01ff7016f161262e6e39b27ccd36936e8fdc77e7bcb24",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-616569f18d0f.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-616569f18d0f",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-616569f18d0f-fig-p5-01.png",
+          "sha256": "42a595bc5396045ff4eac899f6d9f5293292f10aca8e159383a0a307031fdde8",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-616569f18d0f.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-616569f18d0f",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-616569f18d0f-fig-p5-03.png",
+          "sha256": "2dd3b8f0d9e2dd423f24e0e8eb44fb5d57c109047717f5df7e0808d0e3f6b92d",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-616569f18d0fb28c9e7d1fda84ccfb2e65740a7f8f51b8fbc53b2cf892750fa8-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -4925,7 +8028,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",
@@ -5069,7 +8172,114 @@
         },
         "fold_values_ref": "phases/phase-05/fold-metrics.json"
       },
-      "figures": [],
+      "figures": [
+        {
+          "figure_id": "FIG-P5-02",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-67e3f996e959.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-67e3f996e959",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-67e3f996e959-fig-p5-02.png",
+          "sha256": "714a2b1d0ccc251456769811620aefad9f333845e774d89845464fa902ef9a23",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Actual - Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-01",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-67e3f996e959.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-67e3f996e959",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-67e3f996e959-fig-p5-01.png",
+          "sha256": "18cf6c424568a2477a1423a33c9fea985f24590e6cd1a387bef2fbe77c50b517",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual",
+              "label": "Actual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Predicted",
+              "unit": "USD"
+            },
+            "reference_line": "y_equals_x"
+          },
+          "residual_sign": null,
+          "histogram": null
+        },
+        {
+          "figure_id": "FIG-P5-03",
+          "evaluation_id": "development_20261026_01.hist-ridge-rfe-67e3f996e959.pooled-oof",
+          "configuration_id": "hist-ridge-rfe-67e3f996e959",
+          "evaluation_population": "development_oof",
+          "prediction_origin": "phase4_historical_oof",
+          "n": 1168,
+          "status": "PLANNED",
+          "publication_review": "PENDING",
+          "asset_ref": "phases/phase-05/assets/hist-ridge-rfe-67e3f996e959-fig-p5-03.png",
+          "sha256": "60b034def159ef1fe865d836a78e63242426f06bf7f21da730775b58ce949e44",
+          "accessible_table_ref": null,
+          "alt": null,
+          "finding": null,
+          "limitations": [
+            "Development OOF diagnostic; publication review pending."
+          ],
+          "source_digest": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+          "axes": {
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Count",
+              "unit": "count"
+            },
+            "reference_line": "x_equals_0"
+          },
+          "residual_sign": "actual_minus_predicted",
+          "histogram": {
+            "bin_count": 30,
+            "bin_edges_ref": "assets/cfg-67e3f996e959abae53745d268e5801e8b11fe386218827b9324285c06e06c5e7-pooled-oof-FIG-P5-03-histogram.json",
+            "n": 1168
+          }
+        }
+      ],
       "interval": {
         "int_f": {
           "status": "UNAVAILABLE",
@@ -5095,7 +8305,7 @@
         "protocol_version": "v2.0",
         "review_url": null
       },
-      "asset_status": "UNAVAILABLE",
+      "asset_status": "PENDING_REVIEW",
       "review_status": "AWAITING_REVIEW",
       "limitations": [
         "Development OOF is internal resampling, not independent generalization testing.",

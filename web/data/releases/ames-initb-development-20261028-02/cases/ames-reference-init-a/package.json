@@ -99,9 +99,15 @@
       "mime": "image/svg+xml"
     },
     {
+      "path": "phases/phase-03/feature-lineage.json",
+      "sha256": "5dab8eddc5b2b4c439d1aa1eac1b16a4419ad22ba2e778dd990b76b888ce0afc",
+      "bytes": 56178,
+      "mime": "application/json"
+    },
+    {
       "path": "phases/phase-03/preparation.json",
-      "sha256": "c837b3e7d68c6b8e28c2d7542841e5d90af5b769959c9f3e04a4677eb6a82a6d",
-      "bytes": 3867,
+      "sha256": "9d6caf86623262785db28129fb0cd60eb01dde15a29009398130024f8223bd66",
+      "bytes": 4133,
       "mime": "application/json"
     },
     {

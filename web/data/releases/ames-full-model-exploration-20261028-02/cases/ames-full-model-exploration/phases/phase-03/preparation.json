@@ -29,75 +29,75 @@
       "total_status": "VERIFIED",
       "segments": [
         {
-          "type_id": "continuous",
-          "count": 19
-        },
-        {
-          "type_id": "discrete",
-          "count": 14
+          "type_id": "nominal",
+          "count": 26
         },
         {
           "type_id": "ordinal",
           "count": 20
         },
         {
-          "type_id": "nominal",
-          "count": 26
+          "type_id": "discrete",
+          "count": 14
+        },
+        {
+          "type_id": "continuous",
+          "count": 19
         }
       ],
-      "distribution_status": "UNAVAILABLE"
+      "distribution_status": "VERIFIED"
     },
     {
       "id": "filtered",
-      "label": "Id and target excluded",
+      "label": "Predictor fields retained for preparation",
       "unit": "pre_encoding_columns",
       "total": 79,
       "total_status": "VERIFIED",
       "segments": [
         {
-          "type_id": "continuous",
-          "count": 19
-        },
-        {
-          "type_id": "discrete",
-          "count": 14
+          "type_id": "nominal",
+          "count": 26
         },
         {
           "type_id": "ordinal",
           "count": 20
         },
         {
-          "type_id": "nominal",
-          "count": 26
+          "type_id": "discrete",
+          "count": 14
+        },
+        {
+          "type_id": "continuous",
+          "count": 19
         }
       ],
-      "distribution_status": "UNAVAILABLE"
+      "distribution_status": "VERIFIED"
     },
     {
       "id": "processed",
-      "label": "Train-only imputation and structural indicators",
+      "label": "Train-only imputation and 9 derived indicators",
       "unit": "pre_encoding_columns",
-      "total": 79,
+      "total": 88,
       "total_status": "VERIFIED",
       "segments": [
         {
-          "type_id": "continuous",
-          "count": 19
-        },
-        {
-          "type_id": "discrete",
-          "count": 14
+          "type_id": "nominal",
+          "count": 26
         },
         {
           "type_id": "ordinal",
           "count": 20
         },
         {
-          "type_id": "nominal",
-          "count": 26
+          "type_id": "discrete",
+          "count": 23
+        },
+        {
+          "type_id": "continuous",
+          "count": 19
         }
       ],
-      "distribution_status": "UNAVAILABLE",
+      "distribution_status": "VERIFIED",
       "fit_population": "development_train_only",
       "pipeline_version": "reference-baseline-phase3-v1"
     },
@@ -109,11 +109,23 @@
       "total_status": "VERIFIED",
       "segments": [
         {
+          "type_id": "nominal",
+          "count": 186
+        },
+        {
+          "type_id": "ordinal",
+          "count": 20
+        },
+        {
+          "type_id": "discrete",
+          "count": 23
+        },
+        {
           "type_id": "continuous",
-          "count": 248
+          "count": 19
         }
       ],
-      "distribution_status": "UNAVAILABLE",
+      "distribution_status": "VERIFIED",
       "fit_population": "development_train_only",
       "pipeline_version": "reference-baseline-phase3-v1"
     }
@@ -162,5 +174,5 @@
     "seed": 42,
     "status": "VERIFIED"
   },
-  "lineage_ref": null
+  "lineage_ref": "phases/phase-03/feature-lineage.json"
 }
