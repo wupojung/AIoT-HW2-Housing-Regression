@@ -1,0 +1,273 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "configuration_id": "hist-ridge-rfe-55d847e58f1b",
+  "selection_unit": "encoded_feature",
+  "summary": "Selections are fold-local. No final all-Development refit feature list is asserted for this candidate.",
+  "folds": [
+    {
+      "fold": 0,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 5,
+      "raw_source_count": 4,
+      "selected_encoded_names": [
+        "Condition2_PosN",
+        "MiscFeature_TenC",
+        "Neighborhood_NridgHt",
+        "RoofMatl_ClyTile",
+        "RoofMatl_WdShngl"
+      ],
+      "selected_raw_sources": [
+        "Condition2",
+        "MiscFeature",
+        "Neighborhood",
+        "RoofMatl"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "Condition2_PosN",
+          "raw_source_columns": [
+            "Condition2"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MiscFeature_TenC",
+          "raw_source_columns": [
+            "MiscFeature"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MiscFeature"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NridgHt",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_ClyTile",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_WdShngl",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    },
+    {
+      "fold": 1,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 5,
+      "raw_source_count": 4,
+      "selected_encoded_names": [
+        "HasPool",
+        "Neighborhood_NoRidge",
+        "Neighborhood_NridgHt",
+        "Neighborhood_StoneBr",
+        "RoofMatl_ClyTile"
+      ],
+      "selected_raw_sources": [
+        "Neighborhood",
+        "PoolArea",
+        "PoolQC",
+        "RoofMatl"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "HasPool",
+          "raw_source_columns": [
+            "PoolArea",
+            "PoolQC"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "PoolArea",
+            "PoolQC"
+          ]
+        },
+        {
+          "encoded_name": "Neighborhood_NoRidge",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NridgHt",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_StoneBr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_ClyTile",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    },
+    {
+      "fold": 2,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 5,
+      "raw_source_count": 4,
+      "selected_encoded_names": [
+        "Condition2_PosN",
+        "Exterior1st_CemntBd",
+        "Neighborhood_NoRidge",
+        "Neighborhood_StoneBr",
+        "RoofMatl_WdShngl"
+      ],
+      "selected_raw_sources": [
+        "Condition2",
+        "Exterior1st",
+        "Neighborhood",
+        "RoofMatl"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "Condition2_PosN",
+          "raw_source_columns": [
+            "Condition2"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_CemntBd",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NoRidge",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_StoneBr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_WdShngl",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    }
+  ]
+}

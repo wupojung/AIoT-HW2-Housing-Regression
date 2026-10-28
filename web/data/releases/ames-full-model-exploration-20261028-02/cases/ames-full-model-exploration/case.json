@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "title": "Ames Housing — Full Model Exploration",
+  "case_status": "PARTIAL",
+  "methodology_id": "historical-p4b-v2-full-model-exploration",
+  "source": {
+    "label": "Owner-authorized Ames Housing Development train.csv",
+    "url": null,
+    "license_review": "PENDING"
+  },
+  "target": {
+    "raw_field_id": "SalePrice",
+    "label": "SalePrice",
+    "unit": "USD",
+    "value_type": "number"
+  },
+  "language": "zh-Hant",
+  "disclaimer": "Historical Development-CV exploration. Phase 5 publication review is pending; this case has no matching final-fit model or prediction service."
+}

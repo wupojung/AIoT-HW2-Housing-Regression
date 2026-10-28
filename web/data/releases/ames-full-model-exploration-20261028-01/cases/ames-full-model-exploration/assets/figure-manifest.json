@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "figures": [
+    {
+      "path": "phases/phase-02/figures/missingness.svg",
+      "sha256": "2258ae445dd745594a01a2fb0ce5c2f26ce76cc18dcbc32c3fc296d065a2c5f1",
+      "bytes": 3810,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-02/figures/target-distribution.svg",
+      "sha256": "7198f2a0408942666a9cbcd834933e142185dc13147900a5b0b5da4724a9b494",
+      "bytes": 2735,
+      "mime": "image/svg+xml"
+    }
+  ]
+}

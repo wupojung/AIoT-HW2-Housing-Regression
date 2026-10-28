@@ -31,4 +31,6 @@ jobs:
       - name: Run environment smoke test
         run: python python/src/environment_check.py
       - name: Run project tests excluding the retired P4B runner
+        env:
+          PYTHONPATH: python/src
         run: python -m pytest -q --ignore=tests/modeling/test_p4b_runner.py
