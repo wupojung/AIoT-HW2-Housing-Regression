@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "status": "VERIFIED",
+  "default_analysis_id": "field-decisions",
+  "analyses": [
+    {
+      "id": "field-decisions",
+      "figure_id": "figure-field-decisions",
+      "title": "Field classification and feature decisions",
+      "status": "VERIFIED",
+      "image_ref": null,
+      "table_ref": null,
+      "description": "Fixed Ames field taxonomy; target and identifier are never features, and unknown columns are excluded.",
+      "finding": "Id [identifier] exclude; MSSubClass [nominal] include; MSZoning [nominal] include; LotFrontage [continuous] include; LotArea [continuous] include; Street [nominal] include; Alley [nominal] include; LotShape [ordinal] include; LandContour [nominal] include; Utilities [nominal] include; LotConfig [nominal] include; LandSlope [ordinal] include; Neighborhood [nominal] include; Condition1 [nominal] include; Condition2 [nominal] include; BldgType [nominal] include; HouseStyle [nominal] include; OverallQual [ordinal] include; OverallCond [ordinal] include; YearBuilt [discrete] include; YearRemodAdd [discrete] include; RoofStyle [nominal] include; RoofMatl [nominal] include; Exterior1st [nominal] include; Exterior2nd [nominal] include; MasVnrType [nominal] include; MasVnrArea [continuous] include; ExterQual [ordinal] include; ExterCond [ordinal] include; Foundation [nominal] include; BsmtQual [ordinal] include; BsmtCond [ordinal] include; BsmtExposure [ordinal] include; BsmtFinType1 [ordinal] include; BsmtFinSF1 [continuous] include; BsmtFinType2 [ordinal] include; BsmtFinSF2 [continuous] include; BsmtUnfSF [continuous] include; TotalBsmtSF [continuous] include; Heating [nominal] include; HeatingQC [ordinal] include; CentralAir [nominal] include; Electrical [nominal] include; 1stFlrSF [continuous] include; 2ndFlrSF [continuous] include; LowQualFinSF [continuous] include; GrLivArea [continuous] include; BsmtFullBath [discrete] include; BsmtHalfBath [discrete] include; FullBath [discrete] include; HalfBath [discrete] include; BedroomAbvGr [discrete] include; KitchenAbvGr [discrete] include; KitchenQual [ordinal] include; TotRmsAbvGrd [discrete] include; Functional [ordinal] include; Fireplaces [discrete] include; FireplaceQu [ordinal] include; GarageType [nominal] include; GarageYrBlt [discrete] include; GarageFinish [ordinal] include; GarageCars [discrete] include; GarageArea [continuous] include; GarageQual [ordinal] include; GarageCond [ordinal] include; PavedDrive [nominal] include; WoodDeckSF [continuous] include; OpenPorchSF [continuous] include; EnclosedPorch [continuous] include; 3SsnPorch [continuous] include; ScreenPorch [continuous] include; PoolArea [continuous] include; PoolQC [ordinal] include; Fence [ordinal] include; MiscFeature [nominal] include; MiscVal [continuous] include; MoSold [discrete] include; YrSold [discrete] include; SaleType [nominal] include; SaleCondition [nominal] include; SalePrice [target] exclude",
+      "limitations": "FORMAL DEVELOPMENT engineering smoke only. The existing approved empirical Phase 2 report remains authoritative; this output is not a research finding or publication artifact. Raw rows, row identifiers, and source paths are omitted.",
+      "provenance_ref": null
+    },
+    {
+      "id": "missingness",
+      "figure_id": "figure-missingness",
+      "title": "Aggregate missingness",
+      "status": "VERIFIED",
+      "image_ref": "phases/phase-02/figures/missingness.svg",
+      "table_ref": null,
+      "description": "Counts missing cells by field without exposing row values.",
+      "finding": "Rows=1460; missing cells by field: Id=0/1460; MSSubClass=0/1460; MSZoning=0/1460; LotFrontage=259/1460; LotArea=0/1460; Street=0/1460; Alley=1369/1460; LotShape=0/1460; LandContour=0/1460; Utilities=0/1460; LotConfig=0/1460; LandSlope=0/1460; Neighborhood=0/1460; Condition1=0/1460; Condition2=0/1460; BldgType=0/1460; HouseStyle=0/1460; OverallQual=0/1460; OverallCond=0/1460; YearBuilt=0/1460; YearRemodAdd=0/1460; RoofStyle=0/1460; RoofMatl=0/1460; Exterior1st=0/1460; Exterior2nd=0/1460; MasVnrType=8/1460; MasVnrArea=8/1460; ExterQual=0/1460; ExterCond=0/1460; Foundation=0/1460; BsmtQual=37/1460; BsmtCond=37/1460; BsmtExposure=38/1460; BsmtFinType1=37/1460; BsmtFinSF1=0/1460; BsmtFinType2=38/1460; BsmtFinSF2=0/1460; BsmtUnfSF=0/1460; TotalBsmtSF=0/1460; Heating=0/1460; HeatingQC=0/1460; CentralAir=0/1460; Electrical=1/1460; 1stFlrSF=0/1460; 2ndFlrSF=0/1460; LowQualFinSF=0/1460; GrLivArea=0/1460; BsmtFullBath=0/1460; BsmtHalfBath=0/1460; FullBath=0/1460; HalfBath=0/1460; BedroomAbvGr=0/1460; KitchenAbvGr=0/1460; KitchenQual=0/1460; TotRmsAbvGrd=0/1460; Functional=0/1460; Fireplaces=0/1460; FireplaceQu=690/1460; GarageType=81/1460; GarageYrBlt=81/1460; GarageFinish=81/1460; GarageCars=0/1460; GarageArea=0/1460; GarageQual=81/1460; GarageCond=81/1460; PavedDrive=0/1460; WoodDeckSF=0/1460; OpenPorchSF=0/1460; EnclosedPorch=0/1460; 3SsnPorch=0/1460; ScreenPorch=0/1460; PoolArea=0/1460; PoolQC=1453/1460; Fence=1179/1460; MiscFeature=1406/1460; MiscVal=0/1460; MoSold=0/1460; YrSold=0/1460; SaleType=0/1460; SaleCondition=0/1460; SalePrice=0/1460",
+      "limitations": "FORMAL DEVELOPMENT engineering smoke only. The existing approved empirical Phase 2 report remains authoritative; this output is not a research finding or publication artifact. Raw rows, row identifiers, and source paths are omitted.",
+      "provenance_ref": null
+    },
+    {
+      "id": "target-distribution",
+      "figure_id": "figure-target-distribution",
+      "title": "Formal training target distribution",
+      "status": "VERIFIED",
+      "image_ref": "phases/phase-02/figures/target-distribution.svg",
+      "table_ref": null,
+      "description": "Binned numeric target distribution for a formal training engineering smoke; the approved empirical Phase 2 report remains authoritative.",
+      "finding": "Formal training target distribution summarized in 10 bins from 1460 non-missing observations; engineering smoke only.",
+      "limitations": "FORMAL DEVELOPMENT engineering smoke only. The existing approved empirical Phase 2 report remains authoritative; this output is not a research finding or publication artifact. Raw rows, row identifiers, and source paths are omitted.",
+      "provenance_ref": null
+    },
+    {
+      "id": "feature-summary",
+      "figure_id": "figure-feature-summary",
+      "title": "Safe feature aggregates",
+      "status": "VERIFIED",
+      "image_ref": null,
+      "table_ref": null,
+      "description": "Numeric range summaries and nominal cardinalities for included features only.",
+      "finding": "LotFrontage: n=1201, min=21, median=69, max=313; LotArea: n=1460, min=1300, median=9478.5, max=215245; YearBuilt: n=1460, min=1872, median=1973, max=2010; YearRemodAdd: n=1460, min=1950, median=1994, max=2010; MasVnrArea: n=1452, min=0, median=0, max=1600; BsmtFinSF1: n=1460, min=0, median=383.5, max=5644; BsmtFinSF2: n=1460, min=0, median=0, max=1474; BsmtUnfSF: n=1460, min=0, median=477.5, max=2336; TotalBsmtSF: n=1460, min=0, median=991.5, max=6110; 1stFlrSF: n=1460, min=334, median=1087, max=4692; 2ndFlrSF: n=1460, min=0, median=0, max=2065; LowQualFinSF: n=1460, min=0, median=0, max=572; GrLivArea: n=1460, min=334, median=1464, max=5642; BsmtFullBath: n=1460, min=0, median=0, max=3; BsmtHalfBath: n=1460, min=0, median=0, max=2; FullBath: n=1460, min=0, median=2, max=3; HalfBath: n=1460, min=0, median=0, max=2; BedroomAbvGr: n=1460, min=0, median=3, max=8; KitchenAbvGr: n=1460, min=0, median=1, max=3; TotRmsAbvGrd: n=1460, min=2, median=6, max=14; Fireplaces: n=1460, min=0, median=1, max=3; GarageYrBlt: n=1379, min=1900, median=1980, max=2010; GarageCars: n=1460, min=0, median=2, max=4; GarageArea: n=1460, min=0, median=480, max=1418; WoodDeckSF: n=1460, min=0, median=0, max=857; OpenPorchSF: n=1460, min=0, median=25, max=547; EnclosedPorch: n=1460, min=0, median=0, max=552; 3SsnPorch: n=1460, min=0, median=0, max=508; ScreenPorch: n=1460, min=0, median=0, max=480; PoolArea: n=1460, min=0, median=0, max=738; MiscVal: n=1460, min=0, median=0, max=15500; MoSold: n=1460, min=1, median=6, max=12; YrSold: n=1460, min=2006, median=2008, max=2010; MSSubClass: 15 distinct; MSZoning: 5 distinct; Street: 2 distinct; Alley: 2 distinct; LandContour: 4 distinct; Utilities: 2 distinct; LotConfig: 5 distinct; Neighborhood: 25 distinct; Condition1: 9 distinct; Condition2: 8 distinct; BldgType: 5 distinct; HouseStyle: 8 distinct; RoofStyle: 6 distinct; RoofMatl: 8 distinct; Exterior1st: 15 distinct; Exterior2nd: 16 distinct; MasVnrType: 4 distinct; Foundation: 6 distinct; Heating: 6 distinct; CentralAir: 2 distinct; Electrical: 5 distinct; GarageType: 6 distinct; PavedDrive: 3 distinct; MiscFeature: 4 distinct; SaleType: 9 distinct; SaleCondition: 6 distinct",
+      "limitations": "FORMAL DEVELOPMENT engineering smoke only. The existing approved empirical Phase 2 report remains authoritative; this output is not a research finding or publication artifact. Raw rows, row identifiers, and source paths are omitted.",
+      "provenance_ref": null
+    }
+  ]
+}

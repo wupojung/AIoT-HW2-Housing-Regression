@@ -1,0 +1,178 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "status": "VERIFIED",
+  "feature_types": [
+    {
+      "type_id": "continuous",
+      "label": "Continuous numeric"
+    },
+    {
+      "type_id": "discrete",
+      "label": "Discrete numeric"
+    },
+    {
+      "type_id": "ordinal",
+      "label": "Ordinal category"
+    },
+    {
+      "type_id": "nominal",
+      "label": "Nominal category"
+    }
+  ],
+  "stages": [
+    {
+      "id": "raw",
+      "label": "Raw Ames predictors",
+      "unit": "raw_columns",
+      "total": 79,
+      "total_status": "VERIFIED",
+      "segments": [
+        {
+          "type_id": "nominal",
+          "count": 26
+        },
+        {
+          "type_id": "ordinal",
+          "count": 20
+        },
+        {
+          "type_id": "discrete",
+          "count": 14
+        },
+        {
+          "type_id": "continuous",
+          "count": 19
+        }
+      ],
+      "distribution_status": "VERIFIED"
+    },
+    {
+      "id": "filtered",
+      "label": "Predictor fields retained for preparation",
+      "unit": "pre_encoding_columns",
+      "total": 79,
+      "total_status": "VERIFIED",
+      "segments": [
+        {
+          "type_id": "nominal",
+          "count": 26
+        },
+        {
+          "type_id": "ordinal",
+          "count": 20
+        },
+        {
+          "type_id": "discrete",
+          "count": 14
+        },
+        {
+          "type_id": "continuous",
+          "count": 19
+        }
+      ],
+      "distribution_status": "VERIFIED"
+    },
+    {
+      "id": "processed",
+      "label": "Train-only imputation and 9 derived indicators",
+      "unit": "pre_encoding_columns",
+      "total": 88,
+      "total_status": "VERIFIED",
+      "segments": [
+        {
+          "type_id": "nominal",
+          "count": 26
+        },
+        {
+          "type_id": "ordinal",
+          "count": 20
+        },
+        {
+          "type_id": "discrete",
+          "count": 23
+        },
+        {
+          "type_id": "continuous",
+          "count": 19
+        }
+      ],
+      "distribution_status": "VERIFIED",
+      "fit_population": "development_train_only",
+      "pipeline_version": "reference-baseline-phase3-v1"
+    },
+    {
+      "id": "encoded",
+      "label": "Ordinal and training-vocabulary one-hot features",
+      "unit": "encoded_features",
+      "total": 248,
+      "total_status": "VERIFIED",
+      "segments": [
+        {
+          "type_id": "nominal",
+          "count": 186
+        },
+        {
+          "type_id": "ordinal",
+          "count": 20
+        },
+        {
+          "type_id": "discrete",
+          "count": 23
+        },
+        {
+          "type_id": "continuous",
+          "count": 19
+        }
+      ],
+      "distribution_status": "VERIFIED",
+      "fit_population": "development_train_only",
+      "pipeline_version": "reference-baseline-phase3-v1"
+    }
+  ],
+  "treatments": [
+    {
+      "strategy": "numeric_median_imputation",
+      "fit_population": "development_train_only",
+      "status": "VERIFIED"
+    },
+    {
+      "strategy": "nominal_mode_imputation",
+      "fit_population": "development_train_only",
+      "status": "VERIFIED"
+    },
+    {
+      "strategy": "ordinal_median_of_training_mapped_scores",
+      "fit_population": "development_train_only",
+      "status": "VERIFIED"
+    },
+    {
+      "strategy": "field_specific_structural_absence_and_presence_indicators",
+      "fit_population": "development_train_only",
+      "status": "VERIFIED"
+    },
+    {
+      "strategy": "MasVnrType_and_MasVnrArea_missing_indicators",
+      "fit_population": "development_train_only",
+      "status": "VERIFIED"
+    },
+    {
+      "strategy": "ordinal_plus_training_level_one_hot",
+      "fit_population": "development_train_only",
+      "status": "VERIFIED"
+    },
+    {
+      "strategy": "retain_all_outlier_candidates",
+      "fit_population": "development_train_only",
+      "status": "VERIFIED"
+    }
+  ],
+  "split": {
+    "source_labeled_rows": 1460,
+    "training_rows": 1168,
+    "holdout_rows": 292,
+    "seed": 42,
+    "status": "VERIFIED"
+  },
+  "lineage_ref": "phases/phase-03/feature-lineage.json"
+}

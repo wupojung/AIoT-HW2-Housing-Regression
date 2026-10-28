@@ -1,0 +1,472 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "source_oof_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+  "development_data_sha256": "2525b2e9385f9873a45d124dfd7520851234fe0a30501a69b8e5e5536403017c",
+  "fold_sha256": "2d12b0a6294055b8aac95e6055fc9095c436c472666f56fd6f33828cc683dd30",
+  "aggregation": "pooled metrics recomputed over each 1,168-row Development OOF configuration",
+  "configurations": [
+    {
+      "configuration_id": "hist-elastic-net-1098e27f3412",
+      "config_hash": "1098e27f34125c296e9331aae6fa1ffec6075f3986b7577cfa813850951d3b53",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 100.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 9
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40542.52140652569,
+        "mae": 21979.05146582404,
+        "r2": 0.7231949077919828
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-1c73870379fc",
+      "config_hash": "1c73870379fcd6a39c7137064f4cd21cc1b0b0424e5dc48fa0216806af0061db",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 1.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 5
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40679.67788890565,
+        "mae": 22034.782540629636,
+        "r2": 0.7213188610737734
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-20363ce2a7f8",
+      "config_hash": "20363ce2a7f8d58f4e840e81b72590fe8de7d1b0dbf47a124fa71e5f3bcf02de",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 10.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 8
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40184.41008968356,
+        "mae": 21895.146660626182,
+        "r2": 0.728063339209059
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-279a8a5b1c1f",
+      "config_hash": "279a8a5b1c1fa1fa93991dc3691c7f22800aeeaa5633b8a4a21e60490cab2efb",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 0.1,
+        "l1_ratio": 0.8,
+        "candidate_order": 2
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40688.77003387681,
+        "mae": 22059.103428197606,
+        "r2": 0.7211942734365095
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-2cc6e4b57a10",
+      "config_hash": "2cc6e4b57a1018be232ca3b4836764386064679c764d0213a5bfaff33b899206",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 1.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 4
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40678.961744702116,
+        "mae": 22052.231293336677,
+        "r2": 0.7213286730553781
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-52f2eeb3d772",
+      "config_hash": "52f2eeb3d7721d8f4b0ae42ab242efb5c5aa4ac12906532d932958c14c2f7ae8",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 10.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 6
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40663.318663742066,
+        "mae": 22036.75850361332,
+        "r2": 0.721542957774665
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-9fa4d99608f1",
+      "config_hash": "9fa4d99608f14f862026ee988a079004de547e0d713a17b25c36f41a7ac225e3",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 1.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 3
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40669.16961679684,
+        "mae": 22029.076295990704,
+        "r2": 0.7214628189001638
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-d0247c0be6fb",
+      "config_hash": "d0247c0be6fbd0ab346b7d3d5c45583bf3d37d27c45e8d1d432a5cf88d569192",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 10.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 7
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 41035.76472122735,
+        "mae": 22116.124313362343,
+        "r2": 0.7164186744825265
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-d29012556273",
+      "config_hash": "d29012556273bf48ab5997cb33861acd9454e5879dac80f885a7a721a2494460",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 100.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 10
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40539.25473658279,
+        "mae": 21949.633209117714,
+        "r2": 0.7232395125385389
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-d7202991dc8f",
+      "config_hash": "d7202991dc8fee11e65aac3b0532ac68b63599a6b0ec87eec5544eb13ad8c0f3",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 100.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 11
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 38536.94858714711,
+        "mae": 21747.615534198216,
+        "r2": 0.7499037308541324
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-d8d37e65bf41",
+      "config_hash": "d8d37e65bf4102eb0c9aea0edd336d66f0b8557d5f280634ff59ad0fd44f3e89",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 0.1,
+        "l1_ratio": 0.2,
+        "candidate_order": 0
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40678.7109228227,
+        "mae": 22052.05374574932,
+        "r2": 0.7213321095565806
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-dd45a0b3f79e",
+      "config_hash": "dd45a0b3f79edae79eaa99d9a592757df83e7874b21f1acaea413103928dbdc0",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 0.1,
+        "l1_ratio": 0.5,
+        "candidate_order": 1
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40678.7109228227,
+        "mae": 22052.05374574932,
+        "r2": 0.7213321095565806
+      }
+    },
+    {
+      "configuration_id": "hist-lasso-23fac5e0453b",
+      "config_hash": "23fac5e0453be9dd9a61a55b2754a45604d56c9f5c64e3c31cd38bf0d2f5ef35",
+      "method_id": "lasso",
+      "candidate": {
+        "alpha": 100.0,
+        "candidate_order": 3
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 35936.820128771506,
+        "mae": 19394.93176940998,
+        "r2": 0.7825137236061604
+      }
+    },
+    {
+      "configuration_id": "hist-lasso-d0ea8d1b5d1d",
+      "config_hash": "d0ea8d1b5d1d55b5b429a30fa8f7bdf406832c945cbc17b0153747fd681e0925",
+      "method_id": "lasso",
+      "candidate": {
+        "alpha": 10.0,
+        "candidate_order": 2
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 38875.94170238046,
+        "mae": 21516.908462938005,
+        "r2": 0.7454843978611528
+      }
+    },
+    {
+      "configuration_id": "hist-mutual-information-b33c6189b8ae",
+      "config_hash": "b33c6189b8aefebafc09f538fa426395a77a1ea2b6f2ca24c7cc854aa0be11b5",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 37550.378531391536,
+        "mae": 23510.556799555176,
+        "r2": 0.7625450624524726
+      }
+    },
+    {
+      "configuration_id": "hist-mutual-information-b87169fc4edc",
+      "config_hash": "b87169fc4edca859fb91775a40d668145f81e926620d949aadbb38b4272fc6a3",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 41719.30384661835,
+        "mae": 28264.52674713219,
+        "r2": 0.706892675140941
+      }
+    },
+    {
+      "configuration_id": "hist-mutual-information-c79851bf9d83",
+      "config_hash": "c79851bf9d83e7280f5c3f42d39ad330d2742267e109de1c802b1c4761f78480",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 37807.86235605648,
+        "mae": 23589.495137746013,
+        "r2": 0.7592774294819357
+      }
+    },
+    {
+      "configuration_id": "hist-mutual-information-f8964bbe4d91",
+      "config_hash": "f8964bbe4d91e2b423d244942a1c96bdee2b15c2376af1d4c24b708f6d6ddb20",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40924.48842608688,
+        "mae": 26303.235066840265,
+        "r2": 0.7179545588311663
+      }
+    },
+    {
+      "configuration_id": "hist-mutual-information-fe67d806a6c0",
+      "config_hash": "fe67d806a6c09274e96d968e73b93f31c694d678af46ee7aede9abfe4a49c2d0",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 39828.709259750765,
+        "mae": 25514.8390862149,
+        "r2": 0.7328562422820608
+      }
+    },
+    {
+      "configuration_id": "hist-ols-baseline-67211c3848f8",
+      "config_hash": "67211c3848f890177480eb621f1fc247612b56008bd2e062a149de133f603298",
+      "method_id": "ols_baseline",
+      "candidate": {
+        "features": "all"
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 41088.3603536318,
+        "mae": 22167.8368373754,
+        "r2": 0.7156912749743729
+      }
+    },
+    {
+      "configuration_id": "hist-pearson-05a42a840e86",
+      "config_hash": "05a42a840e86417500b7b074f48d18b215aed5e569852838928ef4a5d7dcc7c7",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 39992.01379265052,
+        "mae": 27256.5861659508,
+        "r2": 0.7306610808528322
+      }
+    },
+    {
+      "configuration_id": "hist-pearson-47c2ce66ecde",
+      "config_hash": "47c2ce66ecde074a5358fe1b6538988bb7912d7fd40e4bd75bc00263f9aa4007",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 43735.506442782826,
+        "mae": 29527.908906764256,
+        "r2": 0.6778776300431364
+      }
+    },
+    {
+      "configuration_id": "hist-pearson-4c0e705bb36a",
+      "config_hash": "4c0e705bb36a73081152863b4338858994672e53cad4b8ec3f0a60a881c1451a",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 37885.82707924756,
+        "mae": 23896.514118716565,
+        "r2": 0.7582836034205321
+      }
+    },
+    {
+      "configuration_id": "hist-pearson-76875a54b993",
+      "config_hash": "76875a54b9938060c533ef3a3a95cf0f3deff80daf1872f079f3df63ba40c03f",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 38786.75669585957,
+        "mae": 25902.136319154226,
+        "r2": 0.7466508230520871
+      }
+    },
+    {
+      "configuration_id": "hist-pearson-fb8b057e6677",
+      "config_hash": "fb8b057e667700b125e73b488fedd95dcb3356c5a51b8dc746896fc66671d72d",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 37262.440496500305,
+        "mae": 23379.445375936986,
+        "r2": 0.7661727311871236
+      }
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-1988433b54f5",
+      "config_hash": "1988433b54f59f8e579c2d77bbd63a965d7a09e6b5c2db229cadc2eb42d5d0c4",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 74072.17411886866,
+        "mae": 53233.40824472022,
+        "r2": 0.07601961904841559
+      }
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-5209c529b590",
+      "config_hash": "5209c529b590f46510d92d4477a0919257f4fc0eede444f3f7bf2d571cce282d",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 74135.3790960771,
+        "mae": 53151.454459682456,
+        "r2": 0.07444210156029007
+      }
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-55d847e58f1b",
+      "config_hash": "55d847e58f1bed76947d8912dbd3441e3d05ddc96f3d0c0e4728919118befb42",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 69448.06322567763,
+        "mae": 49765.18816563054,
+        "r2": 0.18778156383749822
+      }
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-616569f18d0f",
+      "config_hash": "616569f18d0fb28c9e7d1fda84ccfb2e65740a7f8f51b8fbc53b2cf892750fa8",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40957.258057629646,
+        "mae": 26744.3588494085,
+        "r2": 0.7175026912113938
+      }
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-67e3f996e959",
+      "config_hash": "67e3f996e959abae53745d268e5801e8b11fe386218827b9324285c06e06c5e7",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 56631.04394058629,
+        "mae": 41572.11650382577,
+        "r2": 0.4599155156706898
+      }
+    }
+  ]
+}

@@ -105,11 +105,11 @@ const state = {
   caseId: "ames-housing", route: "home", analysisId: "overview", perspective: "method_comparison",
   phase4RunId: "MOCK-RUN-02", phase6MockSubmitted: false,
   referenceAnalysisId: "figure-field-decisions",
-  referenceEvaluationId: "initb-development-e2e-20261028-02.development-oof.pooled",
-  referenceFigureId: "FIG-P5-02",
+  referenceFigureId: "FIG-P5-01",
   phase6InputMode: "manual", phase6Csv: null, phase6CsvMessage: "尚未選擇 CSV 檔案。",
   phase6Values: { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" },
   phase5Figure: "FIG-P5-02", p5Population: "development_oof", p5DetailsOpen: false, phase5ConfigId: "",
+  explorationMode: "comparison", explorationPerspective: "selected_features", explorationMethodId: "", explorationConfigurationId: "", explorationP5Figure: "FIG-P5-01",
   dashboardMode: "verified", customSource: "file", customFile: null, customUrl: "", customHeaders: [], customRows: [],
   targetField: "", featureFields: [], csvMessage: "尚未載入資料。CSV 僅在此瀏覽器本機預覽，不會上傳。", customValidated: false
 };
@@ -147,15 +147,18 @@ function setRoute(route) { location.hash = route; }
 function setPhase(phase) { setRoute(`phase-${phase}`); }
 function banner(caseInfo = caseData()) {
   const formalPackage = caseInfo.packageMode === "formal";
+  const explorationPackageMode = caseInfo.packageMode === "exploration";
   const reason = formalPackage
     ? `Formal Case Package ${caseInfo.packageRevision} · only Phase 5 reads local staging; Phases 1–4 remain MOCK UI previews. This is not a public release.`
     : caseInfo.packageMode === "reference"
     ? `公開 Case Package ${caseInfo.packageRevision} · INIT B 正式 Development 計算；Phase 5 為 OOF 評估，研究發布審查仍待完成。`
+    : explorationPackageMode
+    ? `Historical Development model exploration · package revision ${caseInfo.packageRevision} · completed configurations only; publication review pending.`
     : caseInfo.status === "MOCK"
     ? `UI fixture only · package revision ${caseInfo.packageRevision} · ${SOURCE}. These values are not approved research results.`
     : "Planned placeholder only · no research package, data, or model is available.";
   const bannerStatus = caseInfo.status;
-  return `<div class="fixture-banner"><span><strong>${formalPackage ? "Formal package preview" : caseInfo.status === "MOCK" ? "Fixture preview" : "Planned case"}</strong> · ${esc(reason)}</span>${badge(bannerStatus)}</div>`;
+  return `<div class="fixture-banner"><span><strong>${formalPackage ? "Formal package preview" : explorationPackageMode ? "Historical exploration package" : caseInfo.status === "MOCK" ? "Fixture preview" : "Planned case"}</strong> · ${esc(reason)}</span>${badge(bannerStatus)}</div>`;
 }
 function updateShell() {
   const phase = routePhase();
@@ -165,19 +168,85 @@ function updateShell() {
   document.querySelector("[data-home-link]").setAttribute("aria-current", state.route === "home" ? "page" : "false");
   document.querySelector("[data-crisp-link]").setAttribute("aria-current", phase ? "page" : "false");
   caseSelect.innerHTML = Object.entries(CASES).map(([key, c]) => `<option value="${esc(key)}" ${key === state.caseId ? "selected" : ""}>${esc(c.title)} · ${c.packageMode === "formal" ? "FORMAL PACKAGE" : esc(c.status)}</option>`).join("");
+  const caseLoadStatus = document.querySelector("#case-load-status");
+  const loading = referencePackageLoading || explorationPackageLoading;
+  const failedCases = [
+    referencePackageError ? "INIT B Reference Baseline" : null,
+    explorationPackageError ? "Full Model Exploration" : null
+  ].filter(Boolean);
+  caseSelect.disabled = loading;
+  caseLoadStatus.classList.toggle("is-error", failedCases.length > 0);
+  if (loading) {
+    caseLoadStatus.setAttribute("role", failedCases.length ? "alert" : "status");
+    caseLoadStatus.textContent = failedCases.length
+      ? `研究案例載入中…（${failedCases.join("、")}載入失敗；其餘案例仍在驗證）`
+      : "研究案例載入中…";
+  } else if (failedCases.length) {
+    caseLoadStatus.setAttribute("role", "alert");
+    caseLoadStatus.textContent = `研究案例載入失敗：${failedCases.join("、")}。其餘已驗證案例仍可使用。`;
+  } else {
+    caseLoadStatus.setAttribute("role", "status");
+    caseLoadStatus.textContent = `研究案例載入完成，共 ${Object.keys(CASES).length} 個可用案例。`;
+  }
 }
 
 // Reference packages are resolved from a small pointer to an immutable static release.
 let referencePackage = null;
 let referencePackageError = null;
 let referencePackageLoading = false;
+let explorationPackage = null;
+let explorationPackageError = null;
+let explorationPackageLoading = false;
+const EXPLORATION_CASE_ID = "ames-full-model-exploration";
+const explorationArtifactPromises = new Map();
 function safePackageRef(ref) {
   return typeof ref === "string" && !ref.startsWith("/") && !ref.includes("\\")
     && ref.split("/").every((part) => part && part !== "." && part !== "..");
 }
+function validatePhase3Lineage(pkg, preparation, lineage) {
+  const sourceSha = pkg.executionManifest?.source_data_sha256 || pkg.executionManifest?.source_sha256;
+  if (!lineage || lineage.case_id !== pkg.manifest.case_id
+      || !/^[0-9a-f]{64}$/.test(sourceSha || "")
+      || lineage.source_data_sha256 !== sourceSha
+      || lineage.fit_population !== "development_train_only") {
+    throw new Error("Phase 3 feature lineage identity or source binding mismatch.");
+  }
+  const encoded = lineage.encoded_features;
+  const encodedStage = preparation.stages?.find((stage) => stage.id === "encoded");
+  if (!Array.isArray(encoded) || !encodedStage || encoded.length !== encodedStage.total
+      || new Set(encoded.map((item) => item.encoded_feature)).size !== encoded.length
+      || encoded.some((item) => !item.encoded_feature || !Array.isArray(item.source_columns)
+        || !item.source_columns.length || !item.semantic_type || !item.transformation)) {
+    throw new Error("Phase 3 encoded feature lineage is incomplete or inconsistent.");
+  }
+  const counts = Object.fromEntries(["nominal", "ordinal", "discrete", "continuous"].map((type) => [type, 0]));
+  for (const item of encoded) {
+    if (!Object.hasOwn(counts, item.semantic_type)) throw new Error("Phase 3 lineage contains an unknown feature type.");
+    counts[item.semantic_type] += 1;
+  }
+  const expected = Object.fromEntries((encodedStage.segments || []).map((segment) => [segment.type_id, segment.count]));
+  if (Object.keys(counts).some((type) => counts[type] !== expected[type])) {
+    throw new Error("Phase 3 encoded feature lineage counts disagree with the Case Package.");
+  }
+  return lineage;
+}
+function logPackageLoadFailure(caseId, stage, error) {
+  const detail = error instanceof Error ? error.message : "Unknown error";
+  const safeDetail = detail
+    .replace(/https?:\/\/\S+/g, "[URL]")
+    .replace(/(?:\/(?:Users|private|tmp|var|home)\/\S+|[A-Za-z]:\\[^\s]+)/g, "[local path]")
+    .slice(0, 180);
+  console.warn("[RegScope] Case Package validation failed", {
+    caseId,
+    stage,
+    errorName: error instanceof Error ? error.name : "Error",
+    detail: safeDetail
+  });
+}
 async function loadReferencePackage() {
   if (referencePackage || referencePackageError || referencePackageLoading) return;
   referencePackageLoading = true;
+  let stage = "release_index";
   try {
     const releaseResponse = await fetch(REFERENCE_RELEASE_INDEX);
     if (!releaseResponse.ok) throw new Error(`Release index request failed (${releaseResponse.status}).`);
@@ -185,22 +254,24 @@ async function loadReferencePackage() {
     if (releaseIndex.schema_version !== "1.0.0" || !Array.isArray(releaseIndex.cases)) throw new Error("Invalid Case Package release index.");
     const releaseCase = releaseIndex.cases.find((entry) => entry.case_id === "ames-reference-init-a");
     const packageRef = releaseCase?.package_ref;
-    if (!safePackageRef(packageRef) || !packageRef.startsWith(`releases/${releaseIndex.release_id}/cases/`) || !packageRef.endsWith("/package.json")) {
+    const packagePath = typeof packageRef === "string" ? packageRef.split("/") : [];
+    if (!safePackageRef(packageRef) || packagePath.length !== 5 || packagePath[0] !== "releases" || packagePath[2] !== "cases" || packagePath[3] !== "ames-reference-init-a" || packagePath[4] !== "package.json" || !/^[a-z0-9][a-z0-9._-]{2,79}$/.test(packagePath[1])) {
       throw new Error("Release index has no safe reference for the Ames case.");
     }
-    const packagePath = packageRef.split("/");
     REFERENCE_PACKAGE_ROOT = `${WEB_BASE}/data/${packagePath.slice(0, -1).join("/")}`;
+    stage = "package_manifest";
     const packageResponse = await fetch(`${WEB_BASE}/data/${packageRef}`);
     if (!packageResponse.ok) throw new Error(`Case Package request failed (${packageResponse.status}).`);
     const packageBytes = await packageResponse.arrayBuffer();
     const packageDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", packageBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
     if (packageDigest !== releaseCase.package_sha256 || packageBytes.byteLength !== releaseCase.package_bytes) throw new Error("Release index package digest/size mismatch.");
     const manifest = JSON.parse(new TextDecoder().decode(packageBytes));
-    if (manifest.package_revision !== releaseIndex.release_id || manifest.package_status !== releaseCase.package_status) throw new Error("Release index and Case Package metadata disagree.");
+    if (manifest.package_revision !== packagePath[1] || manifest.package_status !== releaseCase.package_status) throw new Error("Release index and Case Package metadata disagree.");
     if (manifest.case_id !== "ames-reference-init-a" || !Array.isArray(manifest.files)) throw new Error("Unexpected Case Package identity or file manifest.");
     const listed = new Map(manifest.files.map((entry) => [entry.path, entry]));
     if (listed.size !== manifest.files.length) throw new Error("Duplicate Case Package file entry.");
     const docs = {};
+    stage = "phase_documents";
     for (const [phase, fallback] of [[1,"phases/phase-01/content.json"],[2,"phases/phase-02/analyses.json"],[3,"phases/phase-03/preparation.json"],[4,"phases/phase-04/modeling.json"],[5,"phases/phase-05/evaluations.json"],[6,"phases/phase-06/inference-catalog.json"]]) {
       const ref = manifest.phases?.[`phase${phase}`]?.data_ref || fallback;
       const entry = listed.get(ref);
@@ -213,6 +284,28 @@ async function loadReferencePackage() {
       docs[phase] = JSON.parse(new TextDecoder().decode(bytes));
       if (docs[phase].case_id !== manifest.case_id) throw new Error(`Phase ${phase} Case ID mismatch.`);
     }
+    stage = "phase3_lineage";
+    const phase3LineageRef = docs[3].lineage_ref;
+    const phase3LineageEntry = listed.get(phase3LineageRef);
+    if (!safePackageRef(phase3LineageRef) || !phase3LineageEntry) throw new Error("Phase 3 lineage is not package-manifest-listed.");
+    const phase3LineageResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${phase3LineageRef}`);
+    if (!phase3LineageResponse.ok) throw new Error(`Phase 3 lineage request failed (${phase3LineageResponse.status}).`);
+    const phase3LineageBytes = await phase3LineageResponse.arrayBuffer();
+    const phase3LineageDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", phase3LineageBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    if (phase3LineageDigest !== phase3LineageEntry.sha256 || phase3LineageBytes.byteLength !== phase3LineageEntry.bytes) throw new Error("Phase 3 lineage manifest digest/size mismatch.");
+    const phase3LineageDocument = JSON.parse(new TextDecoder().decode(phase3LineageBytes));
+    stage = "execution_manifest";
+    const executionEntry = listed.get("assets/execution-manifest.json");
+    if (!executionEntry) throw new Error("Execution manifest is not package-manifest-listed.");
+    const executionResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/assets/execution-manifest.json`);
+    if (!executionResponse.ok) throw new Error(`Execution manifest request failed (${executionResponse.status}).`);
+    const executionBytes = await executionResponse.arrayBuffer();
+    const executionDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", executionBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    if (executionDigest !== executionEntry.sha256 || executionBytes.byteLength !== executionEntry.bytes) throw new Error("Execution manifest digest/size mismatch.");
+    const executionManifest = JSON.parse(new TextDecoder().decode(executionBytes));
+    if (executionManifest.case_id !== manifest.case_id) throw new Error("Execution manifest Case ID mismatch.");
+    const phase3Lineage = validatePhase3Lineage({ manifest, executionManifest }, docs[3], phase3LineageDocument);
+    stage = "case_document";
     const caseEntry = listed.get(manifest.case_ref);
     if (!caseEntry || !safePackageRef(manifest.case_ref)) throw new Error("Case document is not package-manifest-listed.");
     const caseResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${manifest.case_ref}`);
@@ -222,6 +315,7 @@ async function loadReferencePackage() {
     if (caseDigest !== caseEntry.sha256 || caseBytes.byteLength !== caseEntry.bytes) throw new Error("Case document manifest digest/size mismatch.");
     const caseDoc = JSON.parse(new TextDecoder().decode(caseBytes));
     if (caseDoc.case_id !== manifest.case_id || caseDoc.case_status !== manifest.package_status) throw new Error("Case document identity/status mismatch.");
+    stage = "figures";
     for (const entry of manifest.files.filter((item) => ["image/svg+xml", "image/png"].includes(item.mime))) {
       if (!safePackageRef(entry.path)) throw new Error("Unsafe figure path reference.");
       const response = await fetch(`${REFERENCE_PACKAGE_ROOT}/${entry.path}`);
@@ -230,6 +324,7 @@ async function loadReferencePackage() {
       const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
       if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error("Figure manifest digest/size mismatch.");
     }
+    stage = "phase4_metrics";
     const defaultConfig = docs[4].configurations.find((item) => item.configuration_id === docs[4].default_configuration_id);
     const metricsRef = defaultConfig?.cv_metrics_ref;
     const metricsEntry = manifest.files.find((entry) => entry.path === metricsRef);
@@ -241,6 +336,7 @@ async function loadReferencePackage() {
     if (metricsDigest !== metricsEntry.sha256 || metricsBytes.byteLength !== metricsEntry.bytes) throw new Error("Phase 4 metrics manifest digest/size mismatch.");
     const cvMetrics = JSON.parse(new TextDecoder().decode(metricsBytes));
     if (cvMetrics.case_id !== manifest.case_id || cvMetrics.run_id !== defaultConfig.execution_run_id) throw new Error("Phase 4 metrics identity mismatch.");
+    stage = "phase6_smoke";
     const smokeRef = "assets/phase6-inference-smoke.json";
     const smokeEntry = listed.get(smokeRef);
     if (!smokeEntry) throw new Error("Phase 6 inference smoke evidence is not package-manifest-listed.");
@@ -250,15 +346,137 @@ async function loadReferencePackage() {
     const smokeDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", smokeBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
     if (smokeDigest !== smokeEntry.sha256 || smokeBytes.byteLength !== smokeEntry.bytes) throw new Error("Phase 6 smoke evidence manifest digest/size mismatch.");
     const phase6Smoke = JSON.parse(new TextDecoder().decode(smokeBytes));
-    referencePackage = { manifest, caseDoc, docs, cvMetrics, phase6Smoke, figurePaths: manifest.files.filter((item) => ["image/svg+xml", "image/png"].includes(item.mime)).map((item) => item.path) };
+    referencePackage = { manifest, caseDoc, docs, cvMetrics, phase6Smoke, phase3Lineage, executionManifest, root: REFERENCE_PACKAGE_ROOT, figurePaths: manifest.files.filter((item) => ["image/svg+xml", "image/png"].includes(item.mime)).map((item) => item.path) };
     CASES[manifest.case_id] = { id: manifest.case_id, title: "Ames Housing — INIT B Reference Baseline", status: manifest.package_status, packageMode: "reference", packageRevision: manifest.package_revision, analyses: [] };
   } catch (error) {
     referencePackageError = error instanceof Error ? error.message : "Unable to verify Case Package.";
+    logPackageLoadFailure("ames-reference-init-a", stage, error);
   } finally {
     referencePackageLoading = false;
     updateShell();
     if (state.caseId === "ames-reference-init-a") render();
   }
+}
+
+async function loadExplorationPackage() {
+  if (explorationPackage || explorationPackageError || explorationPackageLoading) return;
+  explorationPackageLoading = true;
+  let stage = "release_index";
+  try {
+    const releaseResponse = await fetch(REFERENCE_RELEASE_INDEX);
+    if (!releaseResponse.ok) throw new Error(`Release index request failed (${releaseResponse.status}).`);
+    const releaseIndex = await releaseResponse.json();
+    const releaseCase = releaseIndex.cases?.find((entry) => entry.case_id === EXPLORATION_CASE_ID);
+    const packageRef = releaseCase?.package_ref;
+    if (!safePackageRef(packageRef) || !packageRef.endsWith(`/cases/${EXPLORATION_CASE_ID}/package.json`)) throw new Error("Release index has no safe Model Exploration package reference.");
+    const parts = packageRef.split("/");
+    if (parts.length !== 5 || parts[0] !== "releases" || parts[2] !== "cases" || parts[3] !== EXPLORATION_CASE_ID || parts[4] !== "package.json" || !/^[a-z0-9][a-z0-9._-]{2,79}$/.test(parts[1])) throw new Error("Model Exploration package path does not match an immutable release layout.");
+    const root = `${WEB_BASE}/data/${parts.slice(0, -1).join("/")}`;
+    stage = "package_manifest";
+    const packageResponse = await fetch(`${WEB_BASE}/data/${packageRef}`);
+    if (!packageResponse.ok) throw new Error(`Model Exploration package request failed (${packageResponse.status}).`);
+    const packageBytes = await packageResponse.arrayBuffer();
+    const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", packageBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    if (digest !== releaseCase.package_sha256 || packageBytes.byteLength !== releaseCase.package_bytes) throw new Error("Model Exploration release pointer digest/size mismatch.");
+    const manifest = JSON.parse(new TextDecoder().decode(packageBytes));
+    if (manifest.case_id !== EXPLORATION_CASE_ID || manifest.package_revision !== parts[1] || manifest.package_status !== releaseCase.package_status || !Array.isArray(manifest.files)) throw new Error("Model Exploration package identity/revision mismatch.");
+    const listed = new Map(manifest.files.map((entry) => [entry.path, entry]));
+    if (listed.size !== manifest.files.length) throw new Error("Duplicate Model Exploration manifest entry.");
+    const pkg = { manifest, root, artifacts: new Map(), caseDoc: null, docs: {} };
+    async function boundBytes(ref) {
+      if (!safePackageRef(ref)) throw new Error("Unsafe Model Exploration package reference.");
+      const entry = listed.get(ref);
+      if (!entry) throw new Error(`Model Exploration file is not manifest-bound: ${ref}`);
+      const response = await fetch(`${root}/${encodeURI(ref)}`);
+      if (!response.ok) throw new Error(`Model Exploration asset request failed (${response.status}).`);
+      const bytes = await response.arrayBuffer();
+      const actual = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+      if (actual !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error(`Model Exploration manifest digest/size mismatch: ${ref}`);
+      return bytes;
+    }
+    async function boundJson(ref) {
+      if (pkg.artifacts.has(ref)) return pkg.artifacts.get(ref);
+      const bytes = await boundBytes(ref);
+      const value = JSON.parse(new TextDecoder().decode(bytes));
+      pkg.artifacts.set(ref, value);
+      return value;
+    }
+    stage = "phase_documents";
+    for (let phase = 1; phase <= 6; phase += 1) {
+      const ref = manifest.phases?.[`phase${phase}`]?.data_ref;
+      const bytes = await boundBytes(ref);
+      pkg.docs[phase] = JSON.parse(new TextDecoder().decode(bytes));
+      if (pkg.docs[phase].case_id !== manifest.case_id) throw new Error(`Model Exploration Phase ${phase} Case ID mismatch.`);
+    }
+    const caseBytes = await boundBytes(manifest.case_ref);
+    pkg.caseDoc = JSON.parse(new TextDecoder().decode(caseBytes));
+    if (pkg.caseDoc.case_id !== manifest.case_id || pkg.caseDoc.case_status !== manifest.package_status) throw new Error("Model Exploration case document identity/status mismatch.");
+    stage = "execution_manifest";
+    pkg.executionManifest = await boundJson("assets/execution-manifest.json");
+    if (pkg.executionManifest.case_id !== manifest.case_id) throw new Error("Execution manifest Case ID mismatch.");
+    stage = "phase3_lineage";
+    pkg.phase3Lineage = validatePhase3Lineage(pkg, pkg.docs[3], await boundJson(pkg.docs[3].lineage_ref));
+    stage = "figures";
+    for (const entry of manifest.files.filter((item) => ["image/svg+xml", "image/png"].includes(item.mime))) await boundBytes(entry.path);
+    stage = "phase4_charts";
+    const phase4 = pkg.docs[4];
+    for (const chart of phase4.charts || []) {
+      const chartDoc = await boundJson(chart.points_ref);
+      if (chartDoc.case_id !== manifest.case_id || chartDoc.run_id !== phase4.execution_runs?.[0]?.execution_run_id) throw new Error("Model Exploration chart identity mismatch.");
+    }
+    stage = "phase5_metrics";
+    const phase5 = pkg.docs[5];
+    for (const ref of ["phases/phase-05/fold-metrics.json", "phases/phase-05/pooled-oof-metrics.json"]) {
+      const metricsDoc = await boundJson(ref);
+      if (metricsDoc.case_id !== manifest.case_id) throw new Error("Model Exploration Phase 5 metrics identity mismatch.");
+    }
+    stage = "default_configuration_artifacts";
+    const defaultConfig = phase4.configurations.find((item) => item.configuration_id === phase4.default_configuration_id) || phase4.configurations.find((item) => item.status === "VERIFIED");
+    if (defaultConfig) {
+      const [cvMetrics, selectedFeatures] = await Promise.all([boundJson(defaultConfig.cv_metrics_ref), boundJson(defaultConfig.selected_features_ref)]);
+      if (cvMetrics.configuration_id !== defaultConfig.configuration_id || selectedFeatures.configuration_id !== defaultConfig.configuration_id || cvMetrics.run_id !== defaultConfig.execution_run_id || selectedFeatures.run_id !== defaultConfig.execution_run_id) throw new Error("Default Phase 4 configuration artifacts are not identity-bound.");
+      state.explorationConfigurationId = defaultConfig.configuration_id;
+      state.explorationMethodId = defaultConfig.method_id;
+    }
+    explorationPackage = pkg;
+    CASES[EXPLORATION_CASE_ID] = { id: EXPLORATION_CASE_ID, title: pkg.caseDoc.title, status: manifest.package_status, packageMode: "exploration", packageRevision: manifest.package_revision };
+  } catch (error) {
+    explorationPackageError = error instanceof Error ? error.message : "Unable to verify Model Exploration Case Package.";
+    logPackageLoadFailure(EXPLORATION_CASE_ID, stage, error);
+  } finally {
+    explorationPackageLoading = false;
+    updateShell();
+    if (state.caseId === EXPLORATION_CASE_ID) render();
+  }
+}
+
+async function loadExplorationArtifact(pkg, ref) {
+  if (pkg.artifacts.has(ref)) return pkg.artifacts.get(ref);
+  if (!safePackageRef(ref) || !pkg.manifest.files.some((entry) => entry.path === ref)) throw new Error("Requested artifact is not package-bound.");
+  if (!explorationArtifactPromises.has(ref)) explorationArtifactPromises.set(ref, (async () => {
+    const response = await fetch(`${pkg.root}/${encodeURI(ref)}`);
+    if (!response.ok) throw new Error(`Artifact request failed (${response.status}).`);
+    const bytes = await response.arrayBuffer();
+    const entry = pkg.manifest.files.find((item) => item.path === ref);
+    const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error("Artifact manifest digest/size mismatch.");
+    const value = JSON.parse(new TextDecoder().decode(bytes));
+    if (value.case_id !== pkg.manifest.case_id) throw new Error("Artifact Case ID mismatch.");
+    pkg.artifacts.set(ref, value);
+    return value;
+  })());
+  try { return await explorationArtifactPromises.get(ref); }
+  finally { explorationArtifactPromises.delete(ref); }
+}
+async function loadExplorationConfigurationArtifacts(pkg, configuration) {
+  const [cvMetrics, selectedFeatures] = await Promise.all([
+    loadExplorationArtifact(pkg, configuration.cv_metrics_ref),
+    loadExplorationArtifact(pkg, configuration.selected_features_ref)
+  ]);
+  for (const artifact of [cvMetrics, selectedFeatures]) {
+    if (artifact.configuration_id !== configuration.configuration_id || artifact.run_id !== configuration.execution_run_id) throw new Error("Phase 4 artifact Configuration/Run identity mismatch.");
+  }
+  return { cvMetrics, selectedFeatures };
 }
 function renderReferencePackagePhase(phase) {
   const pkg = referencePackage;
@@ -322,7 +540,7 @@ function packageFigure(pkg, ref, alt, className = "package-figure") {
   const dimensions = ref.endsWith("missingness.svg") ? [760, 575]
     : ref.endsWith("target-distribution.svg") ? [760, 360]
       : entry.mime === "image/png" ? [910, 650] : [760, 575];
-  return `<figure class="reference-figure"><img class="${className}" src="${REFERENCE_PACKAGE_ROOT}/${encodeURI(ref)}" alt="${esc(alt)}" width="${dimensions[0]}" height="${dimensions[1]}" loading="lazy" decoding="async"><figcaption>${esc(alt)}</figcaption></figure>`;
+  return `<figure class="reference-figure"><img class="${className}" src="${pkg.root || REFERENCE_PACKAGE_ROOT}/${encodeURI(ref)}" alt="${esc(alt)}" width="${dimensions[0]}" height="${dimensions[1]}" loading="lazy" decoding="async"><figcaption>${esc(alt)}</figcaption></figure>`;
 }
 function renderReferencePhase1(pkg, doc) {
   const c = pkg.caseDoc;
@@ -340,9 +558,24 @@ function renderReferencePhase2(pkg, doc) {
     const fields = parseFieldDecisions(selected.finding);
     const rowSource = analyses.find((item) => item.figure_id === "figure-missingness");
     const sourceRows = parseMissingness(rowSource?.finding)?.rows;
-    const counts = new Map();
-    for (const field of fields.filter((item) => item.action === "include")) counts.set(field.type, (counts.get(field.type) || 0) + 1);
-    content += fields.length ? `<div class="reference-summary-grid grid four">${[["資料列", sourceRows?.toLocaleString() || "—"],["原始欄位", String(fields.length)],["納入預測欄位", String(fields.filter((item) => item.action === "include").length)],["排除目標／識別欄位", String(fields.filter((item) => item.action === "exclude").length)]].map(([label,value]) => `<article class="reference-stat-card"><span>${label}</span><strong>${value}</strong></article>`).join("")}</div><div class="reference-type-summary">${["nominal","ordinal","discrete","continuous"].map((type) => `<span>${typeLabel(type)} <strong>${counts.get(type) || 0}</strong></span>`).join("")}</div><details class="disclosure"><summary>檢視欄位分類與決策 (${fields.length})</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>欄位</th><th>分類</th><th>決策</th></tr></thead><tbody>${fields.map((item) => `<tr><td>${esc(item.field)}</td><td>${esc(typeLabel(item.type))}</td><td>${item.action === "include" ? "納入" : "排除"}</td></tr>`).join("")}</tbody></table></div></details>` : `<p class="state-panel">欄位摘要格式不符合可驗證規則，未解析顯示。</p>`;
+    const includedFields = fields.filter((item) => item.action === "include");
+    const classificationTypes = ["nominal", "ordinal", "discrete", "continuous"];
+    const counts = new Map(classificationTypes.map((type) => [type, 0]));
+    for (const field of includedFields) {
+      if (counts.has(field.type)) counts.set(field.type, counts.get(field.type) + 1);
+    }
+    const classificationTotal = classificationTypes.reduce((sum, type) => sum + counts.get(type), 0);
+    const classificationsComplete = classificationTotal === includedFields.length;
+    const classificationLegend = classificationTypes.map((type) => {
+      const count = counts.get(type);
+      const percentage = classificationTotal ? count / classificationTotal * 100 : 0;
+      return `<span class="reference-classification-item" data-classification-type="${type}" data-count="${count}" data-percent="${percentage.toFixed(1)}"><i class="reference-classification-swatch ${type}" aria-hidden="true"></i><span>${typeLabel(type)}</span><strong>${count.toLocaleString()}</strong><small>${percentage.toFixed(1)}%</small></span>`;
+    }).join("");
+    const classificationBar = classificationsComplete && classificationTotal ? `<div class="reference-classification-bar" role="img" aria-label="四種欄位分類共 ${classificationTotal} 個特徵；下方圖例列出各類數量與百分比">${classificationTypes.map((type) => {
+      const count = counts.get(type);
+      return `<span class="reference-classification-segment ${type}" data-classification-type="${type}" data-count="${count}" style="flex-grow:${count}" title="${typeLabel(type)} ${count.toLocaleString()}（${(count / classificationTotal * 100).toFixed(1)}%）"></span>`;
+    }).join("")}</div><div class="reference-classification-legend" aria-label="欄位分類圖例">${classificationLegend}</div>` : `<p class="state-panel">欄位分類總數不完整，未繪製比例圖。</p>`;
+    content += fields.length ? `<div class="reference-summary-grid grid four">${[["資料列", sourceRows?.toLocaleString() || "—"],["原始欄位", String(fields.length)],["納入預測欄位", String(includedFields.length)],["排除目標／識別欄位", String(fields.filter((item) => item.action === "exclude").length)]].map(([label,value]) => `<article class="reference-stat-card"><span>${label}</span><strong>${value}</strong></article>`).join("")}</div><section class="reference-classification"><div class="reference-classification-heading"><h3>欄位分類</h3><span>${classificationTotal.toLocaleString()} 個納入特徵</span></div>${classificationBar}</section><details class="disclosure"><summary>檢視欄位分類與決策 (${fields.length})</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>欄位</th><th>分類</th><th>決策</th></tr></thead><tbody>${fields.map((item) => `<tr><td>${esc(item.field)}</td><td>${esc(typeLabel(item.type))}</td><td>${item.action === "include" ? "納入" : "排除"}</td></tr>`).join("")}</tbody></table></div></details>` : `<p class="state-panel">欄位摘要格式不符合可驗證規則，未解析顯示。</p>`;
   } else if (selected.figure_id === "figure-missingness") {
     const missing = parseMissingness(selected.finding);
     const sorted = missing?.fields.filter((item) => item.missing).sort((a,b) => b.missing-a.missing || a.field.localeCompare(b.field)) || [];
@@ -360,18 +593,37 @@ function renderReferencePhase2(pkg, doc) {
 function typeLabel(type) { return ({ nominal: "名目", ordinal: "次序", discrete: "離散", continuous: "連續" })[type] || type; }
 function renderReferencePhase3(pkg, doc) {
   const stages = Array.isArray(doc.stages) ? doc.stages : [];
-  const typeColors = { nominal: "#55d6c2", ordinal: "#a9df62", discrete: "#70b5e8", continuous: "#f1b45b" };
+  const fieldDecisionAnalysis = pkg.docs?.[2]?.analyses?.find((item) => item.figure_id === "figure-field-decisions");
+  const sourceFields = parseFieldDecisions(fieldDecisionAnalysis?.finding);
+  const sourcePredictors = sourceFields.filter((item) => item.action === "include").length;
+  const sourceColumnCount = sourceFields.length;
   const stageCards = stages.map((stage,index) => {
     const sourceSegments = stage.segments || [];
+    const total = Number(stage.total);
     const segmentTotal = sourceSegments.reduce((sum,item) => sum + Number(item.count || 0), 0);
-    const segments = index < 3 && segmentTotal === stage.total && stage.total === 79 ? sourceSegments : [];
-    const track = segments.length ? `<div class="stack-track" aria-label="${esc(stage.label)} feature type distribution">${segments.map((segment) => `<span class="reference-stack-segment" style="width:${segment.count / segmentTotal * 100}%;background:${typeColors[segment.type_id] || "#aab"}" title="${esc(typeLabel(segment.type_id))}: ${segment.count}"></span>`).join("")}</div><div class="legend">${segments.map((segment) => `<span class="legend-item"><i class="legend-dot" style="--dot:${typeColors[segment.type_id] || "#aab"}"></i>${esc(typeLabel(segment.type_id))} ${segment.count}</span>`).join("")}</div>` : `<div class="reference-stage-total"><strong>${Number(stage.total).toLocaleString()}</strong><span>${esc(stage.unit)}</span></div>`;
-    return `<article class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index">0${index+1}</span><h2>${esc(stage.label)}</h2></div><span class="stage-total">${Number(stage.total).toLocaleString()} ${esc(stage.unit)} · ${esc(stage.total_status)}</span></div>${track}</article>`;
+    const track = stage.distribution_status === "VERIFIED" && segmentTotal === total
+      ? renderSegments(stage, doc.feature_types || [])
+      : `<div class="stack-track is-unknown" role="img" aria-label="欄位分類未驗證">欄位分類資料不可用 UNAVAILABLE</div>`;
+    const notes = {
+      raw: sourceColumnCount && sourcePredictors === total
+        ? `${sourceColumnCount} 個 CSV 欄位中，${sourcePredictors} 個是模型預測特徵；欄位分類採 Phase 2 的語意分類。`
+        : "欄位分類依 Phase 2 的欄位決策資料。",
+      filtered: "篩選後仍保留相同的 79 個預測欄位，因此分類比例與 Step 01 相同。",
+      processed: "79 個原始預測欄位加上 9 個衍生指示特徵，共 88 個；補值與指示特徵只使用 Development 訓練資料擬合。",
+      encoded: "248 個特徵分類依逐欄來源沿革計算；one-hot 特徵沿用名目語意，衍生指示特徵列為離散。",
+    };
+    const title = stage.id === "filtered" ? "Predictor fields retained for preparation"
+      : stage.id === "processed" ? "Train-only imputation and derived indicators" : stage.label;
+    const lineageRows = stage.id === "encoded" ? (pkg.phase3Lineage?.encoded_features || []).map((item) =>
+      `<tr><td>${esc(item.index + 1)}</td><td>${esc(item.encoded_feature)}</td><td>${esc(item.source_columns.join(", "))}</td><td>${esc(typeLabel(item.semantic_type))}</td><td>${esc(item.transformation)}</td></tr>`).join("") : "";
+    const lineageDetails = lineageRows
+      ? `<details class="disclosure reference-lineage-disclosure"><summary>檢視 248 個編碼特徵的原始欄位對照</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>#</th><th>編碼特徵</th><th>來源欄位</th><th>分類</th><th>轉換</th></tr></thead><tbody>${lineageRows}</tbody></table></div><p class="stage-note">Source SHA-256 ${esc(pkg.phase3Lineage.source_data_sha256)} · Config SHA-256 ${esc(pkg.phase3Lineage.config_sha256)} · 特徵名稱 SHA-256 ${esc(pkg.phase3Lineage.feature_names_sha256)} · fit: development_train_only.</p></details>` : "";
+    return `<article class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index" aria-label="步驟 ${index + 1} Step ${index + 1}"><span>步驟 · STEP</span><b>0${index + 1}</b></span><h2>${esc(title)}</h2></div><span class="stage-total">總數 Total: ${Number.isInteger(total) ? total.toLocaleString() : "—"} ${esc(stage.unit)} ${badge(stage.total_status)}</span></div>${track}<p class="stage-note">${esc(notes[stage.id] || "")}</p>${lineageDetails}</article>`;
   }).join("");
   const split = doc.split || {};
   const train = Number(split.training_rows) || 0, validation = Number(split.holdout_rows) || 0, total = train + validation;
   const treatments = (doc.treatments || []).map((item) => `<div class="treatment-item"><strong>${esc(item.field_group || item.variable_type || item.strategy || "處理策略")}</strong><span>${esc(item.strategy || item.method || item.description || JSON.stringify(item))}</span></div>`).join("");
-  return `<section class="card"><div class="card-head"><div><p class="eyebrow">FEATURE TRANSFORMATION · FOUR STAGES</p><h2>資料如何轉成模型特徵</h2></div>${badge(doc.status)}</div><div class="card-body"><div class="stage-list">${stageCards}</div><p class="stage-note">前三階段的類型分布採用各階段自身的 Package segments，且總數與欄位數相符。編碼後欄位沒有可驗證的原始類型對應，因此只顯示總數，不推估比例。</p><section class="reference-split"><div class="reference-analysis-heading"><div><p class="eyebrow">DEVELOPMENT SPLIT</p><h2>固定訓練／驗證切分</h2></div><strong>Seed ${esc(split.seed)}</strong></div><div class="row-split"><span style="width:${total ? train / total * 100 : 0}%">Development · ${train.toLocaleString()}</span><span style="width:${total ? validation / total * 100 : 0}%">Validation · ${validation.toLocaleString()}</span></div><p class="stage-note">${Number(split.source_labeled_rows).toLocaleString()} labeled rows · 80/20 split · preprocessing fit scope: training data only. Validation rows are shown as split context and are not used for this page’s CV scores.</p></section>${treatments ? `<details class="disclosure"><summary>查看實際補值與編碼策略</summary><div class="treatment-list">${treatments}</div></details>` : ""}</div></section>`;
+  return `<section class="card"><div class="card-head"><div><p class="eyebrow">FEATURE TRANSFORMATION · FOUR STAGES</p><h2>資料如何轉成模型特徵</h2></div>${badge(doc.status)}</div><div class="card-body"><div class="stage-list">${stageCards}</div><p class="stage-note">四階段分類分別對應原始欄位、篩選後欄位、加上 9 個指示特徵的處理欄位，以及 248 個最終模型特徵。</p><section class="reference-split"><div class="reference-analysis-heading"><div><p class="eyebrow">DEVELOPMENT SPLIT</p><h2>固定訓練／驗證切分</h2></div><strong>Seed ${esc(split.seed)}</strong></div><div class="row-split"><span style="width:${total ? train / total * 100 : 0}%">Development · ${train.toLocaleString()}</span><span style="width:${total ? validation / total * 100 : 0}%">Validation · ${validation.toLocaleString()}</span></div><p class="stage-note">${Number(split.source_labeled_rows).toLocaleString()} labeled rows · 80/20 split · preprocessing fit scope: training data only. Validation rows are shown as split context and are not used for this page’s CV scores.</p></section>${treatments ? `<details class="disclosure"><summary>查看實際補值與編碼策略</summary><div class="treatment-list">${treatments}</div></details>` : ""}</div></section>`;
 }
 function renderReferencePhase4(pkg, doc) {
   const cfg = doc.configurations.find((item) => item.configuration_id === doc.default_configuration_id);
@@ -388,25 +640,199 @@ function renderReferencePhase4(pkg, doc) {
   return `<section class="grid two reference-model-grid"><article class="card"><div class="card-head"><div><p class="eyebrow">FIXED REFERENCE MODEL</p><h2>Lasso selection → OLS</h2></div>${badge(doc.status)}</div><div class="card-body"><p class="body-copy">固定歷史設定以 Lasso α=${esc(params.alpha ?? "—")} 選擇特徵，再由 OLS 執行三折 Development CV。這裡只有一個已執行配置，不代表模型比較。</p><dl class="data-row"><dt>CV 母體</dt><dd>${Number(doc.cv.training_rows).toLocaleString()} Development rows</dd></dl><dl class="data-row"><dt>折數</dt><dd>${doc.cv.fold_count} fixed folds</dd></dl><dl class="data-row"><dt>選模搜尋</dt><dd>未執行</dd></dl></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">FOLD ROTATION</p><h2>三折交叉驗證</h2></div></div><div class="card-body reference-fold-list">${foldVisual}</div></article></section><section class="card reference-metrics-card"><div class="card-head"><div><p class="eyebrow">MEAN FOLD METRICS · DEVELOPMENT CV</p><h2>模型表現摘要</h2></div>${badge(doc.status)}</div><div class="card-body"><div class="metrics">${cards}</div><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>Fold</th><th>驗證筆數</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody>${foldRows}</tbody></table></div><p class="stage-note">指標直接來自已驗證的 Phase 4 fold-metrics 檔案。這是 Development 交叉驗證，不是獨立 Holdout 泛化評估。</p><details class="disclosure"><summary>技術細節</summary><div class="disclosure-body"><p>Configuration ${esc(cfg?.configuration_id || "—")} · Run ${esc(cfg?.execution_run_id || "—")} · Protocol ${esc(cfg?.protocol_id || "—")}</p><pre class="package-json">${esc(JSON.stringify(params,null,2))}</pre></div></details></div></section>`;
 }
 function renderReferencePhase5(pkg, doc) {
-  const evaluations = Array.isArray(doc.evaluations) ? doc.evaluations : [];
-  const selected = evaluations.find((item) => item.evaluation_id === state.referenceEvaluationId) || evaluations.find((item) => item.evaluation_id === doc.default_evaluation_id) || evaluations[0];
-  if (!selected) return `<section class="state-panel"><h2>沒有可用的 Development OOF 評估</h2>${badge("UNAVAILABLE")}</section>`;
-  const figures = selected.figures || [];
-  const figure = figures.find((item) => item.figure_id === state.referenceFigureId) || figures[0];
-  const evaluationStatus = Object.values(selected.metrics || {}).length > 0 && Object.values(selected.metrics || {}).every((metric) => metric.status === "VERIFIED") ? "VERIFIED" : (selected.status || doc.status);
-  const evalButtons = evaluations.map((item) => `<button type="button" class="selector-button" data-reference-evaluation="${esc(item.evaluation_id)}" aria-pressed="${item.evaluation_id === selected.evaluation_id}">${item.metric_source === "pooled_oof" ? "Pooled OOF" : "Mean Fold"}</button>`).join("");
-  const figureButtons = figures.map((item) => `<button type="button" class="selector-button" data-reference-figure="${esc(item.figure_id)}" aria-pressed="${item.figure_id === figure?.figure_id}">${esc(item.figure_id)} · ${esc(item.axes?.y?.label || item.alt)}</button>`).join("");
-  const fmt = (key,value) => key === "r2" ? Number(value).toFixed(6) : Number(value).toLocaleString("en-US",{maximumFractionDigits:2});
-  const metrics = ["rmse","mae","r2"].map((key) => `<article class="metric-card"><span class="metric-label">${key.toUpperCase()}</span><strong class="metric-value">${fmt(key,selected.metrics[key].value)}</strong><span class="metric-note">${selected.metrics[key].status} · ${key === "r2" ? "variance score" : "USD"}</span></article>`).join("");
-  const figureEntry = figure && pkg.manifest.files.find((item) => item.path === figure.asset_ref);
-  const figureSafe = figure && safePackageRef(figure.asset_ref) && figureEntry && figureEntry.sha256 === figure.sha256;
-  return `<section class="card"><div class="card-head"><div><p class="eyebrow">DEVELOPMENT OUT-OF-FOLD EVALUATION</p><h2>交叉驗證評估摘要</h2></div>${badge(evaluationStatus)}</div><div class="card-body"><div class="selector-row" role="group" aria-label="Evaluation population">${evalButtons}</div><p class="sr-only" aria-live="polite">Showing ${selected.metric_source === "pooled_oof" ? "pooled OOF" : "mean-fold"} metrics.</p><div class="metrics reference-p5-metrics">${metrics}</div><p class="body-copy">${selected.metric_source === "pooled_oof" ? `合併 ${Number(selected.n).toLocaleString()} 筆 Development OOF 預測計算` : "三折指標的算術平均"}。兩者的統計口徑不同，請勿混為同一數值。</p><p class="stage-note">資料只代表 Development OOF，並非獨立 Validation／Holdout。研究發布審查：${esc(doc.publication_review)}（此狀態不會隱藏已計算的指標）。</p><details class="disclosure"><summary>Run 與來源追溯</summary><div class="disclosure-body"><p>Run ${esc(selected.execution_run_id)} · Config ${esc(selected.configuration_id)} · n=${selected.n}</p><code>${esc(selected.evidence?.source_artifact_sha256 || "")}</code></div></details></div></section><section class="card reference-figure-card"><div class="card-head"><div><p class="eyebrow">OOF DIAGNOSTICS</p><h2>評估圖表</h2></div>${figure ? badge(figure.status) : badge("UNAVAILABLE")}</div><div class="card-body"><div class="selector-row" role="group" aria-label="Evaluation figure">${figureButtons}</div><p class="sr-only" aria-live="polite">${esc(figure?.alt || "No figure selected")}</p>${figure && figureSafe ? packageFigure(pkg,figure.asset_ref,figure.alt) : `<div class="state-panel"><h3>圖表未通過 Package 引用驗證</h3><p>此圖表不顯示；請檢查其檔案清單與 SHA。</p></div>`}<p class="stage-note">${esc(figure?.finding || "")} · Publication review ${esc(figure?.publication_review || doc.publication_review)}.</p></div></section>`;
+  const configs = pkg.docs[4]?.configurations || [];
+  const config = configs.find((item) => item.configuration_id === doc.evaluations?.[0]?.configuration_id);
+  const selected = (doc.evaluations || []).find((item) => item.configuration_id === config?.configuration_id && item.metric_source === "cv_fold_mean");
+  const pooled = (doc.evaluations || []).find((item) => item.configuration_id === config?.configuration_id && item.metric_source === "pooled_oof");
+  if (!selected || !config) return `<section class="state-panel"><h2>沒有可用的 Development CV 評估</h2><p>此案例沒有與 Phase 4 預設 Configuration 綁定的 Mean-fold 評估。</p>${badge("UNAVAILABLE")}</section>`;
+  const method = pkg.docs[4].methods?.find((item) => item.method_id === config.method_id);
+  const figure = phase5BoundFigure(pkg, pooled, state.referenceFigureId);
+  return renderPhase5EvaluationCard(pkg, doc, config, method?.label || config.method_id, selected, pooled, figure, state.referenceFigureId, "data-reference-figure");
 }
 function renderReferencePhase6(pkg, doc) {
   const model = doc.models?.[0];
   const smoke = pkg.phase6Smoke;
   const reload = Boolean(smoke?.reload_verified), inference = Boolean(smoke?.local_inference_verified);
   return `<section class="grid two reference-model-grid"><article class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL ARTIFACT</p><h2>Development 模型封裝</h2></div>${badge(model?.model_status || doc.status)}</div><div class="card-body"><dl class="data-row"><dt>來源配置</dt><dd>${esc(model?.source_configuration_id || "—")}</dd></dl><dl class="data-row"><dt>模型版本</dt><dd>${esc(model?.model_version || "—")}</dd></dl><dl class="data-row"><dt>重新載入</dt><dd>${reload ? "PASS" : "NOT VERIFIED"}</dd></dl><dl class="data-row"><dt>本機推論 Smoke</dt><dd>${inference ? "PASS · 預測值未公開" : "NOT VERIFIED"}</dd></dl></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">SERVING AVAILABILITY</p><h2>網站推論能力</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><p class="body-copy">這個公開網站目前只提供靜態研究套件，沒有即時模型 API。不能在此輸入房屋條件並取得模型預測。</p><div class="state-panel"><h3>遠端預測未部署</h3><p>本機模型重新載入與推論驗證，不等同於公開服務。</p></div><details class="disclosure"><summary>模型來源識別</summary><div class="disclosure-body"><p>Model ${esc(model?.model_id || "—")} · Run ${esc(model?.source_execution_run_id || "—")}</p></div></details></div></article></section>`;
+}
+function explorationArtifact(pkg, ref) { return pkg.artifacts.get(ref) || null; }
+function explorationSelectedConfig(pkg) {
+  const doc = pkg.docs[4];
+  const methodId = state.explorationMethodId
+    || doc.configurations.find((item) => item.configuration_id === doc.default_configuration_id)?.method_id;
+  const methodConfigs = doc.configurations.filter((item) => item.method_id === methodId);
+  return methodConfigs.find((item) => item.configuration_id === state.explorationConfigurationId)
+    || methodConfigs.find((item) => item.configuration_id === doc.default_configuration_id)
+    || methodConfigs.find((item) => item.status === "VERIFIED")
+    || methodConfigs[0] || null;
+}
+function explorationDefaultConfigForMethod(pkg, methodId) {
+  const doc = pkg.docs[4];
+  const methodChart = (doc.charts || []).find((item) => item.chart_id === "method-comparison");
+  const points = explorationArtifact(pkg, methodChart?.points_ref)?.points || [];
+  const candidates = points.filter((item) => item.method_id === methodId && item.status === "VERIFIED");
+  const winner = candidates.find((item) => item.method_winner) || candidates[0];
+  return doc.configurations.find((item) => item.configuration_id === winner?.configuration_id && item.method_id === methodId)
+    || doc.configurations.find((item) => item.method_id === methodId && item.status === "VERIFIED")
+    || doc.configurations.find((item) => item.method_id === methodId) || null;
+}
+function explorationMethodLabel(doc, methodId) { return doc.methods.find((item) => item.method_id === methodId)?.label || methodId; }
+function explorationMetric(value, key) {
+  return Number(value).toLocaleString("en-US", { maximumFractionDigits: key === "r2" ? 6 : 2 });
+}
+function explorationMetricsCards(metrics) {
+  return [["RMSE", "rmse", "USD · 越低越好"], ["MAE", "mae", "USD · 越低越好"], ["R²", "r2", "Development folds"]].map(([label,key,note]) =>
+    `<article class="metric-card"><span class="metric-label">${label}</span><strong class="metric-value">${metrics?.[key] == null ? "—" : explorationMetric(metrics[key], key)}</strong><span class="metric-note">${note}</span></article>`).join("");
+}
+const PHASE5_FIGURES = [
+  ["FIG-P5-01", "Actual vs Predicted", "實際值與預測值"],
+  ["FIG-P5-02", "Residual vs Predicted", "殘差與預測值"],
+  ["FIG-P5-03", "Residual Distribution", "殘差分布"]
+];
+function phase5BoundFigure(pkg, pooled, figureId) {
+  if (!pooled) return null;
+  const figure = pooled.figures?.find((item) => item.figure_id === figureId);
+  if (!figure) return null;
+  const entry = pkg.manifest.files.find((item) => item.path === figure.asset_ref);
+  const identityMatches = figure.evaluation_id === pooled.evaluation_id
+    && figure.configuration_id === pooled.configuration_id
+    && figure.evaluation_population === pooled.evaluation_population
+    && figure.prediction_origin === pooled.prediction_origin
+    && figure.n === pooled.n
+    && figure.source_digest === pooled.evidence?.source_artifact_sha256;
+  const assetMatches = safePackageRef(figure.asset_ref) && entry
+    && entry.sha256 === figure.sha256 && entry.mime === "image/png";
+  return identityMatches && assetMatches ? figure : null;
+}
+function phase5MetricValue(evaluation, key) {
+  const metric = evaluation?.metrics?.[key];
+  return metric?.status === "VERIFIED" && Number.isFinite(metric.value) ? metric.value : null;
+}
+function phase5FormatMetric(value, key) {
+  return value == null ? "—" : key === "r2"
+    ? Number(value).toFixed(6)
+    : Number(value).toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+function phase5ComputationStatus(evaluation, fallback) {
+  const metrics = ["mae", "rmse", "r2"].map((key) => evaluation?.metrics?.[key]);
+  return metrics.every((metric) => metric?.status === "VERIFIED" && Number.isFinite(metric.value))
+    ? "VERIFIED" : fallback || "UNAVAILABLE";
+}
+function phase5ConfigurationDescription(config) {
+  const params = config?.params || {};
+  const useful = Object.entries(params).filter(([key]) => !["seed", "selection", "selection_search", "max_iter", "tol"].includes(key));
+  if (!useful.length) return "固定 Reference Configuration";
+  return useful.map(([key, value]) => `${key} ${String(value)}`).join(" · ");
+}
+function renderPhase5EvaluationCard(pkg, doc, config, methodLabel, meanEval, pooledEval, figure, selectedFigureId, figureAttribute) {
+  const computationStatus = phase5ComputationStatus(meanEval, doc.status);
+  const metrics = [
+    ["MAE", "mae", "平均絕對誤差 · USD"],
+    ["RMSE", "rmse", "均方根誤差 · USD"],
+    ["R²", "r2", "決定係數"]
+  ].map(([label, key, note]) => `<article class="metric-card"><span class="metric-label">${label}</span><strong class="metric-value">${phase5FormatMetric(phase5MetricValue(meanEval, key), key)}</strong><span class="metric-note">${note}</span></article>`).join("");
+  const diagnosticButtons = PHASE5_FIGURES.map(([id, en, zh]) => `<button type="button" class="selector-button" ${figureAttribute}="${id}" aria-pressed="${id === selectedFigureId}">${en}<span>${zh}</span></button>`).join("");
+  const advancedMetricRows = ["mae", "rmse", "r2"].map((key) => {
+    const mean = phase5MetricValue(meanEval, key), pooled = phase5MetricValue(pooledEval, key);
+    const delta = mean == null || pooled == null ? null : pooled - mean;
+    return `<tr><th>${key.toUpperCase()}</th><td>${phase5FormatMetric(mean, key)}</td><td>${phase5FormatMetric(pooled, key)}</td><td>${phase5FormatMetric(delta, key)}</td></tr>`;
+  }).join("");
+  const foldCount = meanEval.fold_summary?.fold_count || pkg.docs[4]?.cv?.fold_count || "—";
+  const sourceSha = meanEval.evidence?.source_artifact_sha256 || pooledEval?.evidence?.source_artifact_sha256 || "—";
+  const configLink = `<a class="text-link" href="#phase-4">在 Phase 4 變更模型 →</a>`;
+  const figureContent = figure
+    ? `${packageFigure(pkg, figure.asset_ref, figure.alt || PHASE5_FIGURES.find(([id]) => id === figure.figure_id)?.[1], "package-figure phase5-diagnostic-image")}<p class="stage-note">圖表狀態 ${esc(figure.status)} · Publication review ${esc(figure.publication_review)}. 此為 Development OOF 診斷，不代表獨立 Holdout。</p>`
+    : `<div class="state-panel"><h3>此模型的診斷圖目前不可用</h3><p>找不到與目前 Configuration、Pooled Development OOF、來源指紋及 Package Manifest 完全匹配的圖表。未使用 Mock 圖或其他模型的結果代替。</p>${badge("UNAVAILABLE")}</div>`;
+  const methodName = methodLabel || meanEval.method_id || "Reference Baseline";
+  const modelType = config.track_id?.includes("primary_ols") || config.track_id?.includes("selected_features_to_primary_ols")
+    ? "OLS（主要模型）" : (meanEval.model_id || "依研究 Configuration");
+  return `<section class="grid two phase5-summary-grid"><article class="card"><div class="card-head"><div><p class="eyebrow">SELECTED MODEL SUMMARY</p><h2>目前評估的模型</h2></div>${badge(computationStatus)}</div><div class="card-body"><dl class="data-row"><dt>特徵選擇方法</dt><dd>${esc(methodName)}</dd></dl><dl class="data-row"><dt>模型類型</dt><dd>${esc(modelType)}</dd></dl><dl class="data-row"><dt>Configuration</dt><dd>${esc(phase5ConfigurationDescription(config))}</dd></dl><dl class="data-row"><dt>評估母體</dt><dd>Development OOF · 三折交叉驗證</dd></dl><dl class="data-row"><dt>Development 筆數</dt><dd>${Number(meanEval.n).toLocaleString()}</dd></dl><dl class="data-row"><dt>交叉驗證折數</dt><dd>${esc(foldCount)}</dd></dl><dl class="data-row"><dt>研究狀態</dt><dd>Evaluation ${esc(computationStatus)} · 發布審查 ${esc(doc.publication_review)}</dd></dl><div class="phase5-model-change">${configLink}</div></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">MEAN-FOLD CV METRICS</p><h2>三折交叉驗證摘要</h2></div>${badge(computationStatus)}</div><div class="card-body"><div class="metrics reference-p5-metrics">${metrics}</div><p class="body-copy">三折交叉驗證指標的算術平均，並非獨立 Holdout Test 的結果。</p><p class="stage-note">指標僅對應目前選取的 Configuration。Publication review：${esc(doc.publication_review)}。</p></div></article></section><section class="card phase5-diagnostics-card"><div class="card-head"><div><p class="eyebrow">CORE DIAGNOSTICS · DEVELOPMENT OOF</p><h2>${esc(PHASE5_FIGURES.find(([id]) => id === selectedFigureId)?.[1] || "Actual vs Predicted")}</h2></div>${badge(figure?.status || "UNAVAILABLE")}</div><div class="card-body"><div class="selector-row phase5-diagnostic-tabs" role="group" aria-label="Core diagnostics">${diagnosticButtons}</div>${figureContent}</div></section><details class="disclosure phase5-advanced"><summary>Advanced Evaluation Details</summary><div class="disclosure-body"><p>Mean-fold 是三折各自指標的算術平均；Pooled OOF 是將所有 Development OOF 預測合併後計算。兩者是不同統計量，不會混合或平均。</p><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>Metric</th><th>Mean-fold CV</th><th>Pooled Development OOF</th><th>Pooled − Mean-fold</th></tr></thead><tbody>${advancedMetricRows}</tbody></table></div><dl class="data-row"><dt>Evaluation IDs</dt><dd>Mean ${esc(meanEval.evaluation_id)}<br>Pooled ${esc(pooledEval?.evaluation_id || "UNAVAILABLE")}</dd></dl><dl class="data-row"><dt>Run ID</dt><dd>${esc(meanEval.execution_run_id)}</dd></dl><dl class="data-row"><dt>Configuration ID</dt><dd>${esc(config.configuration_id)}</dd></dl><dl class="data-row"><dt>資料筆數／折數</dt><dd>${Number(meanEval.n).toLocaleString()} rows · ${esc(foldCount)} folds</dd></dl><dl class="data-row"><dt>Research Evidence Reference / Source SHA-256</dt><dd><code>${esc(meanEval.evidence?.source_ref || sourceSha)}</code></dd></dl><dl class="data-row"><dt>Publication Review</dt><dd>${esc(doc.publication_review)} · ${esc(meanEval.review_status || "PENDING")}</dd></dl><pre class="package-json">${esc(JSON.stringify(config.params || {}, null, 2))}</pre></div></details>`;
+}
+function explorationComparisonChart(points) {
+  const usable = points.filter((item) => item.status === "VERIFIED" && Number.isFinite(Number(item.feature_count_mean)) && Number.isFinite(Number(item.rmse_mean_fold)));
+  if (!usable.length) return `<div class="state-panel"><h3>尚無可繪製的已完成比較</h3><p>此視角不會以示意值補出缺少的研究結果。</p></div>`;
+  const width = 760, height = 330, left = 74, top = 28, plotW = 640, plotH = 230;
+  const minX = Math.min(...usable.map((p) => Number(p.feature_count_mean))), maxX = Math.max(...usable.map((p) => Number(p.feature_count_mean)));
+  const minY = Math.min(...usable.map((p) => Number(p.rmse_mean_fold))), maxY = Math.max(...usable.map((p) => Number(p.rmse_mean_fold)));
+  const x = (v) => left + (maxX === minX ? 0.5 : (Number(v) - minX) / (maxX - minX)) * plotW;
+  const y = (v) => top + plotH - (maxY === minY ? 0.5 : (Number(v) - minY) / (maxY - minY)) * plotH;
+  const dots = usable.map((p) => `<circle cx="${x(p.feature_count_mean).toFixed(1)}" cy="${y(p.rmse_mean_fold).toFixed(1)}" r="${p.method_winner ? 6 : 4}" fill="${p.method_winner ? "#f1b45b" : "#55d6c2"}"><title>${esc(p.configuration_id)} · ${Number(p.feature_count_mean).toFixed(1)} features · RMSE ${explorationMetric(p.rmse_mean_fold, "rmse")}</title></circle>`).join("");
+  return `<figure class="reference-figure"><svg class="mock-svg exploration-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Historical Development CV feature count versus mean-fold RMSE"><line x1="${left}" y1="${top+plotH}" x2="${left+plotW}" y2="${top+plotH}"/><line x1="${left}" y1="${top}" x2="${left}" y2="${top+plotH}"/>${dots}<text x="${left+plotW/2}" y="${height-12}" text-anchor="middle">Mean selected encoded feature count</text><text transform="translate(20 ${top+plotH/2}) rotate(-90)" text-anchor="middle">Mean-fold CV RMSE (USD)</text><text x="${left}" y="${top+plotH+20}">${minX.toFixed(0)}</text><text x="${left+plotW}" y="${top+plotH+20}" text-anchor="end">${maxX.toFixed(0)}</text></svg><figcaption>Only completed historical Development CV configurations are plotted; ${usable.length} configurations. Two invalid Lasso candidates are excluded.</figcaption></figure>`;
+}
+function renderExplorationPhase4(pkg, doc) {
+  const methods = doc.methods || [];
+  const configs = doc.configurations || [];
+  const selected = explorationSelectedConfig(pkg);
+  const selectedMethod = state.explorationMethodId || selected?.method_id || methods[0]?.method_id;
+  const selectedForMethod = configs.filter((item) => item.method_id === selectedMethod);
+  const activeConfig = selectedForMethod.find((item) => item.configuration_id === state.explorationConfigurationId)
+    || selectedForMethod.find((item) => item.status === "VERIFIED") || selectedForMethod[0] || null;
+  const methodChart = (doc.charts || []).find((item) => item.chart_id === "method-comparison");
+  const curveChart = (doc.charts || []).find((item) => item.chart_id === "feature-count-vs-cv-rmse");
+  const comparison = explorationArtifact(pkg, methodChart?.points_ref)?.points || [];
+  const curve = explorationArtifact(pkg, curveChart?.points_ref)?.points || [];
+  const cv = activeConfig?.status === "VERIFIED" ? explorationArtifact(pkg, activeConfig?.cv_metrics_ref) : null;
+  const selectedFeatures = activeConfig?.status === "VERIFIED" ? explorationArtifact(pkg, activeConfig?.selected_features_ref) : null;
+  const winnerRows = methods.map((method) => {
+    const candidates = comparison.filter((item) => item.method_id === method.method_id && item.status === "VERIFIED");
+    const winner = candidates.find((item) => item.method_winner) || candidates[0];
+    const candidateCount = configs.filter((item) => item.method_id === method.method_id).length;
+    const methodStatus = winner ? "VERIFIED" : configs.some((item) => item.method_id === method.method_id && item.status === "ERROR") ? "ERROR" : "UNAVAILABLE";
+    const action = `<button class="selector-button exploration-method-link" type="button" data-exploration-open-method="${esc(method.method_id)}" data-exploration-open-configuration="${esc(winner?.configuration_id || "")}">探索方法 →</button>`;
+    return `<tr><td>${esc(method.label)}</td><td>${winner ? esc(winner.configuration_id) : "—"}</td><td>${winner ? Number(winner.feature_count_mean).toFixed(1) : "—"}</td><td>${winner ? explorationMetric(winner.rmse_mean_fold,"rmse") : "—"}</td><td>${badge(methodStatus)}</td><td>${candidateCount} 個 configurations</td><td>${action}</td></tr>`;
+  }).join("");
+  const folds = cv?.fold_results || [];
+  const foldRows = folds.map((fold) => `<tr><td>Fold ${Number(fold.fold)+1}</td><td>${explorationMetric(fold.rmse,"rmse")}</td><td>${explorationMetric(fold.mae,"mae")}</td><td>${explorationMetric(fold.r2,"r2")}</td></tr>`).join("");
+  const featureFolds = selectedFeatures?.folds || [];
+  const perspectiveBody = state.explorationPerspective === "selected_features"
+      ? activeConfig?.status !== "VERIFIED" ? `<div class="state-panel"><h3>此 Configuration 沒有完成可用的特徵選擇</h3><p>保留來源狀態 ${esc(activeConfig?.status || "UNAVAILABLE")}；不會顯示指標或補造特徵。</p></div>` : selectedFeatures ? `<p>${esc(selectedFeatures.summary || "Fold-local selected feature sets.")}</p><div class="grid three">${featureFolds.map((fold) => `<article class="reference-stat-card"><span class="eyebrow">FOLD ${Number(fold.fold)+1} · ${Number(fold.encoded_count).toLocaleString()} ENCODED FEATURES</span><strong>${Number(fold.selected_encoded_names?.length || 0).toLocaleString()} selected</strong><details class="disclosure"><summary>檢視特徵名稱</summary><div class="disclosure-body"><ul class="feature-name-list">${(fold.selected_encoded_names || []).map((name) => `<li>${esc(name)}</li>`).join("")}</ul></div></details></article>`).join("")}</div>` : `<div class="state-panel"><h3>${explorationArtifactPromises.has(activeConfig?.selected_features_ref) ? "載入 fold-local features…" : "Selected feature evidence unavailable"}</h3><p>每折特徵各自從訓練 fold 選出；不代表全 Development 最終重訓特徵集。</p></div>`
+      : `${explorationComparisonChart(curve.filter((item) => item.method_id === selectedMethod))}<p class="stage-note">X 軸為 fold 平均 encoded feature 數；Y 軸為三折 RMSE 的算術平均。未執行或失敗的候選不會補值。</p>`;
+  const methodOptions = methods.map((item) => `<option value="${esc(item.method_id)}" ${item.method_id === selectedMethod ? "selected" : ""}>${esc(item.label)}</option>`).join("");
+  const configOptions = selectedForMethod.map((item) => `<option value="${esc(item.configuration_id)}" ${item.configuration_id === activeConfig?.configuration_id ? "selected" : ""}>${esc(item.configuration_id)} · ${esc(item.status)}</option>`).join("");
+  const isExplorer = state.explorationMode === "explorer";
+  const comparisonView = `<div class="table-scroll"><table class="mock-data-table"><thead><tr><th>方法 Method</th><th>最佳 Configuration</th><th>平均特徵數</th><th>CV RMSE</th><th>狀態</th><th>已記錄配置</th><th>操作</th></tr></thead><tbody>${winnerRows}</tbody></table></div><p class="stage-note">比較列只呈現同一歷史 Protocol、相同三折 Development CV 母體與 selected-features → primary OLS track 的完成結果；不同評估母體不可直接排名。</p>`;
+  const modeSwitch = `<div class="mode-switch exploration-mode-switch" role="group" aria-label="Phase 4 research mode"><button type="button" data-exploration-mode="comparison" aria-pressed="${state.explorationMode === "comparison"}">方法比較 Method Comparison</button><button type="button" data-exploration-mode="explorer" aria-pressed="${state.explorationMode === "explorer"}">單一方法探索 Method Explorer</button></div>`;
+  const explorerView = `<div class="control-row"><label class="control">Feature-selection method<select id="exploration-method">${methodOptions}</select></label><label class="control">Configuration / Run<select id="exploration-config" ${selectedForMethod.length ? "" : "disabled"}>${configOptions}</select></label></div><div class="selector-row" role="group" aria-label="Method Explorer view"><button type="button" class="selector-button" data-exploration-perspective="selected_features" aria-pressed="${state.explorationPerspective === "selected_features"}">Selected Features</button><button type="button" class="selector-button" data-exploration-perspective="feature_count_cv_rmse" aria-pressed="${state.explorationPerspective === "feature_count_cv_rmse"}">Feature Count vs. CV RMSE</button></div><div class="metrics exploration-selected-metrics">${activeConfig?.status === "VERIFIED" && cv?.mean_fold_metrics ? explorationMetricsCards(cv.mean_fold_metrics) : `<div class="state-panel"><h3>此 Configuration 沒有可用的已完成指標</h3><p>保留來源狀態 ${esc(activeConfig?.status || "UNAVAILABLE")}；不以其他 Configuration 或 Mock 數值補齊。</p></div>`}</div><div class="exploration-view">${perspectiveBody}</div><section class="card exploration-fold-card"><div class="card-head"><div><p class="eyebrow">THREE-FOLD CROSS VALIDATION</p><h3>${esc(activeConfig?.configuration_id || "Configuration unavailable")}</h3></div>${badge(activeConfig?.status || "UNAVAILABLE")}</div><div class="card-body">${foldRows ? `<div class="table-scroll"><table class="mock-data-table"><thead><tr><th>Fold</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody>${foldRows}</tbody></table></div>` : `<p>${explorationArtifactPromises.has(activeConfig?.cv_metrics_ref) ? "Loading fold metrics…" : "Fold metrics unavailable for this configuration."}</p>`}<p class="stage-note">Fold metrics are bound to the selected Configuration and source-linked Development CV. They are not Holdout scores and do not establish independent generalization.</p><details class="disclosure"><summary>Technical details</summary><div class="disclosure-body"><p>${esc(explorationMethodLabel(doc, activeConfig?.method_id || ""))} · ${esc(activeConfig?.configuration_id || "—")} · Run ${esc(activeConfig?.execution_run_id || "—")}</p><pre class="package-json">${esc(JSON.stringify(activeConfig?.params || {},null,2))}</pre><code>${esc(activeConfig?.protocol_id || "")}</code></div></details></div></section>`;
+  return `<section class="card"><div class="card-head"><div><p class="eyebrow">HISTORICAL PHASE 4 · DEVELOPMENT CV</p><h2>Model Explorer</h2></div>${badge(doc.status)}</div><div class="card-body">${modeSwitch}<p class="body-copy">${configs.length} recorded configurations · ${configs.filter((item)=>item.status === "VERIFIED").length} completed · ${configs.filter((item)=>item.status === "ERROR").length} invalid. Run ${esc(doc.execution_runs?.[0]?.execution_run_id)} · ${Number(doc.cv.training_rows).toLocaleString()} Development rows · ${doc.cv.fold_count}-fold · seed 42.</p>${isExplorer ? explorerView : comparisonView}</div></section>`;
+}
+function renderExplorationPhase5(pkg, doc) {
+  const phase4 = pkg.docs[4];
+  const requestedId = state.explorationConfigurationId;
+  const config = requestedId
+    ? phase4.configurations.find((item) => item.configuration_id === requestedId)
+    : phase4.configurations.find((item) => item.configuration_id === phase4.default_configuration_id)
+      || phase4.configurations.find((item) => item.status === "VERIFIED");
+  if (!config) return `<section class="state-panel"><h2>沒有可用的 Phase 4 Configuration</h2><p>尚未找到可作為預設值的研究設定。</p>${badge("UNAVAILABLE")}</section>`;
+  const evaluations = (doc.evaluations || []).filter((item) => item.configuration_id === config.configuration_id);
+  const meanEval = evaluations.find((item) => item.metric_source === "cv_fold_mean");
+  const pooled = evaluations.find((item) => item.metric_source === "pooled_oof");
+  const meanSourceSha = meanEval?.evidence?.source_artifact_sha256;
+  if (!meanEval || meanEval.execution_run_id !== config.execution_run_id
+      || !/^[0-9a-f]{64}$/.test(meanSourceSha || "")
+      || (pooled && (pooled.execution_run_id !== config.execution_run_id || pooled.n !== meanEval.n
+        || pooled.evaluation_population !== meanEval.evaluation_population
+        || pooled.prediction_origin !== meanEval.prediction_origin
+        || pooled.evidence?.source_artifact_sha256 !== meanSourceSha))) {
+    return `<section class="state-panel"><h2>此 Phase 4 Configuration 沒有一致的 Phase 5 評估</h2><p>Configuration ${esc(config.configuration_id)} 的 Run、資料筆數或評估母體無法與 Phase 5 記錄一致；未切換到其他模型。</p>${badge("UNAVAILABLE")}</section>`;
+  }
+  const method = phase4.methods?.find((item) => item.method_id === config.method_id);
+  const figure = phase5BoundFigure(pkg, pooled, state.explorationP5Figure);
+  return renderPhase5EvaluationCard(pkg, doc, config, method?.label || config.method_id, meanEval, pooled, figure, state.explorationP5Figure, "data-exploration-p5-figure");
+}
+function renderExplorationPackagePhase(phase) {
+  const pkg = explorationPackage;
+  if (!pkg) return `<div class="page">${pageHeading(`PHASE 0${phase} / MODEL EXPLORATION`, "Ames Housing — Full Model Exploration", "Package integrity and availability.", explorationPackageError ? "ERROR" : "UNAVAILABLE")}<section class="state-panel" role="${explorationPackageError ? "alert" : "status"}"><h3>${explorationPackageError ? "Case Package validation failed" : "Loading Model Exploration package"}</h3><p>${esc(explorationPackageError || "Loading the immutable package and verifying its manifest references.")}</p></section></div>`;
+  const doc = pkg.docs[phase];
+  let body = "";
+  if (phase === 1) body = renderReferencePhase1(pkg, doc);
+  else if (phase === 2) body = renderReferencePhase2(pkg, doc);
+  else if (phase === 3) body = renderReferencePhase3(pkg, doc);
+  else if (phase === 4) body = renderExplorationPhase4(pkg, doc);
+  else if (phase === 5) body = renderExplorationPhase5(pkg, doc);
+  else body = `<section class="state-panel"><h2>Prediction unavailable</h2><p>${esc(doc.readiness?.message || "No matching final model or prediction service is available for this exploration case.")}</p>${badge("UNAVAILABLE")}</section>`;
+  const prev = phase > 1 ? [phase - 1, PHASES[phase - 2][2]] : null;
+  const next = phase < 6 ? [phase + 1, PHASES[phase][2]] : null;
+  return `<div class="page reference-page" data-exploration-phase="${phase}"><div class="fixture-banner"><span><strong>Ames Housing · Full Model Exploration</strong> · ${esc(pkg.manifest.package_revision)} · Historical Development research; package remains PARTIAL.</span>${badge(pkg.manifest.package_status)}</div>${pageHeading(`PHASE 0${phase} / ${PHASES[phase-1][1].toUpperCase()}`, PHASES[phase-1][2], phase === 4 ? "Compare only completed configurations from the same historical CV protocol." : phase === 5 ? "Development OOF metrics are bound to the selected Phase 4 configuration; publication review is pending." : referencePhaseSubtitle(phase), doc.status)}${body}<p class="stage-note package-verification-note">Package file references and the Phase documents shown here were SHA-256 / byte-count verified. Case Package status: ${esc(pkg.manifest.package_status)}.</p>${referenceFooterNav(prev,next)}</div>`;
 }
 function pageHeading(kicker, title, subtitle, status = caseData().status) {
   return `<div class="page-heading"><div><p class="kicker">${esc(kicker)}</p><h1>${esc(title)}</h1><p class="lede">${esc(subtitle)}</p></div><div class="page-meta">${badge(status)}</div></div>`;
@@ -735,6 +1161,15 @@ function renderPhase6() {
 }
 function renderDashboardVerified() {
   const c = caseData();
+  if (c.packageMode === "exploration") {
+    const pkg = explorationPackage;
+    if (!pkg) return `<div class="state-panel"><h3>載入 Model Exploration 摘要中</h3><p>${esc(explorationPackageError || "Waiting for the static Case Package.")}</p>${badge(explorationPackageError ? "ERROR" : "UNAVAILABLE")}</div>`;
+    const p4 = pkg.docs[4], p5 = pkg.docs[5];
+    const methodChart = p4.charts.find((item) => item.chart_id === "method-comparison");
+    const points = explorationArtifact(pkg, methodChart.points_ref)?.points || [];
+    const winners = p4.methods.map((method) => points.find((item) => item.method_id === method.method_id && item.method_winner)).filter(Boolean);
+    return `<div class="grid three"><article class="card"><div class="card-head"><div><p class="eyebrow">FULL MODEL EXPLORATION</p><h2>${esc(pkg.caseDoc.title)}</h2></div>${badge(pkg.manifest.package_status)}</div><div class="card-body"><p>${esc(pkg.caseDoc.source.label)} · Target ${esc(pkg.caseDoc.target.raw_field_id)}</p><p>${p4.configurations.length} configurations · ${p4.configurations.filter((x)=>x.status === "VERIFIED").length} completed · ${p4.cv.fold_count}-fold Development CV</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">METHOD COMPARISON</p><h2>${winners.length} methods with completed results</h2></div>${badge("VERIFIED")}</div><div class="card-body"><p>Fixed historical protocol · ${esc(p4.execution_runs[0].execution_run_id)}</p><p>Invalid configurations are retained with their recorded status and excluded from scores.</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">DEVELOPMENT OOF</p><h2>Phase 5 metrics</h2></div>${badge(p5.publication_review)}</div><div class="card-body"><p>${p5.evaluations.length} bound evaluations across ${new Set(p5.evaluations.map((x)=>x.configuration_id)).size} configurations.</p><p>Publication review pending; no predictions or residual rows are public.</p></div></article></div><div class="button-row" style="margin-top:18px">${PHASES.map(([n,,zh]) => `<a class="button" href="#phase-${n}">Phase ${n} · ${esc(zh)}</a>`).join("")}</div>`;
+  }
   if (c.packageMode === "reference") {
     const pkg = referencePackage;
     if (!pkg) return `<div class="state-panel"><h3>載入 Reference Baseline 摘要中</h3><p>${esc(referencePackageError || "Waiting for the static Case Package.")}</p>${badge(referencePackageError ? "ERROR" : "UNAVAILABLE")}</div>`;
@@ -763,11 +1198,13 @@ function renderDashboard() {
 }
 function render() {
   if (!referencePackage && !referencePackageError && !referencePackageLoading) loadReferencePackage();
+  if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage();
   updateShell();
   const phase = routePhase();
   if (state.route === "home") app.innerHTML = renderHome();
   else if (state.route === "dashboard") app.innerHTML = renderDashboard();
   else if (phase && caseData().packageMode === "reference") app.innerHTML = renderReferencePackagePhase(phase);
+  else if (phase && caseData().packageMode === "exploration") app.innerHTML = renderExplorationPackagePhase(phase);
   else if (phase === 1) app.innerHTML = renderPhase1();
   else if (phase === 2) app.innerHTML = renderPhase2();
   else if (phase === 3) app.innerHTML = renderPhase3();
@@ -807,8 +1244,13 @@ caseSelect.addEventListener("change", () => {
   state.caseId = caseSelect.value;
   state.analysisId = CASES[state.caseId].analyses?.[0]?.id || "";
   state.referenceAnalysisId = "figure-field-decisions";
-  state.referenceEvaluationId = "initb-development-e2e-20261028-02.development-oof.pooled";
-  state.referenceFigureId = "FIG-P5-02";
+  state.referenceEvaluationId = "initb-development-e2e-20261028-02.development-oof.cv-mean";
+  state.referenceFigureId = "FIG-P5-01";
+  state.explorationP5Figure = "FIG-P5-01";
+  state.explorationMode = "comparison";
+  state.explorationPerspective = "selected_features";
+  state.explorationConfigurationId = explorationPackage?.docs[4]?.default_configuration_id || "";
+  state.explorationMethodId = explorationPackage?.docs[4]?.configurations.find((item) => item.configuration_id === state.explorationConfigurationId)?.method_id || "";
   state.phase5ConfigId = "";
   state.perspective = "method_comparison"; state.phase5Figure = "FIG-P5-02";
   state.p5Population = "development_oof"; state.phase6MockSubmitted = false; state.phase6InputMode = "manual"; state.phase6Csv = null; state.phase6Values = { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" }; resetCustom(); render();
@@ -818,9 +1260,23 @@ window.addEventListener("hashchange", () => {
   if (/^#phase-[1-6]$/.test(location.hash)) window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 });
 app.addEventListener("click", (event) => {
-  const target = event.target.closest("button[data-action],button[data-analysis],button[data-perspective],button[data-p5-figure],button[data-dashboard-mode],button[data-custom-source],button[data-phase6-mode],button[data-reference-analysis],button[data-reference-evaluation],button[data-reference-figure]");
+  const target = event.target.closest("button[data-action],button[data-analysis],button[data-perspective],button[data-p5-figure],button[data-dashboard-mode],button[data-custom-source],button[data-phase6-mode],button[data-reference-analysis],button[data-reference-evaluation],button[data-reference-figure],button[data-exploration-p5-figure],button[data-exploration-mode],button[data-exploration-perspective],button[data-exploration-metric-source],button[data-exploration-open-method]");
   if (!target) return;
   if (target.dataset.referenceAnalysis) { state.referenceAnalysisId = target.dataset.referenceAnalysis; render(); }
+  else if (target.dataset.explorationMode) { state.explorationMode = target.dataset.explorationMode; render(); }
+  else if (target.dataset.explorationOpenMethod) {
+    state.explorationMode = "explorer";
+    state.explorationMethodId = target.dataset.explorationOpenMethod;
+    const config = explorationPackage?.docs[4]?.configurations.find((item) => item.configuration_id === target.dataset.explorationOpenConfiguration)
+      || explorationDefaultConfigForMethod(explorationPackage, state.explorationMethodId);
+    state.explorationConfigurationId = config?.configuration_id || "";
+    state.explorationPerspective = "selected_features";
+    if (config?.status === "VERIFIED") loadExplorationConfigurationArtifacts(explorationPackage, config).then(render).catch((error) => { explorationPackageError = error.message; render(); });
+    render();
+  }
+  else if (target.dataset.explorationPerspective) { state.explorationPerspective = target.dataset.explorationPerspective; render(); }
+  else if (target.dataset.explorationP5Figure) { state.explorationP5Figure = target.dataset.explorationP5Figure; render(); }
+  else if (target.dataset.explorationMetricSource) { state.explorationMetricSource = target.dataset.explorationMetricSource; render(); }
   else if (target.dataset.referenceEvaluation) { state.referenceEvaluationId = target.dataset.referenceEvaluation; state.referenceFigureId = "FIG-P5-02"; render(); }
   else if (target.dataset.referenceFigure) { state.referenceFigureId = target.dataset.referenceFigure; render(); }
   else if (target.dataset.phase6Mode) { state.phase6InputMode = target.dataset.phase6Mode; render(); }
@@ -889,6 +1345,22 @@ app.addEventListener("change", (event) => {
   else if (event.target.id === "p4-run") { state.phase4RunId = event.target.value; render(); }
   else if (event.target.id === "p5-population") { state.p5Population = event.target.value; render(); }
   else if (event.target.id === "p5-config") { state.phase5ConfigId = event.target.value; render(); }
+  else if (event.target.id === "exploration-method") {
+    state.explorationMethodId = event.target.value;
+    const config = explorationPackage ? explorationDefaultConfigForMethod(explorationPackage, state.explorationMethodId) : null;
+    state.explorationConfigurationId = config?.configuration_id || "";
+    if (config && config.status === "VERIFIED") loadExplorationConfigurationArtifacts(explorationPackage, config).then(render).catch((error) => { explorationPackageError = error.message; render(); });
+    render();
+  }
+  else if (event.target.id === "exploration-config" || event.target.id === "exploration-p5-config") {
+    state.explorationConfigurationId = event.target.value;
+    const config = explorationPackage?.docs[4]?.configurations.find((item) => item.configuration_id === state.explorationConfigurationId);
+    if (config) {
+      state.explorationMethodId = config.method_id;
+      if (config.status === "VERIFIED") loadExplorationConfigurationArtifacts(explorationPackage, config).then(render).catch((error) => { explorationPackageError = error.message; render(); });
+    }
+    render();
+  }
 });
 app.addEventListener("input", (event) => {
   if (event.target.id === "csv-url") {

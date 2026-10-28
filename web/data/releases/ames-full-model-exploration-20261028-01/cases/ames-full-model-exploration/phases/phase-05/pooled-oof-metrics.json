@@ -1,0 +1,442 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "source_oof_sha256": "02a8b0cd958713125db52d963b228d3d3a47e2e001569816cd54bad9c12d1988",
+  "development_data_sha256": "2525b2e9385f9873a45d124dfd7520851234fe0a30501a69b8e5e5536403017c",
+  "fold_sha256": "2d12b0a6294055b8aac95e6055fc9095c436c472666f56fd6f33828cc683dd30",
+  "aggregation": "pooled metrics recomputed over each 1,168-row Development OOF configuration",
+  "configurations": [
+    {
+      "configuration_id": "hist-elastic-net-1098e27f3412",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 100.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 9
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40542.52140652569,
+        "mae": 21979.05146582404,
+        "r2": 0.7231949077919828
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-1c73870379fc",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 1.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 5
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40679.67788890565,
+        "mae": 22034.782540629636,
+        "r2": 0.7213188610737734
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-20363ce2a7f8",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 10.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 8
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40184.41008968356,
+        "mae": 21895.146660626182,
+        "r2": 0.728063339209059
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-279a8a5b1c1f",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 0.1,
+        "l1_ratio": 0.8,
+        "candidate_order": 2
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40688.77003387681,
+        "mae": 22059.103428197606,
+        "r2": 0.7211942734365095
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-2cc6e4b57a10",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 1.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 4
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40678.961744702116,
+        "mae": 22052.231293336677,
+        "r2": 0.7213286730553781
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-52f2eeb3d772",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 10.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 6
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40663.318663742066,
+        "mae": 22036.75850361332,
+        "r2": 0.721542957774665
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-9fa4d99608f1",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 1.0,
+        "l1_ratio": 0.2,
+        "candidate_order": 3
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40669.16961679684,
+        "mae": 22029.076295990704,
+        "r2": 0.7214628189001638
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-d0247c0be6fb",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 10.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 7
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 41035.76472122735,
+        "mae": 22116.124313362343,
+        "r2": 0.7164186744825265
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-d29012556273",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 100.0,
+        "l1_ratio": 0.5,
+        "candidate_order": 10
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40539.25473658279,
+        "mae": 21949.633209117714,
+        "r2": 0.7232395125385389
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-d7202991dc8f",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 100.0,
+        "l1_ratio": 0.8,
+        "candidate_order": 11
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 38536.94858714711,
+        "mae": 21747.615534198216,
+        "r2": 0.7499037308541324
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-d8d37e65bf41",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 0.1,
+        "l1_ratio": 0.2,
+        "candidate_order": 0
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40678.7109228227,
+        "mae": 22052.05374574932,
+        "r2": 0.7213321095565806
+      }
+    },
+    {
+      "configuration_id": "hist-elastic-net-dd45a0b3f79e",
+      "method_id": "elastic_net",
+      "candidate": {
+        "alpha": 0.1,
+        "l1_ratio": 0.5,
+        "candidate_order": 1
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40678.7109228227,
+        "mae": 22052.05374574932,
+        "r2": 0.7213321095565806
+      }
+    },
+    {
+      "configuration_id": "hist-lasso-23fac5e0453b",
+      "method_id": "lasso",
+      "candidate": {
+        "alpha": 100.0,
+        "candidate_order": 3
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 35936.820128771506,
+        "mae": 19394.93176940998,
+        "r2": 0.7825137236061604
+      }
+    },
+    {
+      "configuration_id": "hist-lasso-d0ea8d1b5d1d",
+      "method_id": "lasso",
+      "candidate": {
+        "alpha": 10.0,
+        "candidate_order": 2
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 38875.94170238046,
+        "mae": 21516.908462938005,
+        "r2": 0.7454843978611528
+      }
+    },
+    {
+      "configuration_id": "hist-mutual-information-b33c6189b8ae",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 37550.378531391536,
+        "mae": 23510.556799555176,
+        "r2": 0.7625450624524726
+      }
+    },
+    {
+      "configuration_id": "hist-mutual-information-b87169fc4edc",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 41719.30384661835,
+        "mae": 28264.52674713219,
+        "r2": 0.706892675140941
+      }
+    },
+    {
+      "configuration_id": "hist-mutual-information-c79851bf9d83",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 37807.86235605648,
+        "mae": 23589.495137746013,
+        "r2": 0.7592774294819357
+      }
+    },
+    {
+      "configuration_id": "hist-mutual-information-f8964bbe4d91",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40924.48842608688,
+        "mae": 26303.235066840265,
+        "r2": 0.7179545588311663
+      }
+    },
+    {
+      "configuration_id": "hist-mutual-information-fe67d806a6c0",
+      "method_id": "mutual_information",
+      "candidate": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 39828.709259750765,
+        "mae": 25514.8390862149,
+        "r2": 0.7328562422820608
+      }
+    },
+    {
+      "configuration_id": "hist-ols-baseline-67211c3848f8",
+      "method_id": "ols_baseline",
+      "candidate": {
+        "features": "all"
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 41088.3603536318,
+        "mae": 22167.8368373754,
+        "r2": 0.7156912749743729
+      }
+    },
+    {
+      "configuration_id": "hist-pearson-05a42a840e86",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 39992.01379265052,
+        "mae": 27256.5861659508,
+        "r2": 0.7306610808528322
+      }
+    },
+    {
+      "configuration_id": "hist-pearson-47c2ce66ecde",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 43735.506442782826,
+        "mae": 29527.908906764256,
+        "r2": 0.6778776300431364
+      }
+    },
+    {
+      "configuration_id": "hist-pearson-4c0e705bb36a",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 37885.82707924756,
+        "mae": 23896.514118716565,
+        "r2": 0.7582836034205321
+      }
+    },
+    {
+      "configuration_id": "hist-pearson-76875a54b993",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 38786.75669585957,
+        "mae": 25902.136319154226,
+        "r2": 0.7466508230520871
+      }
+    },
+    {
+      "configuration_id": "hist-pearson-fb8b057e6677",
+      "method_id": "pearson",
+      "candidate": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 37262.440496500305,
+        "mae": 23379.445375936986,
+        "r2": 0.7661727311871236
+      }
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-1988433b54f5",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 2,
+        "candidate_order": 0
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 74072.17411886866,
+        "mae": 53233.40824472022,
+        "r2": 0.07601961904841559
+      }
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-5209c529b590",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 3,
+        "candidate_order": 1
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 74135.3790960771,
+        "mae": 53151.454459682456,
+        "r2": 0.07444210156029007
+      }
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-55d847e58f1b",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 5,
+        "candidate_order": 2
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 69448.06322567763,
+        "mae": 49765.18816563054,
+        "r2": 0.18778156383749822
+      }
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-616569f18d0f",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 20,
+        "candidate_order": 4
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 40957.258057629646,
+        "mae": 26744.3588494085,
+        "r2": 0.7175026912113938
+      }
+    },
+    {
+      "configuration_id": "hist-ridge-rfe-67e3f996e959",
+      "method_id": "ridge_rfe",
+      "candidate": {
+        "k": 10,
+        "candidate_order": 3
+      },
+      "pooled_oof_metrics": {
+        "n": 1168,
+        "rmse": 56631.04394058629,
+        "mae": 41572.11650382577,
+        "r2": 0.4599155156706898
+      }
+    }
+  ]
+}

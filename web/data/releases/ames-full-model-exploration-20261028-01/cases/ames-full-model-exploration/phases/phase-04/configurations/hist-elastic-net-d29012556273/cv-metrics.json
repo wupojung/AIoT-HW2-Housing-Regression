@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "configuration_id": "hist-elastic-net-d29012556273",
+  "source_code_head": "f30a9293f12dba221a36d62f35abd7cb45acbab5",
+  "data_sha256": "2525b2e9385f9873a45d124dfd7520851234fe0a30501a69b8e5e5536403017c",
+  "fold_sha256": "2d12b0a6294055b8aac95e6055fc9095c436c472666f56fd6f33828cc683dd30",
+  "candidate": {
+    "alpha": 100.0,
+    "l1_ratio": 0.5,
+    "candidate_order": 10
+  },
+  "status": "COMPLETED",
+  "primary_track": "selected_features_to_primary_ols",
+  "fold_results": [
+    {
+      "fold": 0,
+      "status": "COMPLETED",
+      "rmse": 35766.614599322944,
+      "mae": 21969.397519650673,
+      "r2": 0.7406291264428452,
+      "task_id": "task_dc500c4d48dc11059aa2dc461f6ffac8"
+    },
+    {
+      "fold": 1,
+      "status": "COMPLETED",
+      "rmse": 36046.21031957308,
+      "mae": 20228.307779722065,
+      "r2": 0.8062733628745238,
+      "task_id": "task_8a6daaa5e009d6d665346998fb45a328"
+    },
+    {
+      "fold": 2,
+      "status": "COMPLETED",
+      "rmse": 48504.12067066984,
+      "mae": 23651.143519984176,
+      "r2": 0.6190273769102292,
+      "task_id": "task_767068486396be4dd1af0f2a1b785465"
+    }
+  ],
+  "mean_fold_metrics": {
+    "rmse": 40105.64852985529,
+    "rmse_sample_sd": 7274.633610479925,
+    "mae": 21949.616273118972,
+    "mae_sample_sd": 1711.5036077933578,
+    "r2": 0.7219766220758661,
+    "r2_sample_sd": 0.09500632481211621
+  },
+  "native_diagnostic_metrics": {
+    "rmse": 66766.01311732351,
+    "rmse_sample_sd": 6247.713003284004,
+    "mae": 47477.54995149529,
+    "mae_sample_sd": 2485.325914468972,
+    "r2": 0.24738036376063013,
+    "r2_sample_sd": 0.023938215728556422
+  },
+  "selection_scope": "Development three-fold CV; candidate selection score is not independent generalization"
+}

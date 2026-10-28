@@ -1,0 +1,2358 @@
+{
+  "schema_version": "1.0.0",
+  "source_data_sha256": "1e18addf81e5e4d347cc17ee6075bbe4a42b7fa26b9e5b063e8f692a5f929d41",
+  "config_sha256": "a67b42afed991d7a69f5de7fdc56657ed9fce9495316bafe89deb2deee6be05f",
+  "phase3_result_sha256": "ab71cf8959de703aafd59f750ea0d3578c11070ac5e5756346d41fe41e9e8549",
+  "pipeline_source_sha256": "f0b6e0200209f6f80840a4d5f21b2a6c4e318e2ebbe1e449817315457bf19098",
+  "pipeline_version": "reference-baseline-phase3-v1",
+  "training_index_sha256": "3981ebb16dde1b26400a431ef7c5d318b970f7ede50f42390d8221300eb299f4",
+  "feature_names_sha256": "02385a9cc56e43b137b4b3e7f8e6af50ce86660f8eff1730ea9e4cae61d0c720",
+  "fit_population": "development_train_only",
+  "training_rows": 1168,
+  "validation_rows": 292,
+  "classification_method": "Phase 2 semantic field type; indicator outputs are discrete; one-hot outputs inherit nominal source semantics; ordinal-encoded outputs inherit Phase 2 semantic type.",
+  "stages": {
+    "raw": {
+      "total": 79,
+      "counts": {
+        "nominal": 26,
+        "ordinal": 20,
+        "discrete": 14,
+        "continuous": 19
+      }
+    },
+    "filtered": {
+      "total": 79,
+      "counts": {
+        "nominal": 26,
+        "ordinal": 20,
+        "discrete": 14,
+        "continuous": 19
+      }
+    },
+    "processed": {
+      "total": 88,
+      "counts": {
+        "nominal": 26,
+        "ordinal": 20,
+        "discrete": 23,
+        "continuous": 19
+      }
+    },
+    "encoded": {
+      "total": 248,
+      "counts": {
+        "nominal": 186,
+        "ordinal": 20,
+        "discrete": 23,
+        "continuous": 19
+      }
+    }
+  },
+  "indicator_features": [
+    {
+      "feature": "HasGarage",
+      "source_columns": [
+        "GarageType"
+      ],
+      "semantic_type": "discrete"
+    },
+    {
+      "feature": "HasBasement",
+      "source_columns": [
+        "BsmtQual",
+        "TotalBsmtSF"
+      ],
+      "semantic_type": "discrete"
+    },
+    {
+      "feature": "HasFireplace",
+      "source_columns": [
+        "Fireplaces",
+        "FireplaceQu"
+      ],
+      "semantic_type": "discrete"
+    },
+    {
+      "feature": "HasPool",
+      "source_columns": [
+        "PoolArea",
+        "PoolQC"
+      ],
+      "semantic_type": "discrete"
+    },
+    {
+      "feature": "HasFence",
+      "source_columns": [
+        "Fence"
+      ],
+      "semantic_type": "discrete"
+    },
+    {
+      "feature": "HasAlley",
+      "source_columns": [
+        "Alley"
+      ],
+      "semantic_type": "discrete"
+    },
+    {
+      "feature": "HasMiscFeature",
+      "source_columns": [
+        "MiscFeature"
+      ],
+      "semantic_type": "discrete"
+    },
+    {
+      "feature": "MasVnrType_is_missing",
+      "source_columns": [
+        "MasVnrType"
+      ],
+      "semantic_type": "discrete"
+    },
+    {
+      "feature": "MasVnrArea_is_missing",
+      "source_columns": [
+        "MasVnrArea"
+      ],
+      "semantic_type": "discrete"
+    }
+  ],
+  "encoded_features": [
+    {
+      "index": 0,
+      "encoded_feature": "LotFrontage",
+      "source_columns": [
+        "LotFrontage"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 1,
+      "encoded_feature": "LotArea",
+      "source_columns": [
+        "LotArea"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 2,
+      "encoded_feature": "OverallQual",
+      "source_columns": [
+        "OverallQual"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 3,
+      "encoded_feature": "OverallCond",
+      "source_columns": [
+        "OverallCond"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 4,
+      "encoded_feature": "YearBuilt",
+      "source_columns": [
+        "YearBuilt"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 5,
+      "encoded_feature": "YearRemodAdd",
+      "source_columns": [
+        "YearRemodAdd"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 6,
+      "encoded_feature": "MasVnrArea",
+      "source_columns": [
+        "MasVnrArea"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 7,
+      "encoded_feature": "BsmtFinSF1",
+      "source_columns": [
+        "BsmtFinSF1"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 8,
+      "encoded_feature": "BsmtFinSF2",
+      "source_columns": [
+        "BsmtFinSF2"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 9,
+      "encoded_feature": "BsmtUnfSF",
+      "source_columns": [
+        "BsmtUnfSF"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 10,
+      "encoded_feature": "TotalBsmtSF",
+      "source_columns": [
+        "TotalBsmtSF"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 11,
+      "encoded_feature": "1stFlrSF",
+      "source_columns": [
+        "1stFlrSF"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 12,
+      "encoded_feature": "2ndFlrSF",
+      "source_columns": [
+        "2ndFlrSF"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 13,
+      "encoded_feature": "LowQualFinSF",
+      "source_columns": [
+        "LowQualFinSF"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 14,
+      "encoded_feature": "GrLivArea",
+      "source_columns": [
+        "GrLivArea"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 15,
+      "encoded_feature": "BsmtFullBath",
+      "source_columns": [
+        "BsmtFullBath"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 16,
+      "encoded_feature": "BsmtHalfBath",
+      "source_columns": [
+        "BsmtHalfBath"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 17,
+      "encoded_feature": "FullBath",
+      "source_columns": [
+        "FullBath"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 18,
+      "encoded_feature": "HalfBath",
+      "source_columns": [
+        "HalfBath"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 19,
+      "encoded_feature": "BedroomAbvGr",
+      "source_columns": [
+        "BedroomAbvGr"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 20,
+      "encoded_feature": "KitchenAbvGr",
+      "source_columns": [
+        "KitchenAbvGr"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 21,
+      "encoded_feature": "TotRmsAbvGrd",
+      "source_columns": [
+        "TotRmsAbvGrd"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 22,
+      "encoded_feature": "Fireplaces",
+      "source_columns": [
+        "Fireplaces"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 23,
+      "encoded_feature": "GarageYrBlt",
+      "source_columns": [
+        "GarageYrBlt"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 24,
+      "encoded_feature": "GarageCars",
+      "source_columns": [
+        "GarageCars"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 25,
+      "encoded_feature": "GarageArea",
+      "source_columns": [
+        "GarageArea"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 26,
+      "encoded_feature": "WoodDeckSF",
+      "source_columns": [
+        "WoodDeckSF"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 27,
+      "encoded_feature": "OpenPorchSF",
+      "source_columns": [
+        "OpenPorchSF"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 28,
+      "encoded_feature": "EnclosedPorch",
+      "source_columns": [
+        "EnclosedPorch"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 29,
+      "encoded_feature": "3SsnPorch",
+      "source_columns": [
+        "3SsnPorch"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 30,
+      "encoded_feature": "ScreenPorch",
+      "source_columns": [
+        "ScreenPorch"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 31,
+      "encoded_feature": "PoolArea",
+      "source_columns": [
+        "PoolArea"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 32,
+      "encoded_feature": "MiscVal",
+      "source_columns": [
+        "MiscVal"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 33,
+      "encoded_feature": "MoSold",
+      "source_columns": [
+        "MoSold"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 34,
+      "encoded_feature": "YrSold",
+      "source_columns": [
+        "YrSold"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "numeric_value_with_train_only_imputation"
+    },
+    {
+      "index": 35,
+      "encoded_feature": "HasGarage",
+      "source_columns": [
+        "GarageType"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "derived_presence_indicator"
+    },
+    {
+      "index": 36,
+      "encoded_feature": "HasBasement",
+      "source_columns": [
+        "BsmtQual",
+        "TotalBsmtSF"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "derived_presence_indicator"
+    },
+    {
+      "index": 37,
+      "encoded_feature": "HasFireplace",
+      "source_columns": [
+        "Fireplaces",
+        "FireplaceQu"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "derived_presence_indicator"
+    },
+    {
+      "index": 38,
+      "encoded_feature": "HasPool",
+      "source_columns": [
+        "PoolArea",
+        "PoolQC"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "derived_presence_indicator"
+    },
+    {
+      "index": 39,
+      "encoded_feature": "HasFence",
+      "source_columns": [
+        "Fence"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "derived_presence_indicator"
+    },
+    {
+      "index": 40,
+      "encoded_feature": "HasAlley",
+      "source_columns": [
+        "Alley"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "derived_presence_indicator"
+    },
+    {
+      "index": 41,
+      "encoded_feature": "HasMiscFeature",
+      "source_columns": [
+        "MiscFeature"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "derived_presence_indicator"
+    },
+    {
+      "index": 42,
+      "encoded_feature": "MasVnrType_is_missing",
+      "source_columns": [
+        "MasVnrType"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "genuine_missingness_indicator"
+    },
+    {
+      "index": 43,
+      "encoded_feature": "MasVnrArea_is_missing",
+      "source_columns": [
+        "MasVnrArea"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "genuine_missingness_indicator"
+    },
+    {
+      "index": 44,
+      "encoded_feature": "ExterQual",
+      "source_columns": [
+        "ExterQual"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 45,
+      "encoded_feature": "ExterCond",
+      "source_columns": [
+        "ExterCond"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 46,
+      "encoded_feature": "BsmtQual",
+      "source_columns": [
+        "BsmtQual"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 47,
+      "encoded_feature": "BsmtCond",
+      "source_columns": [
+        "BsmtCond"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 48,
+      "encoded_feature": "BsmtExposure",
+      "source_columns": [
+        "BsmtExposure"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 49,
+      "encoded_feature": "BsmtFinType1",
+      "source_columns": [
+        "BsmtFinType1"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 50,
+      "encoded_feature": "BsmtFinType2",
+      "source_columns": [
+        "BsmtFinType2"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 51,
+      "encoded_feature": "HeatingQC",
+      "source_columns": [
+        "HeatingQC"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 52,
+      "encoded_feature": "KitchenQual",
+      "source_columns": [
+        "KitchenQual"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 53,
+      "encoded_feature": "Functional",
+      "source_columns": [
+        "Functional"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 54,
+      "encoded_feature": "FireplaceQu",
+      "source_columns": [
+        "FireplaceQu"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 55,
+      "encoded_feature": "GarageFinish",
+      "source_columns": [
+        "GarageFinish"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 56,
+      "encoded_feature": "GarageQual",
+      "source_columns": [
+        "GarageQual"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 57,
+      "encoded_feature": "GarageCond",
+      "source_columns": [
+        "GarageCond"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 58,
+      "encoded_feature": "PavedDrive",
+      "source_columns": [
+        "PavedDrive"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 59,
+      "encoded_feature": "PoolQC",
+      "source_columns": [
+        "PoolQC"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 60,
+      "encoded_feature": "Fence",
+      "source_columns": [
+        "Fence"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 61,
+      "encoded_feature": "LotShape",
+      "source_columns": [
+        "LotShape"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 62,
+      "encoded_feature": "LandSlope",
+      "source_columns": [
+        "LandSlope"
+      ],
+      "semantic_type": "ordinal",
+      "transformation": "ordinal_mapped_score"
+    },
+    {
+      "index": 63,
+      "encoded_feature": "MSSubClass_120",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 64,
+      "encoded_feature": "MSSubClass_160",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 65,
+      "encoded_feature": "MSSubClass_180",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 66,
+      "encoded_feature": "MSSubClass_190",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 67,
+      "encoded_feature": "MSSubClass_20",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 68,
+      "encoded_feature": "MSSubClass_30",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 69,
+      "encoded_feature": "MSSubClass_40",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 70,
+      "encoded_feature": "MSSubClass_45",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 71,
+      "encoded_feature": "MSSubClass_50",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 72,
+      "encoded_feature": "MSSubClass_60",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 73,
+      "encoded_feature": "MSSubClass_70",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 74,
+      "encoded_feature": "MSSubClass_75",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 75,
+      "encoded_feature": "MSSubClass_80",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 76,
+      "encoded_feature": "MSSubClass_85",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 77,
+      "encoded_feature": "MSSubClass_90",
+      "source_columns": [
+        "MSSubClass"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 78,
+      "encoded_feature": "MSZoning_C (all)",
+      "source_columns": [
+        "MSZoning"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 79,
+      "encoded_feature": "MSZoning_FV",
+      "source_columns": [
+        "MSZoning"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 80,
+      "encoded_feature": "MSZoning_RH",
+      "source_columns": [
+        "MSZoning"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 81,
+      "encoded_feature": "MSZoning_RL",
+      "source_columns": [
+        "MSZoning"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 82,
+      "encoded_feature": "MSZoning_RM",
+      "source_columns": [
+        "MSZoning"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 83,
+      "encoded_feature": "Street_Grvl",
+      "source_columns": [
+        "Street"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 84,
+      "encoded_feature": "Street_Pave",
+      "source_columns": [
+        "Street"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 85,
+      "encoded_feature": "Alley_Grvl",
+      "source_columns": [
+        "Alley"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 86,
+      "encoded_feature": "Alley_None",
+      "source_columns": [
+        "Alley"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 87,
+      "encoded_feature": "Alley_Pave",
+      "source_columns": [
+        "Alley"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 88,
+      "encoded_feature": "LandContour_Bnk",
+      "source_columns": [
+        "LandContour"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 89,
+      "encoded_feature": "LandContour_HLS",
+      "source_columns": [
+        "LandContour"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 90,
+      "encoded_feature": "LandContour_Low",
+      "source_columns": [
+        "LandContour"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 91,
+      "encoded_feature": "LandContour_Lvl",
+      "source_columns": [
+        "LandContour"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 92,
+      "encoded_feature": "Utilities_AllPub",
+      "source_columns": [
+        "Utilities"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 93,
+      "encoded_feature": "Utilities_NoSeWa",
+      "source_columns": [
+        "Utilities"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 94,
+      "encoded_feature": "LotConfig_Corner",
+      "source_columns": [
+        "LotConfig"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 95,
+      "encoded_feature": "LotConfig_CulDSac",
+      "source_columns": [
+        "LotConfig"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 96,
+      "encoded_feature": "LotConfig_FR2",
+      "source_columns": [
+        "LotConfig"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 97,
+      "encoded_feature": "LotConfig_FR3",
+      "source_columns": [
+        "LotConfig"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 98,
+      "encoded_feature": "LotConfig_Inside",
+      "source_columns": [
+        "LotConfig"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 99,
+      "encoded_feature": "Neighborhood_Blmngtn",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 100,
+      "encoded_feature": "Neighborhood_Blueste",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 101,
+      "encoded_feature": "Neighborhood_BrDale",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 102,
+      "encoded_feature": "Neighborhood_BrkSide",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 103,
+      "encoded_feature": "Neighborhood_ClearCr",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 104,
+      "encoded_feature": "Neighborhood_CollgCr",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 105,
+      "encoded_feature": "Neighborhood_Crawfor",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 106,
+      "encoded_feature": "Neighborhood_Edwards",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 107,
+      "encoded_feature": "Neighborhood_Gilbert",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 108,
+      "encoded_feature": "Neighborhood_IDOTRR",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 109,
+      "encoded_feature": "Neighborhood_MeadowV",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 110,
+      "encoded_feature": "Neighborhood_Mitchel",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 111,
+      "encoded_feature": "Neighborhood_NAmes",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 112,
+      "encoded_feature": "Neighborhood_NPkVill",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 113,
+      "encoded_feature": "Neighborhood_NWAmes",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 114,
+      "encoded_feature": "Neighborhood_NoRidge",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 115,
+      "encoded_feature": "Neighborhood_NridgHt",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 116,
+      "encoded_feature": "Neighborhood_OldTown",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 117,
+      "encoded_feature": "Neighborhood_SWISU",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 118,
+      "encoded_feature": "Neighborhood_Sawyer",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 119,
+      "encoded_feature": "Neighborhood_SawyerW",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 120,
+      "encoded_feature": "Neighborhood_Somerst",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 121,
+      "encoded_feature": "Neighborhood_StoneBr",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 122,
+      "encoded_feature": "Neighborhood_Timber",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 123,
+      "encoded_feature": "Neighborhood_Veenker",
+      "source_columns": [
+        "Neighborhood"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 124,
+      "encoded_feature": "Condition1_Artery",
+      "source_columns": [
+        "Condition1"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 125,
+      "encoded_feature": "Condition1_Feedr",
+      "source_columns": [
+        "Condition1"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 126,
+      "encoded_feature": "Condition1_Norm",
+      "source_columns": [
+        "Condition1"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 127,
+      "encoded_feature": "Condition1_PosA",
+      "source_columns": [
+        "Condition1"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 128,
+      "encoded_feature": "Condition1_PosN",
+      "source_columns": [
+        "Condition1"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 129,
+      "encoded_feature": "Condition1_RRAe",
+      "source_columns": [
+        "Condition1"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 130,
+      "encoded_feature": "Condition1_RRAn",
+      "source_columns": [
+        "Condition1"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 131,
+      "encoded_feature": "Condition1_RRNe",
+      "source_columns": [
+        "Condition1"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 132,
+      "encoded_feature": "Condition1_RRNn",
+      "source_columns": [
+        "Condition1"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 133,
+      "encoded_feature": "Condition2_Artery",
+      "source_columns": [
+        "Condition2"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 134,
+      "encoded_feature": "Condition2_Feedr",
+      "source_columns": [
+        "Condition2"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 135,
+      "encoded_feature": "Condition2_Norm",
+      "source_columns": [
+        "Condition2"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 136,
+      "encoded_feature": "Condition2_PosA",
+      "source_columns": [
+        "Condition2"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 137,
+      "encoded_feature": "Condition2_PosN",
+      "source_columns": [
+        "Condition2"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 138,
+      "encoded_feature": "Condition2_RRAe",
+      "source_columns": [
+        "Condition2"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 139,
+      "encoded_feature": "Condition2_RRAn",
+      "source_columns": [
+        "Condition2"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 140,
+      "encoded_feature": "Condition2_RRNn",
+      "source_columns": [
+        "Condition2"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 141,
+      "encoded_feature": "BldgType_1Fam",
+      "source_columns": [
+        "BldgType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 142,
+      "encoded_feature": "BldgType_2fmCon",
+      "source_columns": [
+        "BldgType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 143,
+      "encoded_feature": "BldgType_Duplex",
+      "source_columns": [
+        "BldgType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 144,
+      "encoded_feature": "BldgType_Twnhs",
+      "source_columns": [
+        "BldgType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 145,
+      "encoded_feature": "BldgType_TwnhsE",
+      "source_columns": [
+        "BldgType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 146,
+      "encoded_feature": "HouseStyle_1.5Fin",
+      "source_columns": [
+        "HouseStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 147,
+      "encoded_feature": "HouseStyle_1.5Unf",
+      "source_columns": [
+        "HouseStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 148,
+      "encoded_feature": "HouseStyle_1Story",
+      "source_columns": [
+        "HouseStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 149,
+      "encoded_feature": "HouseStyle_2.5Fin",
+      "source_columns": [
+        "HouseStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 150,
+      "encoded_feature": "HouseStyle_2.5Unf",
+      "source_columns": [
+        "HouseStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 151,
+      "encoded_feature": "HouseStyle_2Story",
+      "source_columns": [
+        "HouseStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 152,
+      "encoded_feature": "HouseStyle_SFoyer",
+      "source_columns": [
+        "HouseStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 153,
+      "encoded_feature": "HouseStyle_SLvl",
+      "source_columns": [
+        "HouseStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 154,
+      "encoded_feature": "RoofStyle_Flat",
+      "source_columns": [
+        "RoofStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 155,
+      "encoded_feature": "RoofStyle_Gable",
+      "source_columns": [
+        "RoofStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 156,
+      "encoded_feature": "RoofStyle_Gambrel",
+      "source_columns": [
+        "RoofStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 157,
+      "encoded_feature": "RoofStyle_Hip",
+      "source_columns": [
+        "RoofStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 158,
+      "encoded_feature": "RoofStyle_Mansard",
+      "source_columns": [
+        "RoofStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 159,
+      "encoded_feature": "RoofStyle_Shed",
+      "source_columns": [
+        "RoofStyle"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 160,
+      "encoded_feature": "RoofMatl_ClyTile",
+      "source_columns": [
+        "RoofMatl"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 161,
+      "encoded_feature": "RoofMatl_CompShg",
+      "source_columns": [
+        "RoofMatl"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 162,
+      "encoded_feature": "RoofMatl_Membran",
+      "source_columns": [
+        "RoofMatl"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 163,
+      "encoded_feature": "RoofMatl_Roll",
+      "source_columns": [
+        "RoofMatl"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 164,
+      "encoded_feature": "RoofMatl_Tar&Grv",
+      "source_columns": [
+        "RoofMatl"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 165,
+      "encoded_feature": "RoofMatl_WdShake",
+      "source_columns": [
+        "RoofMatl"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 166,
+      "encoded_feature": "RoofMatl_WdShngl",
+      "source_columns": [
+        "RoofMatl"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 167,
+      "encoded_feature": "Exterior1st_AsbShng",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 168,
+      "encoded_feature": "Exterior1st_AsphShn",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 169,
+      "encoded_feature": "Exterior1st_BrkComm",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 170,
+      "encoded_feature": "Exterior1st_BrkFace",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 171,
+      "encoded_feature": "Exterior1st_CBlock",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 172,
+      "encoded_feature": "Exterior1st_CemntBd",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 173,
+      "encoded_feature": "Exterior1st_HdBoard",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 174,
+      "encoded_feature": "Exterior1st_ImStucc",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 175,
+      "encoded_feature": "Exterior1st_MetalSd",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 176,
+      "encoded_feature": "Exterior1st_Plywood",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 177,
+      "encoded_feature": "Exterior1st_Stone",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 178,
+      "encoded_feature": "Exterior1st_Stucco",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 179,
+      "encoded_feature": "Exterior1st_VinylSd",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 180,
+      "encoded_feature": "Exterior1st_Wd Sdng",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 181,
+      "encoded_feature": "Exterior1st_WdShing",
+      "source_columns": [
+        "Exterior1st"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 182,
+      "encoded_feature": "Exterior2nd_AsbShng",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 183,
+      "encoded_feature": "Exterior2nd_AsphShn",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 184,
+      "encoded_feature": "Exterior2nd_Brk Cmn",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 185,
+      "encoded_feature": "Exterior2nd_BrkFace",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 186,
+      "encoded_feature": "Exterior2nd_CBlock",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 187,
+      "encoded_feature": "Exterior2nd_CmentBd",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 188,
+      "encoded_feature": "Exterior2nd_HdBoard",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 189,
+      "encoded_feature": "Exterior2nd_ImStucc",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 190,
+      "encoded_feature": "Exterior2nd_MetalSd",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 191,
+      "encoded_feature": "Exterior2nd_Other",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 192,
+      "encoded_feature": "Exterior2nd_Plywood",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 193,
+      "encoded_feature": "Exterior2nd_Stone",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 194,
+      "encoded_feature": "Exterior2nd_Stucco",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 195,
+      "encoded_feature": "Exterior2nd_VinylSd",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 196,
+      "encoded_feature": "Exterior2nd_Wd Sdng",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 197,
+      "encoded_feature": "Exterior2nd_Wd Shng",
+      "source_columns": [
+        "Exterior2nd"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 198,
+      "encoded_feature": "MasVnrType_BrkCmn",
+      "source_columns": [
+        "MasVnrType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 199,
+      "encoded_feature": "MasVnrType_BrkFace",
+      "source_columns": [
+        "MasVnrType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 200,
+      "encoded_feature": "MasVnrType_None",
+      "source_columns": [
+        "MasVnrType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 201,
+      "encoded_feature": "MasVnrType_Stone",
+      "source_columns": [
+        "MasVnrType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 202,
+      "encoded_feature": "Foundation_BrkTil",
+      "source_columns": [
+        "Foundation"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 203,
+      "encoded_feature": "Foundation_CBlock",
+      "source_columns": [
+        "Foundation"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 204,
+      "encoded_feature": "Foundation_PConc",
+      "source_columns": [
+        "Foundation"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 205,
+      "encoded_feature": "Foundation_Slab",
+      "source_columns": [
+        "Foundation"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 206,
+      "encoded_feature": "Foundation_Stone",
+      "source_columns": [
+        "Foundation"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 207,
+      "encoded_feature": "Foundation_Wood",
+      "source_columns": [
+        "Foundation"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 208,
+      "encoded_feature": "Heating_Floor",
+      "source_columns": [
+        "Heating"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 209,
+      "encoded_feature": "Heating_GasA",
+      "source_columns": [
+        "Heating"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 210,
+      "encoded_feature": "Heating_GasW",
+      "source_columns": [
+        "Heating"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 211,
+      "encoded_feature": "Heating_Grav",
+      "source_columns": [
+        "Heating"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 212,
+      "encoded_feature": "Heating_OthW",
+      "source_columns": [
+        "Heating"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 213,
+      "encoded_feature": "Heating_Wall",
+      "source_columns": [
+        "Heating"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 214,
+      "encoded_feature": "CentralAir_N",
+      "source_columns": [
+        "CentralAir"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 215,
+      "encoded_feature": "CentralAir_Y",
+      "source_columns": [
+        "CentralAir"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 216,
+      "encoded_feature": "Electrical_FuseA",
+      "source_columns": [
+        "Electrical"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 217,
+      "encoded_feature": "Electrical_FuseF",
+      "source_columns": [
+        "Electrical"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 218,
+      "encoded_feature": "Electrical_FuseP",
+      "source_columns": [
+        "Electrical"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 219,
+      "encoded_feature": "Electrical_Mix",
+      "source_columns": [
+        "Electrical"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 220,
+      "encoded_feature": "Electrical_SBrkr",
+      "source_columns": [
+        "Electrical"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 221,
+      "encoded_feature": "GarageType_2Types",
+      "source_columns": [
+        "GarageType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 222,
+      "encoded_feature": "GarageType_Attchd",
+      "source_columns": [
+        "GarageType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 223,
+      "encoded_feature": "GarageType_Basment",
+      "source_columns": [
+        "GarageType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 224,
+      "encoded_feature": "GarageType_BuiltIn",
+      "source_columns": [
+        "GarageType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 225,
+      "encoded_feature": "GarageType_CarPort",
+      "source_columns": [
+        "GarageType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 226,
+      "encoded_feature": "GarageType_Detchd",
+      "source_columns": [
+        "GarageType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 227,
+      "encoded_feature": "GarageType_None",
+      "source_columns": [
+        "GarageType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 228,
+      "encoded_feature": "MiscFeature_Gar2",
+      "source_columns": [
+        "MiscFeature"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 229,
+      "encoded_feature": "MiscFeature_None",
+      "source_columns": [
+        "MiscFeature"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 230,
+      "encoded_feature": "MiscFeature_Othr",
+      "source_columns": [
+        "MiscFeature"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 231,
+      "encoded_feature": "MiscFeature_Shed",
+      "source_columns": [
+        "MiscFeature"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 232,
+      "encoded_feature": "MiscFeature_TenC",
+      "source_columns": [
+        "MiscFeature"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 233,
+      "encoded_feature": "SaleType_COD",
+      "source_columns": [
+        "SaleType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 234,
+      "encoded_feature": "SaleType_CWD",
+      "source_columns": [
+        "SaleType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 235,
+      "encoded_feature": "SaleType_Con",
+      "source_columns": [
+        "SaleType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 236,
+      "encoded_feature": "SaleType_ConLD",
+      "source_columns": [
+        "SaleType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 237,
+      "encoded_feature": "SaleType_ConLI",
+      "source_columns": [
+        "SaleType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 238,
+      "encoded_feature": "SaleType_ConLw",
+      "source_columns": [
+        "SaleType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 239,
+      "encoded_feature": "SaleType_New",
+      "source_columns": [
+        "SaleType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 240,
+      "encoded_feature": "SaleType_Oth",
+      "source_columns": [
+        "SaleType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 241,
+      "encoded_feature": "SaleType_WD",
+      "source_columns": [
+        "SaleType"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 242,
+      "encoded_feature": "SaleCondition_Abnorml",
+      "source_columns": [
+        "SaleCondition"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 243,
+      "encoded_feature": "SaleCondition_AdjLand",
+      "source_columns": [
+        "SaleCondition"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 244,
+      "encoded_feature": "SaleCondition_Alloca",
+      "source_columns": [
+        "SaleCondition"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 245,
+      "encoded_feature": "SaleCondition_Family",
+      "source_columns": [
+        "SaleCondition"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 246,
+      "encoded_feature": "SaleCondition_Normal",
+      "source_columns": [
+        "SaleCondition"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    },
+    {
+      "index": 247,
+      "encoded_feature": "SaleCondition_Partial",
+      "source_columns": [
+        "SaleCondition"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "one_hot_indicator"
+    }
+  ],
+  "case_id": "ames-reference-init-a"
+}

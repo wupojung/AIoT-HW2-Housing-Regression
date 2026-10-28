@@ -1,0 +1,492 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "ames-full-model-exploration",
+  "run_id": "development_20261026_01",
+  "configuration_id": "hist-ridge-rfe-67e3f996e959",
+  "selection_unit": "encoded_feature",
+  "summary": "Selections are fold-local. No final all-Development refit feature list is asserted for this candidate.",
+  "folds": [
+    {
+      "fold": 0,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 10,
+      "raw_source_count": 8,
+      "selected_encoded_names": [
+        "Condition2_PosN",
+        "GrLivArea",
+        "HasPool",
+        "HouseStyle_2.5Fin",
+        "MiscFeature_TenC",
+        "Neighborhood_NoRidge",
+        "Neighborhood_NridgHt",
+        "Neighborhood_StoneBr",
+        "RoofMatl_ClyTile",
+        "RoofMatl_WdShngl"
+      ],
+      "selected_raw_sources": [
+        "Condition2",
+        "GrLivArea",
+        "HouseStyle",
+        "MiscFeature",
+        "Neighborhood",
+        "PoolArea",
+        "PoolQC",
+        "RoofMatl"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "Condition2_PosN",
+          "raw_source_columns": [
+            "Condition2"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "GrLivArea",
+          "raw_source_columns": [
+            "GrLivArea"
+          ],
+          "is_derived": false,
+          "encoding_type": "numeric",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "GrLivArea"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HasPool",
+          "raw_source_columns": [
+            "PoolArea",
+            "PoolQC"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "PoolArea",
+            "PoolQC"
+          ]
+        },
+        {
+          "encoded_name": "HouseStyle_2.5Fin",
+          "raw_source_columns": [
+            "HouseStyle"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "HouseStyle"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MiscFeature_TenC",
+          "raw_source_columns": [
+            "MiscFeature"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MiscFeature"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NoRidge",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NridgHt",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_StoneBr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_ClyTile",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_WdShngl",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    },
+    {
+      "fold": 1,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 10,
+      "raw_source_count": 5,
+      "selected_encoded_names": [
+        "Exterior2nd_CmentBd",
+        "HasPool",
+        "Neighborhood_IDOTRR",
+        "Neighborhood_NoRidge",
+        "Neighborhood_NridgHt",
+        "Neighborhood_OldTown",
+        "Neighborhood_StoneBr",
+        "RoofMatl_ClyTile",
+        "RoofMatl_CompShg",
+        "RoofMatl_WdShngl"
+      ],
+      "selected_raw_sources": [
+        "Exterior2nd",
+        "Neighborhood",
+        "PoolArea",
+        "PoolQC",
+        "RoofMatl"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "Exterior2nd_CmentBd",
+          "raw_source_columns": [
+            "Exterior2nd"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior2nd"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "HasPool",
+          "raw_source_columns": [
+            "PoolArea",
+            "PoolQC"
+          ],
+          "is_derived": true,
+          "encoding_type": "derived_indicator",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [],
+          "derived_dependencies": [
+            "PoolArea",
+            "PoolQC"
+          ]
+        },
+        {
+          "encoded_name": "Neighborhood_IDOTRR",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NoRidge",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NridgHt",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_OldTown",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_StoneBr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_ClyTile",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_CompShg",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_WdShngl",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    },
+    {
+      "fold": 2,
+      "status": "COMPLETED",
+      "selection_unit": "encoded_feature",
+      "encoded_count": 10,
+      "raw_source_count": 6,
+      "selected_encoded_names": [
+        "Condition2_PosN",
+        "Exterior1st_BrkComm",
+        "Exterior1st_CemntBd",
+        "MSZoning_C (all)",
+        "Neighborhood_NoRidge",
+        "Neighborhood_NridgHt",
+        "Neighborhood_StoneBr",
+        "RoofMatl_Tar&Grv",
+        "RoofMatl_WdShngl",
+        "SaleType_CWD"
+      ],
+      "selected_raw_sources": [
+        "Condition2",
+        "Exterior1st",
+        "MSZoning",
+        "Neighborhood",
+        "RoofMatl",
+        "SaleType"
+      ],
+      "feature_lineage": [
+        {
+          "encoded_name": "Condition2_PosN",
+          "raw_source_columns": [
+            "Condition2"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Condition2"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_BrkComm",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Exterior1st_CemntBd",
+          "raw_source_columns": [
+            "Exterior1st"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Exterior1st"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "MSZoning_C (all)",
+          "raw_source_columns": [
+            "MSZoning"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "MSZoning"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NoRidge",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_NridgHt",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "Neighborhood_StoneBr",
+          "raw_source_columns": [
+            "Neighborhood"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "Neighborhood"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_Tar&Grv",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "RoofMatl_WdShngl",
+          "raw_source_columns": [
+            "RoofMatl"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "RoofMatl"
+          ],
+          "derived_dependencies": []
+        },
+        {
+          "encoded_name": "SaleType_CWD",
+          "raw_source_columns": [
+            "SaleType"
+          ],
+          "is_derived": false,
+          "encoding_type": "one_hot",
+          "provenance_status": "RESOLVED",
+          "direct_raw_sources": [
+            "SaleType"
+          ],
+          "derived_dependencies": []
+        }
+      ]
+    }
+  ]
+}

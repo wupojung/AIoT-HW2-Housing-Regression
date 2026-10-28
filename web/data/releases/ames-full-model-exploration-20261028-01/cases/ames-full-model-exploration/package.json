@@ -1,0 +1,906 @@
+{
+  "package_schema_version": "1.0.0",
+  "package_id": "ames-full-model-exploration-development_20261026_01",
+  "case_id": "ames-full-model-exploration",
+  "package_revision": "ames-full-model-exploration-20261028-01",
+  "package_status": "PARTIAL",
+  "publication": {
+    "approved": false,
+    "release_id": "ames-full-model-exploration-20261028-01",
+    "review_status": "PENDING"
+  },
+  "case_ref": "case.json",
+  "phases": {
+    "phase1": {
+      "status": "UNAVAILABLE",
+      "data_ref": "phases/phase-01/content.json"
+    },
+    "phase2": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-02/analyses.json"
+    },
+    "phase3": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-03/preparation.json"
+    },
+    "phase4": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-04/modeling.json"
+    },
+    "phase5": {
+      "status": "PLANNED",
+      "data_ref": "phases/phase-05/evaluations.json"
+    },
+    "phase6": {
+      "status": "UNAVAILABLE",
+      "data_ref": "phases/phase-06/inference-catalog.json"
+    }
+  },
+  "asset_manifest_ref": "assets/figure-manifest.json",
+  "files": [
+    {
+      "path": "assets/execution-manifest.json",
+      "sha256": "8e6f344c60d0aa67d3700ddbaa1590cdfd7e57fc5d43cec9f1128eaaa2332f15",
+      "bytes": 739,
+      "mime": "application/json"
+    },
+    {
+      "path": "assets/figure-manifest.json",
+      "sha256": "d20d1f7f98c21c2545060fc0e8b1dcf7167a911c8498b28e70795274d329c2d6",
+      "bytes": 513,
+      "mime": "application/json"
+    },
+    {
+      "path": "assets/phase6-inference-smoke.json",
+      "sha256": "c09bc8891bdefba297a0fd5d7aa37032695cea1b5a1bae40ce349ae97a065c16",
+      "bytes": 185,
+      "mime": "application/json"
+    },
+    {
+      "path": "case.json",
+      "sha256": "4097eed52c613b091db89d197b92d4e0989251aad3a12e343e58ac93051a79a8",
+      "bytes": 669,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-01/content.json",
+      "sha256": "922b63ff3201dd0a6ffacabdfe0e2d4074b0d216fe6740ab402eccace623268f",
+      "bytes": 121,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-02/analyses.json",
+      "sha256": "ed2f999a3c62f21a874af6954943a6c6e5aeb280106116cd15ba5f6647a59b3f",
+      "bytes": 9139,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-02/figures/missingness.svg",
+      "sha256": "2258ae445dd745594a01a2fb0ce5c2f26ce76cc18dcbc32c3fc296d065a2c5f1",
+      "bytes": 3810,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-02/figures/target-distribution.svg",
+      "sha256": "7198f2a0408942666a9cbcd834933e142185dc13147900a5b0b5da4724a9b494",
+      "bytes": 2735,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-03/preparation.json",
+      "sha256": "9399fb664358d9f1fe4e9d31f6ad28ef09bdeecfd131e0f2edcfb9ebb562f607",
+      "bytes": 3873,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/charts/feature-count-vs-cv-rmse.json",
+      "sha256": "82c285216512cee5ec3a51667d703a2beba719d5b7a576790ce116b5b874b793",
+      "bytes": 10218,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/charts/method-comparison.json",
+      "sha256": "7bbe0033d1ac647d9bd9241e799a7144bc182813c75c9b8a72a99d8d2e9cc9fa",
+      "bytes": 12598,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-1098e27f3412/cv-metrics.json",
+      "sha256": "6fe213fb6c25e3786d20584782cf4ee39572527948be9bc462dcbd171f6ed03f",
+      "bytes": 1846,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-1098e27f3412/fold-tasks.json",
+      "sha256": "9f4dd545e2d4abe20c50dccede707d3a989764e2bc23bf72b815ac687cd73a73",
+      "bytes": 1053,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-1098e27f3412/metadata.json",
+      "sha256": "3e1aa4e39838dd235e569ee972b01dc0c40aa35cc22231a13ace0bfe8a10ed36",
+      "bytes": 1106,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-1098e27f3412/selected-features.json",
+      "sha256": "ecfd2c73d361c54669fbbb10d6b0ab8b20c7400f197383d8b229bf4556b6b5c0",
+      "bytes": 277604,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-1c73870379fc/cv-metrics.json",
+      "sha256": "9abc5e6c4350d3fd6cd4ebd03c59f4224dc198b3ab3ff55ca4ac362af86000ac",
+      "bytes": 1844,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-1c73870379fc/fold-tasks.json",
+      "sha256": "d5fa9c9e656a8c754311be5060ea26ee65e3c4bad40a8819feb4af16135c4b81",
+      "bytes": 1054,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-1c73870379fc/metadata.json",
+      "sha256": "7bd04d4e86639d9d6911eb088012be002296c47b7c4e6b92bb63d21a98d3ad1c",
+      "bytes": 1105,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-1c73870379fc/selected-features.json",
+      "sha256": "ee9062a59c724fb769d4c9aefb4b41ec22d45eabe644e4e31f91854988769a70",
+      "bytes": 283400,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-20363ce2a7f8/cv-metrics.json",
+      "sha256": "958678af8076d7da71d45eb332cb1b04540476b57010ae94bdf0b4f15178cb9d",
+      "bytes": 1844,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-20363ce2a7f8/fold-tasks.json",
+      "sha256": "1c54ef7b4c3ea37cd1c58d1ceec05149369b884e9980e11be6d1acc1b6c5ab7c",
+      "bytes": 1054,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-20363ce2a7f8/metadata.json",
+      "sha256": "0aca2968a4218bc23b6306927ece84fed5ee086f5c3199268135f87a40ba0b3a",
+      "bytes": 1092,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-20363ce2a7f8/selected-features.json",
+      "sha256": "913280c2d4ba356343d596a824a5ede5eb3a18f471a16ec0861cd344feb3d8c9",
+      "bytes": 276062,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-279a8a5b1c1f/cv-metrics.json",
+      "sha256": "0bdbeaceefb6d2d9037378f2cec5ff380fa209a47a1b313284f64709c83cc8b1",
+      "bytes": 1845,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-279a8a5b1c1f/fold-tasks.json",
+      "sha256": "a9bcc75cdc527bf911a2244aa74a3ee389c8696a96875f26483a18bc6c0f9152",
+      "bytes": 1055,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-279a8a5b1c1f/metadata.json",
+      "sha256": "e55def06da821eb4b4b0f07ad68e044df1f13201d4fad71dc3ec01e86bdb13f8",
+      "bytes": 1104,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-279a8a5b1c1f/selected-features.json",
+      "sha256": "25105d4aa12fd39b76c6ed2fb7aa956be7adf85042446174579d6815e3384284",
+      "bytes": 283790,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-2cc6e4b57a10/cv-metrics.json",
+      "sha256": "bfd1512596a3a8a6c9c277f9e03d44057669ab0be94c575a5944f9c9267f3708",
+      "bytes": 1845,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-2cc6e4b57a10/fold-tasks.json",
+      "sha256": "fd546a6b8c022d266f847bf9f13048eceec908d40b11a88c45779140ce48b3b5",
+      "bytes": 1056,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-2cc6e4b57a10/metadata.json",
+      "sha256": "09f00df7a6002176aee9c317e028eac846b3bb3fc905f109d0287ea8c34938b6",
+      "bytes": 1105,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-2cc6e4b57a10/selected-features.json",
+      "sha256": "6e2e66909289a1c04f9df00f7bb94e502ba8babee0f93b963dbb120f470f4374",
+      "bytes": 283784,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-52f2eeb3d772/cv-metrics.json",
+      "sha256": "3195a9d562b14b75790e6faa677dff712920687e18f7d1027d124a45200ba7f8",
+      "bytes": 1846,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-52f2eeb3d772/fold-tasks.json",
+      "sha256": "d64895ce5ea7a300e90eecbb27b04974549294b17dc32b7c1147cee2887688ba",
+      "bytes": 1054,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-52f2eeb3d772/metadata.json",
+      "sha256": "321ee460b5f1cc6ce0cdeed7603410a23832f201195d33fd1b2f6b0cd9700d0d",
+      "bytes": 1092,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-52f2eeb3d772/selected-features.json",
+      "sha256": "d5f86d07ac8d25af99e3f753768fde1f0d382b7ba73c4e91038a20ac1de92a12",
+      "bytes": 283018,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-9fa4d99608f1/cv-metrics.json",
+      "sha256": "1459440be9c9356f8cb7bfed211193fd9d10f452d23133630c74ff28d6cfa13c",
+      "bytes": 1841,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-9fa4d99608f1/fold-tasks.json",
+      "sha256": "e22a8b83bc16451fb9ac27fc2b740ad9cef04f57b4d4096d8bbf05d47c77e03e",
+      "bytes": 1054,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-9fa4d99608f1/metadata.json",
+      "sha256": "a71f33d2c641b6561fc6d2d8f1509ea01a4a70bdd699dab1b4c9e4d00660bcdc",
+      "bytes": 1103,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-9fa4d99608f1/selected-features.json",
+      "sha256": "eb2543358077e8393b441519562953bfdcaa814a3242a2daea137dfcc83b9793",
+      "bytes": 283774,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d0247c0be6fb/cv-metrics.json",
+      "sha256": "92acee8c5bb4acf1a239771ecd4be7fc2f04e02a766efa7bf6e37c50fce2331a",
+      "bytes": 1843,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d0247c0be6fb/fold-tasks.json",
+      "sha256": "bf1646c84a8defe0725955b4f390192aecc167bb8a23f9d92e287057740eef35",
+      "bytes": 1051,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d0247c0be6fb/metadata.json",
+      "sha256": "3ee1ac0e5c0cf79647d91ff95f270ee1f9098f3a24e0e24a2118c4e670a6e163",
+      "bytes": 1106,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d0247c0be6fb/selected-features.json",
+      "sha256": "047441e0ad04a315523dae86f6f46324b3c823130716192585b25c0c23040050",
+      "bytes": 279912,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d29012556273/cv-metrics.json",
+      "sha256": "5a30f80e02d042c06454ded9bebf24eefdfa5dd6e6c429fa1e3dc4280345133c",
+      "bytes": 1849,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d29012556273/fold-tasks.json",
+      "sha256": "9e0352f15cdd3caa29fe8e2a548c9062b0aafe36863911180703a1aafb228b4c",
+      "bytes": 1055,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d29012556273/metadata.json",
+      "sha256": "0dd35cfff8a9d240006840999985e0176ac82adeea6e2661ec3e4cf4022364e8",
+      "bytes": 1107,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d29012556273/selected-features.json",
+      "sha256": "8bcf1e561d649ea79ac979a5c8f2ad303b86902d8190f9d8e8070269aa16c98a",
+      "bytes": 269403,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d7202991dc8f/cv-metrics.json",
+      "sha256": "9cc076d05cafdee014fddb0fab21c26cd55d0d0b5dab585c69d21a3874fafac6",
+      "bytes": 1842,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d7202991dc8f/fold-tasks.json",
+      "sha256": "442765fd93a543dc5a6f9c291830413054fd63be991f4b97c959137371dc35be",
+      "bytes": 1051,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d7202991dc8f/metadata.json",
+      "sha256": "08e5b0eeda4227de5f58f250390d0b952bfb7b3a2b878d0efab539b874068a20",
+      "bytes": 1093,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d7202991dc8f/selected-features.json",
+      "sha256": "0affde8378572b83ca111c16505f65002fcdc0c4dd4079f12b10cbc62c850a9f",
+      "bytes": 245678,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d8d37e65bf41/cv-metrics.json",
+      "sha256": "6cbaf55e5de626fd8acef5ba89810e409627f696839993abb90f033e1f55648c",
+      "bytes": 1845,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d8d37e65bf41/fold-tasks.json",
+      "sha256": "7fa1878aba784b05c04b12bfb7f5b4085fd238d01bba05efc9843551f1adf973",
+      "bytes": 1054,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d8d37e65bf41/metadata.json",
+      "sha256": "e48d8c2f6161323e9ba12fdd900c9d00f509ba89c79a8e1ccadfd60ceb6414c4",
+      "bytes": 1091,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-d8d37e65bf41/selected-features.json",
+      "sha256": "80375259f6e29bc256fe46a51a9938f0218d79d5d49c995e4eaee7ed7e4fadc5",
+      "bytes": 284170,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-dd45a0b3f79e/cv-metrics.json",
+      "sha256": "a78e7e1bf4c9c132abea96902f02c0a4803c2e1d42829a85495fa7ad7bc87572",
+      "bytes": 1842,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-dd45a0b3f79e/fold-tasks.json",
+      "sha256": "c3dfa61b7c167bf9fb8dad46c50108a11afba490e1aece388f065d7aa47142da",
+      "bytes": 1054,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-dd45a0b3f79e/metadata.json",
+      "sha256": "0dffa5b59f606d8b63ecd44c8a57a4c700ea2f1a2b7ae56f16614d9ca3271422",
+      "bytes": 1090,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-elastic-net-dd45a0b3f79e/selected-features.json",
+      "sha256": "75eae5eaa6a3874c29c81a63a9571385408d71c35f4380e75d9ba60d06eafe4f",
+      "bytes": 284170,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-15ccb5910916/cv-metrics.json",
+      "sha256": "0f16280a9799710a5432fe6164d489e337baa420ffc19854827978e9cc5bf5df",
+      "bytes": 1521,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-15ccb5910916/fold-tasks.json",
+      "sha256": "0eb2fae73676b972d7dae6b2213792fa8c388371b75e0b10519e3a22e50edf74",
+      "bytes": 919,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-15ccb5910916/metadata.json",
+      "sha256": "bc0f2aae9921c0bc9a02f6327309064bf2c64a9a7d4f92cedf747d14596a8f93",
+      "bytes": 1138,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-15ccb5910916/selected-features.json",
+      "sha256": "a5239ac256f4a22487faa87c85ae381fdada3d77c24898f334f2d17b5b976238",
+      "bytes": 24133,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-23fac5e0453b/cv-metrics.json",
+      "sha256": "cfe76e93b9088bd7613f86911429e67a4b3eba3c2e5388f84ba83cbaf58c449d",
+      "bytes": 1819,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-23fac5e0453b/fold-tasks.json",
+      "sha256": "766c89cbf2f30d1bf9dfc3b9968f194a68e5c24d6eaac726a6f635d4f9a99b2c",
+      "bytes": 1048,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-23fac5e0453b/metadata.json",
+      "sha256": "ea089c05c02d20b3760c6c5a3080582379424baaf920de051439dfd5c32d17a8",
+      "bytes": 1065,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-23fac5e0453b/selected-features.json",
+      "sha256": "fd8954d4100d168822aff5c693e311b6791fde909bf4d2a3b8dab88bad821be3",
+      "bytes": 124245,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-d0ea8d1b5d1d/cv-metrics.json",
+      "sha256": "a6fe9cb6733990438afa194d68a167fb8ff3ec9cd610be5df45e339c21d07c7c",
+      "bytes": 1820,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-d0ea8d1b5d1d/fold-tasks.json",
+      "sha256": "7e33ca482f3b26a8da0898b9c0a40450a465d91cf0ab7b1af9c5b92eefb9f82d",
+      "bytes": 1049,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-d0ea8d1b5d1d/metadata.json",
+      "sha256": "bb96cd6ebaacd65db65018201dd5f8f7a4cc8017b2d19acf6d7aa0d69f7071e0",
+      "bytes": 1065,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-d0ea8d1b5d1d/selected-features.json",
+      "sha256": "d5c66d3bbbf031b250b3b839a7bb4e83efd8680bc8cec30d0bc6fbac45194662",
+      "bytes": 221330,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-e0ae972743a4/cv-metrics.json",
+      "sha256": "7d2fe1364ac76c42384e7666c12a27fb5b4be2a014d58e31e8f64b231ffb1481",
+      "bytes": 1565,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-e0ae972743a4/fold-tasks.json",
+      "sha256": "fd3705b20ffc098bf52ba58d5b508769dcd7814fc17c23b7d575db9c17fb689f",
+      "bytes": 963,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-e0ae972743a4/metadata.json",
+      "sha256": "e197b7810a24f2e2d99f2f0eeae4a8c8d9934e10cc72ae3de3d4a7c112d3d020",
+      "bytes": 1138,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-lasso-e0ae972743a4/selected-features.json",
+      "sha256": "b4e3a3ae97e3162b766eaa2ee6a6212cd5bbeadc5806440e38c2a9b6af095957",
+      "bytes": 101653,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-b33c6189b8ae/cv-metrics.json",
+      "sha256": "db6bf8b681be367b8354bdec4897f47f2cafc2c296b62c4eff5c000444dddc39",
+      "bytes": 1741,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-b33c6189b8ae/fold-tasks.json",
+      "sha256": "b674d1da10fe286b905e6273eeee5eb6fa63eb6b3fd6d67069fdf506a5c166f7",
+      "bytes": 1061,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-b33c6189b8ae/metadata.json",
+      "sha256": "51813625ccd8e128f050671f208fc9e7a61ef8cdecf57f465e5a7664798a9371",
+      "bytes": 1057,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-b33c6189b8ae/selected-features.json",
+      "sha256": "6b4c5c248f1f8547296f4f09943eaec200c854bd7858a698a6b36cc7ffd41231",
+      "bytes": 25084,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-b87169fc4edc/cv-metrics.json",
+      "sha256": "6fad5a8853cea88c7488453de6efd7b75511a1efb937e745c1c32d54f8679165",
+      "bytes": 1736,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-b87169fc4edc/fold-tasks.json",
+      "sha256": "2438ce1aeb1abc54d8b1bbfa6573f16c23151b488bbc48b3182106b5bc629185",
+      "bytes": 1057,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-b87169fc4edc/metadata.json",
+      "sha256": "0a91e52e6b9d8a6dd52cf1d8f4011def90d962d2235002286f3c89b1afe7a0c7",
+      "bytes": 1056,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-b87169fc4edc/selected-features.json",
+      "sha256": "0e5bd8a001f8dca1aede94db805b427bda59f8cfddf1e0da4dd44a6ab71dce4b",
+      "bytes": 3559,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-c79851bf9d83/cv-metrics.json",
+      "sha256": "f32fade27a1cbd6e2d1d68bbd45527c11e19b2e13ea7a113bb4cd13cde1f38b1",
+      "bytes": 1741,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-c79851bf9d83/fold-tasks.json",
+      "sha256": "a8bc439b40b85dc729e6725515b6445f039457e9e24cecbd8447e63339b60243",
+      "bytes": 1059,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-c79851bf9d83/metadata.json",
+      "sha256": "72ea3ca88b1a18d4708cb69875de4678985e732c0de51bbbe0058e7a82ee8e85",
+      "bytes": 1058,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-c79851bf9d83/selected-features.json",
+      "sha256": "e7b60a35f9ef0809ed1ae3b7bdf4e72c9615b18f5de967349d17dcc7a4b7df63",
+      "bytes": 13097,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-f8964bbe4d91/cv-metrics.json",
+      "sha256": "26231b1f897dfff3f2105c3f1ca59f65b0d4589e30cf9572fcc46edb5c904655",
+      "bytes": 1741,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-f8964bbe4d91/fold-tasks.json",
+      "sha256": "c3301bf7e6c0db2e06c99a663ff232ec839bcb0a901d737eeade16126b289ce7",
+      "bytes": 1062,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-f8964bbe4d91/metadata.json",
+      "sha256": "13694541496d394581c5d1b3f895ef7937ee120d6793b14fc9145cab5c68b86b",
+      "bytes": 1056,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-f8964bbe4d91/selected-features.json",
+      "sha256": "4e5cf13792f732d10c731f9aaf3eafe134827982dd7ac71b06ef07258a2aecd8",
+      "bytes": 4758,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-fe67d806a6c0/cv-metrics.json",
+      "sha256": "86c224323287f6f33824a38525cb36a3c0f4705a0232cb701dd4ca693ce12080",
+      "bytes": 1739,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-fe67d806a6c0/fold-tasks.json",
+      "sha256": "fc8932bb1365f7c0a63e613bc5c7e1da915f2422e5b16c4f36ac0814c2b86ce6",
+      "bytes": 1060,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-fe67d806a6c0/metadata.json",
+      "sha256": "fac424dd99503658df0c93b8413ae2bf53a5e0f8865457f4a5248df8240ec573",
+      "bytes": 1056,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-mutual-information-fe67d806a6c0/selected-features.json",
+      "sha256": "79eb205a042079468815152da752859f1c95d34bbcce5cd58facfef7bd3cd0f8",
+      "bytes": 7136,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ols-baseline-67211c3848f8/cv-metrics.json",
+      "sha256": "8062d408ff2cb0ac83db1b8edde4783dc093d75bfa8067c9930ee6625eb9ebd0",
+      "bytes": 1723,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ols-baseline-67211c3848f8/fold-tasks.json",
+      "sha256": "22b71061274047c006400ea6d38a15731f5b6d24f4029a15f36ad09b55434d10",
+      "bytes": 1056,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ols-baseline-67211c3848f8/metadata.json",
+      "sha256": "c588325b1f358c856f4d6161e7eb94d4f7ac4d19dbc1f85a0091a1da60f25687",
+      "bytes": 1050,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ols-baseline-67211c3848f8/selected-features.json",
+      "sha256": "23f0ae0226096833e4f7505db34dea2ed5f3920ba98d61aaa1fbe7f90cff6799",
+      "bytes": 284578,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-05a42a840e86/cv-metrics.json",
+      "sha256": "b2c631762dc4480ac38efd02f5e836a223370cbc63b12995c7f32fcf97e26dd9",
+      "bytes": 1731,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-05a42a840e86/fold-tasks.json",
+      "sha256": "d60bde4acda97bb3fcbcdffe8c7c2e6eac1036b87b8668438e727cbc713af13a",
+      "bytes": 1050,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-05a42a840e86/metadata.json",
+      "sha256": "46b4640492be2754932cf309ed85090a8a38daa724f94439eeb5b3c4c3b56742",
+      "bytes": 1045,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-05a42a840e86/selected-features.json",
+      "sha256": "1b39c3c0c26548c3dd0df778d76a43c6c27e61db02f673a92b361b545bc7fded",
+      "bytes": 4727,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-47c2ce66ecde/cv-metrics.json",
+      "sha256": "bb6072f1f2f5ee9010bb98be6cdcc62aa9c50cccb19b241c330dedb0e2ee6205",
+      "bytes": 1729,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-47c2ce66ecde/fold-tasks.json",
+      "sha256": "ac47b5a9679dff935a5f7dfa1441e7be57e95b3a5dace51158455be808885d1e",
+      "bytes": 1048,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-47c2ce66ecde/metadata.json",
+      "sha256": "14d18adaec4eb95de47f2a5591f590f918f709d681d70f2b70860c2265ba7d61",
+      "bytes": 1045,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-47c2ce66ecde/selected-features.json",
+      "sha256": "de8e7647f1aebcd1fe0bfba99b1f94b9971bf5577f500a2e21fe346bbeb6d2b2",
+      "bytes": 3548,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-4c0e705bb36a/cv-metrics.json",
+      "sha256": "a41c7232d90467c92ab48fd2ca6a05dd7adf2d0d84fb9ac767c6fc9d4baa9bbc",
+      "bytes": 1727,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-4c0e705bb36a/fold-tasks.json",
+      "sha256": "0f64e4305ef402842bcb84f6d94927037b8a626abc00690a918e3e788de089a3",
+      "bytes": 1047,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-4c0e705bb36a/metadata.json",
+      "sha256": "ee84fa9f4e2fcb5f7122db0d5d6981f86d1146561a7b75f6570a8cda38b1f66b",
+      "bytes": 1047,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-4c0e705bb36a/selected-features.json",
+      "sha256": "582129f51ab1d7710e3e4d495cd5688b02812a6d5dc3500acb7f1f023a08d611",
+      "bytes": 13036,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-76875a54b993/cv-metrics.json",
+      "sha256": "64923ffd633d543ea0868df806da22e3a806410bc31b1588d2e3373a09ba2775",
+      "bytes": 1730,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-76875a54b993/fold-tasks.json",
+      "sha256": "844c68650c25bb166891904fed7f2fee2424fb6957f7dee27db3702b76dcbb75",
+      "bytes": 1050,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-76875a54b993/metadata.json",
+      "sha256": "2d15de945c50b4994177ca94fa4c30a58f3545958974428bc97d2f32d6c05cb4",
+      "bytes": 1045,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-76875a54b993/selected-features.json",
+      "sha256": "f519d5533fc7cb165567ebc4bf07e8cb751f70d4e2f7328f75ba669b676c39ba",
+      "bytes": 7120,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-fb8b057e6677/cv-metrics.json",
+      "sha256": "0243c5d81d19d198dd3ab06da157c2f927d2c420ec892f8b0bf229c8054a40bc",
+      "bytes": 1729,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-fb8b057e6677/fold-tasks.json",
+      "sha256": "a38f9a51ada691cab602bee691042f1536aff149dd928351f199c2a7cd92e24b",
+      "bytes": 1048,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-fb8b057e6677/metadata.json",
+      "sha256": "ef48885edef864090b70db5bbcdef07a1ac28fb83c27ab233bc9278775305a84",
+      "bytes": 1046,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-pearson-fb8b057e6677/selected-features.json",
+      "sha256": "4b20c89e3e792eeecee8a34d3614f90ad1fa1d6440f473142b89f96e1a4209dd",
+      "bytes": 25248,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-1988433b54f5/cv-metrics.json",
+      "sha256": "3cd5b7e8ab7430fa8045a5a69d00fb75bf773955b81c8a9f37c8a7ab0677f365",
+      "bytes": 1738,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-1988433b54f5/fold-tasks.json",
+      "sha256": "f8bbca391c3017f1dfe8c719cb583f9ee35541e2cde9fb38d51aca9fbb2efefd",
+      "bytes": 1056,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-1988433b54f5/metadata.json",
+      "sha256": "a11b7c824a864d76cddf07bdf41a458095e5f5564a16a1fa8db06c0c5d37ebf2",
+      "bytes": 1047,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-1988433b54f5/selected-features.json",
+      "sha256": "c78a1243c021d68e6209317484e6a89cfc5eb76678cc2004bf6bb0a88738676b",
+      "bytes": 3610,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-5209c529b590/cv-metrics.json",
+      "sha256": "de8c68ee6bb92772948f66beec71cfd22fb4f2d48ab6c36edf01e27dafda5964",
+      "bytes": 1739,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-5209c529b590/fold-tasks.json",
+      "sha256": "1398ab64b8e636c0d78dfecaee98384e3e4ba4e0da4242efeec7ecd96ace961a",
+      "bytes": 1058,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-5209c529b590/metadata.json",
+      "sha256": "92176cd890ef4314014fb3900b29b6699c189453ec82c4963c09174f86f0de2d",
+      "bytes": 1047,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-5209c529b590/selected-features.json",
+      "sha256": "1294e3d4a4be47cdf9de32d9af07f49378cf7a9a55af5aaa7a93f60ada57ab37",
+      "bytes": 4875,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-55d847e58f1b/cv-metrics.json",
+      "sha256": "d56ffa16cc0f473e3cfe124d8b1f0e4fcd35427ed9a40381e250672bf0856dd8",
+      "bytes": 1731,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-55d847e58f1b/fold-tasks.json",
+      "sha256": "04d81707b3848869f03f2110e427204dfe5f7bc51accfbe95eeec221dd352047",
+      "bytes": 1049,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-55d847e58f1b/metadata.json",
+      "sha256": "893f9b2cfb509f71b169c914c72972d175f73f688d48be1df9a1378ee01f01c5",
+      "bytes": 1047,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-55d847e58f1b/selected-features.json",
+      "sha256": "3376082a196df06812bb1b66c32275e57924053dabb24b9d1888a9cdd8efb925",
+      "bytes": 7335,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-616569f18d0f/cv-metrics.json",
+      "sha256": "c558809c38ee3f61cb78ce85918d5bee8d7714a2dbce4359f984eddb7bbd5613",
+      "bytes": 1731,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-616569f18d0f/fold-tasks.json",
+      "sha256": "188b9db535f16450c923ef5e22089d957c832563254e16fe1b348ef43e38c275",
+      "bytes": 1051,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-616569f18d0f/metadata.json",
+      "sha256": "4f88b7fc31dd116945af47496d7727b85a9783a149338bbddada693f4b6e4bf1",
+      "bytes": 1048,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-616569f18d0f/selected-features.json",
+      "sha256": "1636b84ddae404309bdf5c6dcc7e615386ca00b3ecf68870e1a6e8bbd1863c9a",
+      "bytes": 25386,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-67e3f996e959/cv-metrics.json",
+      "sha256": "8c9c00ba6e08f71297da7a9f9f77886cd4a9e337ed85c6fc6ed5524d2cecad19",
+      "bytes": 1729,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-67e3f996e959/fold-tasks.json",
+      "sha256": "bf7cf122c3fc214fa7459c0130b5e30acce0069155d7b37f33a9ab10fbc36371",
+      "bytes": 1050,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-67e3f996e959/metadata.json",
+      "sha256": "9630fbfe805a38e046f052175dffcf47109001d2e8be3fee82382160168fc0fa",
+      "bytes": 1049,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/hist-ridge-rfe-67e3f996e959/selected-features.json",
+      "sha256": "96c10d9dcd8da73494044bf8e06d84f2f49ecaa06dec0bdd21216fc5555996f5",
+      "bytes": 13365,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/modeling.json",
+      "sha256": "5d118ff1dd2d84365f8f08b7478133a31a16c0455d6eb3488fc94b32d291c10a",
+      "bytes": 29527,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-05/evaluations.json",
+      "sha256": "ec5eeef6c63ad1cf1f9d2c56c2cb68ba89083de0acd159ddd8d61dbf2ac134e6",
+      "bytes": 173791,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-05/fold-metrics.json",
+      "sha256": "4d20c6ae87b0690e26c92b688724bc0bc668db1b9d17a7af61fe52f4e840f634",
+      "bytes": 31298,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-05/pooled-oof-metrics.json",
+      "sha256": "bb71bfceb8840e653e7b21547a39c821581bd9d77b1d5e137f8d1426a08a931e",
+      "bytes": 11100,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-06/inference-catalog.json",
+      "sha256": "3f2f0d55a9870d264b0b686ecf30283aaf7e1470974745cd0c9d9c7ab79e55ec",
+      "bytes": 376,
+      "mime": "application/json"
+    }
+  ]
+}
