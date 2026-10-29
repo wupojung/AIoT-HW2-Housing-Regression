@@ -1,0 +1,26 @@
+{
+  "case_id": "used-car-price-optimized",
+  "configuration_id": "car-lasso-db8e72af782f",
+  "folds": [
+    {
+      "fold": 1,
+      "n_train": 417,
+      "n_validation": 209,
+      "status": "VERIFIED"
+    },
+    {
+      "fold": 2,
+      "n_train": 417,
+      "n_validation": 209,
+      "status": "VERIFIED"
+    },
+    {
+      "fold": 3,
+      "n_train": 418,
+      "n_validation": 208,
+      "status": "VERIFIED"
+    }
+  ],
+  "run_id": "used-car-e2e-20261028-03",
+  "schema_version": "1.0.0"
+}

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d" width="760" height="532" viewBox="0 0 760 532">
+<title id="t">中古車資料缺失值概況</title><desc id="d">訓練 CSV 聚合缺失值筆數；不含資料列內容。</desc>
+<rect width="100%" height="100%" fill="#fff"/><style>text{font:12px Arial;fill:#243447}.bar{fill:#3977a8}</style>
+<text x="18" y="25" font-size="18">缺失值欄位概況</text><text x="18" y="47" fill="#8a3c20">REAL TRAINING DATA · AGGREGATED</text>
+<text x="18" y="80">search_price</text>
+<rect class="bar" x="220" y="66" width="420.00" height="16"/>
+<text x="650" y="79">784 (100.0%)</text>
+<text x="18" y="105">est._monthly_pmt</text>
+<rect class="bar" x="220" y="91" width="418.93" height="16"/>
+<text x="650" y="104">782 (99.7%)</text>
+<text x="18" y="130">int_color</text>
+<rect class="bar" x="220" y="116" width="416.79" height="16"/>
+<text x="650" y="129">778 (99.2%)</text>
+<text x="18" y="155">ext_color</text>
+<rect class="bar" x="220" y="141" width="416.79" height="16"/>
+<text x="650" y="154">778 (99.2%)</text>
+<text x="18" y="180">trans</text>
+<rect class="bar" x="220" y="166" width="401.79" height="16"/>
+<text x="650" y="179">750 (95.7%)</text>
+<text x="18" y="205">trim</text>
+<rect class="bar" x="220" y="191" width="385.18" height="16"/>
+<text x="650" y="204">719 (91.7%)</text>
+<text x="18" y="230">model</text>
+<rect class="bar" x="220" y="216" width="383.04" height="16"/>
+<text x="650" y="229">715 (91.2%)</text>
+<text x="18" y="255">year</text>
+<rect class="bar" x="220" y="241" width="380.89" height="16"/>
+<text x="650" y="254">711 (90.7%)</text>
+<text x="18" y="280">make</text>
+<rect class="bar" x="220" y="266" width="378.75" height="16"/>
+<text x="650" y="279">707 (90.2%)</text>
+<text x="18" y="305">engine</text>
+<rect class="bar" x="220" y="291" width="375.54" height="16"/>
+<text x="650" y="304">701 (89.4%)</text>
+<text x="18" y="330">mileage</text>
+<rect class="bar" x="220" y="316" width="371.25" height="16"/>
+<text x="650" y="329">693 (88.4%)</text>
+<text x="18" y="355">vin</text>
+<rect class="bar" x="220" y="341" width="253.39" height="16"/>
+<text x="650" y="354">473 (60.3%)</text>
+<text x="18" y="380">condition</text>
+<rect class="bar" x="220" y="366" width="152.14" height="16"/>
+<text x="650" y="379">284 (36.2%)</text>
+<text x="18" y="405">drive</text>
+<rect class="bar" x="220" y="391" width="148.39" height="16"/>
+<text x="650" y="404">277 (35.3%)</text>
+<text x="18" y="430">cylinders</text>
+<rect class="bar" x="220" y="416" width="123.75" height="16"/>
+<text x="650" y="429">231 (29.5%)</text>
+<text x="18" y="455">paint_color</text>
+<rect class="bar" x="220" y="441" width="113.04" height="16"/>
+<text x="650" y="454">211 (26.9%)</text>
+<text x="18" y="480">type</text>
+<rect class="bar" x="220" y="466" width="45.54" height="16"/>
+<text x="650" y="479">85 (10.8%)</text>
+<text x="18" y="505">odometer</text>
+<rect class="bar" x="220" y="491" width="7.50" height="16"/>
+<text x="650" y="504">14 (1.8%)</text>
+</svg>

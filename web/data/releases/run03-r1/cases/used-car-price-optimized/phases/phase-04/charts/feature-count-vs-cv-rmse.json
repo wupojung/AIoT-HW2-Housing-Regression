@@ -1,0 +1,167 @@
+{
+  "case_id": "used-car-price-optimized",
+  "points": [
+    {
+      "configuration_id": "car-ols-baseline-4c86752fe699",
+      "feature_count_mean": 63.666666666666664,
+      "mae_mean_fold": 52848.741731047456,
+      "method_id": "ols_baseline",
+      "method_winner": true,
+      "r2_mean_fold": -37.38913740798501,
+      "rmse_mean_fold": 213115.7164522678,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-pearson-b07928f29ee5",
+      "feature_count_mean": 10.0,
+      "mae_mean_fold": 43307.197568231815,
+      "method_id": "pearson",
+      "method_winner": true,
+      "r2_mean_fold": -23.90286247585736,
+      "rmse_mean_fold": 194995.13252852755,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-pearson-521dd42752f4",
+      "feature_count_mean": 20.0,
+      "mae_mean_fold": 45047.2604830463,
+      "method_id": "pearson",
+      "method_winner": false,
+      "r2_mean_fold": -25.38684575612861,
+      "rmse_mean_fold": 196986.31882781943,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-pearson-a7dfaf3405dd",
+      "feature_count_mean": 40.0,
+      "mae_mean_fold": 50660.32972281194,
+      "method_id": "pearson",
+      "method_winner": false,
+      "r2_mean_fold": -31.758321975747688,
+      "rmse_mean_fold": 204580.41522066935,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-mutual-information-8b59f9573a65",
+      "feature_count_mean": 10.0,
+      "mae_mean_fold": 36753.76752684662,
+      "method_id": "mutual_information",
+      "method_winner": true,
+      "r2_mean_fold": -3.694315667724369,
+      "rmse_mean_fold": 163451.6177303072,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-mutual-information-5311d06498f3",
+      "feature_count_mean": 20.0,
+      "mae_mean_fold": 42034.46637402281,
+      "method_id": "mutual_information",
+      "method_winner": false,
+      "r2_mean_fold": -7.617770563702174,
+      "rmse_mean_fold": 178581.96854366758,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-mutual-information-e11538e02991",
+      "feature_count_mean": 40.0,
+      "mae_mean_fold": 51643.63004242004,
+      "method_id": "mutual_information",
+      "method_winner": false,
+      "r2_mean_fold": -36.46964163524911,
+      "rmse_mean_fold": 212463.94131956823,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-lasso-385aa2570165",
+      "feature_count_mean": 31.333333333333332,
+      "mae_mean_fold": 51239.19637423125,
+      "method_id": "lasso",
+      "method_winner": false,
+      "r2_mean_fold": -36.23334566791346,
+      "rmse_mean_fold": 211699.11499315235,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-lasso-db8e72af782f",
+      "feature_count_mean": 4.333333333333333,
+      "mae_mean_fold": 31160.399823516414,
+      "method_id": "lasso",
+      "method_winner": true,
+      "r2_mean_fold": -21.08311334730016,
+      "rmse_mean_fold": 191411.190397989,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-elastic-net-ef98c804cdbf",
+      "feature_count_mean": 44.333333333333336,
+      "mae_mean_fold": 52771.1053220497,
+      "method_id": "elastic_net",
+      "method_winner": false,
+      "r2_mean_fold": -37.38495142733852,
+      "rmse_mean_fold": 212940.01052303132,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-elastic-net-f33b908c072a",
+      "feature_count_mean": 35.666666666666664,
+      "mae_mean_fold": 52030.35612482305,
+      "method_id": "elastic_net",
+      "method_winner": false,
+      "r2_mean_fold": -36.364730951716304,
+      "rmse_mean_fold": 212036.25534690407,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-elastic-net-edef4b070267",
+      "feature_count_mean": 13.666666666666666,
+      "mae_mean_fold": 45392.27782305377,
+      "method_id": "elastic_net",
+      "method_winner": false,
+      "r2_mean_fold": -29.730437517399086,
+      "rmse_mean_fold": 205276.66554271252,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-elastic-net-aab117069346",
+      "feature_count_mean": 5.0,
+      "mae_mean_fold": 38709.343241129165,
+      "method_id": "elastic_net",
+      "method_winner": true,
+      "r2_mean_fold": -22.222114704844586,
+      "rmse_mean_fold": 192734.22123684827,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-ridge-rfe-728567db5f64",
+      "feature_count_mean": 10.0,
+      "mae_mean_fold": 46831.13503618713,
+      "method_id": "ridge_rfe",
+      "method_winner": true,
+      "r2_mean_fold": -31.583959574353234,
+      "rmse_mean_fold": 208052.11232214732,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-ridge-rfe-3c74558a2b71",
+      "feature_count_mean": 20.0,
+      "mae_mean_fold": 48193.07970205857,
+      "method_id": "ridge_rfe",
+      "method_winner": false,
+      "r2_mean_fold": -33.259613244566026,
+      "rmse_mean_fold": 209254.59987156303,
+      "status": "VERIFIED"
+    },
+    {
+      "configuration_id": "car-ridge-rfe-8ad39244ce34",
+      "feature_count_mean": 40.0,
+      "mae_mean_fold": 52628.21198747776,
+      "method_id": "ridge_rfe",
+      "method_winner": false,
+      "r2_mean_fold": -37.16787056247488,
+      "rmse_mean_fold": 212852.93047886997,
+      "status": "VERIFIED"
+    }
+  ],
+  "run_id": "used-car-e2e-20261028-03",
+  "schema_version": "1.0.0"
+}

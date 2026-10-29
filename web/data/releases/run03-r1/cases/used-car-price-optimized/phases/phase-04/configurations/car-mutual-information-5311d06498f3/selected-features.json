@@ -1,0 +1,670 @@
+{
+  "case_id": "used-car-price-optimized",
+  "configuration_id": "car-mutual-information-5311d06498f3",
+  "folds": [
+    {
+      "encoded_count": 64,
+      "feature_lineage": [
+        {
+          "encoded_feature": "num__image_count",
+          "index": 1,
+          "semantic_type": "discrete",
+          "source_columns": [
+            "image_count"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "num__odometer",
+          "index": 2,
+          "semantic_type": "continuous",
+          "source_columns": [
+            "odometer"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "num__year",
+          "index": 3,
+          "semantic_type": "discrete",
+          "source_columns": [
+            "year"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "cat__condition_",
+          "index": 4,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "condition"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__condition_good",
+          "index": 7,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "condition"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_",
+          "index": 10,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_4 cylinders",
+          "index": 11,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_6 cylinders",
+          "index": 12,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_other",
+          "index": 14,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__drive_",
+          "index": 16,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "drive"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__drive_4wd",
+          "index": 17,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "drive"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__fuel_electric",
+          "index": 23,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "fuel"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__fuel_gas",
+          "index": 24,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "fuel"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__fuel_other",
+          "index": 26,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "fuel"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__trim_",
+          "index": 50,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "trim"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__trim_infrequent_sklearn",
+          "index": 51,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "trim"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_",
+          "index": 52,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_SUV",
+          "index": 53,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_hatchback",
+          "index": 56,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_van",
+          "index": 62,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        }
+      ],
+      "fold": 1,
+      "selected_encoded_names": [
+        "num__image_count",
+        "num__odometer",
+        "num__year",
+        "cat__condition_",
+        "cat__condition_good",
+        "cat__cylinders_",
+        "cat__cylinders_4 cylinders",
+        "cat__cylinders_6 cylinders",
+        "cat__cylinders_other",
+        "cat__drive_",
+        "cat__drive_4wd",
+        "cat__fuel_electric",
+        "cat__fuel_gas",
+        "cat__fuel_other",
+        "cat__trim_",
+        "cat__trim_infrequent_sklearn",
+        "cat__type_",
+        "cat__type_SUV",
+        "cat__type_hatchback",
+        "cat__type_van"
+      ],
+      "selected_raw_sources": [
+        "condition",
+        "cylinders",
+        "drive",
+        "fuel",
+        "image_count",
+        "odometer",
+        "trim",
+        "type",
+        "year"
+      ]
+    },
+    {
+      "encoded_count": 65,
+      "feature_lineage": [
+        {
+          "encoded_feature": "num__image_count",
+          "index": 1,
+          "semantic_type": "discrete",
+          "source_columns": [
+            "image_count"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "num__odometer",
+          "index": 2,
+          "semantic_type": "continuous",
+          "source_columns": [
+            "odometer"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "num__year",
+          "index": 3,
+          "semantic_type": "discrete",
+          "source_columns": [
+            "year"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "cat__condition_",
+          "index": 4,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "condition"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__condition_excellent",
+          "index": 5,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "condition"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__condition_good",
+          "index": 7,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "condition"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__condition_like new",
+          "index": 8,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "condition"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_4 cylinders",
+          "index": 11,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_8 cylinders",
+          "index": 13,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__drive_",
+          "index": 16,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "drive"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__drive_4wd",
+          "index": 17,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "drive"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__drive_fwd",
+          "index": 18,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "drive"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__paint_color_",
+          "index": 30,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "paint_color"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__paint_color_custom",
+          "index": 34,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "paint_color"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__transmission_",
+          "index": 46,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "transmission"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__trim_",
+          "index": 50,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "trim"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__trim_infrequent_sklearn",
+          "index": 51,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "trim"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_",
+          "index": 52,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_hatchback",
+          "index": 56,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_sedan",
+          "index": 60,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        }
+      ],
+      "fold": 2,
+      "selected_encoded_names": [
+        "num__image_count",
+        "num__odometer",
+        "num__year",
+        "cat__condition_",
+        "cat__condition_excellent",
+        "cat__condition_good",
+        "cat__condition_like new",
+        "cat__cylinders_4 cylinders",
+        "cat__cylinders_8 cylinders",
+        "cat__drive_",
+        "cat__drive_4wd",
+        "cat__drive_fwd",
+        "cat__paint_color_",
+        "cat__paint_color_custom",
+        "cat__transmission_",
+        "cat__trim_",
+        "cat__trim_infrequent_sklearn",
+        "cat__type_",
+        "cat__type_hatchback",
+        "cat__type_sedan"
+      ],
+      "selected_raw_sources": [
+        "condition",
+        "cylinders",
+        "drive",
+        "image_count",
+        "odometer",
+        "paint_color",
+        "transmission",
+        "trim",
+        "type",
+        "year"
+      ]
+    },
+    {
+      "encoded_count": 62,
+      "feature_lineage": [
+        {
+          "encoded_feature": "num__image_count",
+          "index": 1,
+          "semantic_type": "discrete",
+          "source_columns": [
+            "image_count"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "num__odometer",
+          "index": 2,
+          "semantic_type": "continuous",
+          "source_columns": [
+            "odometer"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "num__year",
+          "index": 3,
+          "semantic_type": "discrete",
+          "source_columns": [
+            "year"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "cat__condition_",
+          "index": 4,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "condition"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__condition_good",
+          "index": 7,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "condition"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_",
+          "index": 10,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_4 cylinders",
+          "index": 11,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_6 cylinders",
+          "index": 13,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_8 cylinders",
+          "index": 14,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__drive_",
+          "index": 17,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "drive"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__drive_4wd",
+          "index": 18,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "drive"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__fuel_diesel",
+          "index": 23,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "fuel"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__paint_color_",
+          "index": 30,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "paint_color"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__paint_color_black",
+          "index": 31,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "paint_color"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__paint_color_silver",
+          "index": 38,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "paint_color"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__transmission_",
+          "index": 44,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "transmission"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__trim_",
+          "index": 48,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "trim"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__trim_infrequent_sklearn",
+          "index": 49,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "trim"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_",
+          "index": 50,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_SUV",
+          "index": 51,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        }
+      ],
+      "fold": 3,
+      "selected_encoded_names": [
+        "num__image_count",
+        "num__odometer",
+        "num__year",
+        "cat__condition_",
+        "cat__condition_good",
+        "cat__cylinders_",
+        "cat__cylinders_4 cylinders",
+        "cat__cylinders_6 cylinders",
+        "cat__cylinders_8 cylinders",
+        "cat__drive_",
+        "cat__drive_4wd",
+        "cat__fuel_diesel",
+        "cat__paint_color_",
+        "cat__paint_color_black",
+        "cat__paint_color_silver",
+        "cat__transmission_",
+        "cat__trim_",
+        "cat__trim_infrequent_sklearn",
+        "cat__type_",
+        "cat__type_SUV"
+      ],
+      "selected_raw_sources": [
+        "condition",
+        "cylinders",
+        "drive",
+        "fuel",
+        "image_count",
+        "odometer",
+        "paint_color",
+        "transmission",
+        "trim",
+        "type",
+        "year"
+      ]
+    }
+  ],
+  "run_id": "used-car-e2e-20261028-03",
+  "schema_version": "1.0.0",
+  "selection_unit": "encoded_feature",
+  "summary": "各折僅以該折訓練資料擬合前處理與特徵選擇。"
+}

@@ -1,0 +1,45 @@
+{
+  "case_id": "used-car-price-optimized",
+  "configuration_id": "car-lasso-db8e72af782f",
+  "fold_results": [
+    {
+      "fold": 1,
+      "mae": 24638.725234688056,
+      "n_train": 417,
+      "n_validation": 209,
+      "r2": -6.502346185475253,
+      "rmse": 71028.72040136506,
+      "status": "VERIFIED"
+    },
+    {
+      "fold": 2,
+      "mae": 31427.712106900108,
+      "n_train": 417,
+      "n_validation": 209,
+      "r2": -56.7457544320286,
+      "rmse": 104385.95841999292,
+      "status": "VERIFIED"
+    },
+    {
+      "fold": 3,
+      "mae": 37414.76212896108,
+      "n_train": 418,
+      "n_validation": 208,
+      "r2": -0.0012394243966289409,
+      "rmse": 398818.89237260906,
+      "status": "VERIFIED"
+    }
+  ],
+  "mean_fold_metrics": {
+    "mae": 31160.399823516414,
+    "r2": -21.08311334730016,
+    "rmse": 191411.190397989
+  },
+  "run_id": "used-car-e2e-20261028-03",
+  "sample_sd": {
+    "mae": 6392.211790420609,
+    "r2": 31.055338899025976,
+    "rmse": 180393.0222066598
+  },
+  "schema_version": "1.0.0"
+}

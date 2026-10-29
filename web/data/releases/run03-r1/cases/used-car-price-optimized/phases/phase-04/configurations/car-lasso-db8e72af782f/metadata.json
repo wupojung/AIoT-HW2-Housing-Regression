@@ -1,0 +1,13 @@
+{
+  "case_id": "used-car-price-optimized",
+  "config_sha256": "c4c7962655443154cced25520a4021160dd00b2443aad66c01931d2b52081884",
+  "configuration_id": "car-lasso-db8e72af782f",
+  "method_id": "lasso",
+  "params": {
+    "alpha": 0.1
+  },
+  "run_id": "used-car-e2e-20261028-03",
+  "schema_version": "1.0.0",
+  "source_data_sha256": "83caf79b21b8b72a18dc6bd06334627dc39f0108e83b8d8b8724cdfa04cd9a36",
+  "status": "VERIFIED"
+}
