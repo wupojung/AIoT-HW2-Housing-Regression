@@ -177,6 +177,15 @@ RAW_FIELD_TYPE_BY_SOURCE_TYPE = {
     "temporal": "temporal",
     "leakage_proxy": "other",
 }
+# Source-documented field meaning takes precedence over model-filter labels.
+RAW_FIELD_TYPE_BY_FIELD = {
+    "make": "nominal",
+    "model": "nominal",
+    "trans": "nominal",
+    "mileage": "continuous",
+    "est._monthly_pmt": "continuous",
+    "search_price": "continuous",
+}
 RAW_FIELD_TYPE_LABELS = {
     "nominal": "名目類別 (Nominal)",
     "ordinal": "有序類別 (Ordinal)",
@@ -192,12 +201,14 @@ RAW_FIELD_TYPE_LABELS = {
 def classify_raw_source_fields(
     decisions: list[tuple[str, str, str]],
     lineage_decisions: list[dict[str, Any]] | None = None,
+    automatically_screened_fields: set[str] | None = None,
 ) -> dict[str, Any]:
     """Build a verified, mutually exclusive classification from recorded source-field decisions."""
     counts = {type_id: 0 for type_id in RAW_FIELD_TYPE_LABELS}
     fields = []
     seen: set[str] = set()
     evidence_by_field = {item.get("field"): item for item in (lineage_decisions or [])}
+    automatically_screened_fields = automatically_screened_fields or set()
     for raw_name, source_type, decision in decisions:
         field = raw_name.strip()
         if field == "price":
@@ -206,11 +217,7 @@ def classify_raw_source_fields(
             raise UsedCarPackageError("Phase 2 field decisions contain an empty or duplicate source field")
         seen.add(field)
         type_id = RAW_FIELD_TYPE_BY_SOURCE_TYPE.get(source_type)
-        # Run 03's mileage field is numeric in meaning but excluded as a
-        # potentially redundant representation; that decision does not change
-        # its raw measurement type. Its equivalence to odometer stays pending.
-        if source_type == "duplicate_representation" and field == "mileage":
-            type_id = "continuous"
+        type_id = RAW_FIELD_TYPE_BY_FIELD.get(field, type_id)
         if type_id is None:
             raise UsedCarPackageError(f"no reviewed raw-field classification for source type: {source_type}")
         if decision not in {"include", "exclude"}:
@@ -219,13 +226,16 @@ def classify_raw_source_fields(
         exclusion_category = None
         reason_status = "VERIFIED"
         if decision == "exclude":
-            exclusion_category = {
-                "identifier": "Identifier",
-                "text": "Free Text",
-                "leakage_proxy": "Leakage Risk",
-                "temporal": "Temporal Metadata",
-                "duplicate_representation": "Redundant Feature",
-            }.get(source_type, "Reason pending verification")
+            if field in automatically_screened_fields:
+                exclusion_category = "High-cardinality / long-label screen"
+            else:
+                exclusion_category = {
+                    "identifier": "Identifier",
+                    "text": "Free Text",
+                    "leakage_proxy": "Leakage Risk",
+                    "temporal": "Temporal Metadata",
+                    "duplicate_representation": "Redundant Feature",
+                }.get(source_type, "Reason pending verification")
             if source_type == "duplicate_representation":
                 exclusion_category = "Redundant Feature — basis pending verification"
                 reason_status = "PENDING"
@@ -233,6 +243,7 @@ def classify_raw_source_fields(
             "field": field,
             "type_id": type_id,
             "source_semantic_type": source_type,
+            "classification_basis": "Kaggle data dictionary / verified source field semantics" if field in RAW_FIELD_TYPE_BY_FIELD else "Run 03 Phase 2 field classification",
             "decision": decision,
             "reason": evidence_by_field.get(field, {}).get("reason", "eligible predictor" if decision == "include" else "Reason pending verification"),
             "exclusion_category": exclusion_category,
@@ -248,7 +259,7 @@ def classify_raw_source_fields(
         "feature_types": [{"type_id": type_id, "label": label} for type_id, label in RAW_FIELD_TYPE_LABELS.items()],
         "fields": fields,
         "evidence": {
-            "basis": "Run 03 Phase 2 field decisions and Phase 3 feature lineage, checked against the source CSV schema",
+            "basis": "Kaggle data dictionary, source CSV schema, Run 03 Phase 2 field decisions and Phase 3 feature lineage",
             "mileage": "Numeric measurement. Excluded from modeling as a duplicate representation; exact equivalence to odometer remains pending.",
         },
     }
@@ -350,11 +361,19 @@ def build_used_car_case_package(run_root: str | Path, package_root: str | Path) 
         decisions = re.findall(r"([^;]+?)\s+\[([^\]]+)\]\s+(include|exclude)", field_analysis["finding"])
         raw_predictors = [item for item in decisions if item[0].strip() != "price"]
         eligible_predictors = [item for item in raw_predictors if item[2] == "include"]
-        raw_classification = classify_raw_source_fields(decisions, phase3_lineage_doc.get("excluded_fields", []))
+        exclusion_review = _json_read(run / "field-exclusion-review.json")
+        automatic_text_fields = set(exclusion_review.get("automatically_detected_long_text_fields", {}))
+        raw_classification = classify_raw_source_fields(
+            decisions,
+            phase3_lineage_doc.get("excluded_fields", []),
+            automatic_text_fields,
+        )
         if raw_classification["total"] != len(raw_predictors):
             raise UsedCarPackageError("raw field classification does not match Phase 2 candidate count")
         raw_classification["evidence"]["source_data_sha256"] = checkpoint["source_sha256"]
-        raw_classification["evidence"]["schema_source"] = "train_data_v2.csv header reconciled with all Phase 2 field decisions; target price excluded"
+        raw_classification["evidence"]["schema_source"] = "train_data_v2.csv header reconciled with Phase 2 decisions; semantic types checked against Kaggle data dictionary; target price excluded"
+        raw_classification["evidence"]["exclusion_review_source"] = "field-exclusion-review.json"
+        raw_classification["evidence"]["dictionary_url"] = "https://www.kaggle.com/competitions/used-car-price-prediction-challenge/data"
         raw_stage = next(item for item in phase3_doc["stages"] if item["id"] == "raw")
         raw_stage["total"] = len(raw_predictors)
         raw_stage["segments"] = []

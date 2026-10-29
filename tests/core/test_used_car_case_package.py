@@ -30,14 +30,41 @@ class UsedCarCasePackageTests(unittest.TestCase):
             ("trim", "nominal", "include"), ("type", "nominal", "include"),
             ("vin", "identifier", "exclude"), ("year", "discrete", "include"),
         ]
-        result = classify_raw_source_fields(decisions)
+        result = classify_raw_source_fields(
+            decisions,
+            automatically_screened_fields={"make", "model", "trans"},
+        )
         self.assertEqual(result["total"], 27)
         self.assertEqual(sum(result["counts"].values()), 27)
         self.assertEqual(result["counts"], {
-            "nominal": 11, "ordinal": 0, "discrete": 3, "continuous": 2,
-            "identifier": 2, "text": 6, "temporal": 1, "other": 2,
+            "nominal": 14, "ordinal": 0, "discrete": 3, "continuous": 4,
+            "identifier": 2, "text": 3, "temporal": 1, "other": 0,
         })
         self.assertEqual(sum(item["decision"] == "exclude" for item in result["fields"]), 12)
+        exclusion_categories = {}
+        for item in result["fields"]:
+            if item["exclusion_category"]:
+                exclusion_categories[item["exclusion_category"]] = exclusion_categories.get(item["exclusion_category"], 0) + 1
+        self.assertEqual(exclusion_categories, {
+            "Identifier": 2,
+            "Free Text": 3,
+            "High-cardinality / long-label screen": 3,
+            "Leakage Risk": 2,
+            "Temporal Metadata": 1,
+            "Redundant Feature — basis pending verification": 1,
+        })
+        for field in ("make", "model", "trans"):
+            item = next(item for item in result["fields"] if item["field"] == field)
+            self.assertEqual(item["type_id"], "nominal")
+            self.assertEqual(item["exclusion_category"], "High-cardinality / long-label screen")
+        for field in ("est._monthly_pmt", "search_price"):
+            item = next(item for item in result["fields"] if item["field"] == field)
+            self.assertEqual(item["type_id"], "continuous")
+            self.assertEqual(item["exclusion_category"], "Leakage Risk")
+        for field in ("engine", "features_list", "title"):
+            item = next(item for item in result["fields"] if item["field"] == field)
+            self.assertEqual(item["type_id"], "text")
+            self.assertEqual(item["exclusion_category"], "Free Text")
         mileage = next(item for item in result["fields"] if item["field"] == "mileage")
         self.assertEqual(mileage["type_id"], "continuous")
         self.assertEqual(mileage["reason_status"], "PENDING")
