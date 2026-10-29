@@ -27,7 +27,7 @@
 | 3 — Data Preparation / 資料準備 | Transformation stages and feature-type breakdown; CAR provides raw-column classification, exclusion reasons, filtered/processed/encoded lineage | Original columns ≠ retained source predictors ≠ encoded model features. CAR raw distribution depends on counts and source-SHA validation |
 | 4 — Modeling / 模型建立 | Method Comparison and Explorer, method/config selectors, verified configuration metrics, selected features and feature-count vs CV RMSE | Comparisons use compatible recorded protocol/run; unknown, invalid or unexecuted points are never fabricated. X may represent mean encoded feature count across folds, not necessarily requested Top-K |
 | 5 — Evaluation / 模型評估 | Per-configuration evaluation with `cv_fold_mean` and `pooled_oof`, diagnostics when package-bound | Fold-mean metrics and pooled-OOF metrics are distinct; neither is Holdout. Mismatched run, sample population, evidence digest or unavailable figure must not silently fall back to another result |
-| 6 — Deployment / 部署階段 | Case-specific readiness/unavailability and local model reload smoke evidence where present; legacy/manual/CSV UI exists in code | **No deployed Prediction API**. Local reload smoke is not predictive fitness; a fixed mock estimate is not prediction. Ames historical exploration has no matched deployable final-fit for public inference |
+| 6 — Deployment / 部署（頁面標題：模型預測與結果 / Model Prediction & Results） | Case-specific readiness/unavailability and local model reload smoke evidence where present; legacy/manual/CSV UI exists in code | **No deployed Prediction API**. Local reload smoke is not predictive fitness; a fixed mock estimate is not prediction. Ames historical exploration has no matched deployable final-fit for public inference |
 
 The application loads package manifests and referenced artifacts with identity, permitted path, byte-length and SHA-256 checks. These are **artifact integrity checks**, not approval of data rights, model validity or statistical results. CAR CV performance did not beat the Dummy baseline; do not present it as successfully optimized prediction accuracy.
 
@@ -50,7 +50,14 @@ Loading and failure panels are rendered for package errors; the loader refuses m
 
 - `web/styles.css` contains media queries around 1000, 760, 700 and 680 px and respects `prefers-reduced-motion`. Browser visual/layout checks at desktop, tablet and mobile widths are **UNKNOWN**, not accepted as tested.
 - HTML uses `lang="zh-Hant"`, a skip link, labelled case/phase navigation and status announcements. Actual copy is mixed Traditional Chinese / English. There is **no verified full bilingual locale switch**.
-- Keep canonical English research terms with consistent Traditional Chinese UI labels: `Business Understanding／業務理解`, `Data Understanding／資料理解`, `Data Preparation／資料準備`, `Modeling／模型建立`, `Evaluation／模型評估`, `Deployment／部署`. `模型預測實驗室` is a Phase 6 UI label, **not** an indication that online inference exists.
+- Keep canonical English research terms with consistent Traditional Chinese UI labels: `Business Understanding／業務理解`, `Data Understanding／資料理解`, `Data Preparation／資料準備`, `Modeling／模型建立`, `Evaluation／模型評估`, `Deployment／部署`. **Owner-approved Phase 6 page-title target**: `模型預測與結果（Model Prediction & Results）`; retain `Deployment／部署` as the CRISP-DM standard stage. The currently shipped UI still uses `模型預測實驗室` in some copy; this is **STALE UI terminology pending a separate code change**, not a completed website rename. Neither title indicates online inference exists.
+
+## Phase 6 naming boundary (Owner decision, 2026-10-29)
+
+- **CRISP-DM stage:** `Deployment／部署` (standard taxonomy; never rename the CRISP-DM phase itself to prediction).
+- **Intended page heading:** `模型預測與結果（Model Prediction & Results）`. This is an approved **documentation and future UI copy target**, not confirmation that the released frontend has changed.
+- **Current service state:** online prediction **UNAVAILABLE / NOT IMPLEMENTED**. Do not imply that users can submit a prediction request or download generated results.
+- **Current legacy UI label:** `模型預測實驗室` (historical/STALE). Changing `web/app.js`, deployment or case JSON is outside this documentation PR.
 
 ## Future-only Prediction API UX (PROPOSED, NOT AUTHORIZED)
 
