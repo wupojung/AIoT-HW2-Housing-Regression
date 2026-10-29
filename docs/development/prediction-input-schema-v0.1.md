@@ -1,6 +1,6 @@
 # Prediction Input Schema v0.1
 
-Canonical generated filename: **`prediction-input-schema.json`**, stored at the model's Case Package root. Phase 6 should refer to it through the existing Phase 6 `input_schema_ref`; this schema does not replace the Phase 6 model-readiness contract.
+Canonical packaged filename: **`prediction-input-schema.json`**, located at the model's Case Package root and referenced through the existing Phase 6 `input_schema_ref`. This v0.1 deliverable is a standalone exporter: it writes to the caller-supplied `--output` path and does not automatically invoke Phase 4 Final Fit, modify a Case Package, or bind `input_schema_ref`. Those integrations are later work; this schema does not replace the Phase 6 model-readiness contract.
 
 ## Purpose and v0.1 scope
 
