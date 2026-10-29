@@ -802,7 +802,7 @@ const EXPLORATION_METHOD_PRESENTATION = Object.freeze({
 });
 function explorationMethodPresentation(doc, methodId) {
   return EXPLORATION_METHOD_PRESENTATION[methodId]
-    || { name: doc.methods.find((item) => item.method_id === methodId)?.label || methodId, description: "" };
+    || { name: doc.methods?.find((item) => item.method_id === methodId)?.label || methodId, description: "" };
 }
 function explorationMethodLabel(doc, methodId) { return explorationMethodPresentation(doc, methodId).name; }
 function phase5RegressionModelName(config, evaluation) {

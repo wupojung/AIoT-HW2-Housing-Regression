@@ -115,6 +115,7 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('<dt>Regression Model</dt>', self.js)
         self.assertIn('fold_local_selected_features_to_primary_ols: "OLS"', self.js)
         self.assertIn('|| evaluation?.model_name', self.js)
+        self.assertIn('doc.methods?.find((item) => item.method_id === methodId)', self.js)
         self.assertIn('以互資訊評估特徵與目標值的統計依賴關係。', self.js)
 
     def test_phase5_uses_phase4_configuration_and_mean_fold_metrics_by_default(self):
