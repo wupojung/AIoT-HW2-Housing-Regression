@@ -1,6 +1,6 @@
-# RegScope — Data Contracts (Design)
+# RegScope — Contracts Registry
 
-**Authoritative phase schema directory:** [schemas/](schemas/README.md). One canonical location for Phase 1–6 machine-readable contracts. The Phase 5 Evaluation Index schema lives at [schemas/phase-05.schema.json](schemas/phase-05.schema.json).
+**Authoritative contract root:** `docs/contracts/`. API and CLI interfaces must be specified here when approved; a JSON Schema describes JSON shape, not deployment procedure. **Phase schema directory:** [schemas/](schemas/README.md). One canonical location for Phase 1–6 machine-readable contracts. The Phase 5 Evaluation Index schema lives at [schemas/phase-05.schema.json](schemas/phase-05.schema.json).
 
 ## Responsibility and precedence
 
