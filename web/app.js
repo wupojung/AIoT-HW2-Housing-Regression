@@ -150,6 +150,8 @@ function banner(caseInfo = caseData()) {
   const explorationPackageMode = caseInfo.packageMode === "exploration";
   const reason = formalPackage
     ? `Formal Case Package ${caseInfo.packageRevision} · only Phase 5 reads local staging; Phases 1–4 remain MOCK UI previews. This is not a public release.`
+    : caseInfo.packageMode === "car"
+    ? `CAR research package ${caseInfo.packageRevision} · local review only; publication approval is pending.`
     : caseInfo.packageMode === "reference"
     ? `公開 Case Package ${caseInfo.packageRevision} · INIT B 正式 Development 計算；Phase 5 為 OOF 評估，研究發布審查仍待完成。`
     : explorationPackageMode
@@ -169,10 +171,11 @@ function updateShell() {
   document.querySelector("[data-crisp-link]").setAttribute("aria-current", phase ? "page" : "false");
   caseSelect.innerHTML = Object.entries(CASES).map(([key, c]) => `<option value="${esc(key)}" ${key === state.caseId ? "selected" : ""}>${esc(c.title)} · ${c.packageMode === "formal" ? "FORMAL PACKAGE" : esc(c.status)}</option>`).join("");
   const caseLoadStatus = document.querySelector("#case-load-status");
-  const loading = referencePackageLoading || explorationPackageLoading;
+  const loading = referencePackageLoading || explorationPackageLoading || carPackageLoading;
   const failedCases = [
     referencePackageError ? "INIT B Reference Baseline" : null,
-    explorationPackageError ? "Full Model Exploration" : null
+    explorationPackageError ? "Full Model Exploration" : null,
+    carPackageError ? "Used Car Price Prediction" : null
   ].filter(Boolean);
   caseSelect.disabled = loading;
   caseLoadStatus.classList.toggle("is-error", failedCases.length > 0);
@@ -197,7 +200,11 @@ let referencePackageLoading = false;
 let explorationPackage = null;
 let explorationPackageError = null;
 let explorationPackageLoading = false;
+let carPackage = null;
+let carPackageError = null;
+let carPackageLoading = false;
 const EXPLORATION_CASE_ID = "ames-full-model-exploration";
+const CAR_CASE_ID = "used-car-price-optimized";
 const explorationArtifactPromises = new Map();
 function safePackageRef(ref) {
   return typeof ref === "string" && !ref.startsWith("/") && !ref.includes("\\")
@@ -450,6 +457,104 @@ async function loadExplorationPackage() {
   }
 }
 
+async function loadCarPackage() {
+  if (carPackage || carPackageError || carPackageLoading) return;
+  carPackageLoading = true;
+  let stage = "release_index";
+  try {
+    const releaseResponse = await fetch(REFERENCE_RELEASE_INDEX);
+    if (!releaseResponse.ok) throw new Error(`Release index request failed (${releaseResponse.status}).`);
+    const releaseIndex = await releaseResponse.json();
+    if (releaseIndex.schema_version !== "1.0.0" || !Array.isArray(releaseIndex.cases)) throw new Error("Invalid Case Package release index.");
+    const releaseCase = releaseIndex.cases.find((entry) => entry.case_id === CAR_CASE_ID);
+    if (!releaseCase) return;
+    const packageRef = releaseCase?.package_ref;
+    const parts = typeof packageRef === "string" ? packageRef.split("/") : [];
+    if (!safePackageRef(packageRef) || parts.length !== 5 || parts[0] !== "releases" || parts[2] !== "cases"
+        || parts[3] !== CAR_CASE_ID || parts[4] !== "package.json" || !/^[a-z0-9][a-z0-9._-]{2,79}$/.test(parts[1])) {
+      throw new Error("Release index has no safe CAR Case Package reference.");
+    }
+    const root = `${WEB_BASE}/data/${parts.slice(0, -1).join("/")}`;
+    stage = "package_manifest";
+    const manifestResponse = await fetch(`${WEB_BASE}/data/${packageRef}`);
+    if (!manifestResponse.ok) throw new Error(`CAR Case Package request failed (${manifestResponse.status}).`);
+    const manifestBytes = await manifestResponse.arrayBuffer();
+    const manifestDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", manifestBytes))].map((v) => v.toString(16).padStart(2, "0")).join("");
+    if (manifestDigest !== releaseCase.package_sha256 || manifestBytes.byteLength !== releaseCase.package_bytes) throw new Error("CAR release pointer digest/size mismatch.");
+    const manifest = JSON.parse(new TextDecoder().decode(manifestBytes));
+    if (manifest.case_id !== CAR_CASE_ID || manifest.package_revision !== parts[1]
+        || manifest.package_status !== releaseCase.package_status || !Array.isArray(manifest.files)) throw new Error("CAR package identity or revision mismatch.");
+    const listed = new Map(manifest.files.map((entry) => [entry.path, entry]));
+    if (listed.size !== manifest.files.length || manifest.files.some((entry) => !safePackageRef(entry.path) || !/^[0-9a-f]{64}$/.test(entry.sha256) || !Number.isInteger(entry.bytes))) {
+      throw new Error("CAR package manifest has duplicate or invalid file entries.");
+    }
+    const pkg = { manifest, root, artifacts: new Map(), docs: {}, caseDoc: null };
+    async function boundBytes(ref) {
+      if (!safePackageRef(ref)) throw new Error("Unsafe CAR package reference.");
+      const entry = listed.get(ref);
+      if (!entry) throw new Error(`CAR file is not manifest-listed: ${ref}`);
+      const response = await fetch(`${root}/${encodeURI(ref)}`);
+      if (!response.ok) throw new Error(`CAR asset request failed (${response.status}): ${ref}`);
+      const bytes = await response.arrayBuffer();
+      const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2, "0")).join("");
+      if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error(`CAR manifest digest/size mismatch: ${ref}`);
+      return bytes;
+    }
+    async function boundJson(ref) {
+      if (pkg.artifacts.has(ref)) return pkg.artifacts.get(ref);
+      const value = JSON.parse(new TextDecoder().decode(await boundBytes(ref)));
+      if (value.case_id !== CAR_CASE_ID) throw new Error(`CAR artifact Case ID mismatch: ${ref}`);
+      pkg.artifacts.set(ref, value);
+      return value;
+    }
+    stage = "phase_documents";
+    for (let phase = 1; phase <= 6; phase += 1) {
+      const ref = manifest.phases?.[`phase${phase}`]?.data_ref;
+      const document = await boundJson(ref);
+      pkg.docs[phase] = document;
+    }
+    pkg.caseDoc = await boundJson(manifest.case_ref);
+    if (pkg.caseDoc.case_status !== manifest.package_status) throw new Error("CAR case document status mismatch.");
+    stage = "execution_manifest";
+    pkg.executionManifest = await boundJson("assets/execution-manifest.json");
+    stage = "phase3_lineage";
+    pkg.phase3Lineage = await boundJson(pkg.docs[3].lineage_ref);
+    const lineage = pkg.phase3Lineage;
+    const encodedCount = pkg.docs[3].stages.find((item) => item.id === "encoded")?.total;
+    if (lineage.source_data_sha256 !== (pkg.executionManifest.source_sha256 || pkg.executionManifest.source_data_sha256)
+        || lineage.config_sha256 !== pkg.executionManifest.config_sha256 || lineage.fit_population !== "development_train_only"
+        || !Array.isArray(lineage.encoded_features) || lineage.encoded_features.length !== encodedCount
+        || !/^[0-9a-f]{64}$/.test(lineage.feature_names_sha256 || "")) throw new Error("CAR Phase 3 lineage is not bound to its source, config, or encoded feature count.");
+    stage = "phase4_artifacts";
+    const charts = pkg.docs[4].charts || [];
+    for (const chart of charts) await boundJson(chart.points_ref);
+    const config = pkg.docs[4].configurations.find((item) => item.configuration_id === pkg.docs[4].default_configuration_id);
+    if (!config) throw new Error("CAR default Phase 4 configuration is missing.");
+    const [metrics, features] = await Promise.all([boundJson(config.cv_metrics_ref), boundJson(config.selected_features_ref)]);
+    if (metrics.configuration_id !== config.configuration_id || metrics.run_id !== config.execution_run_id
+        || features.configuration_id !== config.configuration_id) throw new Error("CAR default configuration artifact identity mismatch.");
+    stage = "package_bundle";
+    const assets = manifest.files.filter((item) => item.path !== "package.json");
+    for (let start = 0; start < assets.length; start += 6) {
+      await Promise.all(assets.slice(start, start + 6).map((entry) => boundBytes(entry.path)));
+    }
+    carPackage = pkg;
+    CASES[CAR_CASE_ID] = {
+      id: CAR_CASE_ID, title: pkg.caseDoc.title, status: manifest.package_status,
+      packageMode: "car", packageRevision: manifest.package_revision, analyses: []
+    };
+    state.explorationConfigurationId = config.configuration_id;
+    state.explorationMethodId = config.method_id;
+  } catch (error) {
+    carPackageError = error instanceof Error ? error.message : "Unable to verify CAR Case Package.";
+    logPackageLoadFailure(CAR_CASE_ID, stage, error);
+  } finally {
+    carPackageLoading = false;
+    updateShell();
+    if (state.caseId === CAR_CASE_ID) render();
+  }
+}
+
 async function loadExplorationArtifact(pkg, ref) {
   if (pkg.artifacts.has(ref)) return pkg.artifacts.get(ref);
   if (!safePackageRef(ref) || !pkg.manifest.files.some((entry) => entry.path === ref)) throw new Error("Requested artifact is not package-bound.");
@@ -531,7 +636,7 @@ function parseFeatureSummary(text) {
 }
 function referenceAnalysis(pkg) {
   const doc = pkg.docs[2];
-  return doc.analyses.find((a) => a.figure_id === state.referenceAnalysisId)
+  return doc.analyses.find((a) => a.figure_id === state.referenceAnalysisId || a.id === state.referenceAnalysisId)
     || doc.analyses.find((a) => a.figure_id === doc.default_analysis_id) || doc.analyses[0];
 }
 function packageFigure(pkg, ref, alt, className = "package-figure") {
@@ -575,14 +680,14 @@ function renderReferencePhase2(pkg, doc) {
       const count = counts.get(type);
       return `<span class="reference-classification-segment ${type}" data-classification-type="${type}" data-count="${count}" style="flex-grow:${count}" title="${typeLabel(type)} ${count.toLocaleString()}（${(count / classificationTotal * 100).toFixed(1)}%）"></span>`;
     }).join("")}</div><div class="reference-classification-legend" aria-label="欄位分類圖例">${classificationLegend}</div>` : `<p class="state-panel">欄位分類總數不完整，未繪製比例圖。</p>`;
-    content += fields.length ? `<div class="reference-summary-grid grid four">${[["資料列", sourceRows?.toLocaleString() || "—"],["原始欄位", String(fields.length)],["納入預測欄位", String(includedFields.length)],["排除目標／識別欄位", String(fields.filter((item) => item.action === "exclude").length)]].map(([label,value]) => `<article class="reference-stat-card"><span>${label}</span><strong>${value}</strong></article>`).join("")}</div><section class="reference-classification"><div class="reference-classification-heading"><h3>欄位分類</h3><span>${classificationTotal.toLocaleString()} 個納入特徵</span></div>${classificationBar}</section><details class="disclosure"><summary>檢視欄位分類與決策 (${fields.length})</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>欄位</th><th>分類</th><th>決策</th></tr></thead><tbody>${fields.map((item) => `<tr><td>${esc(item.field)}</td><td>${esc(typeLabel(item.type))}</td><td>${item.action === "include" ? "納入" : "排除"}</td></tr>`).join("")}</tbody></table></div></details>` : `<p class="state-panel">欄位摘要格式不符合可驗證規則，未解析顯示。</p>`;
+    content += fields.length ? `<div class="reference-summary-grid grid four">${[["資料列", sourceRows?.toLocaleString() || "—"],["原始欄位", String(fields.length)],["納入預測欄位", String(includedFields.length)],["排除欄位", String(fields.filter((item) => item.action === "exclude").length)]].map(([label,value]) => `<article class="reference-stat-card"><span>${label}</span><strong>${value}</strong></article>`).join("")}</div><section class="reference-classification"><div class="reference-classification-heading"><h3>欄位分類</h3><span>${classificationTotal.toLocaleString()} 個納入特徵</span></div>${classificationBar}</section><details class="disclosure"><summary>檢視欄位分類與決策 (${fields.length})</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>欄位</th><th>分類</th><th>決策</th></tr></thead><tbody>${fields.map((item) => `<tr><td>${esc(item.field)}</td><td>${esc(typeLabel(item.type))}</td><td>${item.action === "include" ? "納入" : "排除"}</td></tr>`).join("")}</tbody></table></div></details>` : `<p class="state-panel">欄位摘要格式不符合可驗證規則，未解析顯示。</p>`;
   } else if (selected.figure_id === "figure-missingness") {
     const missing = parseMissingness(selected.finding);
     const sorted = missing?.fields.filter((item) => item.missing).sort((a,b) => b.missing-a.missing || a.field.localeCompare(b.field)) || [];
     const total = missing?.fields.reduce((sum,item) => sum + item.missing, 0) || 0;
     content += missing ? `<div class="reference-summary-grid grid three"><article class="reference-stat-card"><span>資料列 ROWS</span><strong>${missing.rows.toLocaleString()}</strong></article><article class="reference-stat-card"><span>缺失儲存格 MISSING</span><strong>${total.toLocaleString()}</strong></article><article class="reference-stat-card"><span>有缺失欄位 FIELDS</span><strong>${sorted.length}</strong></article></div><div class="reference-missing-bars">${sorted.slice(0, 8).map((item) => `<div class="reference-bar-row"><span>${esc(item.field)}</span><span class="reference-bar-track"><i style="width:${Math.min(100, item.missing / missing.rows * 100)}%"></i></span><strong>${item.missing.toLocaleString()} <small>(${(item.missing / missing.rows * 100).toFixed(1)}%)</small></strong></div>`).join("")}</div>${packageFigure(pkg, selected.image_ref, "正式資料缺失值欄位分布") }<details class="disclosure"><summary>檢視完整缺失統計 (${missing.fields.length} 欄)</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>欄位</th><th>缺失筆數</th><th>比例</th></tr></thead><tbody>${sorted.concat(missing.fields.filter((item) => !item.missing)).map((item) => `<tr><td>${esc(item.field)}</td><td>${item.missing}</td><td>${(item.missing / missing.rows * 100).toFixed(2)}%</td></tr>`).join("")}</tbody></table></div></details>` : `<p class="state-panel">缺失摘要格式不符合可驗證規則，未解析顯示。</p>`;
   } else if (selected.figure_id === "figure-target-distribution") {
-    content += packageFigure(pkg, selected.image_ref, "正式訓練資料 SalePrice 分布圖") || `<p class="state-panel">此分析沒有可用圖表檔案。</p>`;
+    content += packageFigure(pkg, selected.image_ref, `正式訓練資料 ${pkg.caseDoc.target?.raw_field_id || "target"} 分布圖`) || `<p class="state-panel">此分析沒有可用圖表檔案。</p>`;
     content += `<p class="stage-note">${esc(selected.finding || "")} 圖表呈現分箱分布；Package 未提供逐箱表格，因此不額外重建或推測箱內數值。</p>`;
   } else if (selected.figure_id === "figure-feature-summary") {
     const summary = parseFeatureSummary(selected.finding);
@@ -656,6 +761,7 @@ function renderReferencePhase6(pkg, doc) {
   return `<section class="grid two reference-model-grid"><article class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL ARTIFACT</p><h2>Development 模型封裝</h2></div>${badge(model?.model_status || doc.status)}</div><div class="card-body"><dl class="data-row"><dt>來源配置</dt><dd>${esc(model?.source_configuration_id || "—")}</dd></dl><dl class="data-row"><dt>模型版本</dt><dd>${esc(model?.model_version || "—")}</dd></dl><dl class="data-row"><dt>重新載入</dt><dd>${reload ? "PASS" : "NOT VERIFIED"}</dd></dl><dl class="data-row"><dt>本機推論 Smoke</dt><dd>${inference ? "PASS · 預測值未公開" : "NOT VERIFIED"}</dd></dl></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">SERVING AVAILABILITY</p><h2>網站推論能力</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><p class="body-copy">這個公開網站目前只提供靜態研究套件，沒有即時模型 API。不能在此輸入房屋條件並取得模型預測。</p><div class="state-panel"><h3>遠端預測未部署</h3><p>本機模型重新載入與推論驗證，不等同於公開服務。</p></div><details class="disclosure"><summary>模型來源識別</summary><div class="disclosure-body"><p>Model ${esc(model?.model_id || "—")} · Run ${esc(model?.source_execution_run_id || "—")}</p></div></details></div></article></section>`;
 }
 function explorationArtifact(pkg, ref) { return pkg.artifacts.get(ref) || null; }
+function activeExplorationPackage() { return caseData().packageMode === "car" ? carPackage : explorationPackage; }
 function explorationSelectedConfig(pkg) {
   const doc = pkg.docs[4];
   const methodId = state.explorationMethodId
@@ -757,7 +863,7 @@ function explorationComparisonChart(points) {
   const x = (v) => left + (maxX === minX ? 0.5 : (Number(v) - minX) / (maxX - minX)) * plotW;
   const y = (v) => top + plotH - (maxY === minY ? 0.5 : (Number(v) - minY) / (maxY - minY)) * plotH;
   const dots = usable.map((p) => `<circle cx="${x(p.feature_count_mean).toFixed(1)}" cy="${y(p.rmse_mean_fold).toFixed(1)}" r="${p.method_winner ? 6 : 4}" fill="${p.method_winner ? "#f1b45b" : "#55d6c2"}"><title>${esc(p.configuration_id)} · ${Number(p.feature_count_mean).toFixed(1)} features · RMSE ${explorationMetric(p.rmse_mean_fold, "rmse")}</title></circle>`).join("");
-  return `<figure class="reference-figure"><svg class="mock-svg exploration-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Historical Development CV feature count versus mean-fold RMSE"><line x1="${left}" y1="${top+plotH}" x2="${left+plotW}" y2="${top+plotH}"/><line x1="${left}" y1="${top}" x2="${left}" y2="${top+plotH}"/>${dots}<text x="${left+plotW/2}" y="${height-12}" text-anchor="middle">Mean selected encoded feature count</text><text transform="translate(20 ${top+plotH/2}) rotate(-90)" text-anchor="middle">Mean-fold CV RMSE (USD)</text><text x="${left}" y="${top+plotH+20}">${minX.toFixed(0)}</text><text x="${left+plotW}" y="${top+plotH+20}" text-anchor="end">${maxX.toFixed(0)}</text></svg><figcaption>Only completed historical Development CV configurations are plotted; ${usable.length} configurations. Two invalid Lasso candidates are excluded.</figcaption></figure>`;
+  return `<figure class="reference-figure"><svg class="mock-svg exploration-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Development CV feature count versus mean-fold RMSE"><line x1="${left}" y1="${top+plotH}" x2="${left+plotW}" y2="${top+plotH}"/><line x1="${left}" y1="${top}" x2="${left}" y2="${top+plotH}"/>${dots}<text x="${left+plotW/2}" y="${height-12}" text-anchor="middle">Mean selected encoded feature count</text><text transform="translate(20 ${top+plotH/2}) rotate(-90)" text-anchor="middle">Mean-fold CV RMSE</text><text x="${left}" y="${top+plotH+20}">${minX.toFixed(0)}</text><text x="${left+plotW}" y="${top+plotH+20}" text-anchor="end">${maxX.toFixed(0)}</text></svg><figcaption>Only completed Development CV configurations are plotted; ${usable.length} configurations. Incomplete and failed candidates are omitted, not interpolated.</figcaption></figure>`;
 }
 function renderExplorationPhase4(pkg, doc) {
   const methods = doc.methods || [];
@@ -793,7 +899,8 @@ function renderExplorationPhase4(pkg, doc) {
   const comparisonView = `<div class="table-scroll"><table class="mock-data-table"><thead><tr><th>方法 Method</th><th>最佳 Configuration</th><th>平均特徵數</th><th>CV RMSE</th><th>狀態</th><th>已記錄配置</th><th>操作</th></tr></thead><tbody>${winnerRows}</tbody></table></div><p class="stage-note">比較列只呈現同一歷史 Protocol、相同三折 Development CV 母體與 selected-features → primary OLS track 的完成結果；不同評估母體不可直接排名。</p>`;
   const modeSwitch = `<div class="mode-switch exploration-mode-switch" role="group" aria-label="Phase 4 research mode"><button type="button" data-exploration-mode="comparison" aria-pressed="${state.explorationMode === "comparison"}">方法比較 Method Comparison</button><button type="button" data-exploration-mode="explorer" aria-pressed="${state.explorationMode === "explorer"}">單一方法探索 Method Explorer</button></div>`;
   const explorerView = `<div class="control-row"><label class="control">Feature-selection method<select id="exploration-method">${methodOptions}</select></label><label class="control">Configuration / Run<select id="exploration-config" ${selectedForMethod.length ? "" : "disabled"}>${configOptions}</select></label></div><div class="selector-row" role="group" aria-label="Method Explorer view"><button type="button" class="selector-button" data-exploration-perspective="selected_features" aria-pressed="${state.explorationPerspective === "selected_features"}">Selected Features</button><button type="button" class="selector-button" data-exploration-perspective="feature_count_cv_rmse" aria-pressed="${state.explorationPerspective === "feature_count_cv_rmse"}">Feature Count vs. CV RMSE</button></div><div class="metrics exploration-selected-metrics">${activeConfig?.status === "VERIFIED" && cv?.mean_fold_metrics ? explorationMetricsCards(cv.mean_fold_metrics) : `<div class="state-panel"><h3>此 Configuration 沒有可用的已完成指標</h3><p>保留來源狀態 ${esc(activeConfig?.status || "UNAVAILABLE")}；不以其他 Configuration 或 Mock 數值補齊。</p></div>`}</div><div class="exploration-view">${perspectiveBody}</div><section class="card exploration-fold-card"><div class="card-head"><div><p class="eyebrow">THREE-FOLD CROSS VALIDATION</p><h3>${esc(activeConfig?.configuration_id || "Configuration unavailable")}</h3></div>${badge(activeConfig?.status || "UNAVAILABLE")}</div><div class="card-body">${foldRows ? `<div class="table-scroll"><table class="mock-data-table"><thead><tr><th>Fold</th><th>RMSE</th><th>MAE</th><th>R²</th></tr></thead><tbody>${foldRows}</tbody></table></div>` : `<p>${explorationArtifactPromises.has(activeConfig?.cv_metrics_ref) ? "Loading fold metrics…" : "Fold metrics unavailable for this configuration."}</p>`}<p class="stage-note">Fold metrics are bound to the selected Configuration and source-linked Development CV. They are not Holdout scores and do not establish independent generalization.</p><details class="disclosure"><summary>Technical details</summary><div class="disclosure-body"><p>${esc(explorationMethodLabel(doc, activeConfig?.method_id || ""))} · ${esc(activeConfig?.configuration_id || "—")} · Run ${esc(activeConfig?.execution_run_id || "—")}</p><pre class="package-json">${esc(JSON.stringify(activeConfig?.params || {},null,2))}</pre><code>${esc(activeConfig?.protocol_id || "")}</code></div></details></div></section>`;
-  return `<section class="card"><div class="card-head"><div><p class="eyebrow">HISTORICAL PHASE 4 · DEVELOPMENT CV</p><h2>Model Explorer</h2></div>${badge(doc.status)}</div><div class="card-body">${modeSwitch}<p class="body-copy">${configs.length} recorded configurations · ${configs.filter((item)=>item.status === "VERIFIED").length} completed · ${configs.filter((item)=>item.status === "ERROR").length} invalid. Run ${esc(doc.execution_runs?.[0]?.execution_run_id)} · ${Number(doc.cv.training_rows).toLocaleString()} Development rows · ${doc.cv.fold_count}-fold · seed 42.</p>${isExplorer ? explorerView : comparisonView}</div></section>`;
+  const seed = pkg.docs[3]?.split?.seed ?? doc.cv.seed ?? "—";
+  return `<section class="card"><div class="card-head"><div><p class="eyebrow">PHASE 4 · DEVELOPMENT CV</p><h2>Model Explorer</h2></div>${badge(doc.status)}</div><div class="card-body">${modeSwitch}<p class="body-copy">${configs.length} recorded configurations · ${configs.filter((item)=>item.status === "VERIFIED").length} completed · ${configs.filter((item)=>item.status === "ERROR").length} failed. Run ${esc(doc.execution_runs?.[0]?.execution_run_id)} · ${Number(doc.cv.training_rows).toLocaleString()} Development rows · ${doc.cv.fold_count}-fold · seed ${esc(seed)}.</p>${isExplorer ? explorerView : comparisonView}</div></section>`;
 }
 function renderExplorationPhase5(pkg, doc) {
   const phase4 = pkg.docs[4];
@@ -818,6 +925,45 @@ function renderExplorationPhase5(pkg, doc) {
   const method = phase4.methods?.find((item) => item.method_id === config.method_id);
   const figure = phase5BoundFigure(pkg, pooled, state.explorationP5Figure);
   return renderPhase5EvaluationCard(pkg, doc, config, method?.label || config.method_id, meanEval, pooled, figure, state.explorationP5Figure, "data-exploration-p5-figure");
+}
+function renderCarPhase1(pkg, doc) {
+  const source = pkg.caseDoc.source || {};
+  return `<section class="reference-summary-grid grid three"><article class="reference-stat-card"><span class="eyebrow">研究案例 CASE</span><strong>${esc(pkg.caseDoc.title)}</strong><small>Case ID · ${esc(pkg.caseDoc.case_id)}</small></article><article class="reference-stat-card"><span class="eyebrow">資料來源 SOURCE</span><strong>${esc(source.label || "來源未提供")}</strong><small>授權審查 ${esc(source.license_review || "PENDING")}</small></article><article class="reference-stat-card"><span class="eyebrow">預測目標 TARGET</span><strong>${esc(pkg.caseDoc.target?.label || "price")}</strong><small>${esc(pkg.caseDoc.target?.unit || "單位未提供")}</small></article></section><section class="grid two">${(doc.sections || []).map((section) => `<article class="card"><div class="card-head"><div><p class="eyebrow">BUSINESS UNDERSTANDING</p><h2>${esc(section.title)}</h2></div>${badge(doc.status)}</div><div class="card-body"><p class="body-copy">${esc(section.body)}</p></div></article>`).join("")}</section><section class="card" style="margin-top:18px"><div class="card-head"><div><p class="eyebrow">EVIDENCE STATUS</p><h2>研究與發布狀態</h2></div>${badge(pkg.manifest.package_status)}</div><div class="card-body"><p>候選比較結果有限；目前最佳候選未優於 Dummy Baseline。研究結果不構成可靠價格預測能力證明。</p><p class="stage-note">Dataset license review：${esc(source.license_review || "PENDING")} · Package publication：PENDING · 原始車輛列與私有模型未包含於此本機展示套件。</p></div></section>`;
+}
+function renderCarPhase3(pkg, doc) {
+  const lineage = pkg.phase3Lineage;
+  const cards = (doc.stages || []).map((stage, index) => {
+    const total = Number(stage.total);
+    const segments = renderSegments(stage, doc.feature_types || []);
+    const note = stage.id === "raw" ? "目標 price 不列入預測特徵；原始資料共有 27 個其他欄位，分類比例未完整驗證。"
+      : stage.id === "filtered" ? "依欄位語意移除識別碼、自由文字、時間戳及洩漏代理欄位後，保留 15 個原始特徵。"
+        : stage.id === "processed" ? "缺失值處理與類別編碼在每個 Development 訓練 Fold 內 fit，避免驗證折資料洩漏。"
+          : "One-Hot 編碼後產生 70 個模型特徵；分類依來源欄位語意及 feature lineage 記錄。";
+    return `<article class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index"><span>步驟 · STEP</span><b>0${index + 1}</b></span><h2>${esc(stage.label)}</h2></div><span class="stage-total">總數 Total: ${Number.isInteger(total) ? total.toLocaleString() : "—"} ${esc(stage.unit)} ${badge(stage.total_status)}</span></div>${segments}<p class="stage-note">${esc(note)}</p>${stage.id === "encoded" ? `<details class="disclosure"><summary>檢視 ${lineage.encoded_features.length} 個編碼特徵與來源欄位</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>#</th><th>編碼特徵</th><th>來源欄位</th><th>分類</th><th>轉換</th></tr></thead><tbody>${lineage.encoded_features.map((item) => `<tr><td>${Number(item.index) + 1}</td><td>${esc(item.encoded_feature)}</td><td>${esc((item.source_columns || []).join(", "))}</td><td>${esc(typeLabel(item.semantic_type))}</td><td>${esc(item.transformation)}</td></tr>`).join("")}</tbody></table></div><p class="stage-note">Source SHA-256 ${esc(lineage.source_data_sha256)} · Config SHA-256 ${esc(lineage.config_sha256)} · fit: ${esc(lineage.fit_population)}.</p></details>` : ""}</article>`;
+  }).join("");
+  const split = doc.split || {};
+  const totalRows = Number(split.training_rows || 0) + Number(split.holdout_rows || 0);
+  const treatments = (doc.treatments || []).map((item) => `<div class="treatment-item"><strong>${esc(item.field || "欄位處理")}</strong><span>${esc(item.reason || item.action)}</span></div>`).join("");
+  return `<section class="card"><div class="card-head"><div><p class="eyebrow">FEATURE TRANSFORMATION · FOUR STAGES</p><h2>中古車資料的特徵處理</h2></div>${badge(doc.status)}</div><div class="card-body"><div class="stage-list">${cards}</div><section class="reference-split"><div class="reference-analysis-heading"><div><p class="eyebrow">DEVELOPMENT SPLIT</p><h2>Development／內部 Holdout</h2></div><strong>Seed ${esc(split.seed)}</strong></div><div class="row-split"><span style="width:${totalRows ? split.training_rows / totalRows * 100 : 0}%">Development · ${Number(split.training_rows).toLocaleString()}</span><span style="width:${totalRows ? split.holdout_rows / totalRows * 100 : 0}%">Internal Holdout · ${Number(split.holdout_rows).toLocaleString()}</span></div><p class="stage-note">${Number(split.source_labeled_rows).toLocaleString()} 筆有標籤資料 · 80/20 split · 前處理與特徵選擇只在訓練 Fold fit。此為內部分區，非 Kaggle competition test set。</p></section>${treatments ? `<details class="disclosure"><summary>查看欄位排除與處理紀錄</summary><div class="treatment-list">${treatments}</div></details>` : ""}</div></section>`;
+}
+function renderCarPhase6(doc) {
+  const readiness = doc.readiness || {};
+  return `<section class="grid two"><article class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL SMOKE</p><h2>本機模型重載</h2></div>${badge("VERIFIED")}</div><div class="card-body"><p>${esc(readiness.message || "本機模型重載 Smoke 已完成；私有模型未放入 Case Package。")}</p><p class="stage-note">Reload Smoke 只確認本機載入及介面流程，不證明模型具有可靠預測能力。</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">ONLINE SERVING</p><h2>線上推論服務</h2></div>${badge(doc.status)}</div><div class="card-body"><p>Prediction unavailable。此案例目前沒有公開推論 API；網站僅展示經核對的研究結果。</p><p class="stage-note">${esc(readiness.reason_code || "NO_PUBLIC_INFERENCE_SERVICE")} · 未公開私有模型或逐筆資料。</p></div></article></section>`;
+}
+function renderCarPackagePhase(phase) {
+  const pkg = carPackage;
+  if (!pkg || !pkg.docs[phase]) return `<div class="page"><section class="state-panel" role="${carPackageError ? "alert" : "status"}"><h2>${carPackageError ? "CAR Package 驗證失敗" : "載入 CAR Case Package"}</h2><p>${esc(carPackageError || "正在驗證本機研究套件。")}</p></section></div>`;
+  const doc = pkg.docs[phase];
+  let body = "";
+  if (phase === 1) body = renderCarPhase1(pkg, doc);
+  else if (phase === 2) body = renderReferencePhase2(pkg, doc);
+  else if (phase === 3) body = renderCarPhase3(pkg, doc);
+  else if (phase === 4) body = renderExplorationPhase4(pkg, doc);
+  else if (phase === 5) body = renderExplorationPhase5(pkg, doc);
+  else body = renderCarPhase6(doc);
+  const prev = phase > 1 ? [phase - 1, PHASES[phase - 2][2]] : null;
+  const next = phase < 6 ? [phase + 1, PHASES[phase][2]] : null;
+  return `<div class="page reference-page" data-car-phase="${phase}"><div class="fixture-banner"><span><strong>中古車研究案例</strong> · ${esc(pkg.manifest.package_revision)} · 本機檢視；公開授權審查待確認。</span>${badge(pkg.manifest.package_status)}</div>${pageHeading(`PHASE 0${phase} / ${PHASES[phase-1][1].toUpperCase()}`, PHASES[phase-1][2], phase === 4 ? "Run 03 中已記錄的同一協定候選比較；失敗組態保留為錯誤狀態。" : phase === 5 ? "使用該 Run 的 Development CV／OOF 指標；Holdout 與 Development CV 分開呈現。" : referencePhaseSubtitle(phase), doc.status)}${body}<p class="stage-note package-verification-note">本機 Case Package 的 Manifest、Phase 文件與列入套件的檔案已逐一驗證 SHA-256／bytes。Publication review：PENDING。</p>${referenceFooterNav(prev, next)}</div>`;
 }
 function renderExplorationPackagePhase(phase) {
   const pkg = explorationPackage;
@@ -1161,6 +1307,14 @@ function renderPhase6() {
 }
 function renderDashboardVerified() {
   const c = caseData();
+  if (c.packageMode === "car") {
+    const pkg = carPackage;
+    if (!pkg) return `<div class="state-panel"><h3>載入中古車研究摘要中</h3><p>${esc(carPackageError || "正在驗證本機 Case Package。")}</p>${badge(carPackageError ? "ERROR" : "UNAVAILABLE")}</div>`;
+    const phase4 = pkg.docs[4], winner = phase4.configurations.find((item) => item.configuration_id === phase4.default_configuration_id);
+    const evaluations = pkg.docs[5].evaluations.filter((item) => item.configuration_id === winner?.configuration_id);
+    const mean = evaluations.find((item) => item.metric_source === "cv_fold_mean");
+    return `<div class="grid three"><article class="card"><div class="card-head"><div><p class="eyebrow">USED CAR CASE</p><h2>${esc(pkg.caseDoc.title)}</h2></div>${badge(pkg.manifest.package_status)}</div><div class="card-body"><p>${esc(pkg.caseDoc.source.label)} · ${esc(pkg.caseDoc.target.raw_field_id)}</p><p>Development ${Number(pkg.docs[4].cv.training_rows).toLocaleString()} rows · ${phase4.cv.fold_count}-fold</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">CANDIDATE EXPLORATION</p><h2>${phase4.configurations.length} configurations</h2></div>${badge("PARTIAL")}</div><div class="card-body"><p>${phase4.configurations.filter((item) => item.status === "VERIFIED").length} completed · ${phase4.configurations.filter((item) => item.status === "ERROR").length} failed.</p><p>最佳候選僅代表已完成候選中的相對排序。</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">DEVELOPMENT CV</p><h2>Mean-fold RMSE</h2></div>${badge("VERIFIED")}</div><div class="card-body"><p>${mean ? phase5FormatMetric(phase5MetricValue(mean, "rmse"), "rmse") : "—"} USD</p><p>該候選未優於 Dummy Baseline；預測能力有限。</p></div></article></div><div class="button-row" style="margin-top:18px">${PHASES.map(([n,,zh]) => `<a class="button" href="#phase-${n}">Phase ${n} · ${esc(zh)}</a>`).join("")}</div>`;
+  }
   if (c.packageMode === "exploration") {
     const pkg = explorationPackage;
     if (!pkg) return `<div class="state-panel"><h3>載入 Model Exploration 摘要中</h3><p>${esc(explorationPackageError || "Waiting for the static Case Package.")}</p>${badge(explorationPackageError ? "ERROR" : "UNAVAILABLE")}</div>`;
@@ -1199,12 +1353,14 @@ function renderDashboard() {
 function render() {
   if (!referencePackage && !referencePackageError && !referencePackageLoading) loadReferencePackage();
   if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage();
+  if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage();
   updateShell();
   const phase = routePhase();
   if (state.route === "home") app.innerHTML = renderHome();
   else if (state.route === "dashboard") app.innerHTML = renderDashboard();
   else if (phase && caseData().packageMode === "reference") app.innerHTML = renderReferencePackagePhase(phase);
   else if (phase && caseData().packageMode === "exploration") app.innerHTML = renderExplorationPackagePhase(phase);
+  else if (phase && caseData().packageMode === "car") app.innerHTML = renderCarPackagePhase(phase);
   else if (phase === 1) app.innerHTML = renderPhase1();
   else if (phase === 2) app.innerHTML = renderPhase2();
   else if (phase === 3) app.innerHTML = renderPhase3();
@@ -1243,14 +1399,15 @@ function routeFromHash() {
 caseSelect.addEventListener("change", () => {
   state.caseId = caseSelect.value;
   state.analysisId = CASES[state.caseId].analyses?.[0]?.id || "";
-  state.referenceAnalysisId = "figure-field-decisions";
+  state.referenceAnalysisId = state.caseId === CAR_CASE_ID ? (carPackage?.docs[2]?.default_analysis_id || "field-decisions") : "figure-field-decisions";
   state.referenceEvaluationId = "initb-development-e2e-20261028-02.development-oof.cv-mean";
   state.referenceFigureId = "FIG-P5-01";
   state.explorationP5Figure = "FIG-P5-01";
   state.explorationMode = "comparison";
   state.explorationPerspective = "selected_features";
-  state.explorationConfigurationId = explorationPackage?.docs[4]?.default_configuration_id || "";
-  state.explorationMethodId = explorationPackage?.docs[4]?.configurations.find((item) => item.configuration_id === state.explorationConfigurationId)?.method_id || "";
+  const selectedExplorationPackage = state.caseId === CAR_CASE_ID ? carPackage : explorationPackage;
+  state.explorationConfigurationId = selectedExplorationPackage?.docs[4]?.default_configuration_id || "";
+  state.explorationMethodId = selectedExplorationPackage?.docs[4]?.configurations.find((item) => item.configuration_id === state.explorationConfigurationId)?.method_id || "";
   state.phase5ConfigId = "";
   state.perspective = "method_comparison"; state.phase5Figure = "FIG-P5-02";
   state.p5Population = "development_oof"; state.phase6MockSubmitted = false; state.phase6InputMode = "manual"; state.phase6Csv = null; state.phase6Values = { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" }; resetCustom(); render();
@@ -1267,11 +1424,12 @@ app.addEventListener("click", (event) => {
   else if (target.dataset.explorationOpenMethod) {
     state.explorationMode = "explorer";
     state.explorationMethodId = target.dataset.explorationOpenMethod;
-    const config = explorationPackage?.docs[4]?.configurations.find((item) => item.configuration_id === target.dataset.explorationOpenConfiguration)
-      || explorationDefaultConfigForMethod(explorationPackage, state.explorationMethodId);
+    const pkg = activeExplorationPackage();
+    const config = pkg?.docs[4]?.configurations.find((item) => item.configuration_id === target.dataset.explorationOpenConfiguration)
+      || (pkg ? explorationDefaultConfigForMethod(pkg, state.explorationMethodId) : null);
     state.explorationConfigurationId = config?.configuration_id || "";
     state.explorationPerspective = "selected_features";
-    if (config?.status === "VERIFIED") loadExplorationConfigurationArtifacts(explorationPackage, config).then(render).catch((error) => { explorationPackageError = error.message; render(); });
+    if (config?.status === "VERIFIED") loadExplorationConfigurationArtifacts(pkg, config).then(render).catch((error) => { if (caseData().packageMode === "car") carPackageError = error.message; else explorationPackageError = error.message; render(); });
     render();
   }
   else if (target.dataset.explorationPerspective) { state.explorationPerspective = target.dataset.explorationPerspective; render(); }
@@ -1347,17 +1505,19 @@ app.addEventListener("change", (event) => {
   else if (event.target.id === "p5-config") { state.phase5ConfigId = event.target.value; render(); }
   else if (event.target.id === "exploration-method") {
     state.explorationMethodId = event.target.value;
-    const config = explorationPackage ? explorationDefaultConfigForMethod(explorationPackage, state.explorationMethodId) : null;
+    const pkg = activeExplorationPackage();
+    const config = pkg ? explorationDefaultConfigForMethod(pkg, state.explorationMethodId) : null;
     state.explorationConfigurationId = config?.configuration_id || "";
-    if (config && config.status === "VERIFIED") loadExplorationConfigurationArtifacts(explorationPackage, config).then(render).catch((error) => { explorationPackageError = error.message; render(); });
+    if (config && config.status === "VERIFIED") loadExplorationConfigurationArtifacts(pkg, config).then(render).catch((error) => { if (caseData().packageMode === "car") carPackageError = error.message; else explorationPackageError = error.message; render(); });
     render();
   }
   else if (event.target.id === "exploration-config" || event.target.id === "exploration-p5-config") {
     state.explorationConfigurationId = event.target.value;
-    const config = explorationPackage?.docs[4]?.configurations.find((item) => item.configuration_id === state.explorationConfigurationId);
+    const pkg = activeExplorationPackage();
+    const config = pkg?.docs[4]?.configurations.find((item) => item.configuration_id === state.explorationConfigurationId);
     if (config) {
       state.explorationMethodId = config.method_id;
-      if (config.status === "VERIFIED") loadExplorationConfigurationArtifacts(explorationPackage, config).then(render).catch((error) => { explorationPackageError = error.message; render(); });
+      if (config.status === "VERIFIED") loadExplorationConfigurationArtifacts(pkg, config).then(render).catch((error) => { if (caseData().packageMode === "car") carPackageError = error.message; else explorationPackageError = error.message; render(); });
     }
     render();
   }

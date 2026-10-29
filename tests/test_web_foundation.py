@@ -57,6 +57,18 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('logPackageLoadFailure("ames-reference-init-a", stage, error);', self.js)
         self.assertIn('logPackageLoadFailure(EXPLORATION_CASE_ID, stage, error);', self.js)
 
+    def test_car_case_loader_is_independent_and_manifest_bound(self):
+        self.assertIn('const CAR_CASE_ID = "used-car-price-optimized";', self.js)
+        self.assertIn('async function loadCarPackage()', self.js)
+        self.assertIn('loadCarPackage();', self.js)
+        self.assertIn('if (!releaseCase) return;', self.js)
+        self.assertIn('caseInfo.packageMode === "car"', self.js)
+        self.assertIn('else if (phase && caseData().packageMode === "car") app.innerHTML = renderCarPackagePhase(phase);', self.js)
+        self.assertIn('function renderCarPhase3(pkg, doc)', self.js)
+        self.assertIn('One-Hot 編碼後產生 70 個模型特徵', self.js)
+        self.assertIn('Publication review：PENDING', self.js)
+        self.assertIn('Prediction unavailable', self.js)
+
     def test_phase4_has_two_mode_controls_and_preserves_explorer_views(self):
         self.assertIn('explorationMode: "comparison"', self.js)
         self.assertIn('data-exploration-mode="comparison"', self.js)
