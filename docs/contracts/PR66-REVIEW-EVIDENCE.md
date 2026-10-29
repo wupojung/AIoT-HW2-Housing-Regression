@@ -79,3 +79,13 @@ Review: [comment 6496768693](https://github.com/wupojung/AIoT-HW2-Housing-Regres
 | `python -m unittest discover -s tests/e2e -p 'test_minimal_e2e_package.py' -v` | required | Python version required | NOT RUN | Pending |
 
 Capture command STDOUT, STDERR, process exit status, OS/Python version, current `git rev-parse HEAD`, and matched paths from `git grep`. Do not update to PASS without attached evidence.
+
+## Local QA rerun 3 and follow-up — 2026-10-29
+
+Evidence: [Owner/local QA comment 6497387420](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/66#issuecomment-6497387420); [isolated QA logs](https://gist.github.com/wupojung/27fecd4c51b5e99cb050b221370f084f).
+
+**Executed HEAD:** `849d28d17507bf5a680e3372c51d1a1ea2189a30`; Python 3.12.15 with jsonschema 4.26.0; detached worktree. Five suites were attempted: **21 individual tests PASS, 0 assertion FAIL, 1 ERROR, 0 NOT RUN**, with four suites fully passing and E2E 1 PASS/1 ERROR. The E2E failure occurred while reading old Phase 1 schema path; this is **not** a merge PASS.
+
+**Root cause independently confirmed:** `python/src/housing_regression/contracts.py::phase_schema_path()` still returned `docs/design/data-contracts/schemas/phase-0N.schema.json` (active runtime helper). PR #66 commit `235866db4efd04b782f67e9517587f39323cd2b8` changed **only that location** to `docs/contracts/schemas/phase-0N.schema.json`. No changes to published web, Case Packages, schemas, model behavior, tests or assertions.
+
+**Post-fix test status:** **NOT RUN at new HEAD**. The prior 21/1 result applies **only** to the pre-fix commit, not to this correction. Rerun the same five suites, record full HEAD and exit codes, and run an active-source scan including Python string fragments `"design" / "data-contracts"`, not merely exact whole-path literals. Browser, Production HTTP, rights and scientific fitness remain UNKNOWN.
