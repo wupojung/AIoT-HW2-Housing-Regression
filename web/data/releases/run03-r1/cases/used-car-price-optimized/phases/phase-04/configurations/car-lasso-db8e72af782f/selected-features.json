@@ -1,0 +1,181 @@
+{
+  "case_id": "used-car-price-optimized",
+  "configuration_id": "car-lasso-db8e72af782f",
+  "folds": [
+    {
+      "encoded_count": 64,
+      "feature_lineage": [
+        {
+          "encoded_feature": "cat__cylinders_other",
+          "index": 14,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_other",
+          "index": 58,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        }
+      ],
+      "fold": 1,
+      "selected_encoded_names": [
+        "cat__cylinders_other",
+        "cat__type_other"
+      ],
+      "selected_raw_sources": [
+        "cylinders",
+        "type"
+      ]
+    },
+    {
+      "encoded_count": 65,
+      "feature_lineage": [
+        {
+          "encoded_feature": "cat__cylinders_other",
+          "index": 14,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_other",
+          "index": 58,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        }
+      ],
+      "fold": 2,
+      "selected_encoded_names": [
+        "cat__cylinders_other",
+        "cat__type_other"
+      ],
+      "selected_raw_sources": [
+        "cylinders",
+        "type"
+      ]
+    },
+    {
+      "encoded_count": 62,
+      "feature_lineage": [
+        {
+          "encoded_feature": "num__image_count",
+          "index": 1,
+          "semantic_type": "discrete",
+          "source_columns": [
+            "image_count"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "num__odometer",
+          "index": 2,
+          "semantic_type": "continuous",
+          "source_columns": [
+            "odometer"
+          ],
+          "transformation": "median_impute_and_scale"
+        },
+        {
+          "encoded_feature": "cat__condition_",
+          "index": 4,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "condition"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_8 cylinders",
+          "index": 14,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__cylinders_infrequent_sklearn",
+          "index": 16,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "cylinders"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__drive_4wd",
+          "index": 18,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "drive"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__fuel_diesel",
+          "index": 23,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "fuel"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__fuel_gas",
+          "index": 25,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "fuel"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        },
+        {
+          "encoded_feature": "cat__type_sedan",
+          "index": 58,
+          "semantic_type": "nominal",
+          "source_columns": [
+            "type"
+          ],
+          "transformation": "mode_impute_and_one_hot"
+        }
+      ],
+      "fold": 3,
+      "selected_encoded_names": [
+        "num__image_count",
+        "num__odometer",
+        "cat__condition_",
+        "cat__cylinders_8 cylinders",
+        "cat__cylinders_infrequent_sklearn",
+        "cat__drive_4wd",
+        "cat__fuel_diesel",
+        "cat__fuel_gas",
+        "cat__type_sedan"
+      ],
+      "selected_raw_sources": [
+        "condition",
+        "cylinders",
+        "drive",
+        "fuel",
+        "image_count",
+        "odometer",
+        "type"
+      ]
+    }
+  ],
+  "run_id": "used-car-e2e-20261028-03",
+  "schema_version": "1.0.0",
+  "selection_unit": "encoded_feature",
+  "summary": "各折僅以該折訓練資料擬合前處理與特徵選擇。"
+}

@@ -1,0 +1,45 @@
+{
+  "case_id": "used-car-price-optimized",
+  "configuration_id": "car-mutual-information-8b59f9573a65",
+  "fold_results": [
+    {
+      "fold": 1,
+      "mae": 37319.165157119525,
+      "n_train": 417,
+      "n_validation": 209,
+      "r2": -2.619045259968126,
+      "rmse": 49332.423143054875,
+      "status": "VERIFIED"
+    },
+    {
+      "fold": 2,
+      "mae": 34849.83160871276,
+      "n_train": 417,
+      "n_validation": 209,
+      "r2": -8.462928870193434,
+      "rmse": 42256.62827563035,
+      "status": "VERIFIED"
+    },
+    {
+      "fold": 3,
+      "mae": 38092.305814707586,
+      "n_train": 418,
+      "n_validation": 208,
+      "r2": -0.0009728730115476925,
+      "rmse": 398765.80177223636,
+      "status": "VERIFIED"
+    }
+  ],
+  "mean_fold_metrics": {
+    "mae": 36753.76752684662,
+    "r2": -3.694315667724369,
+    "rmse": 163451.6177303072
+  },
+  "run_id": "used-car-e2e-20261028-03",
+  "sample_sd": {
+    "mae": 1693.565943320219,
+    "r2": 4.332243028952534,
+    "rmse": 203818.76907375496
+  },
+  "schema_version": "1.0.0"
+}

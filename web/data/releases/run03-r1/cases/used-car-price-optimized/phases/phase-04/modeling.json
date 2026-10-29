@@ -1,0 +1,326 @@
+{
+  "case_id": "used-car-price-optimized",
+  "charts": [
+    {
+      "chart_id": "method-comparison",
+      "chart_type": "method-comparison",
+      "points_ref": "phases/phase-04/charts/method-comparison.json",
+      "status": "VERIFIED"
+    },
+    {
+      "chart_id": "feature-count-vs-cv-rmse",
+      "chart_type": "feature-count-vs-cv-rmse",
+      "points_ref": "phases/phase-04/charts/feature-count-vs-cv-rmse.json",
+      "status": "VERIFIED"
+    }
+  ],
+  "configurations": [
+    {
+      "configuration_id": "car-ols-baseline-4c86752fe699",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-ols-baseline-4c86752fe699/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-ols-baseline-4c86752fe699/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-ols-baseline-4c86752fe699/metadata.json",
+      "method_id": "ols_baseline",
+      "params": {
+        "selection": "all"
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-ols-baseline-4c86752fe699/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-pearson-b07928f29ee5",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-pearson-b07928f29ee5/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-pearson-b07928f29ee5/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-pearson-b07928f29ee5/metadata.json",
+      "method_id": "pearson",
+      "params": {
+        "k": 10
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-pearson-b07928f29ee5/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-pearson-521dd42752f4",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-pearson-521dd42752f4/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-pearson-521dd42752f4/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-pearson-521dd42752f4/metadata.json",
+      "method_id": "pearson",
+      "params": {
+        "k": 20
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-pearson-521dd42752f4/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-pearson-a7dfaf3405dd",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-pearson-a7dfaf3405dd/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-pearson-a7dfaf3405dd/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-pearson-a7dfaf3405dd/metadata.json",
+      "method_id": "pearson",
+      "params": {
+        "k": 40
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-pearson-a7dfaf3405dd/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-mutual-information-8b59f9573a65",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-mutual-information-8b59f9573a65/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-mutual-information-8b59f9573a65/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-mutual-information-8b59f9573a65/metadata.json",
+      "method_id": "mutual_information",
+      "params": {
+        "k": 10
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-mutual-information-8b59f9573a65/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-mutual-information-5311d06498f3",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-mutual-information-5311d06498f3/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-mutual-information-5311d06498f3/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-mutual-information-5311d06498f3/metadata.json",
+      "method_id": "mutual_information",
+      "params": {
+        "k": 20
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-mutual-information-5311d06498f3/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-mutual-information-e11538e02991",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-mutual-information-e11538e02991/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-mutual-information-e11538e02991/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-mutual-information-e11538e02991/metadata.json",
+      "method_id": "mutual_information",
+      "params": {
+        "k": 40
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-mutual-information-e11538e02991/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-lasso-385aa2570165",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-lasso-385aa2570165/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-lasso-385aa2570165/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-lasso-385aa2570165/metadata.json",
+      "method_id": "lasso",
+      "params": {
+        "alpha": 0.01
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-lasso-385aa2570165/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-lasso-db8e72af782f",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-lasso-db8e72af782f/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-lasso-db8e72af782f/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-lasso-db8e72af782f/metadata.json",
+      "method_id": "lasso",
+      "params": {
+        "alpha": 0.1
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-lasso-db8e72af782f/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-lasso-d8ec5a284a26",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-lasso-d8ec5a284a26/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-lasso-d8ec5a284a26/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-lasso-d8ec5a284a26/metadata.json",
+      "method_id": "lasso",
+      "params": {
+        "alpha": 1.0
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-lasso-d8ec5a284a26/selected-features.json",
+      "status": "ERROR",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-elastic-net-ef98c804cdbf",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-elastic-net-ef98c804cdbf/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-elastic-net-ef98c804cdbf/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-elastic-net-ef98c804cdbf/metadata.json",
+      "method_id": "elastic_net",
+      "params": {
+        "alpha": 0.01,
+        "l1_ratio": 0.5
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-elastic-net-ef98c804cdbf/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-elastic-net-f33b908c072a",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-elastic-net-f33b908c072a/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-elastic-net-f33b908c072a/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-elastic-net-f33b908c072a/metadata.json",
+      "method_id": "elastic_net",
+      "params": {
+        "alpha": 0.01,
+        "l1_ratio": 0.9
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-elastic-net-f33b908c072a/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-elastic-net-edef4b070267",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-elastic-net-edef4b070267/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-elastic-net-edef4b070267/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-elastic-net-edef4b070267/metadata.json",
+      "method_id": "elastic_net",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.5
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-elastic-net-edef4b070267/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-elastic-net-aab117069346",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-elastic-net-aab117069346/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-elastic-net-aab117069346/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-elastic-net-aab117069346/metadata.json",
+      "method_id": "elastic_net",
+      "params": {
+        "alpha": 0.1,
+        "l1_ratio": 0.9
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-elastic-net-aab117069346/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-ridge-rfe-728567db5f64",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-ridge-rfe-728567db5f64/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-ridge-rfe-728567db5f64/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-ridge-rfe-728567db5f64/metadata.json",
+      "method_id": "ridge_rfe",
+      "params": {
+        "k": 10
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-ridge-rfe-728567db5f64/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-ridge-rfe-3c74558a2b71",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-ridge-rfe-3c74558a2b71/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-ridge-rfe-3c74558a2b71/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-ridge-rfe-3c74558a2b71/metadata.json",
+      "method_id": "ridge_rfe",
+      "params": {
+        "k": 20
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-ridge-rfe-3c74558a2b71/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    },
+    {
+      "configuration_id": "car-ridge-rfe-8ad39244ce34",
+      "cv_metrics_ref": "phases/phase-04/configurations/car-ridge-rfe-8ad39244ce34/cv-metrics.json",
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "fold_tasks_ref": "phases/phase-04/configurations/car-ridge-rfe-8ad39244ce34/fold-tasks.json",
+      "metadata_ref": "phases/phase-04/configurations/car-ridge-rfe-8ad39244ce34/metadata.json",
+      "method_id": "ridge_rfe",
+      "params": {
+        "k": 40
+      },
+      "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+      "selected_features_ref": "phases/phase-04/configurations/car-ridge-rfe-8ad39244ce34/selected-features.json",
+      "status": "VERIFIED",
+      "track_id": "fold_local_selected_features_to_primary_ols"
+    }
+  ],
+  "cv": {
+    "fold_count": 3,
+    "protocol_id": "used-car-dev-80-20-seed42-3fold-v1",
+    "status": "VERIFIED",
+    "training_rows": 626
+  },
+  "default_configuration_id": "car-mutual-information-8b59f9573a65",
+  "execution_runs": [
+    {
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "source_manifest_sha256": "e246012af21667b184aff7c0903fb5545ffbe12dcd586cd36db65a9937bdc60e",
+      "status": "VERIFIED"
+    }
+  ],
+  "methods": [
+    {
+      "label": "全特徵 OLS 基準",
+      "method_id": "ols_baseline",
+      "parameters": []
+    },
+    {
+      "label": "Pearson 篩選 → OLS",
+      "method_id": "pearson",
+      "parameters": []
+    },
+    {
+      "label": "互資訊篩選 → OLS",
+      "method_id": "mutual_information",
+      "parameters": []
+    },
+    {
+      "label": "Lasso 篩選 → OLS",
+      "method_id": "lasso",
+      "parameters": []
+    },
+    {
+      "label": "Elastic Net 篩選 → OLS",
+      "method_id": "elastic_net",
+      "parameters": []
+    },
+    {
+      "label": "Ridge RFE → OLS",
+      "method_id": "ridge_rfe",
+      "parameters": []
+    }
+  ],
+  "schema_version": "1.1.0",
+  "status": "VERIFIED"
+}

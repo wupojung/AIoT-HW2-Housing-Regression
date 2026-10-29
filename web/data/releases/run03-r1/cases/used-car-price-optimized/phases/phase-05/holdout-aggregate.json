@@ -1,0 +1,14 @@
+{
+  "case_id": "used-car-price-optimized",
+  "competition_test_data_used": false,
+  "configuration_id": "car-mutual-information-8b59f9573a65",
+  "metrics": {
+    "mae": 21638.576628632865,
+    "r2": -0.8144873847779581,
+    "rmse": 28293.356086355227
+  },
+  "n": 157,
+  "population": "internal_holdout",
+  "run_id": "used-car-e2e-20261028-03",
+  "schema_version": "1.0.0"
+}

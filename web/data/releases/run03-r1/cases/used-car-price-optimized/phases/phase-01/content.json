@@ -1,0 +1,37 @@
+{
+  "case_id": "used-car-price-optimized",
+  "schema_version": "1.0.0",
+  "sections": [
+    {
+      "body": "本研究以中古車網路刊登資料為對象，探討特徵選擇與迴歸模型預測刊登價格的表現。資料包含車輛規格、使用狀況與刊登資訊；加入更多欄位不一定能持續改善誤差，因此比較不同選擇策略及特徵數量的取捨。研究問題：RQ1 不同特徵選擇方法是否影響預測表現？RQ2 特徵數量與預測誤差有何關係？RQ3 能否在維持預測品質下減少模型特徵？這些是待檢驗問題，不是已證實結論。",
+      "section_id": "research-question",
+      "title": "研究背景與問題｜Research Background & Questions"
+    },
+    {
+      "body": "建立可重現的中古車價格迴歸流程；檢查資料品質，將識別欄位、自由文字及疑似價格洩漏欄位自模型輸入排除並逐欄記錄；使用訓練折內擬合的補值與類別編碼比較基準模型和特徵選擇方法；對混有刊登文字的年份欄只解析開頭四位年份，原始 CSV 保持不變；記錄特徵數量、交叉驗證與內部保留集結果；以可追溯 Case Package 呈現計算結果。",
+      "section_id": "research-objectives",
+      "title": "研究目標｜Research Objectives"
+    },
+    {
+      "body": "依 CRISP-DM 六階段進行：Phase 1 定義研究問題；Phase 2 檢視欄位、缺失、重複與價格分布，並逐欄記錄排除原因；Phase 3 以訓練資料擬合補值與 One-Hot Encoding；Phase 4 以固定種子及三折交叉驗證比較預先列明的線性迴歸候選；Phase 5 分開報告 Development OOF 與內部 Holdout；Phase 6 驗證本機模型重載與推論能力。可訓練的短類別欄位仍保留；長篇自由文字欄位不直接送入模型。Kaggle 的 test_data_v2.csv 不參與訓練、調參、模型選擇或指標計算。",
+      "section_id": "methodology",
+      "title": "研究方法｜CRISP-DM Methodology"
+    },
+    {
+      "body": "RMSE（美元 USD）為主要誤差指標，越低越好，且對較大誤差更敏感；MAE（美元 USD）為輔助平均絕對誤差；R² 描述目標變異的解釋程度，不是預測正確率；Selected Feature Count 用於觀察特徵數量與模型誤差的取捨。比較只在相同資料切分及評估母體下解讀。",
+      "section_id": "evaluation",
+      "title": "評估指標｜Evaluation Metrics"
+    },
+    {
+      "body": "資料來自網路刊登而非已驗證成交紀錄，預測目標是刊登價格，不應解讀為市場估價。資料量與來源市場有限，欄位缺漏、重複表示、時間漂移及高基數類別可能影響結果。Development CV／OOF 與內部 Holdout 分開呈現；特徵選擇不代表因果關係；候選搜尋結果只代表已執行的有限候選，不保證全域最佳。網站目前提供研究展示，不宣稱已部署線上預測 API。",
+      "section_id": "scope-limitations",
+      "title": "研究範圍與限制｜Scope & Limitations"
+    },
+    {
+      "body": "訓練來源：train_data_v2.csv；來源頁面：https://www.kaggle.com/competitions/used-car-price-prediction-challenge/data?select=train_data_v2.csv；資料集標示授權：CC BY-NC-SA 4.0；作者署名：Used Car Price Prediction Challenge dataset by ZeinaDallal, via Kaggle; web-scraped vehicle listings.；訓練檔 SHA-256：83caf79b21b8b72a18dc6bd06334627dc39f0108e83b8d8b8724cdfa04cd9a36。原始 CSV 不納入本 Case Package；套件僅包含聚合研究結果與來源指紋。Competition rules 的完整條款與公開發布適用性仍需核對；公開產物只包含聚合統計與圖表，不包含原始列、VIN、ID 或逐筆預測。",
+      "section_id": "data-provenance",
+      "title": "研究資料與來源｜Data Provenance"
+    }
+  ],
+  "status": "VERIFIED"
+}

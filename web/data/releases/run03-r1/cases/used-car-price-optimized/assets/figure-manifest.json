@@ -1,0 +1,44 @@
+{
+  "case_id": "used-car-price-optimized",
+  "figures": [
+    {
+      "accessible_table_ref": null,
+      "alt": "784 筆、28 欄原始訓練資料的缺失概況。缺失判定採明列 token；合法字串 None 不視為缺失。",
+      "case_id": "used-car-price-optimized",
+      "figure_id": "figure-missingness",
+      "height": 130,
+      "phase": 2,
+      "png_ref": null,
+      "publication_review": "PENDING",
+      "sha256_png": null,
+      "sha256_svg": "90914ce8009ceef60308ab763dd4f15e08994a5937084556b646d9a550ec7af1",
+      "source_configuration_id": null,
+      "source_evaluation_id": null,
+      "source_evidence_ref": "assets/execution-manifest.json",
+      "status": "PLANNED",
+      "svg_ref": "phases/phase-02/figures/missingness.svg",
+      "width": 760
+    },
+    {
+      "accessible_table_ref": null,
+      "alt": "訓練資料中有效正值價格的分箱分布；不使用 Kaggle 測試資料。",
+      "case_id": "used-car-price-optimized",
+      "figure_id": "figure-target-distribution",
+      "height": 130,
+      "phase": 2,
+      "png_ref": null,
+      "publication_review": "PENDING",
+      "sha256_png": null,
+      "sha256_svg": "cf807273b82ecdefba6b40741ef9b22d08c75a6632099b0c8366c2cf4046fbea",
+      "source_configuration_id": null,
+      "source_evaluation_id": null,
+      "source_evidence_ref": "assets/execution-manifest.json",
+      "status": "PLANNED",
+      "svg_ref": "phases/phase-02/figures/target-distribution.svg",
+      "width": 760
+    }
+  ],
+  "run_id": "used-car-e2e-20261028-03",
+  "schema_version": "1.0.0",
+  "status": "PENDING_REVIEW"
+}
