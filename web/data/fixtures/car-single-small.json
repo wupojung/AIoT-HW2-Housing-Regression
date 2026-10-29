@@ -1,0 +1,13 @@
+{
+  "fixture_status": "SYNTHETIC_UI_ONLY",
+  "fixture_id": "car-single-small-v1",
+  "case_id": "used-car-price-optimized",
+  "mode": "single_input_preview",
+  "input_features": [
+    { "name": "demo_vehicle_age_years", "data_type": "number", "required": true, "control_type": "number", "sample_value": 5, "options": null },
+    { "name": "demo_distance", "data_type": "number", "required": true, "control_type": "number", "sample_value": 48000, "options": null },
+    { "name": "demo_make_category", "data_type": "category", "required": true, "control_type": "select", "sample_value": "SYNTHETIC_OPTION_A", "options": ["SYNTHETIC_OPTION_A", "SYNTHETIC_OPTION_B"] },
+    { "name": "demo_fuel_category", "data_type": "category", "required": true, "control_type": "select", "sample_value": "SYNTHETIC_FUEL_A", "options": ["SYNTHETIC_FUEL_A", "SYNTHETIC_FUEL_B"] },
+    { "name": "demo_description", "data_type": "string", "required": false, "control_type": "text", "sample_value": "SYNTHETIC_TEXT_SAMPLE", "options": null }
+  ]
+}
