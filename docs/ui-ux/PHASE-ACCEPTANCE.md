@@ -1,6 +1,6 @@
 # RegScope Phase 1–6 — UI acceptance inventory
 
-**Basis:** current `deploy` two-case release and `web/app.js` documented as source-backed; live browser verification is still UNKNOWN. **No redesign or web changes are authorized here.** UI must not invent values for a missing package item. The canonical contract is [Data Contracts](../contracts/CASE-PACKAGE-CONTRACT.md).
+**Basis:** current `deploy` two-case release and `web/app.js` documented as source-backed; live browser verification is still UNKNOWN. **This document does not authorize broader UI redesign or web runtime changes; the sole exception is the Owner-approved, narrow `web/app.js::footerNav()` Phase 1–6 `Schema ↗` href correction included in PR #66.** That source change does not establish browser/HTTP verification; targeted six-link smoke remains NOT RUN pending authorized merge and verification. UI must not invent values for a missing package item. The canonical contract is [Data Contracts](../contracts/CASE-PACKAGE-CONTRACT.md).
 
 | ID | Page | Acceptance test against current published case | Evidence / failure state |
 | --- | --- | --- | --- |
