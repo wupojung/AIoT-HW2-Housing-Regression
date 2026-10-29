@@ -1,0 +1,11 @@
+{
+  "case_id": "used-car-price-optimized",
+  "models": [],
+  "readiness": {
+    "message": "本機 final-fit 模型已重載並完成推論 smoke；模型檔保留於私有本機路徑，網站未提供線上推論服務。",
+    "predict_enabled": false,
+    "reason_code": "NO_PUBLIC_INFERENCE_SERVICE"
+  },
+  "schema_version": "1.0.0",
+  "status": "UNAVAILABLE"
+}

@@ -1,0 +1,92 @@
+{
+  "automatic_text_exclusion": {
+    "engine": "known free-text/listing field",
+    "features_list": "known free-text/listing field",
+    "make": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+    "model": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+    "title": "known free-text/listing field",
+    "trans": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50"
+  },
+  "candidate_count": 17,
+  "candidate_rule": "method winner by minimum mean-fold Development RMSE; tie-break fewer selected features then declared order",
+  "case_id": "used-car-price-optimized",
+  "categorical_features": [
+    "condition",
+    "cylinders",
+    "drive",
+    "ext_color",
+    "fuel",
+    "int_color",
+    "paint_color",
+    "title_status",
+    "transmission",
+    "trim",
+    "type"
+  ],
+  "code_sha256": "9d4ba7e77f885ed11e11659564a040759f4608bdc920b202e3bd553c335bf5be",
+  "cv": {
+    "folds": 3,
+    "seed": 42,
+    "shuffle": true
+  },
+  "excluded_fields": [
+    "ID",
+    "engine",
+    "est._monthly_pmt",
+    "features_list",
+    "make",
+    "mileage",
+    "model",
+    "price",
+    "scrape_timestamp",
+    "search_price",
+    "title",
+    "trans",
+    "vin"
+  ],
+  "model_features": [
+    "condition",
+    "cylinders",
+    "drive",
+    "ext_color",
+    "feature_count",
+    "fuel",
+    "image_count",
+    "int_color",
+    "odometer",
+    "paint_color",
+    "title_status",
+    "transmission",
+    "trim",
+    "type",
+    "year"
+  ],
+  "numeric_features": [
+    "feature_count",
+    "image_count",
+    "odometer",
+    "year"
+  ],
+  "numpy_version": "2.5.4",
+  "pandas_version": "3.1.0",
+  "preprocessing": {
+    "categorical_imputer": "most_frequent",
+    "fit_scope": "each training fold; holdout evaluation fitted on Development only",
+    "numeric_imputer": "median",
+    "one_hot_min_frequency": 5
+  },
+  "run_id": "used-car-e2e-20261028-03",
+  "sklearn_version": "1.9.1",
+  "source_file": "train_data_v2.csv",
+  "source_sha256": "83caf79b21b8b72a18dc6bd06334627dc39f0108e83b8d8b8724cdfa04cd9a36",
+  "split": {
+    "fraction": 0.2,
+    "seed": 42,
+    "type": "random_holdout"
+  },
+  "target": "price",
+  "target_unit": "USD",
+  "value_normalization": {
+    "year": "extract leading 4-digit 19xx/20xx year only; discard trailing scraped text"
+  }
+}

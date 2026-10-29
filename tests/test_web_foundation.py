@@ -51,11 +51,40 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('caseSelect.disabled = loading;', self.js)
         self.assertIn('研究案例載入中…', self.js)
         self.assertIn('研究案例載入失敗：', self.js)
-        self.assertIn('研究案例載入完成，共 ${Object.keys(CASES).length} 個可用案例。', self.js)
+        self.assertIn('研究案例載入完成，共 ${publicCases.length} 個可用案例。', self.js)
         self.assertIn('caseLoadStatus.classList.toggle("is-error", failedCases.length > 0);', self.js)
         self.assertIn('console.warn("[RegScope] Case Package validation failed", {', self.js)
         self.assertIn('logPackageLoadFailure("ames-reference-init-a", stage, error);', self.js)
         self.assertIn('logPackageLoadFailure(EXPLORATION_CASE_ID, stage, error);', self.js)
+
+    def test_car_case_loader_is_independent_and_manifest_bound(self):
+        self.assertIn('const CAR_CASE_ID = "used-car-price-optimized";', self.js)
+        self.assertIn('async function loadCarPackage()', self.js)
+        self.assertIn('loadCarPackage();', self.js)
+        self.assertIn('if (!releaseCase) return;', self.js)
+        self.assertIn('if (state.caseId === EXPLORATION_CASE_ID)', self.js)
+        self.assertIn('if (state.caseId === CAR_CASE_ID)', self.js)
+        self.assertIn('caseInfo.packageMode === "car"', self.js)
+        self.assertIn('else if (phase && caseData().packageMode === "car") app.innerHTML = renderCarPackagePhase(phase);', self.js)
+        self.assertIn('function renderCarPhase3(pkg, doc)', self.js)
+        self.assertIn('One-Hot 編碼後產生 ${lineage.encoded_features.length.toLocaleString()} 個模型特徵', self.js)
+        self.assertIn('Publication review：PENDING', self.js)
+        self.assertIn('Prediction unavailable', self.js)
+
+    def test_car_phase3_raw_bar_is_lineage_derived_and_keeps_later_stages_dynamic(self):
+        self.assertIn('const rawFields = lineage.raw_fields || [];', self.js)
+        self.assertIn('const rawClassification = lineage.raw_classification || {};', self.js)
+        self.assertIn('const rawCountsMatch =', self.js)
+        self.assertIn('rawClassification.evidence.source_data_sha256 === lineage.source_data_sha256', self.js)
+        self.assertIn('rawClassification.total === rawFields.length', self.js)
+        self.assertIn('segments: Object.entries(rawClassification.counts)', self.js)
+        self.assertIn('stage.id === "raw");', self.js)
+        self.assertIn('const inlineLabels = !compactLabels || percent >= 16', self.js)
+        self.assertIn('const exclusionGroups = Object.entries(excludedFields.reduce', self.js)
+        self.assertIn('rawFields.map((item) =>', self.js)
+        self.assertNotIn('涵蓋 27 個目標以外', self.js)
+        self.assertNotIn('保留 15 個原始特徵。', self.js)
+        self.assertNotIn('產生 70 個模型特徵', self.js)
 
     def test_phase4_has_two_mode_controls_and_preserves_explorer_views(self):
         self.assertIn('explorationMode: "comparison"', self.js)
@@ -68,6 +97,26 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('data-exploration-perspective="selected_features"', self.js)
         self.assertIn('data-exploration-perspective="feature_count_cv_rmse"', self.js)
         self.assertNotIn('data-exploration-back', self.js)
+
+    def test_car_method_labels_are_exact_id_mapped_and_separate_from_regressor(self):
+        expected = {
+            'ols_baseline: { name: "OLS Baseline"',
+            'pearson: { name: "Pearson Correlation"',
+            'mutual_information: { name: "Mutual Information"',
+            'lasso: { name: "Lasso Selection"',
+            'elastic_net: { name: "Elastic Net"',
+            'ridge_rfe: { name: "Ridge RFE"'
+        }
+        for mapping in expected:
+            self.assertIn(mapping, self.js)
+        self.assertIn('explorationMethodLabel(doc, method.method_id)', self.js)
+        self.assertIn('explorationMethodLabel(doc, item.method_id)', self.js)
+        self.assertIn('<dt>Feature Selection</dt>', self.js)
+        self.assertIn('<dt>Regression Model</dt>', self.js)
+        self.assertIn('fold_local_selected_features_to_primary_ols: "OLS"', self.js)
+        self.assertIn('|| evaluation?.model_name', self.js)
+        self.assertIn('doc.methods?.find((item) => item.method_id === methodId)', self.js)
+        self.assertIn('以互資訊評估特徵與目標值的統計依賴關係。', self.js)
 
     def test_phase5_uses_phase4_configuration_and_mean_fold_metrics_by_default(self):
         self.assertIn('item.metric_source === "cv_fold_mean"', self.js)
@@ -95,7 +144,7 @@ class WebFoundationTests(unittest.TestCase):
 
     def test_phase5_package_metric_and_figure_bindings_are_intact(self):
         release = json.loads((WEB / "data/current-release.json").read_text(encoding="utf-8"))
-        for case_id in ("ames-reference-init-a", "ames-full-model-exploration"):
+        for case_id in ("ames-full-model-exploration",):
             entry = next(item for item in release["cases"] if item["case_id"] == case_id)
             package_path = WEB / "data" / entry["package_ref"]
             package_bytes = package_path.read_bytes()
@@ -130,6 +179,18 @@ class WebFoundationTests(unittest.TestCase):
                     self.assertEqual(figure["sha256"], listed["sha256"])
                     self.assertEqual(hashlib.sha256(asset).hexdigest(), listed["sha256"])
                     self.assertEqual(listed["mime"], "image/png")
+
+    def test_public_release_has_only_the_two_approved_cases(self):
+        release = json.loads((WEB / "data/current-release.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            [item["case_id"] for item in release["cases"]],
+            ["ames-full-model-exploration", "used-car-price-optimized"],
+        )
+        self.assertIn('const PUBLIC_CASE_IDS = [EXPLORATION_CASE_ID, CAR_CASE_ID];', self.js)
+        self.assertIn('PUBLIC_CASE_IDS.filter((id) => CASES[id])', self.js)
+        self.assertIn('caseId: "ames-full-model-exploration"', self.js)
+        self.assertIn('const CAR_DISPLAY_NAME = "Used Car Price Prediction — Optimized Modeling";', self.js)
+        self.assertNotIn('loadReferencePackage();\n  if (!explorationPackage', self.js)
 
     def test_brand_course_and_project_links_are_present(self):
         text = " ".join(self.parser.text)

@@ -1,0 +1,45 @@
+{
+  "case_id": "used-car-price-optimized",
+  "configuration_id": "car-ols-baseline-4c86752fe699",
+  "fold_results": [
+    {
+      "fold": 1,
+      "mae": 55917.76045848504,
+      "n_train": 417,
+      "n_validation": 209,
+      "r2": -15.24773012284318,
+      "rmse": 104527.79500030381,
+      "status": "VERIFIED"
+    },
+    {
+      "fold": 2,
+      "mae": 64620.109548228815,
+      "n_train": 417,
+      "n_validation": 209,
+      "r2": -96.91808601589425,
+      "rmse": 135929.4348125009,
+      "status": "VERIFIED"
+    },
+    {
+      "fold": 3,
+      "mae": 38008.355186428525,
+      "n_train": 418,
+      "n_validation": 208,
+      "r2": -0.0015960852176044593,
+      "rmse": 398889.91954399867,
+      "status": "VERIFIED"
+    }
+  ],
+  "mean_fold_metrics": {
+    "mae": 52848.741731047456,
+    "r2": -37.38913740798501,
+    "rmse": 213115.7164522678
+  },
+  "run_id": "used-car-e2e-20261028-03",
+  "sample_sd": {
+    "mae": 13568.733342328647,
+    "r2": 52.11413380788014,
+    "rmse": 161649.48699732855
+  },
+  "schema_version": "1.0.0"
+}

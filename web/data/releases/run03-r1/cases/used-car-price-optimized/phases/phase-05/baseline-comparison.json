@@ -1,0 +1,471 @@
+{
+  "case_id": "used-car-price-optimized",
+  "run_id": "used-car-e2e-20261028-03",
+  "source_sha256": "83caf79b21b8b72a18dc6bd06334627dc39f0108e83b8d8b8724cdfa04cd9a36",
+  "input": {
+    "rows": 784,
+    "columns": 28,
+    "positive_price_rows": 783,
+    "excluded_nonpositive_or_invalid_target_rows": 1,
+    "test_data_accessed": false
+  },
+  "price_all_labeled": {
+    "n": 783,
+    "min": 1.0,
+    "p01": 991.0,
+    "p05": 2405.0,
+    "q1": 4997.0,
+    "median": 9500.0,
+    "mean": 23183.66411238825,
+    "q3": 19247.0,
+    "p95": 45895.49999999998,
+    "p99": 106718.2799999998,
+    "max": 5771710.0,
+    "std_ddof1": 206707.8599554798
+  },
+  "price_development": {
+    "n": 626,
+    "min": 1.0,
+    "p01": 1000.0,
+    "p05": 2412.5,
+    "q1": 4995.0,
+    "median": 9100.0,
+    "mean": 24970.369009584665,
+    "q3": 19807.5,
+    "p95": 44998.75,
+    "p99": 107496.25,
+    "max": 5771710.0,
+    "std_ddof1": 230943.0176374415
+  },
+  "price_internal_holdout": {
+    "n": 157,
+    "min": 24.0,
+    "p01": 724.0,
+    "p05": 2440.0,
+    "q1": 4999.0,
+    "median": 9500.0,
+    "mean": 16059.605095541401,
+    "q3": 18995.0,
+    "p95": 47695.999999999905,
+    "p99": 94796.75999999995,
+    "max": 188999.0,
+    "std_ddof1": 21071.478817306084
+  },
+  "price_development_folds": {
+    "1": {
+      "n": 209,
+      "min": 13.0,
+      "p01": 1016.0,
+      "p05": 2040.0,
+      "q1": 4995.0,
+      "median": 8800.0,
+      "mean": 16538.06698564593,
+      "q3": 17500.0,
+      "p95": 44805.399999999965,
+      "p99": 127357.2399999999,
+      "max": 227750.0,
+      "std_ddof1": 25994.227545695878
+    },
+    "2": {
+      "n": 209,
+      "min": 1.0,
+      "p01": 1000.0,
+      "p05": 2470.0,
+      "q1": 5100.0,
+      "median": 9900.0,
+      "mean": 14615.727272727272,
+      "q3": 18996.0,
+      "p95": 41788.99999999996,
+      "p99": 62806.999999999935,
+      "max": 95000.0,
+      "std_ddof1": 13769.669891833642
+    },
+    "3": {
+      "n": 208,
+      "min": 1.0,
+      "p01": 1460.5,
+      "p05": 2500.0,
+      "q1": 4900.0,
+      "median": 8500.0,
+      "mean": 43847.63461538462,
+      "q3": 22249.25,
+      "p95": 53974.99999999996,
+      "p99": 99649.30000000003,
+      "max": 5771710.0,
+      "std_ddof1": 399533.543250659
+    }
+  },
+  "price_outlier_counts": {
+    "above_1m_usd": 1,
+    "above_500k_usd": 1,
+    "iqr_upper_fence": 40622.0,
+    "above_iqr_upper_fence": 51
+  },
+  "field_quality": {
+    "make": {
+      "dtype_as_loaded": "string",
+      "nonmissing": 77,
+      "missing": 707,
+      "unique_nonmissing": 76,
+      "unique_ratio": 0.987012987012987,
+      "median_text_length": 50.0
+    },
+    "model": {
+      "dtype_as_loaded": "string",
+      "nonmissing": 69,
+      "missing": 715,
+      "unique_nonmissing": 69,
+      "unique_ratio": 1.0,
+      "median_text_length": 41.0
+    },
+    "trans": {
+      "dtype_as_loaded": "string",
+      "nonmissing": 34,
+      "missing": 750,
+      "unique_nonmissing": 21,
+      "unique_ratio": 0.6176470588235294,
+      "median_text_length": 54.5
+    },
+    "transmission": {
+      "dtype_as_loaded": "string",
+      "nonmissing": 773,
+      "missing": 11,
+      "unique_nonmissing": 3,
+      "unique_ratio": 0.0038809831824062097,
+      "median_text_length": 9.0
+    },
+    "condition": {
+      "dtype_as_loaded": "string",
+      "nonmissing": 500,
+      "missing": 284,
+      "unique_nonmissing": 6,
+      "unique_ratio": 0.012,
+      "median_text_length": 8.0
+    },
+    "drive": {
+      "dtype_as_loaded": "string",
+      "nonmissing": 507,
+      "missing": 277,
+      "unique_nonmissing": 3,
+      "unique_ratio": 0.005917159763313609,
+      "median_text_length": 3.0
+    },
+    "fuel": {
+      "dtype_as_loaded": "string",
+      "nonmissing": 783,
+      "missing": 1,
+      "unique_nonmissing": 5,
+      "unique_ratio": 0.006385696040868455,
+      "median_text_length": 3.0
+    },
+    "mileage": {
+      "dtype_as_loaded": "string",
+      "nonmissing": 91,
+      "missing": 693,
+      "unique_nonmissing": 72,
+      "unique_ratio": 0.7912087912087912,
+      "median_text_length": 3.0,
+      "numeric_parseable_nonmissing": 85,
+      "numeric_min": 4.0,
+      "numeric_median": 106.0,
+      "numeric_max": 288.0,
+      "unit": "not established by local evidence"
+    },
+    "odometer": {
+      "dtype_as_loaded": "string",
+      "nonmissing": 770,
+      "missing": 14,
+      "unique_nonmissing": 597,
+      "unique_ratio": 0.7753246753246753,
+      "median_text_length": 6.0,
+      "numeric_parseable_nonmissing": 770,
+      "numeric_min": 1.0,
+      "numeric_median": 109817.5,
+      "numeric_max": 1970000.0,
+      "unit": "not established by local evidence"
+    },
+    "year": {
+      "dtype_as_loaded": "string",
+      "nonmissing": 73,
+      "missing": 711,
+      "unique_nonmissing": 73,
+      "unique_ratio": 1.0,
+      "median_text_length": 61.0,
+      "parseable_leading_years": 73
+    }
+  },
+  "duplicate_check": {
+    "exact_duplicate_feature_rows_excluding_identifiers_and_timestamp": 1
+  },
+  "run03_reconciliation": {
+    "mean_fold": {
+      "rmse": 163451.6177303072,
+      "mae": 36753.76752684662,
+      "r2": -3.694315667724369
+    },
+    "pooled_oof": {
+      "rmse": 232903.54434634713,
+      "mae": 36751.62928677017,
+      "r2": -0.01867779313198037
+    },
+    "holdout": {
+      "rmse": 28293.356086355227,
+      "mae": 21638.576628632865,
+      "r2": -0.8144873847779581
+    },
+    "folds": [
+      {
+        "fold": 1,
+        "n": 209,
+        "rmse": 49332.423143054875,
+        "mae": 37319.165157119525,
+        "r2": -2.619045259968126,
+        "price": {
+          "n": 209,
+          "min": 13.0,
+          "p01": 1016.0,
+          "p05": 2040.0,
+          "q1": 4995.0,
+          "median": 8800.0,
+          "mean": 16538.06698564593,
+          "q3": 17500.0,
+          "p95": 44805.399999999965,
+          "p99": 127357.2399999999,
+          "max": 227750.0,
+          "std_ddof1": 25994.227545695878
+        }
+      },
+      {
+        "fold": 2,
+        "n": 209,
+        "rmse": 42256.62827563035,
+        "mae": 34849.83160871276,
+        "r2": -8.462928870193434,
+        "price": {
+          "n": 209,
+          "min": 1.0,
+          "p01": 1000.0,
+          "p05": 2470.0,
+          "q1": 5100.0,
+          "median": 9900.0,
+          "mean": 14615.727272727272,
+          "q3": 18996.0,
+          "p95": 41788.99999999996,
+          "p99": 62806.999999999935,
+          "max": 95000.0,
+          "std_ddof1": 13769.669891833642
+        }
+      },
+      {
+        "fold": 3,
+        "n": 208,
+        "rmse": 398765.80177223636,
+        "mae": 38092.305814707586,
+        "r2": -0.0009728730115476925,
+        "price": {
+          "n": 208,
+          "min": 1.0,
+          "p01": 1460.5,
+          "p05": 2500.0,
+          "q1": 4900.0,
+          "median": 8500.0,
+          "mean": 43847.63461538462,
+          "q3": 22249.25,
+          "p95": 53974.99999999996,
+          "p99": 99649.30000000003,
+          "max": 5771710.0,
+          "std_ddof1": 399533.543250659
+        }
+      }
+    ],
+    "agreement_to_checkpoint": true
+  },
+  "baselines": {
+    "dummy_mean": {
+      "mean_fold": {
+        "rmse": 149724.74685966852,
+        "mae": 26933.138492205868,
+        "r2": -0.5079418950000884
+      },
+      "pooled_oof": {
+        "rmse": 231238.55278073758,
+        "mae": 26911.788498406226,
+        "r2": -0.004165112395121406
+      },
+      "folds": [
+        {
+          "fold": 1,
+          "n_train": 417,
+          "n_validation": 209,
+          "rmse": 28856.647192301312,
+          "mae": 21588.685334985603,
+          "r2": -0.23828570095579527,
+          "validation_price": {
+            "n": 209,
+            "min": 13.0,
+            "p01": 1016.0,
+            "p05": 2040.0,
+            "q1": 4995.0,
+            "median": 8800.0,
+            "mean": 16538.06698564593,
+            "q3": 17500.0,
+            "p95": 44805.399999999965,
+            "p99": 127357.2399999999,
+            "max": 227750.0,
+            "std_ddof1": 25994.227545695878
+          }
+        },
+        {
+          "fold": 2,
+          "n_train": 417,
+          "n_validation": 209,
+          "rmse": 20744.259654881364,
+          "mae": 18912.495530848046,
+          "r2": -1.2805089092752566,
+          "validation_price": {
+            "n": 209,
+            "min": 1.0,
+            "p01": 1000.0,
+            "p05": 2470.0,
+            "q1": 5100.0,
+            "median": 9900.0,
+            "mean": 14615.727272727272,
+            "q3": 18996.0,
+            "p95": 41788.99999999996,
+            "p99": 62806.999999999935,
+            "max": 95000.0,
+            "std_ddof1": 13769.669891833642
+          }
+        },
+        {
+          "fold": 3,
+          "n_train": 418,
+          "n_validation": 208,
+          "rmse": 399573.3337318229,
+          "mae": 40298.23461078395,
+          "r2": -0.005031074769213273,
+          "validation_price": {
+            "n": 208,
+            "min": 1.0,
+            "p01": 1460.5,
+            "p05": 2500.0,
+            "q1": 4900.0,
+            "median": 8500.0,
+            "mean": 43847.63461538462,
+            "q3": 22249.25,
+            "p95": 53974.99999999996,
+            "p99": 99649.30000000003,
+            "max": 5771710.0,
+            "std_ddof1": 399533.543250659
+          }
+        }
+      ],
+      "internal_holdout": {
+        "rmse": 22816.24118074457,
+        "mae": 16692.114700555543,
+        "r2": -0.17997612506455507
+      }
+    },
+    "all_feature_linear_regression": {
+      "mean_fold": {
+        "rmse": 213115.7164522678,
+        "mae": 52848.741731047456,
+        "r2": -37.38913740798501
+      },
+      "pooled_oof": {
+        "rmse": 250369.50010826343,
+        "mae": 52872.448418818414,
+        "r2": -0.17719250343321313
+      },
+      "folds": [
+        {
+          "fold": 1,
+          "n_train": 417,
+          "n_validation": 209,
+          "rmse": 104527.79500030381,
+          "mae": 55917.76045848504,
+          "r2": -15.24773012284318,
+          "validation_price": {
+            "n": 209,
+            "min": 13.0,
+            "p01": 1016.0,
+            "p05": 2040.0,
+            "q1": 4995.0,
+            "median": 8800.0,
+            "mean": 16538.06698564593,
+            "q3": 17500.0,
+            "p95": 44805.399999999965,
+            "p99": 127357.2399999999,
+            "max": 227750.0,
+            "std_ddof1": 25994.227545695878
+          }
+        },
+        {
+          "fold": 2,
+          "n_train": 417,
+          "n_validation": 209,
+          "rmse": 135929.4348125009,
+          "mae": 64620.109548228815,
+          "r2": -96.91808601589425,
+          "validation_price": {
+            "n": 209,
+            "min": 1.0,
+            "p01": 1000.0,
+            "p05": 2470.0,
+            "q1": 5100.0,
+            "median": 9900.0,
+            "mean": 14615.727272727272,
+            "q3": 18996.0,
+            "p95": 41788.99999999996,
+            "p99": 62806.999999999935,
+            "max": 95000.0,
+            "std_ddof1": 13769.669891833642
+          }
+        },
+        {
+          "fold": 3,
+          "n_train": 418,
+          "n_validation": 208,
+          "rmse": 398889.91954399867,
+          "mae": 38008.355186428525,
+          "r2": -0.0015960852176044593,
+          "validation_price": {
+            "n": 208,
+            "min": 1.0,
+            "p01": 1460.5,
+            "p05": 2500.0,
+            "q1": 4900.0,
+            "median": 8500.0,
+            "mean": 43847.63461538462,
+            "q3": 22249.25,
+            "p95": 53974.99999999996,
+            "p99": 99649.30000000003,
+            "max": 5771710.0,
+            "std_ddof1": 399533.543250659
+          }
+        }
+      ],
+      "internal_holdout": {
+        "rmse": 42322.50039613637,
+        "mae": 31518.109956526383,
+        "r2": -3.0600151832911244
+      }
+    }
+  },
+  "methodology": {
+    "split": "80/20 random split, seed 42",
+    "development_cv": "3-fold KFold shuffle=True seed=42",
+    "preprocessing": "median numeric imputation; most-frequent categorical imputation; OneHotEncoder min_frequency=5; StandardScaler(with_mean=False); all fitted within each training fold and then Development-only for internal Holdout",
+    "metric_definitions": "sklearn RMSE=sqrt(MSE), MAE=mean absolute error, R2=coefficient of determination; mean-fold is arithmetic average of fold metrics; pooled OOF computes once over all Development OOF rows",
+    "holdout_used_for_selection": false
+  },
+  "diagnostic_classification": [
+    "DATA_QUALITY_ISSUE: make/model/trans differ from Kaggle dictionary category labels in observed local field length/cardinality; blankness/high cardinality noted.",
+    "MODEL_LIMITATION: linear models and selected-feature protocol perform poorly relative to target scale; negative R2 retained."
+  ],
+  "safety": {
+    "source_csv_modified": false,
+    "competition_test_file_read": false,
+    "row_level_values_written": false
+  }
+}
