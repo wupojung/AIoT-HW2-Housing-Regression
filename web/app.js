@@ -1057,9 +1057,9 @@ function footerNav(prev, next) {
     : phase === 5 && PHASE5_PACKAGE_ROOT
       ? `${PHASE5_PACKAGE_ROOT}/phases/phase-05/evaluations.json`
       : REF[`phase${phase}`];
-  const schemaPath = phase === 5
-    ? "docs/ui-ux/case-package/phase-05/evaluation-index.schema.json"
-    : `docs/design/data-contracts/schemas/phase-0${phase}.schema.json`;
+  const schemaPath = `docs/contracts/schemas/phase-0${phase}.schema.json`;
+  // Schema links follow the canonical contract on main; historical fixture links stay pinned.
+  const schemaUrl = `https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/main/${schemaPath}`;
   const fileUrl = (path) => path?.startsWith("/")
     ? path
     : path?.startsWith("web/")
@@ -1067,7 +1067,7 @@ function footerNav(prev, next) {
       : path ? `https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/08413d08f5cabbbf519b8ceee4ed68b7187d2669/${path}` : null;
   const provenanceLabel = phase === 5 ? "Case Package files · Phase 5 formal reference" : `Fixture / contract provenance · ${SOURCE}`;
   const manifestLabel = "Schema ↗";
-  const source = `<div class="source-note"><span>${esc(provenanceLabel)}</span>${fileUrl(samplePath) ? `<a href="${fileUrl(samplePath)}" target="_blank" rel="noreferrer">${phase === 5 ? "Evaluation index ↗" : "Sample JSON ↗"}</a>` : ""}${fileUrl(schemaPath) ? `<a href="${fileUrl(schemaPath)}" target="_blank" rel="noreferrer">${manifestLabel}</a>` : ""}</div>`;
+  const source = `<div class="source-note"><span>${esc(provenanceLabel)}</span>${fileUrl(samplePath) ? `<a href="${fileUrl(samplePath)}" target="_blank" rel="noreferrer">${phase === 5 ? "Evaluation index ↗" : "Sample JSON ↗"}</a>` : ""}<a href="${schemaUrl}" target="_blank" rel="noreferrer">${manifestLabel}</a></div>`;
   return `${source}<nav class="phase-footer" aria-label="前後階段">${prev ? `<a class="button" href="#phase-${prev[0]}">← ${esc(prev[1])}</a>` : `<span></span>`}${next ? `<a class="button primary" href="#phase-${next[0]}">${esc(next[1])} →</a>` : `<span></span>`}</nav>`;
 }
 function plannedPanel(message = "此案例目前沒有可用的研究資料。") {
