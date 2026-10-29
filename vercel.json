@@ -1,4 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": "web"
+  "outputDirectory": "web",
+  "routes": [
+    {
+      "src": "^/data/releases/(?!ames-full-model-exploration-20261028-02/cases/ames-full-model-exploration(?:/|$)|run03-r1/cases/used-car-price-optimized(?:/|$)).*",
+      "status": 404
+    },
+    {
+      "handle": "filesystem"
+    }
+  ]
 }
