@@ -356,8 +356,13 @@ h2 { color: #18374b; letter-spacing: -.025em; }
 .p6-prototype-toolbar .control { width: min(100%, 300px); }
 .p6-prototype-group { margin-top: 14px; }
 .p6-prototype-group > summary, .p6-prototype-table-details > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 12px; border: 1px solid #dbe6ec; border-radius: 8px; background: #f5f9fa; color: #29495d; cursor: pointer; font-size: 11px; font-weight: 750; }
-.p6-prototype-group > summary span { color: #738793; font-size: 9px; font-weight: 600; }
+.p6-prototype-group > summary { min-width: 0; flex-wrap: wrap; }
+.p6-prototype-group > summary > span:first-child { display: inline-flex; min-width: 0; flex-wrap: wrap; align-items: baseline; gap: 6px; color: #29495d; }
+.p6-prototype-group > summary > span:first-child small { color: #71838e; font-size: 9px; font-weight: 600; }
+.p6-prototype-group > summary > span:last-child { color: #738793; font-size: 9px; font-weight: 600; white-space: nowrap; }
 .p6-prototype-group .p6-feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.p6-prototype-field { min-width: 0; }
+.p6-prototype-field .p6-field-label strong { overflow-wrap: anywhere; }
 .p6-prototype-field input, .p6-prototype-field select { width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid #cfdee6; border-radius: 7px; background: white; color: #1c374a; font-size: 12px; }
 .p6-prototype-required { color: #71838e; font-size: 8px; font-weight: 600; }
 .p6-prototype-state { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 17px; padding: 17px; border: 1px solid #d9e6eb; border-radius: 9px; background: #f6fafb; }
@@ -372,14 +377,27 @@ h2 { color: #18374b; letter-spacing: -.025em; }
 .p6-prototype-counts article { display: grid; gap: 6px; min-width: 0; padding: 13px; border: 1px solid #d8e5eb; border-radius: 9px; background: #f9fbfc; }
 .p6-prototype-counts span { color: #71838e; font-size: 9px; }
 .p6-prototype-counts strong { color: #203e52; font-size: 22px; font-variant-numeric: tabular-nums; }
+.p6-prototype-input-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .p6-prototype-table-details { display: grid; gap: 10px; margin: 14px 0; }
 .p6-prototype-table-details .csv-preview { max-width: 100%; }
 .p6-prototype-errors { margin: 0; padding: 0 0 0 20px; color: #8c504c; font-size: 10px; line-height: 1.7; }
+.p6-demo-upload { display: grid; justify-items: center; gap: 10px; padding: 23px 16px; border: 1px dashed #8db8bd; border-radius: 10px; background: linear-gradient(145deg, #f2faf9, #f5f8fc); color: #29495d; text-align: center; }
+.p6-demo-upload-icon { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #b6d8d5; border-radius: 50%; background: #e6f5f2; color: #087e82; font-size: 23px; font-weight: 700; }
+.p6-demo-upload > strong { font-size: 11px; }
+.p6-demo-upload > span:not(.p6-demo-upload-icon) { color: #71838e; font-size: 9px; line-height: 1.5; }
+.p6-demo-upload .button { min-height: 36px; }
+.p6-prototype-provenance { margin-top: 18px; }
+.p6-prototype-provenance-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+.p6-prototype-provenance-grid article { display: grid; min-width: 0; align-content: start; gap: 8px; padding: 15px; border: 1px solid #dbe6ec; border-radius: 9px; background: #f8fbfc; }
+.p6-prototype-provenance-grid article > strong { color: #29495d; font-size: 11px; }
+.p6-prototype-provenance-grid article p { margin: 0; color: #687d89; font-size: 10px; line-height: 1.6; }
+.p6-prototype-provenance-grid article small { color: #71838e; font-size: 9px; overflow-wrap: anywhere; }
 .p6-prototype-limit { margin-top: 18px; }
 .p6-prototype-limit p { margin: 8px 0 0; color: #617789; font-size: 11px; line-height: 1.7; }
 @media (max-width: 700px) {
   .p6-prototype-context .card-body { grid-template-columns: 1fr; gap: 14px; }
   .p6-prototype-panels, .p6-prototype-group .p6-feature-grid { grid-template-columns: 1fr; }
+  .p6-prototype-provenance-grid { grid-template-columns: 1fr; }
   .p6-prototype-toolbar { align-items: stretch; flex-direction: column; }
   .p6-prototype-tabs { width: 100%; }
   .p6-prototype-tabs button { flex: 1 1 180px; }

@@ -116,6 +116,7 @@ const state = {
   referenceFigureId: "FIG-P5-01",
   phase6InputMode: "manual", phase6Csv: null, phase6CsvMessage: "尚未選擇 CSV 檔案。",
   carUiPrototypeSize: "large",
+  carUiGroupOpen: { number: true, category: true, text: true },
   phase6Values: { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" },
   phase5Figure: "FIG-P5-02", p5Population: "development_oof", p5DetailsOpen: false, phase5ConfigId: "",
   explorationMode: "comparison", explorationPerspective: "selected_features", explorationMethodId: "", explorationConfigurationId: "", explorationP5Figure: "FIG-P5-01",
@@ -1408,47 +1409,74 @@ function loadCarUiPrototypeFixtures() {
   });
 }
 function renderCarPhase6UiPrototype() {
-  const title = CAR_DISPLAY_NAME;
   const mode = state.phase6InputMode;
+  const pageIntro = pageHeading(
+    "PHASE 06 / DEPLOYMENT",
+    "模型預測與結果",
+    "中古車預測介面原型。本頁僅供檢視操作流程，不代表正式預測服務。",
+    "MOCK"
+  );
   if (carUiPrototypeFixtureLoading || !carUiPrototypeFixtures && !carUiPrototypeFixtureError) {
-    return `<div class="page">${pageHeading("PHASE 06 / DEPLOYMENT", "模型預測與結果", "CAR Phase 6 UI Prototype · SYNTHETIC fixtures only", "MOCK")}<section class="state-panel" role="status"><h3>載入合成介面範例…</h3><p>Loading synthetic UI fixtures…</p></section></div>`;
+    return `<div class="page">${pageIntro}<section class="state-panel" role="status"><h3>正在載入合成介面範例</h3><p>合成介面範例載入中 · SYNTHETIC UI ONLY</p></section></div>`;
   }
   if (carUiPrototypeFixtureError) {
-    return `<div class="page">${pageHeading("PHASE 06 / DEPLOYMENT", "模型預測與結果", "CAR Phase 6 UI Prototype · SYNTHETIC fixtures only", "MOCK")}<section class="state-panel" role="alert"><h3>無法載入合成介面範例</h3><p>${esc(carUiPrototypeFixtureError)}</p></section></div>`;
+    return `<div class="page">${pageIntro}<section class="state-panel" role="alert"><h3>無法載入合成介面範例</h3><p>${esc(carUiPrototypeFixtureError)}</p></section></div>`;
   }
+
   const fixture = mode === "csv" ? carUiPrototypeFixtures.batch : carUiPrototypeFixtures[state.carUiPrototypeSize];
-  const fieldCard = (field, index) => {
+  const selectedFixturePath = mode === "csv"
+    ? "data/fixtures/car-batch-preview.json"
+    : `data/fixtures/car-single-${state.carUiPrototypeSize}.json`;
+  const typeLabels = {
+    number: { title: "數值欄位", en: "Number", tag: "數值 · Number" },
+    select: { title: "類別欄位", en: "Category", tag: "類別 · Category" },
+    text: { title: "文字欄位", en: "Text", tag: "文字 · Text" }
+  };
+  const renderField = (field, index) => {
     const id = `car-p6-field-${index}`;
-    const required = field.required ? `<span class="p6-prototype-required">Required</span>` : "";
-    let control = "";
-    if (field.control_type === "select") {
-      control = `<select id="${id}" name="${esc(field.name)}">${field.options.map((option) => `<option value="${esc(option)}" ${option === field.sample_value ? "selected" : ""}>${esc(option)}</option>`).join("")}</select>`;
-    } else {
-      control = `<input id="${id}" name="${esc(field.name)}" type="${field.control_type === "number" ? "number" : "text"}" value="${esc(field.sample_value)}" ${field.control_type === "number" ? 'step="any"' : ""}>`;
-    }
-    return `<article class="p6-feature-card p6-prototype-field"><span class="p6-type-tag ${field.control_type === "number" ? "continuous" : field.control_type === "select" ? "nominal" : "other"}">${field.control_type === "number" ? "NUMBER" : field.control_type === "select" ? "CATEGORY" : "TEXT"}</span><label class="p6-field-label" for="${id}"><strong>${esc(field.name)} ${required}</strong></label>${control}</article>`;
+    const required = field.required ? `<span class="p6-prototype-required">必填</span>` : "";
+    const control = field.control_type === "select"
+      ? `<select id="${id}" name="${esc(field.name)}" aria-label="${esc(field.name)}">${field.options.map((option) => `<option value="${esc(option)}" ${option === field.sample_value ? "selected" : ""}>${esc(option)}</option>`).join("")}</select>`
+      : `<input id="${id}" name="${esc(field.name)}" type="${field.control_type === "number" ? "number" : "text"}" value="${esc(field.sample_value)}" ${field.control_type === "number" ? 'step="any"' : ""} aria-label="${esc(field.name)}">`;
+    const group = typeLabels[field.control_type];
+    return `<article class="p6-feature-card p6-prototype-field"><span class="p6-type-tag ${field.control_type === "number" ? "continuous" : field.control_type === "select" ? "nominal" : "other"}">${group.tag}</span><label class="p6-field-label" for="${id}"><strong>${esc(field.name)} ${required}</strong></label>${control}</article>`;
   };
-  const singlePanel = () => {
+  const renderSingleForm = () => {
     const fields = fixture.input_features;
+    const fieldCounts = {
+      number: fields.filter((field) => field.control_type === "number").length,
+      category: fields.filter((field) => field.control_type === "select").length,
+      text: fields.filter((field) => field.control_type === "text").length
+    };
     const groups = [
-      ["Number fields", fields.filter((field) => field.control_type === "number")],
-      ["Category fields", fields.filter((field) => field.control_type === "select")],
-      ["Text fields", fields.filter((field) => field.control_type === "text")]
-    ].filter(([, items]) => items.length);
-    let index = 0;
-    const sections = groups.map(([label, items]) => {
-      const cards = items.map((field) => fieldCard(field, index++)).join("");
-      return `<details class="p6-prototype-group" open><summary>${label}<span>${items.length} fields</span></summary><div class="p6-feature-grid">${cards}</div></details>`;
+      { key: "number", control: "number" },
+      { key: "category", control: "select" },
+      { key: "text", control: "text" }
+    ].filter(({ control }) => fields.some((field) => field.control_type === control));
+    let fieldIndex = 0;
+    const sections = groups.map(({ key, control }) => {
+      const group = typeLabels[control];
+      const cards = fields.filter((field) => field.control_type === control)
+        .map((field) => renderField(field, fieldIndex++)).join("");
+      const open = state.carUiGroupOpen[key] ? "open" : "";
+      return `<details class="p6-prototype-group" data-car-field-group="${key}" ${open}><summary><span>${group.title} <small>${group.en}</small></span><span>${fieldCounts[key]} 個欄位</span></summary><div class="p6-feature-grid">${cards}</div></details>`;
     }).join("");
-    return `<section class="card"><div class="card-head"><div><p class="eyebrow">01 · SINGLE INPUT · SYNTHETIC</p><h2>Vehicle input form</h2></div>${badge("MOCK")}</div><div class="card-body"><div class="p6-prototype-toolbar"><label class="control">Layout fixture<select id="car-p6-fixture-size"><option value="small" ${state.carUiPrototypeSize === "small" ? "selected" : ""}>Small · 5 fields</option><option value="large" ${state.carUiPrototypeSize === "large" ? "selected" : ""}>Large · 15 fields</option></select></label><span class="stage-note">UI fixture: ${fields.length} synthetic fields</span></div>${sections}<p class="stage-note" role="status">Inputs are editable for layout review only. No schema validation, model call, or price estimate runs.</p><div class="button-row"><button type="button" class="button primary" disabled title="Prediction is not implemented">Run prediction · NOT OPEN</button></div></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">02 · RESULT PANEL · SYNTHETIC</p><h2>Prediction result</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><div class="p6-prototype-state"><span class="p6-prototype-state-icon">—</span><div><strong>No prediction generated</strong><p>Prediction API is not connected. This prototype does not calculate or display a price.</p></div></div><dl class="data-row"><dt>Input state</dt><dd>Editable UI preview · not submitted</dd></dl><dl class="data-row"><dt>Model state</dt><dd>Unavailable · no model loaded</dd></dl></div></section>`;
+    const summaryTiles = [
+      ["欄位總數", fields.length],
+      ["數值", fieldCounts.number],
+      ["類別", fieldCounts.category],
+      ["文字", fieldCounts.text]
+    ].map(([label, value]) => `<article><span>${label}</span><strong>${value}</strong></article>`).join("");
+    return `<section class="card"><div class="card-head"><div><p class="eyebrow">01 · 單筆輸入 · SYNTHETIC</p><h2>車輛輸入欄位</h2></div>${badge("MOCK")}</div><div class="card-body"><div class="p6-prototype-toolbar"><label class="control">表單規模<select id="car-p6-fixture-size"><option value="small" ${state.carUiPrototypeSize === "small" ? "selected" : ""}>精簡版 · 5 個欄位</option><option value="large" ${state.carUiPrototypeSize === "large" ? "selected" : ""}>完整排版版 · 15 個欄位</option></select></label><span class="stage-note">目前資料：${fields.length} 個合成欄位</span></div>${sections}<p class="stage-note" role="status">欄位可編輯以檢視版面；資料不會送出，也不會進行 Schema 驗證或價格計算。</p><div class="button-row"><button type="button" class="button primary" disabled title="預測功能尚未實作">執行預測 · 尚未開放</button></div></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">02 · 輸入摘要與結果狀態</p><h2>預測結果</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><div class="p6-prototype-state"><span class="p6-prototype-state-icon" aria-hidden="true">—</span><div><strong>尚未執行預測</strong><p>目前只展示合成介面資料；不會產生或顯示預測價格。</p></div></div><div class="p6-prototype-counts">${summaryTiles}</div><dl class="data-row"><dt>預覽模式</dt><dd>本機合成 UI Fixture</dd></dl><dl class="data-row"><dt>表單狀態</dt><dd>可編輯展示 · 尚未送出</dd></dl><dl class="data-row"><dt>模型服務</dt><dd>尚未連接 · API 不可用</dd></dl><p class="stage-note">摘要數量取自目前的 Synthetic Fixture；不代表正式模型欄位數或輸入契約。</p></div></section>`;
   };
-  const batchPanel = () => {
+  const renderBatch = () => {
     const batch = carUiPrototypeFixtures.batch;
     const columns = batch.columns;
     const table = `<div class="csv-preview p6-csv-preview"><table><thead><tr>${columns.map((column) => `<th>${esc(column)}</th>`).join("")}</tr></thead><tbody>${batch.preview_rows.map((row) => `<tr>${columns.map((column) => `<td>${esc(row[column])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
-    return `<section class="card"><div class="card-head"><div><p class="eyebrow">01 · CSV BATCH · SYNTHETIC</p><h2>Batch input</h2></div>${badge("MOCK")}</div><div class="card-body"><ol class="p6-prototype-steps"><li><strong>1. Download CSV template</strong><button class="button" type="button" disabled>Download template · DEMO / NOT OPEN</button></li><li><strong>2. Upload CSV</strong><div class="upload-zone"><label class="control">Choose CSV file<input type="file" accept=".csv,text/csv" disabled></label><p class="stage-note">Demo only · file upload is not connected.</p></div></li><li><strong>3. Run batch prediction</strong><button class="button primary" type="button" disabled>Run batch prediction · NOT OPEN</button></li></ol></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">02 · BATCH SUMMARY · SYNTHETIC</p><h2>Preview results</h2></div>${badge("MOCK")}</div><div class="card-body"><div class="p6-prototype-counts"><article><span>Total rows</span><strong>${batch.summary.total_rows}</strong></article><article><span>Valid rows</span><strong>${batch.summary.valid_rows}</strong></article><article><span>Error rows</span><strong>${batch.summary.error_rows}</strong></article></div><p class="stage-note">All counts and sample rows below are synthetic UI fixtures.</p><details class="p6-prototype-table-details"><summary>View synthetic data preview</summary>${table}<ul class="p6-prototype-errors">${batch.errors.map((error) => `<li>${esc(error)}</li>`).join("")}</ul></details><button class="button" type="button" disabled>Download prediction CSV · NOT OPEN</button><div class="p6-prototype-state" style="margin-top:14px"><div><strong>No predictions available</strong><p>Batch processing is not connected to a model or API.</p></div></div></div></section>`;
+    return `<section class="card"><div class="card-head"><div><p class="eyebrow">01 · CSV 批次輸入 · SYNTHETIC</p><h2>批次輸入流程</h2></div>${badge("MOCK")}</div><div class="card-body"><ol class="p6-prototype-steps"><li><strong>1. 下載 CSV 範本</strong><button class="button" type="button" disabled>下載範本 · 尚未開放</button></li><li><strong>2. 選擇 CSV 檔案</strong><div class="p6-demo-upload" aria-disabled="true"><span class="p6-demo-upload-icon" aria-hidden="true">↥</span><strong>CSV 檔案上傳介面</strong><span>此處為版面示意；目前無法選取、上傳或解析檔案。</span><button class="button" type="button" disabled>選擇檔案 · Demo 尚未開放</button></div></li><li><strong>3. 執行批次預測</strong><button class="button primary" type="button" disabled>執行批次預測 · 尚未開放</button></li></ol></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">02 · 批次摘要 · SYNTHETIC</p><h2>資料預覽結果</h2></div>${badge("MOCK")}</div><div class="card-body"><div class="p6-prototype-counts"><article><span>總筆數</span><strong>${batch.summary.total_rows}</strong></article><article><span>有效筆數</span><strong>${batch.summary.valid_rows}</strong></article><article><span>錯誤筆數</span><strong>${batch.summary.error_rows}</strong></article></div><p class="stage-note">以上筆數、欄位值與錯誤訊息均來自合成 UI Fixture，不是真實車輛資料。</p><details class="p6-prototype-table-details"><summary>查看合成資料列</summary>${table}<ul class="p6-prototype-errors">${batch.errors.map((error) => `<li>${esc(error)}</li>`).join("")}</ul></details><button class="button" type="button" disabled>下載預測結果 CSV · 尚未開放</button><div class="p6-prototype-state" style="margin-top:14px"><div><strong>尚未產生預測結果</strong><p>批次處理尚未連接模型或 API；此表格僅展示介面樣式。</p></div></div><dl class="data-row"><dt>預覽模式</dt><dd>本機合成 UI Fixture</dd></dl><dl class="data-row"><dt>模型服務</dt><dd>尚未連接 · API 不可用</dd></dl></div></section>`;
   };
-  return `<div class="page p6-prototype-page"><div class="fixture-banner"><span><strong>LOCAL UI PROTOTYPE · SYNTHETIC</strong> · Not a verified Case Package or Prediction Input Contract.</span>${badge("MOCK")}</div>${pageHeading("PHASE 06 / DEPLOYMENT", "模型預測與結果", "Deployment prototype for Used Car Price Prediction. UI demonstration only; no model inference service is connected.", "MOCK")}<section class="card p6-prototype-context"><div class="card-body"><div><span class="eyebrow">CURRENT CASE</span><h2>${esc(title)}</h2><code>${esc(CAR_CASE_ID)}</code></div><div><span class="eyebrow">SCHEMA / PREVIEW MODE</span><strong>SYNTHETIC UI FIXTURE</strong><span>Input fields are illustrative, not the official model contract.</span></div><div><span class="eyebrow">MODEL STATUS</span><strong>Prediction unavailable</strong><span>No model is loaded; no API is called.</span></div></div></section><div class="mode-switch p6-prototype-tabs" role="group" aria-label="Prediction input mode"><button type="button" data-phase6-mode="manual" aria-pressed="${mode === "manual"}">單筆輸入 · Single input</button><button type="button" data-phase6-mode="csv" aria-pressed="${mode === "csv"}">CSV 批次輸入 · Batch CSV</button></div><div class="two-panel phase6-panels p6-prototype-panels" data-testid="car-phase6-${mode}">${mode === "csv" ? batchPanel() : singlePanel()}</div><section class="card p6-prototype-limit"><div class="card-body"><span class="eyebrow">DEPLOYMENT STATUS</span><p>Phase 6 currently demonstrates the future input experience only. Prediction, CSV processing, and online API service are not available.</p></div></section>${footerNav([5,"模型評估"],null)}</div>`;
+  const provenance = `<section class="card p6-prototype-provenance"><div class="card-head"><div><p class="eyebrow">資料身分與來源</p><h2>研究參考、合成範例與契約狀態</h2></div>${badge("MOCK")}</div><div class="card-body p6-prototype-provenance-grid"><article><strong>歷史研究／契約參考</strong><p>PR #35 提供既有 Case Package 與介面契約參考；本原型沒有更動其研究證據。</p><a class="text-link" href="https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35" target="_blank" rel="noreferrer">查看 PR #35 ↗</a></article><article><strong>目前使用的合成 Fixture</strong><p>僅用於檢視表單與批次摘要版面，欄位與選項均非正式 CAR 模型資訊。</p><a class="text-link" href="${WEB_BASE}/${selectedFixturePath}">查看目前 Fixture JSON ↗</a><small>Fixture ID: ${esc(fixture.fixture_id)} · SYNTHETIC_UI_ONLY</small></article><article><strong>Prediction Input Schema v0.1</strong><p>通用 Schema 尚未接入本原型，也不代表已核准的 CAR 輸入契約。</p><a class="text-link" href="https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/905c622aad4a9f8581b9c5b904200aa373e96c25/docs/design/data-contracts/schemas/prediction-input-schema-v0.1.schema.json" target="_blank" rel="noreferrer">查看通用 Schema ↗</a></article></div></section>`;
+  return `<div class="page p6-prototype-page"><div class="fixture-banner"><span><strong>本機 UI 原型 · 合成資料</strong> · 非正式 Case Package、研究結果或 CAR Prediction Input Contract。</span>${badge("MOCK")}</div>${pageHeading("PHASE 06 / DEPLOYMENT", "模型預測與結果", "中古車預測介面原型；目前沒有連接模型或線上預測服務。", "MOCK")}<section class="card p6-prototype-context"><div class="card-body"><div><span class="eyebrow">目前案例</span><h2>${esc(CAR_DISPLAY_NAME)}</h2><code>${esc(CAR_CASE_ID)}</code></div><div><span class="eyebrow">Schema／預覽模式</span><strong>合成 UI Fixture</strong><span>欄位與選項僅供版面檢視，不是正式輸入契約。</span></div><div><span class="eyebrow">模型狀態</span><strong>預測功能尚未開放</strong><span>未載入模型，也不會呼叫 API。</span></div></div></section><div class="mode-switch p6-prototype-tabs" role="group" aria-label="輸入模式"><button type="button" data-phase6-mode="manual" aria-pressed="${mode === "manual"}">單筆輸入</button><button type="button" data-phase6-mode="csv" aria-pressed="${mode === "csv"}">CSV 批次輸入</button></div><div class="two-panel phase6-panels p6-prototype-panels" data-testid="car-phase6-${mode}">${mode === "csv" ? renderBatch() : renderSingleForm()}</div>${provenance}${footerNav([5,"模型評估"],null)}</div>`;
 }
 function renderPhase6() {
   if (LOCAL_CAR_PHASE6_PREVIEW && state.caseId === CAR_CASE_ID) return renderCarPhase6UiPrototype();
@@ -1624,6 +1652,12 @@ app.addEventListener("click", (event) => {
     render();
   }
 });
+app.addEventListener("toggle", (event) => {
+  const group = event.target.closest?.("details[data-car-field-group]");
+  if (group && Object.prototype.hasOwnProperty.call(state.carUiGroupOpen, group.dataset.carFieldGroup)) {
+    state.carUiGroupOpen[group.dataset.carFieldGroup] = group.open;
+  }
+}, true);
 app.addEventListener("change", (event) => {
   if (event.target.id === "p6-csv-file") {
     const file = event.target.files?.[0]; if (!file) return;
