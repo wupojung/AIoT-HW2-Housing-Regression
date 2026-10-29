@@ -34,6 +34,19 @@ def valid_ref(ref):
     return all(part not in ("", ".", "..") for part in parts)
 
 
+def checked_manifest_paths(entries):
+    """Reject invalid and duplicate manifest paths; lexical-only smoke guard."""
+    seen = set()
+    for entry in entries:
+        path = entry["path"]
+        if not valid_ref(path):
+            raise ValueError(f"invalid manifest path: {path!r}")
+        if path in seen:
+            raise ValueError(f"duplicate manifest path: {path!r}")
+        seen.add(path)
+    return seen
+
+
 class ReferencePathTests(unittest.TestCase):
     def test_valid_relative_paths(self):
         for ref in ("case.json", "phases/phase-05/evaluations.json", "a-b/c_d.json"):
@@ -48,8 +61,10 @@ class ReferencePathTests(unittest.TestCase):
                 self.assertFalse(valid_ref(ref))
 
     def test_duplicate_manifest_paths_rejected(self):
-        paths = ["case.json", "case.json"]
-        self.assertNotEqual(len(paths), len(set(paths)))
+        duplicate_manifest = [{"path": "case.json"}, {"path": "case.json"}]
+        with self.assertRaisesRegex(ValueError, "duplicate manifest path"):
+            checked_manifest_paths(duplicate_manifest)
+        self.assertEqual(checked_manifest_paths([{"path": "case.json"}]), {"case.json"})
 
 
 class PublishedCasePackageContractTests(unittest.TestCase):
@@ -74,10 +89,9 @@ class PublishedCasePackageContractTests(unittest.TestCase):
                 self.assertIsInstance(pkg["publication"]["approved"], bool)
                 self.assertIn("review_status", pkg["publication"])
                 root = (DATA / entry["package_ref"]).parent
+                checked_manifest_paths(pkg["files"])
                 file_map = {}
                 for f in pkg["files"]:
-                    self.assertTrue(valid_ref(f["path"]))
-                    self.assertNotIn(f["path"], file_map)
                     self.assertRegex(f["sha256"], HEX)
                     self.assertIsInstance(f["bytes"], int)
                     self.assertGreaterEqual(f["bytes"], 0)
