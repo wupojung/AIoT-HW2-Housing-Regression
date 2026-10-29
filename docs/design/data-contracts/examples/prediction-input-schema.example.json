@@ -59,7 +59,7 @@
       "name": "category_a",
       "data_type": "category",
       "required": true,
-      "nullable": true,
+      "nullable": null,
       "control_type": "select",
       "control_type_evidence": "PROPOSED_BY_FITTED_CATEGORY_CARDINALITY",
       "options": [
@@ -83,7 +83,7 @@
       "name": "category_b",
       "data_type": "category",
       "required": true,
-      "nullable": true,
+      "nullable": null,
       "control_type": "select",
       "control_type_evidence": "PROPOSED_BY_FITTED_CATEGORY_CARDINALITY",
       "options": [
@@ -107,7 +107,7 @@
       "name": "category_c",
       "data_type": "category",
       "required": true,
-      "nullable": true,
+      "nullable": null,
       "control_type": "select",
       "control_type_evidence": "PROPOSED_BY_FITTED_CATEGORY_CARDINALITY",
       "options": [

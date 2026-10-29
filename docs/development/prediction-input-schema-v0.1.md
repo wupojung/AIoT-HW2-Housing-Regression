@@ -6,13 +6,13 @@ Canonical generated filename: **`prediction-input-schema.json`**, stored at the 
 
 The artifact describes raw input keys accepted by a specific fitted preprocessing/model bundle. The count and field order come from that bundle. Raw fields, encoded features, and selected encoded features are separate properties. v0.1's exporter adapter supports the CAR Final Fit bundle shape (`transformer`, `scaler`, `mask`, `estimator`, `features`, and run identity); the document format itself does not contain a CAR field-count assumption.
 
-The output records model SHA, case/model identity, run/config/source evidence, required key presence, nullable values where a fitted imputer proves support, blank behavior, encoder category values, category grouping and raw-to-encoded lineage. Units and numeric bounds remain `null` unless explicit evidence is available. `control_type` is a UI suggestion derived from the fitted data type/cardinality, not a model constraint.
+The output records model SHA, case/model identity, run/config/source evidence, required key presence, nullable values only where a fitted imputer's literal `None` sentinel proves support, blank behavior, encoder category values, category grouping and raw-to-encoded lineage. A fitted imputer using `NaN` does not by itself prove that a JSON `null` will be normalized correctly, so `nullable` stays unknown in that case. Units and numeric bounds remain `null` unless explicit evidence is available. `control_type` is a UI suggestion derived from the fitted data type/cardinality, not a model constraint.
 
 Encoder options are **training vocabulary**, not an approved API allowlist. Unknown-category handling is recorded from the fitted encoder. Before publishing a generated artifact, review category values for scraped text or other source-sensitive content. The exporter never writes model weights, source rows, OOF, Holdout or estimator parameters into the schema. It does not run `predict`.
 
 ## Export from a trusted bundle
 
-Obtain the model digest from a trusted Run Manifest or other independent record. Do not accept model uploads or deserialize an artifact whose expected digest is not independently verified. The tool checks the digest before calling `joblib.load`.
+Obtain the model digest from a trusted Run Manifest or other independent record. Do not accept model uploads or deserialize an artifact whose expected digest is not independently verified. The tool opens a regular file, copies and hashes the same bytes into a private temporary spool, and passes only that verified stream to `joblib.load`, avoiding a path-replacement race between hashing and deserialization.
 
 ```sh
 PYTHONPATH=python/src python tools/modeling/export_prediction_input_schema.py \

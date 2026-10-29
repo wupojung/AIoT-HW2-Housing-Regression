@@ -80,7 +80,9 @@ def _source_for_encoded_name(encoded_name: str, raw_columns: list[str]) -> str:
     candidates = [name for name in raw_columns if encoded_name == name or encoded_name.startswith(name + "_")]
     if not candidates:
         raise PredictionInputSchemaError("could not trace an encoded feature to a raw input")
-    return max(candidates, key=len)
+    if len(candidates) != 1:
+        raise PredictionInputSchemaError("encoded feature lineage is ambiguous for overlapping raw input names")
+    return candidates[0]
 
 
 def _imputer_metadata(steps: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -95,9 +97,13 @@ def _imputer_metadata(steps: list[tuple[str, Any]]) -> dict[str, Any]:
     if not hasattr(imputer, "statistics_"):
         raise PredictionInputSchemaError("imputer is not fitted")
     marker = imputer.missing_values
-    marker_name = "NaN" if isinstance(marker, (float, np.floating)) and math.isnan(float(marker)) else str(marker)
+    marker_is_nan = isinstance(marker, (float, np.floating)) and math.isnan(float(marker))
+    marker_name = "NaN" if marker_is_nan else str(marker)
     return {
-        "nullable": True,
+        # `nullable` describes literal JSON null input, not merely whether
+        # sklearn can impute its configured sentinel. NaN requires an API
+        # normalization step that this metadata exporter cannot assert.
+        "nullable": True if marker is None else None,
         "missing_policy": f"SIMPLE_IMPUTER_{str(imputer.strategy).upper()}",
         "missing_marker": marker_name,
         "missing_evidence_status": "VERIFIED",

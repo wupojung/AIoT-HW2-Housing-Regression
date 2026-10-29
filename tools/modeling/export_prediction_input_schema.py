@@ -8,8 +8,12 @@ obtaining their expected SHA-256. This tool does not predict or publish models.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
+import stat
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +23,6 @@ sys.path.insert(0, str(REPO_ROOT / "python" / "src"))
 from housing_regression.prediction_input_schema import (  # noqa: E402
     PredictionInputSchemaError,
     build_prediction_input_schema,
-    sha256_file,
     write_schema_new,
 )
 
@@ -37,22 +40,36 @@ def _read_manifest(path: Path | None) -> dict[str, Any] | None:
 
 
 def _load_verified_bundle(model_path: Path, expected_sha256: str) -> tuple[dict[str, Any], str]:
-    if model_path.is_symlink() or not model_path.is_file():
-        raise PredictionInputSchemaError("model path must be an existing regular file, not a symlink")
     expected = expected_sha256.lower()
     if len(expected) != 64 or any(ch not in "0123456789abcdef" for ch in expected):
         raise PredictionInputSchemaError("expected SHA-256 must contain 64 hexadecimal characters")
-    actual = sha256_file(model_path)
-    if actual != expected:
-        raise PredictionInputSchemaError("model artifact SHA-256 does not match the trusted expected digest")
-
-    # joblib deserialization can execute Python code. Keep this strictly after
-    # the caller-provided trusted digest check; never accept uploaded bundles.
     try:
-        import joblib
+        # Open once, verify the opened regular file identity, then copy and hash
+        # the exact bytes that will be deserialized. This prevents replacing
+        # the path between digest verification and joblib.load.
+        with model_path.open("rb") as source:
+            opened_stat = os.fstat(source.fileno())
+            path_stat = model_path.lstat()
+            if not stat.S_ISREG(opened_stat.st_mode) or not os.path.samestat(opened_stat, path_stat):
+                raise PredictionInputSchemaError("model path must resolve to an existing regular file, not a symlink")
+            digest = hashlib.sha256()
+            with tempfile.SpooledTemporaryFile(max_size=64 * 1024 * 1024, mode="w+b") as verified_bytes:
+                for block in iter(lambda: source.read(1024 * 1024), b""):
+                    digest.update(block)
+                    verified_bytes.write(block)
+                actual = digest.hexdigest()
+                if actual != expected:
+                    raise PredictionInputSchemaError("model artifact SHA-256 does not match the trusted expected digest")
 
-        bundle = joblib.load(model_path)
+                # joblib deserialization can execute Python code. Keep this
+                # strictly after digest verification; never accept uploads.
+                import joblib
+
+                verified_bytes.seek(0)
+                bundle = joblib.load(verified_bytes)
     except Exception as exc:
+        if isinstance(exc, PredictionInputSchemaError):
+            raise
         raise PredictionInputSchemaError("could not deserialize the digest-verified model bundle") from exc
     if not isinstance(bundle, dict):
         raise PredictionInputSchemaError("unsupported model bundle format")

@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -17,6 +20,8 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from housing_regression.prediction_input_schema import (
     PredictionInputSchemaError,
+    _imputer_metadata,
+    _source_for_encoded_name,
     build_prediction_input_schema,
     write_schema_new,
 )
@@ -127,6 +132,16 @@ class PredictionInputSchemaTests(unittest.TestCase):
         self.assertIsNone(numeric["unit"])
         self.assertIsNone(numeric["minimum"])
         self.assertIsNone(numeric["maximum"])
+        categorical = next(item for item in document["input_features"] if item["data_type"] == "category")
+        self.assertIsNone(categorical["nullable"], "NaN sentinel does not prove literal JSON null support")
+
+    def test_nullable_true_requires_literal_none_imputer_sentinel(self):
+        imputer = SimpleImputer(strategy="most_frequent", missing_values=None).fit(
+            np.array([[None], ["known"]], dtype=object)
+        )
+        metadata = _imputer_metadata([("imputer", imputer)])
+        self.assertIs(metadata["nullable"], True)
+        self.assertEqual(metadata["missing_marker"], "None")
 
     def test_unknown_preprocessing_metadata_fails_closed(self):
         bundle = self._bundle(5)
@@ -162,6 +177,10 @@ class PredictionInputSchemaTests(unittest.TestCase):
                 run_manifest=manifest,
             )
 
+    def test_ambiguous_raw_name_prefix_fails_closed(self):
+        with self.assertRaisesRegex(PredictionInputSchemaError, "lineage is ambiguous"):
+            _source_for_encoded_name("vehicle_make_model", ["vehicle", "vehicle_make"])
+
     def test_export_excludes_model_contents_and_research_rows(self):
         bundle = self._bundle(5)
         document = build_prediction_input_schema(
@@ -185,6 +204,30 @@ class PredictionInputSchemaTests(unittest.TestCase):
             artifact.write_bytes(b"not a joblib artifact")
             with self.assertRaisesRegex(PredictionInputSchemaError, "does not match"):
                 _load_verified_bundle(artifact, "0" * 64)
+
+    def test_path_replacement_after_hash_does_not_change_loaded_bytes(self):
+        import joblib
+
+        expected_bundle = {"trusted": "verified-bytes"}
+        serialized = io.BytesIO()
+        joblib.dump(expected_bundle, serialized)
+        payload = serialized.getvalue()
+        digest = hashlib.sha256(payload).hexdigest()
+        with tempfile.TemporaryDirectory() as temp:
+            artifact = Path(temp) / "trusted.joblib"
+            artifact.write_bytes(payload)
+            real_load = joblib.load
+
+            def replace_path_then_load(verified_stream):
+                artifact.write_bytes(b"replacement-after-hash")
+                verified_stream.seek(0)
+                return real_load(verified_stream)
+
+            with patch("joblib.load", side_effect=replace_path_then_load):
+                loaded, actual = _load_verified_bundle(artifact, digest)
+            self.assertEqual(loaded, expected_bundle)
+            self.assertEqual(actual, digest)
+            self.assertEqual(artifact.read_bytes(), b"replacement-after-hash")
 
 
 if __name__ == "__main__":
