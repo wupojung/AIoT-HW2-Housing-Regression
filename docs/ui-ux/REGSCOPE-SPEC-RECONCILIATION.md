@@ -14,7 +14,7 @@
 | Phase 3 | Old generic transformation wording | CAR `renderCarPhase3`: raw, filtered, processed, encoded; raw SHA/lineage checking | STALE where raw/encoded conflated | Define units and source lineage explicitly |
 | Phase 4 | PR #35 wireframes and historical feature-K proposal | `renderExplorationPhase4` supports Comparison/Explorer and checked configuration refs | CURRENT code; PR #35 PROPOSED historical | Use observed code labels and conditional eligibility; no invented K |
 | Phase 5 | `docs/ui-ux/case-package/phase-05/` contracts | `renderExplorationPhase5` binds `cv_fold_mean`/`pooled_oof` and configuration evidence | CURRENT contract as retained; statuses PARTIAL/PENDING | Retain contracts, document distinct metrics and missing diagnostics |
-| Phase 6 | PR #35 and `web/README.md` mock inference language | CAR local reload smoke; no online model API; Ames exploration unavailable | PROPOSED API; CURRENT unavailable state | Separate status view, smoke, mock UI and future API |
+| Phase 6 | PR #35 / legacy UI label `模型預測實驗室` and `web/README.md` | CAR local reload smoke; no online model API; Ames exploration unavailable; Owner approved heading `模型預測與結果` | STALE current UI wording; CURRENT unavailable state; PROPOSED future API | Update normative heading only; record required future UI-copy change without touching code |
 | Retired package routing | PR #61 | `main` has allowlist; `deploy` SHA predates #61 | UNKNOWN in Production | Require release + HTTP checks before claiming 404 |
 | Package / research license | Release Index, PR #59/#60 | Both packages PARTIAL; CAR competition-specific reuse rights PENDING; CAR CV worse than Dummy | CURRENT | Keep limitations explicit |
 | Responsive / localization | `web/styles.css`, `web/index.html` | CSS media queries; `zh-Hant`, mixed language copy | CURRENT in code, UNKNOWN visually | Do not claim tested responsive or bilingual localization |
@@ -35,13 +35,20 @@
 | “Evaluation = Holdout test” | **Development CV / OOF evaluation**, unless independent Holdout evidence explicitly exists | Prevent leakage/protocol confusion |
 | “Verified method” = best prediction | **artifact-scoped VERIFIED**; compare against **Dummy baseline** explicitly | CAR model did not beat Dummy |
 | “Optimized” = proven best | **Optimized Modeling** is the case's proper title, **not** performance certification | Preserve official name while stating poor fit |
-| “Deployment complete” / “Prediction Lab live” | **Phase 6 readiness/status UI**; **online Prediction API NOT IMPLEMENTED** | Static frontend and local smoke are not inference service |
+| “Deployment complete” / “Prediction Lab live” | **Phase 6／模型預測與結果 (Model Prediction & Results)** as approved page heading; **online Prediction API NOT IMPLEMENTED** | Page naming is not evidence of inference service |
+| `模型預測實驗室` as canonical Phase 6 heading | **模型預測與結果（Model Prediction & Results）**; CRISP-DM stage remains **Deployment／部署** | Owner-approved naming; currently deployed UI strings still use the old label and require separately authorized UI code changes |
 | “CSV upload” | **browser-local CSV preview** for current UI | No server upload or batch prediction |
 | “License verified” | **dataset attribution recorded; competition Rules review PENDING** | Different rights and redistribution conditions |
 | “Accessible retired cases blocked” | **removed from selector**; **direct-route 404 UNKNOWN** | PR #61 not yet on deploy at watermark |
 | “Bilingual site” | **zh-Hant document with mixed Chinese/English UI labels** | No verified language switch |
 | “Dashboard analysis run” | **Dashboard Verified Research display** or **Custom Dataset preview** | Custom mode cannot run training |
 | “Smoke PASS” | **local model reload smoke passed (scoped)** | Not proof of accuracy, API, security or production |
+
+## Owner naming decision and implementation gap
+
+- **Approved on 2026-10-29:** the Phase 6 **page title** is `模型預測與結果（Model Prediction & Results）`. The CRISP-DM Phase 6 *classification* remains `Deployment／部署`.
+- The production-source strings `PHASES[6]` (`模型預測實驗室`) and legacy `renderPhase6()` page heading (`房價預測實驗室`) remain **STALE in UI source**. This docs-only PR does **not** modify them. Any future UI engineering change must coordinate the visible menu, heading, case-specific CAR/Ames page states, accessibility labels and tests, without suggesting API availability.
+- Do not modify historical code identifiers or prior research records merely to satisfy a glossary change.
 
 ## File disposition and authority
 
@@ -63,4 +70,5 @@
 
 ## Change log
 
+- 2026-10-29: Owner-approved Phase 6 page title `模型預測與結果`; CRISP-DM Deployment name unchanged; live UI copy change recorded separately.
 - 2026-10-29: Initial Issue #62 docs-only reconciliation of two-case release, UI behavior, historical design status and terminology. No frontend, scientific metric, package, routing, CI, merge or deployment modifications.
