@@ -1,0 +1,21 @@
+{
+  "case_id": "used-car-price-optimized",
+  "case_status": "PARTIAL",
+  "disclaimer": "Run 03 是有限候選比較；最佳候選仍未優於 Dummy Baseline。價格為網路刊登價，不是成交價；線上推論服務未提供。",
+  "language": "zh-Hant",
+  "methodology_id": "CRISP-DM",
+  "schema_version": "1.0.0",
+  "source": {
+    "label": "Kaggle Used Car Price Prediction Challenge — train_data_v2.csv",
+    "license": "CC BY-NC-SA 4.0",
+    "license_review": "PENDING",
+    "url": "https://www.kaggle.com/competitions/used-car-price-prediction-challenge/data?select=train_data_v2.csv"
+  },
+  "target": {
+    "label": "中古車刊登價格",
+    "raw_field_id": "price",
+    "unit": "USD",
+    "value_type": "number"
+  },
+  "title": "中古車售價預測與模型效能分析｜Used Car Price Prediction — Optimized Modeling"
+}

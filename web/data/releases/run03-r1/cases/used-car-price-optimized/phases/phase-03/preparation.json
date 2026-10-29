@@ -1,0 +1,192 @@
+{
+  "case_id": "used-car-price-optimized",
+  "feature_types": [
+    {
+      "label": "名目類別",
+      "type_id": "nominal"
+    },
+    {
+      "label": "有序類別",
+      "type_id": "ordinal"
+    },
+    {
+      "label": "離散數值",
+      "type_id": "discrete"
+    },
+    {
+      "label": "連續數值",
+      "type_id": "continuous"
+    }
+  ],
+  "lineage_ref": "phases/phase-03/feature-lineage.json",
+  "schema_version": "1.0.0",
+  "split": {
+    "holdout_rows": 157,
+    "seed": 42,
+    "source_labeled_rows": 783,
+    "status": "VERIFIED",
+    "training_rows": 626
+  },
+  "stages": [
+    {
+      "distribution_status": "UNAVAILABLE",
+      "id": "raw",
+      "label": "目標以外的原始欄位（含排除候選）",
+      "segments": [],
+      "total": 27,
+      "total_status": "VERIFIED",
+      "unit": "raw_columns"
+    },
+    {
+      "distribution_status": "VERIFIED",
+      "id": "filtered",
+      "label": "排除識別／文字／洩漏欄位後",
+      "segments": [
+        {
+          "count": 11,
+          "type_id": "nominal"
+        },
+        {
+          "count": 0,
+          "type_id": "ordinal"
+        },
+        {
+          "count": 3,
+          "type_id": "discrete"
+        },
+        {
+          "count": 1,
+          "type_id": "continuous"
+        }
+      ],
+      "total": 15,
+      "total_status": "VERIFIED",
+      "unit": "pre_encoding_columns"
+    },
+    {
+      "distribution_status": "VERIFIED",
+      "fit_population": "each_development_training_fold",
+      "id": "processed",
+      "label": "訓練折內補值",
+      "pipeline_version": "used-car-fold-local-preprocessing-v1",
+      "segments": [
+        {
+          "count": 11,
+          "type_id": "nominal"
+        },
+        {
+          "count": 0,
+          "type_id": "ordinal"
+        },
+        {
+          "count": 3,
+          "type_id": "discrete"
+        },
+        {
+          "count": 1,
+          "type_id": "continuous"
+        }
+      ],
+      "total": 15,
+      "total_status": "VERIFIED",
+      "unit": "pre_encoding_columns"
+    },
+    {
+      "distribution_status": "VERIFIED",
+      "fit_population": "development_training_only",
+      "id": "encoded",
+      "label": "One-Hot 編碼特徵",
+      "pipeline_version": "used-car-fold-local-preprocessing-v1",
+      "segments": [
+        {
+          "count": 66,
+          "type_id": "nominal"
+        },
+        {
+          "count": 0,
+          "type_id": "ordinal"
+        },
+        {
+          "count": 3,
+          "type_id": "discrete"
+        },
+        {
+          "count": 1,
+          "type_id": "continuous"
+        }
+      ],
+      "total": 70,
+      "total_status": "VERIFIED",
+      "unit": "encoded_features"
+    }
+  ],
+  "status": "VERIFIED",
+  "treatments": [
+    {
+      "action": "exclude_from_model_input",
+      "field": "ID",
+      "reason": "identifier"
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "vin",
+      "reason": "vehicle identifier"
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "search_price",
+      "reason": "price proxy/leakage risk"
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "est._monthly_pmt",
+      "reason": "price-derived proxy risk"
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "engine",
+      "reason": "known free-text/listing field",
+      "source_csv_modified": false
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "features_list",
+      "reason": "known free-text/listing field",
+      "source_csv_modified": false
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "title",
+      "reason": "known free-text/listing field",
+      "source_csv_modified": false
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "scrape_timestamp",
+      "reason": "temporal drift/proxy risk"
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "mileage",
+      "reason": "duplicate representation; canonical odometer retained"
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "trans",
+      "reason": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+      "source_csv_modified": false
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "make",
+      "reason": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+      "source_csv_modified": false
+    },
+    {
+      "action": "exclude_from_model_input",
+      "field": "model",
+      "reason": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+      "source_csv_modified": false
+    }
+  ]
+}

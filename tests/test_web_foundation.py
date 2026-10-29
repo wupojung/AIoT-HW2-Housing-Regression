@@ -51,7 +51,7 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('caseSelect.disabled = loading;', self.js)
         self.assertIn('研究案例載入中…', self.js)
         self.assertIn('研究案例載入失敗：', self.js)
-        self.assertIn('研究案例載入完成，共 ${Object.keys(CASES).length} 個可用案例。', self.js)
+        self.assertIn('研究案例載入完成，共 ${publicCases.length} 個可用案例。', self.js)
         self.assertIn('caseLoadStatus.classList.toggle("is-error", failedCases.length > 0);', self.js)
         self.assertIn('console.warn("[RegScope] Case Package validation failed", {', self.js)
         self.assertIn('logPackageLoadFailure("ames-reference-init-a", stage, error);', self.js)
@@ -144,7 +144,7 @@ class WebFoundationTests(unittest.TestCase):
 
     def test_phase5_package_metric_and_figure_bindings_are_intact(self):
         release = json.loads((WEB / "data/current-release.json").read_text(encoding="utf-8"))
-        for case_id in ("ames-reference-init-a", "ames-full-model-exploration"):
+        for case_id in ("ames-full-model-exploration",):
             entry = next(item for item in release["cases"] if item["case_id"] == case_id)
             package_path = WEB / "data" / entry["package_ref"]
             package_bytes = package_path.read_bytes()
@@ -179,6 +179,18 @@ class WebFoundationTests(unittest.TestCase):
                     self.assertEqual(figure["sha256"], listed["sha256"])
                     self.assertEqual(hashlib.sha256(asset).hexdigest(), listed["sha256"])
                     self.assertEqual(listed["mime"], "image/png")
+
+    def test_public_release_has_only_the_two_approved_cases(self):
+        release = json.loads((WEB / "data/current-release.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            [item["case_id"] for item in release["cases"]],
+            ["ames-full-model-exploration", "used-car-price-optimized"],
+        )
+        self.assertIn('const PUBLIC_CASE_IDS = [EXPLORATION_CASE_ID, CAR_CASE_ID];', self.js)
+        self.assertIn('PUBLIC_CASE_IDS.filter((id) => CASES[id])', self.js)
+        self.assertIn('caseId: "ames-full-model-exploration"', self.js)
+        self.assertIn('const CAR_DISPLAY_NAME = "Used Car Price Prediction — Optimized Modeling";', self.js)
+        self.assertNotIn('loadReferencePackage();\n  if (!explorationPackage', self.js)
 
     def test_brand_course_and_project_links_are_present(self):
         text = " ".join(self.parser.text)

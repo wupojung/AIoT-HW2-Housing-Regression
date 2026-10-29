@@ -1,0 +1,1189 @@
+{
+  "case_id": "used-car-price-optimized",
+  "classification_method": "vehicle field semantics; one-hot outputs inherit nominal source semantics; numeric outputs retain discrete/continuous semantics.",
+  "config_sha256": "c4c7962655443154cced25520a4021160dd00b2443aad66c01931d2b52081884",
+  "encoded_features": [
+    {
+      "encoded_feature": "num__feature_count",
+      "index": 0,
+      "semantic_type": "discrete",
+      "source_columns": [
+        "feature_count"
+      ],
+      "transformation": "median_impute_and_scale"
+    },
+    {
+      "encoded_feature": "num__image_count",
+      "index": 1,
+      "semantic_type": "discrete",
+      "source_columns": [
+        "image_count"
+      ],
+      "transformation": "median_impute_and_scale"
+    },
+    {
+      "encoded_feature": "num__odometer",
+      "index": 2,
+      "semantic_type": "continuous",
+      "source_columns": [
+        "odometer"
+      ],
+      "transformation": "median_impute_and_scale"
+    },
+    {
+      "encoded_feature": "num__year",
+      "index": 3,
+      "semantic_type": "discrete",
+      "source_columns": [
+        "year"
+      ],
+      "transformation": "median_impute_and_scale"
+    },
+    {
+      "encoded_feature": "cat__condition_",
+      "index": 4,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "condition"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__condition_excellent",
+      "index": 5,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "condition"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__condition_fair",
+      "index": 6,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "condition"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__condition_good",
+      "index": 7,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "condition"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__condition_like new",
+      "index": 8,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "condition"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__condition_infrequent_sklearn",
+      "index": 9,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "condition"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__cylinders_",
+      "index": 10,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "cylinders"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__cylinders_10 cylinders",
+      "index": 11,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "cylinders"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__cylinders_4 cylinders",
+      "index": 12,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "cylinders"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__cylinders_5 cylinders",
+      "index": 13,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "cylinders"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__cylinders_6 cylinders",
+      "index": 14,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "cylinders"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__cylinders_8 cylinders",
+      "index": 15,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "cylinders"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__cylinders_other",
+      "index": 16,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "cylinders"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__cylinders_infrequent_sklearn",
+      "index": 17,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "cylinders"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__drive_",
+      "index": 18,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "drive"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__drive_4wd",
+      "index": 19,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "drive"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__drive_fwd",
+      "index": 20,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "drive"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__drive_rwd",
+      "index": 21,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "drive"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__ext_color_",
+      "index": 22,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "ext_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__ext_color_infrequent_sklearn",
+      "index": 23,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "ext_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__fuel_diesel",
+      "index": 24,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "fuel"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__fuel_electric",
+      "index": 25,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "fuel"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__fuel_gas",
+      "index": 26,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "fuel"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__fuel_hybrid",
+      "index": 27,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "fuel"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__fuel_other",
+      "index": 28,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "fuel"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__fuel_infrequent_sklearn",
+      "index": 29,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "fuel"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__int_color_",
+      "index": 30,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "int_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__int_color_infrequent_sklearn",
+      "index": 31,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "int_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_",
+      "index": 32,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_black",
+      "index": 33,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_blue",
+      "index": 34,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_brown",
+      "index": 35,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_custom",
+      "index": 36,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_green",
+      "index": 37,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_grey",
+      "index": 38,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_orange",
+      "index": 39,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_red",
+      "index": 40,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_silver",
+      "index": 41,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_white",
+      "index": 42,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__paint_color_infrequent_sklearn",
+      "index": 43,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "paint_color"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__title_status_",
+      "index": 44,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "title_status"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__title_status_clean",
+      "index": 45,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "title_status"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__title_status_missing",
+      "index": 46,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "title_status"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__title_status_rebuilt",
+      "index": 47,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "title_status"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__title_status_salvage",
+      "index": 48,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "title_status"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__title_status_infrequent_sklearn",
+      "index": 49,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "title_status"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__transmission_",
+      "index": 50,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "transmission"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__transmission_automatic",
+      "index": 51,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "transmission"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__transmission_manual",
+      "index": 52,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "transmission"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__transmission_other",
+      "index": 53,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "transmission"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__trim_",
+      "index": 54,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "trim"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__trim_...",
+      "index": 55,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "trim"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__trim_infrequent_sklearn",
+      "index": 56,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "trim"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_",
+      "index": 57,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_SUV",
+      "index": 58,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_convertible",
+      "index": 59,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_coupe",
+      "index": 60,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_hatchback",
+      "index": 61,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_minivan",
+      "index": 62,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_other",
+      "index": 63,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_pickup",
+      "index": 64,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_sedan",
+      "index": 65,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_truck",
+      "index": 66,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_van",
+      "index": 67,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_wagon",
+      "index": 68,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    },
+    {
+      "encoded_feature": "cat__type_infrequent_sklearn",
+      "index": 69,
+      "semantic_type": "nominal",
+      "source_columns": [
+        "type"
+      ],
+      "transformation": "mode_impute_and_one_hot"
+    }
+  ],
+  "excluded_fields": [
+    {
+      "decision": "exclude",
+      "field": "ID",
+      "reason": "not used as a predictor; source CSV preserved",
+      "semantic_type": "identifier"
+    },
+    {
+      "decision": "include",
+      "field": "condition",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "include",
+      "field": "cylinders",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "include",
+      "field": "drive",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "exclude",
+      "field": "engine",
+      "reason": "known free-text/listing field",
+      "semantic_type": "text"
+    },
+    {
+      "decision": "exclude",
+      "field": "est._monthly_pmt",
+      "reason": "not used as a predictor; source CSV preserved",
+      "semantic_type": "leakage_proxy"
+    },
+    {
+      "decision": "include",
+      "field": "ext_color",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "include",
+      "field": "feature_count",
+      "reason": "eligible predictor",
+      "semantic_type": "discrete"
+    },
+    {
+      "decision": "exclude",
+      "field": "features_list",
+      "reason": "known free-text/listing field",
+      "semantic_type": "text"
+    },
+    {
+      "decision": "include",
+      "field": "fuel",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "include",
+      "field": "image_count",
+      "reason": "eligible predictor",
+      "semantic_type": "discrete"
+    },
+    {
+      "decision": "include",
+      "field": "int_color",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "exclude",
+      "field": "make",
+      "reason": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+      "semantic_type": "text"
+    },
+    {
+      "decision": "exclude",
+      "field": "mileage",
+      "reason": "not used as a predictor; source CSV preserved",
+      "semantic_type": "duplicate_representation"
+    },
+    {
+      "decision": "exclude",
+      "field": "model",
+      "reason": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+      "semantic_type": "text"
+    },
+    {
+      "decision": "include",
+      "field": "odometer",
+      "reason": "eligible predictor",
+      "semantic_type": "continuous"
+    },
+    {
+      "decision": "include",
+      "field": "paint_color",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "exclude",
+      "field": "price",
+      "reason": "not used as a predictor; source CSV preserved",
+      "semantic_type": "target"
+    },
+    {
+      "decision": "exclude",
+      "field": "scrape_timestamp",
+      "reason": "not used as a predictor; source CSV preserved",
+      "semantic_type": "temporal"
+    },
+    {
+      "decision": "exclude",
+      "field": "search_price",
+      "reason": "not used as a predictor; source CSV preserved",
+      "semantic_type": "leakage_proxy"
+    },
+    {
+      "decision": "exclude",
+      "field": "title",
+      "reason": "known free-text/listing field",
+      "semantic_type": "text"
+    },
+    {
+      "decision": "include",
+      "field": "title_status",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "exclude",
+      "field": "trans",
+      "reason": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+      "semantic_type": "text"
+    },
+    {
+      "decision": "include",
+      "field": "transmission",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "include",
+      "field": "trim",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "include",
+      "field": "type",
+      "reason": "eligible predictor",
+      "semantic_type": "nominal"
+    },
+    {
+      "decision": "exclude",
+      "field": "vin",
+      "reason": "not used as a predictor; source CSV preserved",
+      "semantic_type": "identifier"
+    },
+    {
+      "decision": "include",
+      "field": "year",
+      "reason": "eligible predictor",
+      "semantic_type": "discrete"
+    }
+  ],
+  "feature_names_sha256": "67a154b93b2672f2b84d4710f7f01e5dc0d1452a44ff695076c7de6f673aa68b",
+  "fit_population": "development_train_only",
+  "phase3_result_sha256": null,
+  "pipeline_source_sha256": "9d4ba7e77f885ed11e11659564a040759f4608bdc920b202e3bd553c335bf5be",
+  "pipeline_version": "used-car-fold-local-preprocessing-v1",
+  "raw_classification": {
+    "counts": {
+      "continuous": 4,
+      "discrete": 3,
+      "identifier": 2,
+      "nominal": 14,
+      "ordinal": 0,
+      "other": 0,
+      "temporal": 1,
+      "text": 3
+    },
+    "evidence": {
+      "basis": "Kaggle data dictionary, source CSV schema, Run 03 Phase 2 field decisions and Phase 3 feature lineage",
+      "dictionary_url": "https://www.kaggle.com/competitions/used-car-price-prediction-challenge/data",
+      "exclusion_review_source": "field-exclusion-review.json",
+      "mileage": "Numeric measurement. Excluded from modeling as a duplicate representation; exact equivalence to odometer remains pending.",
+      "schema_source": "train_data_v2.csv header reconciled with Phase 2 decisions; semantic types checked against Kaggle data dictionary; target price excluded",
+      "source_data_sha256": "83caf79b21b8b72a18dc6bd06334627dc39f0108e83b8d8b8724cdfa04cd9a36"
+    },
+    "feature_types": [
+      {
+        "label": "名目類別 (Nominal)",
+        "type_id": "nominal"
+      },
+      {
+        "label": "有序類別 (Ordinal)",
+        "type_id": "ordinal"
+      },
+      {
+        "label": "離散數值 (Discrete)",
+        "type_id": "discrete"
+      },
+      {
+        "label": "連續數值 (Continuous)",
+        "type_id": "continuous"
+      },
+      {
+        "label": "識別碼 (Identifier)",
+        "type_id": "identifier"
+      },
+      {
+        "label": "自由文字 (Text)",
+        "type_id": "text"
+      },
+      {
+        "label": "時間欄位 (Temporal)",
+        "type_id": "temporal"
+      },
+      {
+        "label": "其他／洩漏代理 (Other / Leakage Proxy)",
+        "type_id": "other"
+      }
+    ],
+    "status": "VERIFIED",
+    "total": 27
+  },
+  "raw_fields": [
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "exclude",
+      "exclusion_category": "Identifier",
+      "field": "ID",
+      "reason": "not used as a predictor; source CSV preserved",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "identifier",
+      "type_id": "identifier"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "condition",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "cylinders",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "drive",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "exclude",
+      "exclusion_category": "Free Text",
+      "field": "engine",
+      "reason": "known free-text/listing field",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "text",
+      "type_id": "text"
+    },
+    {
+      "classification_basis": "Kaggle data dictionary / verified source field semantics",
+      "decision": "exclude",
+      "exclusion_category": "Leakage Risk",
+      "field": "est._monthly_pmt",
+      "reason": "not used as a predictor; source CSV preserved",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "leakage_proxy",
+      "type_id": "continuous"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "ext_color",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "feature_count",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "discrete",
+      "type_id": "discrete"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "exclude",
+      "exclusion_category": "Free Text",
+      "field": "features_list",
+      "reason": "known free-text/listing field",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "text",
+      "type_id": "text"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "fuel",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "image_count",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "discrete",
+      "type_id": "discrete"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "int_color",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Kaggle data dictionary / verified source field semantics",
+      "decision": "exclude",
+      "exclusion_category": "High-cardinality / long-label screen",
+      "field": "make",
+      "reason": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "text",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Kaggle data dictionary / verified source field semantics",
+      "decision": "exclude",
+      "exclusion_category": "Redundant Feature — basis pending verification",
+      "field": "mileage",
+      "reason": "not used as a predictor; source CSV preserved",
+      "reason_status": "PENDING",
+      "source_semantic_type": "duplicate_representation",
+      "type_id": "continuous"
+    },
+    {
+      "classification_basis": "Kaggle data dictionary / verified source field semantics",
+      "decision": "exclude",
+      "exclusion_category": "High-cardinality / long-label screen",
+      "field": "model",
+      "reason": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "text",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "odometer",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "continuous",
+      "type_id": "continuous"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "paint_color",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "exclude",
+      "exclusion_category": "Temporal Metadata",
+      "field": "scrape_timestamp",
+      "reason": "not used as a predictor; source CSV preserved",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "temporal",
+      "type_id": "temporal"
+    },
+    {
+      "classification_basis": "Kaggle data dictionary / verified source field semantics",
+      "decision": "exclude",
+      "exclusion_category": "Leakage Risk",
+      "field": "search_price",
+      "reason": "not used as a predictor; source CSV preserved",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "leakage_proxy",
+      "type_id": "continuous"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "exclude",
+      "exclusion_category": "Free Text",
+      "field": "title",
+      "reason": "known free-text/listing field",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "text",
+      "type_id": "text"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "title_status",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Kaggle data dictionary / verified source field semantics",
+      "decision": "exclude",
+      "exclusion_category": "High-cardinality / long-label screen",
+      "field": "trans",
+      "reason": "automatic free-text rule: median length >= 40 and unique ratio >= 0.50",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "text",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "transmission",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "trim",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "type",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "nominal",
+      "type_id": "nominal"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "exclude",
+      "exclusion_category": "Identifier",
+      "field": "vin",
+      "reason": "not used as a predictor; source CSV preserved",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "identifier",
+      "type_id": "identifier"
+    },
+    {
+      "classification_basis": "Run 03 Phase 2 field classification",
+      "decision": "include",
+      "exclusion_category": null,
+      "field": "year",
+      "reason": "eligible predictor",
+      "reason_status": "VERIFIED",
+      "source_semantic_type": "discrete",
+      "type_id": "discrete"
+    }
+  ],
+  "schema_version": "1.0.0",
+  "source_data_sha256": "83caf79b21b8b72a18dc6bd06334627dc39f0108e83b8d8b8724cdfa04cd9a36",
+  "stages": {
+    "encoded": {
+      "counts": {
+        "continuous": 1,
+        "discrete": 3,
+        "nominal": 66,
+        "ordinal": 0
+      },
+      "total": 70
+    },
+    "filtered": {
+      "counts": {
+        "continuous": 1,
+        "discrete": 3,
+        "nominal": 11,
+        "ordinal": 0
+      },
+      "total": 15
+    },
+    "processed": {
+      "counts": {
+        "continuous": 1,
+        "discrete": 3,
+        "nominal": 11,
+        "ordinal": 0
+      },
+      "total": 15
+    },
+    "raw": {
+      "classification_status": "VERIFIED",
+      "counts": {
+        "continuous": 4,
+        "discrete": 3,
+        "identifier": 2,
+        "nominal": 14,
+        "ordinal": 0,
+        "other": 0,
+        "temporal": 1,
+        "text": 3
+      },
+      "eligible_predictor_columns": 15,
+      "total": 27
+    }
+  },
+  "training_index_sha256": "b0e9a70c7200e89a2da5a9aacd0a30d36f25105b00935dd011cb94245c9469f5",
+  "training_rows": 626,
+  "validation_rows": 157
+}

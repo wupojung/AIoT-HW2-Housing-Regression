@@ -1,0 +1,399 @@
+{
+  "case_id": "used-car-price-optimized",
+  "default_evaluation_id": "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.cv-mean",
+  "evaluations": [
+    {
+      "asset_status": "PENDING_REVIEW",
+      "configuration_id": "car-mutual-information-8b59f9573a65",
+      "evaluation_id": "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.cv-mean",
+      "evaluation_population": "development_oof",
+      "evidence": {
+        "protocol_version": "used-car-dev-80-20-seed42-3fold-v1",
+        "review_url": null,
+        "source_artifact_sha256": "40e09eacc995dacb31d0f0511eba6414bae877bb191b8de75134276e9af70731",
+        "source_ref": null
+      },
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "figures": [],
+      "final_fit_id": null,
+      "fold_summary": {
+        "aggregation": "fold_mean",
+        "ddof": 1,
+        "fold_count": 3,
+        "fold_values_ref": "phases/phase-05/fold-metrics.json",
+        "sample_sd": {
+          "mae": 1693.565943320219,
+          "r2": 4.332243028952534,
+          "rmse": 203818.76907375496
+        }
+      },
+      "interval": {
+        "int_f": {
+          "assumptions_ref": null,
+          "method": null,
+          "reason_code": "NOT_COMPUTED",
+          "status": "UNAVAILABLE"
+        },
+        "int_s": {
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "reason_code": "NOT_COMPUTED",
+          "review_url": null,
+          "status": "UNAVAILABLE"
+        }
+      },
+      "limitations": [
+        "資料為刊登價，不是成交價。",
+        "Development 評估不代表外部市場泛化。",
+        "逐筆 OOF 與 Holdout 預測未納入公開 Package。",
+        "Package 資料集授權與競賽條款審查仍待完成。"
+      ],
+      "linked_evaluation_ids": [
+        "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.cv-mean",
+        "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.pooled-oof"
+      ],
+      "metric_source": "cv_fold_mean",
+      "metrics": {
+        "mae": {
+          "evidence_ref": "phases/phase-05/fold-metrics.json",
+          "reason_code": null,
+          "status": "VERIFIED",
+          "value": 36753.76752684662
+        },
+        "r2": {
+          "evidence_ref": "phases/phase-05/fold-metrics.json",
+          "reason_code": null,
+          "status": "VERIFIED",
+          "value": -3.694315667724369
+        },
+        "rmse": {
+          "evidence_ref": "phases/phase-05/fold-metrics.json",
+          "reason_code": null,
+          "status": "VERIFIED",
+          "value": 163451.6177303072
+        }
+      },
+      "model_id": "used-car-price-optimized-car-mutual-information-8b59f9573a65",
+      "model_version": "83caf79b21b8",
+      "n": 626,
+      "prediction_origin": "new_core_fold_local_oof",
+      "review_status": "AWAITING_REVIEW",
+      "target": {
+        "column": "price",
+        "unit": "USD"
+      }
+    },
+    {
+      "asset_status": "PENDING_REVIEW",
+      "configuration_id": "car-mutual-information-8b59f9573a65",
+      "evaluation_id": "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.pooled-oof",
+      "evaluation_population": "development_oof",
+      "evidence": {
+        "protocol_version": "used-car-dev-80-20-seed42-3fold-v1",
+        "review_url": null,
+        "source_artifact_sha256": "40e09eacc995dacb31d0f0511eba6414bae877bb191b8de75134276e9af70731",
+        "source_ref": null
+      },
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "figures": [
+        {
+          "accessible_table_ref": "phases/phase-05/diagnostics/oof-quantile-bins.json",
+          "alt": "Actual vs Predicted，以 Development OOF 彙總分箱繪製，不公開逐筆值。",
+          "asset_ref": "phases/phase-05/figures/actual-vs-predicted.png",
+          "axes": {
+            "reference_line": "y_equals_x",
+            "x": {
+              "field": "actual",
+              "label": "Actual vs Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "predicted",
+              "label": "Actual vs Predicted",
+              "unit": "USD"
+            }
+          },
+          "configuration_id": "car-mutual-information-8b59f9573a65",
+          "evaluation_id": "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.pooled-oof",
+          "evaluation_population": "development_oof",
+          "figure_id": "FIG-P5-01",
+          "finding": null,
+          "histogram": null,
+          "limitations": [
+            "Publication review pending; chart is aggregate-only and uses Development OOF."
+          ],
+          "n": 626,
+          "prediction_origin": "new_core_fold_local_oof",
+          "publication_review": "PENDING",
+          "residual_sign": null,
+          "sha256": "c72d4a9f23e10051e68a83530c6527f2df129411109bdfe92537d112d9527a3f",
+          "source_digest": "40e09eacc995dacb31d0f0511eba6414bae877bb191b8de75134276e9af70731",
+          "status": "PLANNED"
+        },
+        {
+          "accessible_table_ref": "phases/phase-05/diagnostics/oof-quantile-bins.json",
+          "alt": "Residual vs Predicted，以 Development OOF 彙總分箱繪製，不公開逐筆值。",
+          "asset_ref": "phases/phase-05/figures/residual-vs-predicted.png",
+          "axes": {
+            "reference_line": "y_equals_0",
+            "x": {
+              "field": "predicted",
+              "label": "Residual vs Predicted",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "actual_minus_predicted",
+              "label": "Residual vs Predicted",
+              "unit": "USD"
+            }
+          },
+          "configuration_id": "car-mutual-information-8b59f9573a65",
+          "evaluation_id": "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.pooled-oof",
+          "evaluation_population": "development_oof",
+          "figure_id": "FIG-P5-02",
+          "finding": null,
+          "histogram": null,
+          "limitations": [
+            "Publication review pending; chart is aggregate-only and uses Development OOF."
+          ],
+          "n": 626,
+          "prediction_origin": "new_core_fold_local_oof",
+          "publication_review": "PENDING",
+          "residual_sign": "actual_minus_predicted",
+          "sha256": "0e263894a1f8aa1560917fb6311968ac8b6a86eae3a69f97afaff8b54587bce1",
+          "source_digest": "40e09eacc995dacb31d0f0511eba6414bae877bb191b8de75134276e9af70731",
+          "status": "PLANNED"
+        },
+        {
+          "accessible_table_ref": "phases/phase-05/diagnostics/residual-histogram.json",
+          "alt": "Residual Distribution，以 Development OOF 彙總分箱繪製，不公開逐筆值。",
+          "asset_ref": "phases/phase-05/figures/residual-distribution.png",
+          "axes": {
+            "reference_line": "x_equals_0",
+            "x": {
+              "field": "actual_minus_predicted",
+              "label": "Residual Distribution",
+              "unit": "USD"
+            },
+            "y": {
+              "field": "count",
+              "label": "Residual Distribution",
+              "unit": "count"
+            }
+          },
+          "configuration_id": "car-mutual-information-8b59f9573a65",
+          "evaluation_id": "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.pooled-oof",
+          "evaluation_population": "development_oof",
+          "figure_id": "FIG-P5-03",
+          "finding": null,
+          "histogram": {
+            "bin_count": 20,
+            "bin_edges_ref": "phases/phase-05/diagnostics/residual-histogram.json",
+            "n": 626
+          },
+          "limitations": [
+            "Publication review pending; chart is aggregate-only and uses Development OOF."
+          ],
+          "n": 626,
+          "prediction_origin": "new_core_fold_local_oof",
+          "publication_review": "PENDING",
+          "residual_sign": "actual_minus_predicted",
+          "sha256": "5a8e26dbd62e66b2672ad3765370e0865785f446d592aaeb62ce1803aab25b2b",
+          "source_digest": "40e09eacc995dacb31d0f0511eba6414bae877bb191b8de75134276e9af70731",
+          "status": "PLANNED"
+        }
+      ],
+      "final_fit_id": null,
+      "fold_summary": {
+        "aggregation": "pooled_oof",
+        "ddof": 1,
+        "fold_count": 3,
+        "fold_values_ref": "phases/phase-05/fold-metrics.json",
+        "sample_sd": {
+          "mae": 1693.565943320219,
+          "r2": 4.332243028952534,
+          "rmse": 203818.76907375496
+        }
+      },
+      "interval": {
+        "int_f": {
+          "assumptions_ref": null,
+          "method": null,
+          "reason_code": "NOT_COMPUTED",
+          "status": "UNAVAILABLE"
+        },
+        "int_s": {
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "reason_code": "NOT_COMPUTED",
+          "review_url": null,
+          "status": "UNAVAILABLE"
+        }
+      },
+      "limitations": [
+        "資料為刊登價，不是成交價。",
+        "Development 評估不代表外部市場泛化。",
+        "逐筆 OOF 與 Holdout 預測未納入公開 Package。",
+        "Package 資料集授權與競賽條款審查仍待完成。"
+      ],
+      "linked_evaluation_ids": [
+        "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.cv-mean",
+        "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.pooled-oof"
+      ],
+      "metric_source": "pooled_oof",
+      "metrics": {
+        "mae": {
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json",
+          "reason_code": null,
+          "status": "VERIFIED",
+          "value": 36751.62928677017
+        },
+        "r2": {
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json",
+          "reason_code": null,
+          "status": "VERIFIED",
+          "value": -0.01867779313198037
+        },
+        "rmse": {
+          "evidence_ref": "phases/phase-05/pooled-oof-metrics.json",
+          "reason_code": null,
+          "status": "VERIFIED",
+          "value": 232903.54434634713
+        }
+      },
+      "model_id": "used-car-price-optimized-car-mutual-information-8b59f9573a65",
+      "model_version": "83caf79b21b8",
+      "n": 626,
+      "prediction_origin": "new_core_fold_local_oof",
+      "review_status": "AWAITING_REVIEW",
+      "target": {
+        "column": "price",
+        "unit": "USD"
+      }
+    },
+    {
+      "asset_status": "PENDING_REVIEW",
+      "configuration_id": "car-mutual-information-8b59f9573a65",
+      "evaluation_id": "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.internal-holdout",
+      "evaluation_population": "holdout",
+      "evidence": {
+        "protocol_version": "used-car-dev-80-20-seed42-3fold-v1",
+        "review_url": null,
+        "source_artifact_sha256": "40e09eacc995dacb31d0f0511eba6414bae877bb191b8de75134276e9af70731",
+        "source_ref": null
+      },
+      "execution_run_id": "used-car-e2e-20261028-03",
+      "figures": [],
+      "final_fit_id": null,
+      "fold_summary": null,
+      "interval": {
+        "int_f": {
+          "assumptions_ref": null,
+          "method": null,
+          "reason_code": "NOT_COMPUTED",
+          "status": "UNAVAILABLE"
+        },
+        "int_s": {
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "reason_code": "NOT_COMPUTED",
+          "review_url": null,
+          "status": "UNAVAILABLE"
+        }
+      },
+      "limitations": [
+        "資料為刊登價，不是成交價。",
+        "Development 評估不代表外部市場泛化。",
+        "逐筆 OOF 與 Holdout 預測未納入公開 Package。",
+        "Package 資料集授權與競賽條款審查仍待完成。"
+      ],
+      "linked_evaluation_ids": [
+        "used-car-e2e-20261028-03.car-mutual-information-8b59f9573a65.internal-holdout"
+      ],
+      "metric_source": "holdout_aggregate",
+      "metrics": {
+        "mae": {
+          "evidence_ref": "phases/phase-05/holdout-aggregate.json",
+          "reason_code": null,
+          "status": "VERIFIED",
+          "value": 21638.576628632865
+        },
+        "r2": {
+          "evidence_ref": "phases/phase-05/holdout-aggregate.json",
+          "reason_code": null,
+          "status": "VERIFIED",
+          "value": -0.8144873847779581
+        },
+        "rmse": {
+          "evidence_ref": "phases/phase-05/holdout-aggregate.json",
+          "reason_code": null,
+          "status": "VERIFIED",
+          "value": 28293.356086355227
+        }
+      },
+      "model_id": "used-car-price-optimized-car-mutual-information-8b59f9573a65",
+      "model_version": "83caf79b21b8",
+      "n": 157,
+      "prediction_origin": "internal_labeled_holdout_once_after_cv_selection",
+      "review_status": "AWAITING_REVIEW",
+      "target": {
+        "column": "price",
+        "unit": "USD"
+      }
+    }
+  ],
+  "generated_at": "2026-10-29T09:34:55+00:00",
+  "publication_review": "PENDING",
+  "reason_code": null,
+  "release_id": null,
+  "schema_version": "1.0.0",
+  "status": "PLANNED",
+  "ui": {
+    "default_population": "development_oof",
+    "figure_tabs": [
+      {
+        "figure_id": "FIG-P5-01",
+        "kind": "actual_vs_predicted",
+        "label": "Actual vs Predicted"
+      },
+      {
+        "figure_id": "FIG-P5-02",
+        "kind": "residual_vs_predicted",
+        "label": "Residual vs Predicted"
+      },
+      {
+        "figure_id": "FIG-P5-03",
+        "kind": "residual_distribution",
+        "label": "Residual Distribution"
+      }
+    ],
+    "interval_figure_id": "FIG-P5-04",
+    "metric_order": [
+      "mae",
+      "rmse",
+      "r2"
+    ],
+    "population_options": [
+      {
+        "id": "development_oof",
+        "label": "Development OOF"
+      },
+      {
+        "id": "holdout",
+        "label": "Internal labeled Holdout"
+      }
+    ]
+  }
+}

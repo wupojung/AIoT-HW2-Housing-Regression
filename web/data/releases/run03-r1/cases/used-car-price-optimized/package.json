@@ -1,0 +1,588 @@
+{
+  "asset_manifest_ref": "assets/figure-manifest.json",
+  "case_id": "used-car-price-optimized",
+  "case_ref": "case.json",
+  "files": [
+    {
+      "bytes": 783,
+      "mime": "application/json",
+      "path": "assets/execution-manifest.json",
+      "sha256": "86b71b25f2e6f35a3fa5d719ebb4f3b5681f7564bed2bd73fdd1e59ade6eac42"
+    },
+    {
+      "bytes": 1601,
+      "mime": "application/json",
+      "path": "assets/figure-manifest.json",
+      "sha256": "25b87b4869ae7c21a1fc05b2227295f7fd7ae7a3f5ad40fdb4dc05d94fbb3882"
+    },
+    {
+      "bytes": 404,
+      "mime": "application/json",
+      "path": "assets/publication-status.json",
+      "sha256": "2c2f90df28fa2275224a1ad46a4b2e2b31bafb6ed3e7c9a4c30563c08bb9c502"
+    },
+    {
+      "bytes": 848,
+      "mime": "application/json",
+      "path": "case.json",
+      "sha256": "b9cd9ad719b46038705584d4ba191b19cdb23b3e060cff3827729211ea042e35"
+    },
+    {
+      "bytes": 2320,
+      "mime": "application/json",
+      "path": "config.json",
+      "sha256": "c4c7962655443154cced25520a4021160dd00b2443aad66c01931d2b52081884"
+    },
+    {
+      "bytes": 3860,
+      "mime": "application/json",
+      "path": "phases/phase-01/content.json",
+      "sha256": "b6cddb5ff113d1cfad8f64ff459e7e4ec1afef75b982f985ec6450a15a3c56f8"
+    },
+    {
+      "bytes": 3899,
+      "mime": "application/json",
+      "path": "phases/phase-02/analyses.json",
+      "sha256": "65f177717b5a6de6367e5934423667556a9d2d3c35bc53b79b0802045c4944cc"
+    },
+    {
+      "bytes": 3027,
+      "mime": "image/svg+xml",
+      "path": "phases/phase-02/figures/missingness.svg",
+      "sha256": "90914ce8009ceef60308ab763dd4f15e08994a5937084556b646d9a550ec7af1"
+    },
+    {
+      "bytes": 2218,
+      "mime": "image/svg+xml",
+      "path": "phases/phase-02/figures/target-distribution.svg",
+      "sha256": "cf807273b82ecdefba6b40741ef9b22d08c75a6632099b0c8366c2cf4046fbea"
+    },
+    {
+      "bytes": 32386,
+      "mime": "application/json",
+      "path": "phases/phase-03/feature-lineage.json",
+      "sha256": "bda24294ac34d76d0c0e926354c66aa83be5ff09d3af9ace2e697a86e80019f9"
+    },
+    {
+      "bytes": 4660,
+      "mime": "application/json",
+      "path": "phases/phase-03/preparation.json",
+      "sha256": "5877543416c61f3810c880bc0b6edc371a2b244a06d7e1961d72bc7207f36d51"
+    },
+    {
+      "bytes": 5379,
+      "mime": "application/json",
+      "path": "phases/phase-04/charts/feature-count-vs-cv-rmse.json",
+      "sha256": "52387b49e7edf492b0f346a56891228a6a494c97158e4d6a15a2ff32f8a5b201"
+    },
+    {
+      "bytes": 5379,
+      "mime": "application/json",
+      "path": "phases/phase-04/charts/method-comparison.json",
+      "sha256": "52387b49e7edf492b0f346a56891228a6a494c97158e4d6a15a2ff32f8a5b201"
+    },
+    {
+      "bytes": 1041,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-aab117069346/cv-metrics.json",
+      "sha256": "c5248b817342486ab5d6908c0bea9d0a35ccc196ac81672e18a042405bfbe455"
+    },
+    {
+      "bytes": 502,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-aab117069346/fold-tasks.json",
+      "sha256": "0f2e1f3b878aa7356e05bae99fabed64c61dacd9ae7f6d5e717848c3ababff39"
+    },
+    {
+      "bytes": 457,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-aab117069346/metadata.json",
+      "sha256": "71da389956b96dc013bc7a23bb0f52b80613e044fef9a2289de47da853c0cf74"
+    },
+    {
+      "bytes": 5267,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-aab117069346/selected-features.json",
+      "sha256": "5c242f9bd23f4a06c40c6657ad4fa7ce062c8bb4bfc267127b09dc62fab1d5d3"
+    },
+    {
+      "bytes": 1042,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-edef4b070267/cv-metrics.json",
+      "sha256": "0ce0f9d55fbf33b4bc6c5fc90f918eb19cdc37f359fbe25f7a79d4ea956fb5f5"
+    },
+    {
+      "bytes": 502,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-edef4b070267/fold-tasks.json",
+      "sha256": "2d586651fa15dbc8f761ace986498582ea955d7d041412a19241b470f3084ba5"
+    },
+    {
+      "bytes": 457,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-edef4b070267/metadata.json",
+      "sha256": "467790d7aedc8e836551abc407f87bc5fd40c4a13134723d6da3bffc2b980368"
+    },
+    {
+      "bytes": 12882,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-edef4b070267/selected-features.json",
+      "sha256": "baedaa6653757739ed80d6a8c7e1b98e32df10e4bcee187215d87d87aefa121d"
+    },
+    {
+      "bytes": 1038,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-ef98c804cdbf/cv-metrics.json",
+      "sha256": "8020d60d1b2589f5dc925b7f6736415ca33328cc7b91ebd64d008704462ae8f8"
+    },
+    {
+      "bytes": 502,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-ef98c804cdbf/fold-tasks.json",
+      "sha256": "9b9d927be1ba697df796bea62212f51d8a60f2f7402f51bd5befa69864042574"
+    },
+    {
+      "bytes": 458,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-ef98c804cdbf/metadata.json",
+      "sha256": "ed18552ebdd610c5af71a279059cc75f73616d29ed1c07e3e49dad4ba6d41521"
+    },
+    {
+      "bytes": 39962,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-ef98c804cdbf/selected-features.json",
+      "sha256": "5ee29eb4592c96fb5ee0e8fb6c19624a59eeafed557d36f650fd7efa16e06c5e"
+    },
+    {
+      "bytes": 1042,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-f33b908c072a/cv-metrics.json",
+      "sha256": "d2ab0e2eb8f9d503af495a0037f625eeb367222701ef72cd863693cd62f153d3"
+    },
+    {
+      "bytes": 502,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-f33b908c072a/fold-tasks.json",
+      "sha256": "adf98e3073f1548c49d2f0f4664430e66456da8aa999a7f76edeeb53512dd5fe"
+    },
+    {
+      "bytes": 458,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-f33b908c072a/metadata.json",
+      "sha256": "6570877c5f82697160e5c7c3eb74ae7531b424d25833e27407ff0c8bd16b78a0"
+    },
+    {
+      "bytes": 32297,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-elastic-net-f33b908c072a/selected-features.json",
+      "sha256": "1a820126b928de37c632d70429ea08d2d063f649b9e6e97ae7ec198575234a8d"
+    },
+    {
+      "bytes": 1031,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-385aa2570165/cv-metrics.json",
+      "sha256": "6eba52fe28fd7b5430cd19ee2120e9e2b5d3a53c28f41b0473b9f039cf873011"
+    },
+    {
+      "bytes": 496,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-385aa2570165/fold-tasks.json",
+      "sha256": "15442b250242a3a8a786646972a3e199009f90a1a35c65feca0e5a56976a1572"
+    },
+    {
+      "bytes": 425,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-385aa2570165/metadata.json",
+      "sha256": "8a2beb72c16ea4ef447b49d7c7d8915efbc28d29422122f25251251bd022df01"
+    },
+    {
+      "bytes": 28440,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-385aa2570165/selected-features.json",
+      "sha256": "7c12a472a621b5cf6a01fa5707031703f14764ea2228bbae356b8ffef838e9ca"
+    },
+    {
+      "bytes": 268,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-d8ec5a284a26/cv-metrics.json",
+      "sha256": "70e69243393de5ab4bb1065cae458b5de49296f23275407280586f02ece64a47"
+    },
+    {
+      "bytes": 176,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-d8ec5a284a26/fold-tasks.json",
+      "sha256": "aae00825b2b7f40d9d7986ba78e8a41714010b11f8c6b74392948dfc7f662034"
+    },
+    {
+      "bytes": 421,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-d8ec5a284a26/metadata.json",
+      "sha256": "2d2bee6ff72ad07b54011b2de41d49d64295dff27f31386c38645245fe126fe9"
+    },
+    {
+      "bytes": 197,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-d8ec5a284a26/selected-features.json",
+      "sha256": "338e9936c3f138b72df3d46016102199e7b1fdb7bd64e73a1eb36e9d7cd9833a"
+    },
+    {
+      "bytes": 1033,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-db8e72af782f/cv-metrics.json",
+      "sha256": "285116ea15f0864520437576e723ab3567a6a4342278e398a5655c21e91723dd"
+    },
+    {
+      "bytes": 496,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-db8e72af782f/fold-tasks.json",
+      "sha256": "51910a051bb33175f441e11994feaee014742571a01882708bfe782b35a03336"
+    },
+    {
+      "bytes": 424,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-db8e72af782f/metadata.json",
+      "sha256": "b1762ca57c3936dcf24eaa5f2f281c1ea1072959c2721f287072b804d69a2e83"
+    },
+    {
+      "bytes": 4683,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-lasso-db8e72af782f/selected-features.json",
+      "sha256": "233b77c7f8e6281b61b4ecd45fe1e04a9694bcd7a034aa4ca8fdb5f7a4328179"
+    },
+    {
+      "bytes": 1045,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-5311d06498f3/cv-metrics.json",
+      "sha256": "e8c243507e580b9a2147a9c11bcf6798a26707892d77c68264ca055f32a66772"
+    },
+    {
+      "bytes": 509,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-5311d06498f3/fold-tasks.json",
+      "sha256": "958b3fcd531ef27363f61dff159af886eced3326c1a8349e3defe0fa4869278d"
+    },
+    {
+      "bytes": 445,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-5311d06498f3/metadata.json",
+      "sha256": "b1b339538cf980ccf13838c05bd7dbe50f9bb208bcf217cf62f6dcc30e320b2b"
+    },
+    {
+      "bytes": 18204,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-5311d06498f3/selected-features.json",
+      "sha256": "e44dc3358613b920a22269c0039b8d361557db9ac660f204f8a64fe3a9c386f0"
+    },
+    {
+      "bytes": 1047,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-8b59f9573a65/cv-metrics.json",
+      "sha256": "dbbc076c38c86e75e2a862c9a2630319fc2caab47c54e0afc2e3822748149a96"
+    },
+    {
+      "bytes": 509,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-8b59f9573a65/fold-tasks.json",
+      "sha256": "1f2a7ff0348b8f0ecb307003aa486e5049eaabecd8876fc5c16bb876e2b6bd88"
+    },
+    {
+      "bytes": 445,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-8b59f9573a65/metadata.json",
+      "sha256": "a23280e27150c6b18c6f83afbd530a997b2d2c30e1f31a9d30977154e1218475"
+    },
+    {
+      "bytes": 9646,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-8b59f9573a65/selected-features.json",
+      "sha256": "fad940c1d45b76093cb4699d5283f6aaf9f295d14be3ce8bdb1d9d6fd3e4f522"
+    },
+    {
+      "bytes": 1046,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-e11538e02991/cv-metrics.json",
+      "sha256": "8994a2c1be5a9e251893e7af9dd7f4f710c6e8d914649d836e1c8c0c561d7ef3"
+    },
+    {
+      "bytes": 509,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-e11538e02991/fold-tasks.json",
+      "sha256": "c0bdb7dc83110fb354c801b0b95f070d08e1935c948ed2a944112e1627729d6c"
+    },
+    {
+      "bytes": 445,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-e11538e02991/metadata.json",
+      "sha256": "463102f5a647f679173f11002ec041624b0fe4006fa7c77d9d475060874b7d26"
+    },
+    {
+      "bytes": 35763,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-mutual-information-e11538e02991/selected-features.json",
+      "sha256": "a6afb20540764fdf9ce61b7c81856511b4eeda29f17438e7096c3dc19a4bb8e9"
+    },
+    {
+      "bytes": 1043,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ols-baseline-4c86752fe699/cv-metrics.json",
+      "sha256": "236ae6a710420a2111f2b092fdf1e1cef1ff0929ee3e5b7ec2ff7b91307a0015"
+    },
+    {
+      "bytes": 503,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ols-baseline-4c86752fe699/fold-tasks.json",
+      "sha256": "f3787f019d69cf98761bf8b80d6a41ead5eb41d3a2e031c2faac1b440e0aa075"
+    },
+    {
+      "bytes": 444,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ols-baseline-4c86752fe699/metadata.json",
+      "sha256": "9c7e3b41497a14127aa4325e9b42bbd0939b513c9714d92810d57e96870b6a96"
+    },
+    {
+      "bytes": 56590,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ols-baseline-4c86752fe699/selected-features.json",
+      "sha256": "e6cb28ab1f676cdd74818008b6ae1761824c2b4b96920500be4bf9b78a74ae6d"
+    },
+    {
+      "bytes": 1034,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-521dd42752f4/cv-metrics.json",
+      "sha256": "c9e19e7705d7e910e6465d882452d0e1e8d6b1b18ff73189e7f83775837d574a"
+    },
+    {
+      "bytes": 498,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-521dd42752f4/fold-tasks.json",
+      "sha256": "0a7e6f185666aed932c7f932a66ede64cf4f02a9cb54636142943113962ffecd"
+    },
+    {
+      "bytes": 423,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-521dd42752f4/metadata.json",
+      "sha256": "9122336346ce7f4b8f7547bff65ea572a44afbe0eb58a158ad00668d7ac80519"
+    },
+    {
+      "bytes": 18101,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-521dd42752f4/selected-features.json",
+      "sha256": "6939d03995d4a02ddcc897601262610e77ef9159cf6c80f12e243cb27e4fa7ac"
+    },
+    {
+      "bytes": 1037,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-a7dfaf3405dd/cv-metrics.json",
+      "sha256": "59d18cc8d51e3c0114789ca84c38ab5a8e2f65ef58670ff51b30e3331aed31a3"
+    },
+    {
+      "bytes": 498,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-a7dfaf3405dd/fold-tasks.json",
+      "sha256": "d4f3cb4ec9c3a5fc6537603d02c74813c1e20fd73d498022e6ba1dd3bea2d8ea"
+    },
+    {
+      "bytes": 423,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-a7dfaf3405dd/metadata.json",
+      "sha256": "b915190da0c0f89906f9aeafcda9e581c662091904db515521dac374a4f41267"
+    },
+    {
+      "bytes": 35699,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-a7dfaf3405dd/selected-features.json",
+      "sha256": "d9f059a389ecaf1a17be7d5a3fe5dfaa4c1ec0a70eddf7072d926eb622314f4b"
+    },
+    {
+      "bytes": 1034,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-b07928f29ee5/cv-metrics.json",
+      "sha256": "bc66ae78ef2d11e52409f083d976f4db9e1a4e33ab7528b68c568abd3a574190"
+    },
+    {
+      "bytes": 498,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-b07928f29ee5/fold-tasks.json",
+      "sha256": "f7f97877c02613105896f726f804f103ee9fda7275375d68c5c465cadcdeb738"
+    },
+    {
+      "bytes": 423,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-b07928f29ee5/metadata.json",
+      "sha256": "928a8b86492532e4773f25911cc4c54e442f49226d50da0404501e57ce89f2f3"
+    },
+    {
+      "bytes": 9655,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-pearson-b07928f29ee5/selected-features.json",
+      "sha256": "8c758fed6aa71b8329c3e91ed4364f1dce21a16a139e8e5f0d98a4db7ffcdebf"
+    },
+    {
+      "bytes": 1041,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-3c74558a2b71/cv-metrics.json",
+      "sha256": "a5485b4a7d24b3e6f000c0255653fc01142ae8a4d5fd7f168c8e41bd0c584e54"
+    },
+    {
+      "bytes": 500,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-3c74558a2b71/fold-tasks.json",
+      "sha256": "ea0953aa52fd60a4892a829197ae2d7bf7e879eb4f16936aa81bf46fe76ab0c3"
+    },
+    {
+      "bytes": 427,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-3c74558a2b71/metadata.json",
+      "sha256": "4567e24e64937d958a69ebba424bab270bc3b085c41146c91ec9d09fc9c93b10"
+    },
+    {
+      "bytes": 18468,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-3c74558a2b71/selected-features.json",
+      "sha256": "26584f1b10ce6a4d09313fcf509867e7788ca970c5164dfbed45ad1e133358a6"
+    },
+    {
+      "bytes": 1036,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-728567db5f64/cv-metrics.json",
+      "sha256": "86185bfbb90c4d96df1abcaca888e54ac0dbd176acbd87ffe684799adc201a4d"
+    },
+    {
+      "bytes": 500,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-728567db5f64/fold-tasks.json",
+      "sha256": "b6c28e60c8f800b35b94e49d382af1229cac4a59ef1e94f9bfefcac4f29a707d"
+    },
+    {
+      "bytes": 427,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-728567db5f64/metadata.json",
+      "sha256": "13fac2bed7cdf8ae651e91bda706a490895cc99d5039f6d492029656af7ac111"
+    },
+    {
+      "bytes": 9692,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-728567db5f64/selected-features.json",
+      "sha256": "8577f005045f6dfa79bc48e77ff12f9c7ba13379aa6a66346619477ee7c28c41"
+    },
+    {
+      "bytes": 1040,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-8ad39244ce34/cv-metrics.json",
+      "sha256": "31d3abd1d3070c9c2de0884d77a53fe8b7b1d78a70b7a8d5c48685fa1a098a97"
+    },
+    {
+      "bytes": 500,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-8ad39244ce34/fold-tasks.json",
+      "sha256": "759660477efa299da51ef6091196cca28b301cb783256cdde4a89c3e128b5995"
+    },
+    {
+      "bytes": 427,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-8ad39244ce34/metadata.json",
+      "sha256": "8eb8162cc7caf7328554daa24417ba301fb7b7e18aab8abaabd515b7d238a025"
+    },
+    {
+      "bytes": 35807,
+      "mime": "application/json",
+      "path": "phases/phase-04/configurations/car-ridge-rfe-8ad39244ce34/selected-features.json",
+      "sha256": "0e96dbafac5ce0bade0cf66f8a838e2e6df433295d6a79cbe1b779e967b7ffab"
+    },
+    {
+      "bytes": 14887,
+      "mime": "application/json",
+      "path": "phases/phase-04/modeling.json",
+      "sha256": "2ae70e9caa13eb034459ec1704216157a2c5c76ee76e7814e785fa472be817af"
+    },
+    {
+      "bytes": 12857,
+      "mime": "application/json",
+      "path": "phases/phase-05/baseline-comparison.json",
+      "sha256": "7bd68e87db13ddf173abd45cebf4b7d3a9c6345297689ab62635aa12a9acd5f5"
+    },
+    {
+      "bytes": 3430,
+      "mime": "application/json",
+      "path": "phases/phase-05/diagnostics/oof-quantile-bins.json",
+      "sha256": "c3610900d36788af499eb6c46ef7bff6651022621caefc84a4c7afd0e1c400e2"
+    },
+    {
+      "bytes": 1001,
+      "mime": "application/json",
+      "path": "phases/phase-05/diagnostics/residual-histogram.json",
+      "sha256": "1c3c0c037fbd72ea08cf97505fa0700d98d18fcf4f00e3b4036bfc990cb2b534"
+    },
+    {
+      "bytes": 14131,
+      "mime": "application/json",
+      "path": "phases/phase-05/evaluations.json",
+      "sha256": "d2110ac1808bcbb3d6ad994c6a50353081ca8056665a54ae62a7c45e9b17cae2"
+    },
+    {
+      "bytes": 43167,
+      "mime": "image/png",
+      "path": "phases/phase-05/figures/actual-vs-predicted.png",
+      "sha256": "c72d4a9f23e10051e68a83530c6527f2df129411109bdfe92537d112d9527a3f"
+    },
+    {
+      "bytes": 32032,
+      "mime": "image/png",
+      "path": "phases/phase-05/figures/residual-distribution.png",
+      "sha256": "5a8e26dbd62e66b2672ad3765370e0865785f446d592aaeb62ce1803aab25b2b"
+    },
+    {
+      "bytes": 44858,
+      "mime": "image/png",
+      "path": "phases/phase-05/figures/residual-vs-predicted.png",
+      "sha256": "0e263894a1f8aa1560917fb6311968ac8b6a86eae3a69f97afaff8b54587bce1"
+    },
+    {
+      "bytes": 374,
+      "mime": "application/json",
+      "path": "phases/phase-05/holdout-aggregate.json",
+      "sha256": "eea4dc11280ac1a9b46688cc80643dc2ec68eb26fac17425b5ea2e8a05d01244"
+    },
+    {
+      "bytes": 367,
+      "mime": "application/json",
+      "path": "phases/phase-06/inference-catalog.json",
+      "sha256": "4031c8f7f2ccfb69b1f5e924025d7ccf41297602090cf7e2bd4338bacf9af9e1"
+    }
+  ],
+  "package_id": "used-car-price-optimized-run03-r1",
+  "package_revision": "run03-r1",
+  "package_schema_version": "1.0.0",
+  "package_status": "PARTIAL",
+  "phases": {
+    "phase1": {
+      "data_ref": "phases/phase-01/content.json",
+      "status": "VERIFIED"
+    },
+    "phase2": {
+      "data_ref": "phases/phase-02/analyses.json",
+      "status": "VERIFIED"
+    },
+    "phase3": {
+      "data_ref": "phases/phase-03/preparation.json",
+      "status": "VERIFIED"
+    },
+    "phase4": {
+      "data_ref": "phases/phase-04/modeling.json",
+      "status": "VERIFIED"
+    },
+    "phase5": {
+      "data_ref": "phases/phase-05/evaluations.json",
+      "status": "PLANNED"
+    },
+    "phase6": {
+      "data_ref": "phases/phase-06/inference-catalog.json",
+      "status": "UNAVAILABLE"
+    }
+  },
+  "publication": {
+    "approved": false,
+    "release_id": null,
+    "review_status": "PENDING"
+  }
+}

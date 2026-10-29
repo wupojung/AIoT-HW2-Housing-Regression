@@ -1,0 +1,24 @@
+{
+  "case_id": "used-car-price-optimized",
+  "code_sha256": "9d4ba7e77f885ed11e11659564a040759f4608bdc920b202e3bd553c335bf5be",
+  "config_sha256": "c4c7962655443154cced25520a4021160dd00b2443aad66c01931d2b52081884",
+  "phase_status": {
+    "phase1": "VERIFIED",
+    "phase2": "VERIFIED",
+    "phase3": "VERIFIED",
+    "phase4": "VERIFIED",
+    "phase5": "VERIFIED",
+    "phase6": "LOCAL_PRIVATE_VERIFIED"
+  },
+  "python_dependencies": {
+    "numpy": "2.5.4",
+    "pandas": "3.1.0",
+    "scikit_learn": "1.9.1"
+  },
+  "row_level_predictions_included": false,
+  "run_id": "used-car-e2e-20261028-03",
+  "schema_version": "1.0.0",
+  "source_file": "train_data_v2.csv",
+  "source_sha256": "83caf79b21b8b72a18dc6bd06334627dc39f0108e83b8d8b8724cdfa04cd9a36",
+  "test_data_accessed": false
+}

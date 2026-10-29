@@ -1,0 +1,45 @@
+{
+  "case_id": "used-car-price-optimized",
+  "configuration_id": "car-ridge-rfe-728567db5f64",
+  "fold_results": [
+    {
+      "fold": 1,
+      "mae": 51134.9961745772,
+      "n_train": 417,
+      "n_validation": 209,
+      "r2": -14.13922332307464,
+      "rmse": 100899.08745662757,
+      "status": "VERIFIED"
+    },
+    {
+      "fold": 2,
+      "mae": 50920.96953767591,
+      "n_train": 417,
+      "n_validation": 209,
+      "r2": -80.60968926494266,
+      "rmse": 124094.60909774205,
+      "status": "VERIFIED"
+    },
+    {
+      "fold": 3,
+      "mae": 38437.439396308255,
+      "n_train": 418,
+      "n_validation": 208,
+      "r2": -0.002966135042403506,
+      "rmse": 399162.6404120723,
+      "status": "VERIFIED"
+    }
+  ],
+  "mean_fold_metrics": {
+    "mae": 46831.13503618713,
+    "r2": -31.583959574353234,
+    "rmse": 208052.11232214732
+  },
+  "run_id": "used-car-e2e-20261028-03",
+  "sample_sd": {
+    "mae": 7269.941314860593,
+    "r2": 43.04184092940966,
+    "rmse": 165912.4272505178
+  },
+  "schema_version": "1.0.0"
+}

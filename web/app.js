@@ -108,7 +108,7 @@ CASES["ames-housing-formal"] = {
 CASES["ames-housing"].packageMode = "mock";
 
 const state = {
-  caseId: "ames-housing", route: "home", analysisId: "overview", perspective: "method_comparison",
+  caseId: "ames-full-model-exploration", route: "home", analysisId: "overview", perspective: "method_comparison",
   phase4RunId: "MOCK-RUN-02", phase6MockSubmitted: false,
   referenceAnalysisId: "figure-field-decisions",
   referenceFigureId: "FIG-P5-01",
@@ -175,11 +175,11 @@ function updateShell() {
   phaseNav.innerHTML = PHASES.map(([n, en, zh]) => `<a class="phase-tab" href="#phase-${n}" ${phase === n ? 'aria-current="page"' : ""}><span class="num">0${n}</span><span class="phase-zh">${esc(zh)}</span><span class="phase-en">${esc(en)}</span></a>`).join("");
   document.querySelector("[data-home-link]").setAttribute("aria-current", state.route === "home" ? "page" : "false");
   document.querySelector("[data-crisp-link]").setAttribute("aria-current", phase ? "page" : "false");
-  caseSelect.innerHTML = Object.entries(CASES).map(([key, c]) => `<option value="${esc(key)}" ${key === state.caseId ? "selected" : ""}>${esc(c.title)} · ${c.packageMode === "formal" ? "FORMAL PACKAGE" : esc(c.status)}</option>`).join("");
+  const publicCases = PUBLIC_CASE_IDS.filter((id) => CASES[id]).map((id) => [id, CASES[id]]);
+  caseSelect.innerHTML = publicCases.map(([key, c]) => `<option value="${esc(key)}" ${key === state.caseId ? "selected" : ""}>${esc(c.title)} · ${esc(c.status)}</option>`).join("");
   const caseLoadStatus = document.querySelector("#case-load-status");
-  const loading = referencePackageLoading || explorationPackageLoading || carPackageLoading;
+  const loading = explorationPackageLoading || carPackageLoading;
   const failedCases = [
-    referencePackageError ? "INIT B Reference Baseline" : null,
     explorationPackageError ? "Full Model Exploration" : null,
     carPackageError ? "Used Car Price Prediction" : null
   ].filter(Boolean);
@@ -195,7 +195,7 @@ function updateShell() {
     caseLoadStatus.textContent = `研究案例載入失敗：${failedCases.join("、")}。其餘已驗證案例仍可使用。`;
   } else {
     caseLoadStatus.setAttribute("role", "status");
-    caseLoadStatus.textContent = `研究案例載入完成，共 ${Object.keys(CASES).length} 個可用案例。`;
+    caseLoadStatus.textContent = `研究案例載入完成，共 ${publicCases.length} 個可用案例。`;
   }
 }
 
@@ -211,6 +211,8 @@ let carPackageError = null;
 let carPackageLoading = false;
 const EXPLORATION_CASE_ID = "ames-full-model-exploration";
 const CAR_CASE_ID = "used-car-price-optimized";
+const PUBLIC_CASE_IDS = [EXPLORATION_CASE_ID, CAR_CASE_ID];
+const CAR_DISPLAY_NAME = "Used Car Price Prediction — Optimized Modeling";
 const explorationArtifactPromises = new Map();
 function safePackageRef(ref) {
   return typeof ref === "string" && !ref.startsWith("/") && !ref.includes("\\")
@@ -548,7 +550,7 @@ async function loadCarPackage() {
     }
     carPackage = pkg;
     CASES[CAR_CASE_ID] = {
-      id: CAR_CASE_ID, title: pkg.caseDoc.title, status: manifest.package_status,
+      id: CAR_CASE_ID, title: CAR_DISPLAY_NAME, status: manifest.package_status,
       packageMode: "car", packageRevision: manifest.package_revision, analyses: []
     };
     if (state.caseId === CAR_CASE_ID) {
@@ -962,7 +964,7 @@ function renderExplorationPhase5(pkg, doc) {
 }
 function renderCarPhase1(pkg, doc) {
   const source = pkg.caseDoc.source || {};
-  return `<section class="reference-summary-grid grid three"><article class="reference-stat-card"><span class="eyebrow">研究案例 CASE</span><strong>${esc(pkg.caseDoc.title)}</strong><small>Case ID · ${esc(pkg.caseDoc.case_id)}</small></article><article class="reference-stat-card"><span class="eyebrow">資料來源 SOURCE</span><strong>${esc(source.label || "來源未提供")}</strong><small>授權審查 ${esc(source.license_review || "PENDING")}</small></article><article class="reference-stat-card"><span class="eyebrow">預測目標 TARGET</span><strong>${esc(pkg.caseDoc.target?.label || "price")}</strong><small>${esc(pkg.caseDoc.target?.unit || "單位未提供")}</small></article></section><section class="grid two">${(doc.sections || []).map((section) => `<article class="card"><div class="card-head"><div><p class="eyebrow">BUSINESS UNDERSTANDING</p><h2>${esc(section.title)}</h2></div>${badge(doc.status)}</div><div class="card-body"><p class="body-copy">${esc(section.body)}</p></div></article>`).join("")}</section><section class="card" style="margin-top:18px"><div class="card-head"><div><p class="eyebrow">EVIDENCE STATUS</p><h2>研究與發布狀態</h2></div>${badge(pkg.manifest.package_status)}</div><div class="card-body"><p>候選比較結果有限；目前最佳候選未優於 Dummy Baseline。研究結果不構成可靠價格預測能力證明。</p><p class="stage-note">Dataset license review：${esc(source.license_review || "PENDING")} · Package publication：PENDING · 原始車輛列與私有模型未包含於此本機展示套件。</p></div></section>`;
+  return `<section class="reference-summary-grid grid three"><article class="reference-stat-card"><span class="eyebrow">研究案例 CASE</span><strong>${esc(caseData().title)}</strong><small>Case ID · ${esc(pkg.caseDoc.case_id)}</small></article><article class="reference-stat-card"><span class="eyebrow">資料來源 SOURCE</span><strong>${esc(source.label || "來源未提供")}</strong><small>授權審查 ${esc(source.license_review || "PENDING")}</small></article><article class="reference-stat-card"><span class="eyebrow">預測目標 TARGET</span><strong>${esc(pkg.caseDoc.target?.label || "price")}</strong><small>${esc(pkg.caseDoc.target?.unit || "單位未提供")}</small></article></section><section class="grid two">${(doc.sections || []).map((section) => `<article class="card"><div class="card-head"><div><p class="eyebrow">BUSINESS UNDERSTANDING</p><h2>${esc(section.title)}</h2></div>${badge(doc.status)}</div><div class="card-body"><p class="body-copy">${esc(section.body)}</p></div></article>`).join("")}</section><section class="card" style="margin-top:18px"><div class="card-head"><div><p class="eyebrow">EVIDENCE STATUS</p><h2>研究與發布狀態</h2></div>${badge(pkg.manifest.package_status)}</div><div class="card-body"><p>候選比較結果有限；目前最佳候選未優於 Dummy Baseline。研究結果不構成可靠價格預測能力證明。</p><p class="stage-note">Dataset license review：${esc(source.license_review || "PENDING")} · Package publication：PENDING · 原始車輛列與私有模型未包含於此本機展示套件。</p></div></section>`;
 }
 function renderCarPhase3(pkg, doc) {
   const lineage = pkg.phase3Lineage;
@@ -1380,7 +1382,7 @@ function renderDashboardVerified() {
     const phase4 = pkg.docs[4], winner = phase4.configurations.find((item) => item.configuration_id === phase4.default_configuration_id);
     const evaluations = pkg.docs[5].evaluations.filter((item) => item.configuration_id === winner?.configuration_id);
     const mean = evaluations.find((item) => item.metric_source === "cv_fold_mean");
-    return `<div class="grid three"><article class="card"><div class="card-head"><div><p class="eyebrow">USED CAR CASE</p><h2>${esc(pkg.caseDoc.title)}</h2></div>${badge(pkg.manifest.package_status)}</div><div class="card-body"><p>${esc(pkg.caseDoc.source.label)} · ${esc(pkg.caseDoc.target.raw_field_id)}</p><p>Development ${Number(pkg.docs[4].cv.training_rows).toLocaleString()} rows · ${phase4.cv.fold_count}-fold</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">CANDIDATE EXPLORATION</p><h2>${phase4.configurations.length} configurations</h2></div>${badge("PARTIAL")}</div><div class="card-body"><p>${phase4.configurations.filter((item) => item.status === "VERIFIED").length} completed · ${phase4.configurations.filter((item) => item.status === "ERROR").length} failed.</p><p>最佳候選僅代表已完成候選中的相對排序。</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">DEVELOPMENT CV</p><h2>Mean-fold RMSE</h2></div>${badge("VERIFIED")}</div><div class="card-body"><p>${mean ? phase5FormatMetric(phase5MetricValue(mean, "rmse"), "rmse") : "—"} USD</p><p>該候選未優於 Dummy Baseline；預測能力有限。</p></div></article></div><div class="button-row" style="margin-top:18px">${PHASES.map(([n,,zh]) => `<a class="button" href="#phase-${n}">Phase ${n} · ${esc(zh)}</a>`).join("")}</div>`;
+    return `<div class="grid three"><article class="card"><div class="card-head"><div><p class="eyebrow">USED CAR CASE</p><h2>${esc(caseData().title)}</h2></div>${badge(pkg.manifest.package_status)}</div><div class="card-body"><p>${esc(pkg.caseDoc.source.label)} · ${esc(pkg.caseDoc.target.raw_field_id)}</p><p>Development ${Number(pkg.docs[4].cv.training_rows).toLocaleString()} rows · ${phase4.cv.fold_count}-fold</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">CANDIDATE EXPLORATION</p><h2>${phase4.configurations.length} configurations</h2></div>${badge("PARTIAL")}</div><div class="card-body"><p>${phase4.configurations.filter((item) => item.status === "VERIFIED").length} completed · ${phase4.configurations.filter((item) => item.status === "ERROR").length} failed.</p><p>最佳候選僅代表已完成候選中的相對排序。</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">DEVELOPMENT CV</p><h2>Mean-fold RMSE</h2></div>${badge("VERIFIED")}</div><div class="card-body"><p>${mean ? phase5FormatMetric(phase5MetricValue(mean, "rmse"), "rmse") : "—"} USD</p><p>該候選未優於 Dummy Baseline；預測能力有限。</p></div></article></div><div class="button-row" style="margin-top:18px">${PHASES.map(([n,,zh]) => `<a class="button" href="#phase-${n}">Phase ${n} · ${esc(zh)}</a>`).join("")}</div>`;
   }
   if (c.packageMode === "exploration") {
     const pkg = explorationPackage;
@@ -1418,7 +1420,6 @@ function renderDashboard() {
   return `<div class="page">${banner(c)}${pageHeading("INTEGRATED REGRESSION ANALYSIS", "Dashboard", "獨立的分析工作區。Verified Research 與 Custom Dataset 互斥；兩種模式不共享研究結果。", c.status)}<div class="mode-switch" role="group" aria-label="Dashboard mode"><button type="button" data-dashboard-mode="verified" aria-pressed="${state.dashboardMode === "verified"}">Verified Research</button><button type="button" data-dashboard-mode="custom" aria-pressed="${state.dashboardMode === "custom"}">Custom Dataset</button></div><div style="margin-top:18px">${state.dashboardMode === "verified" ? renderDashboardVerified() : customPanel()}</div><div class="button-row" style="margin-top:22px"><a class="button" href="#phase-1">← Back to CRISP-DM Home</a></div></div>`;
 }
 function render() {
-  if (!referencePackage && !referencePackageError && !referencePackageLoading) loadReferencePackage();
   if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage();
   if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage();
   updateShell();

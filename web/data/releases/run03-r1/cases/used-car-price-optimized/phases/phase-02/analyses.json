@@ -1,0 +1,56 @@
+{
+  "analyses": [
+    {
+      "description": "依欄位語意分類；排除目標、識別碼、自由文字、時間戳、重複表示與價格代理欄位。排除只作用於模型輸入，原始 CSV 不變。",
+      "figure_id": "figure-field-decisions",
+      "finding": "ID [identifier] exclude; condition [nominal] include; cylinders [nominal] include; drive [nominal] include; engine [text] exclude; est._monthly_pmt [leakage_proxy] exclude; ext_color [nominal] include; feature_count [discrete] include; features_list [text] exclude; fuel [nominal] include; image_count [discrete] include; int_color [nominal] include; make [text] exclude; mileage [duplicate_representation] exclude; model [text] exclude; odometer [continuous] include; paint_color [nominal] include; price [target] exclude; scrape_timestamp [temporal] exclude; search_price [leakage_proxy] exclude; title [text] exclude; title_status [nominal] include; trans [text] exclude; transmission [nominal] include; trim [nominal] include; type [nominal] include; vin [identifier] exclude; year [discrete] include",
+      "id": "field-decisions",
+      "image_ref": null,
+      "limitations": "資料來源為中古車網路刊登；分類是本研究的建模決策，不是欄位的普遍因果解釋。",
+      "provenance_ref": "assets/execution-manifest.json",
+      "status": "VERIFIED",
+      "table_ref": null,
+      "title": "欄位分類與特徵決策"
+    },
+    {
+      "description": "784 筆、28 欄原始訓練資料的缺失概況。缺失判定採明列 token；合法字串 None 不視為缺失。",
+      "figure_id": "figure-missingness",
+      "finding": "Rows=784; missing cells by field: ID=0/784; condition=284/784; cylinders=231/784; drive=277/784; engine=701/784; est._monthly_pmt=782/784; ext_color=778/784; feature_count=0/784; features_list=0/784; fuel=1/784; image_count=0/784; int_color=778/784; make=707/784; mileage=693/784; model=715/784; odometer=14/784; paint_color=211/784; price=0/784; scrape_timestamp=0/784; search_price=784/784; title=0/784; title_status=8/784; trans=750/784; transmission=11/784; trim=719/784; type=85/784; vin=473/784; year=711/784",
+      "id": "missingness",
+      "image_ref": "phases/phase-02/figures/missingness.svg",
+      "limitations": "圖表僅顯示聚合筆數與比例，不包含逐列資料。",
+      "provenance_ref": "assets/execution-manifest.json",
+      "status": "VERIFIED",
+      "table_ref": null,
+      "title": "缺失值分析"
+    },
+    {
+      "description": "訓練資料中有效正值價格的分箱分布；不使用 Kaggle 測試資料。",
+      "figure_id": "figure-target-distribution",
+      "finding": "Positive numeric price values=783; excluded missing/non-numeric/non-positive target rows=1.",
+      "id": "target-distribution",
+      "image_ref": "phases/phase-02/figures/target-distribution.svg",
+      "limitations": "分箱圖只呈現聚合分布；價格為刊登價，不等同成交價。",
+      "provenance_ref": "assets/execution-manifest.json",
+      "status": "VERIFIED",
+      "table_ref": null,
+      "title": "刊登價格分布"
+    },
+    {
+      "description": "欄位數、有效價格筆數、完全重複檢查與模型輸入排除策略。",
+      "figure_id": "figure-data-quality",
+      "finding": "Rows=784; columns=28; valid_price_rows=783; missing_cells=9713; exact_duplicates_ignoring_ID_VIN_timestamp=0; model_predictor_columns=15.",
+      "id": "data-quality",
+      "image_ref": null,
+      "limitations": "完全重複檢查不等同於近似車輛或重複刊登的人工核對。",
+      "provenance_ref": "assets/execution-manifest.json",
+      "status": "VERIFIED",
+      "table_ref": null,
+      "title": "資料品質與欄位摘要"
+    }
+  ],
+  "case_id": "used-car-price-optimized",
+  "default_analysis_id": "field-decisions",
+  "schema_version": "1.0.0",
+  "status": "VERIFIED"
+}

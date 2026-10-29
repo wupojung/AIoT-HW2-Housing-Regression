@@ -1,0 +1,131 @@
+{
+  "aggregation": "20 approximately equal-sized quantile bins over predictions",
+  "case_id": "used-car-price-optimized",
+  "configuration_id": "car-mutual-information-8b59f9573a65",
+  "points": [
+    {
+      "mean_actual": 9743.03125,
+      "mean_predicted": -43041.085440320545,
+      "mean_residual": 52784.116690320545,
+      "n": 32
+    },
+    {
+      "mean_actual": 12094.25,
+      "mean_predicted": -20498.098825229103,
+      "mean_residual": 32592.348825229103,
+      "n": 32
+    },
+    {
+      "mean_actual": 10081.59375,
+      "mean_predicted": -9212.59182699828,
+      "mean_residual": 19294.18557699828,
+      "n": 32
+    },
+    {
+      "mean_actual": 9156.78125,
+      "mean_predicted": -163.4948578889564,
+      "mean_residual": 9320.276107888956,
+      "n": 32
+    },
+    {
+      "mean_actual": 8384.65625,
+      "mean_predicted": 5095.808423345569,
+      "mean_residual": 3288.8478266544307,
+      "n": 32
+    },
+    {
+      "mean_actual": 8722.0,
+      "mean_predicted": 8273.927595714718,
+      "mean_residual": 448.0724042852828,
+      "n": 32
+    },
+    {
+      "mean_actual": 10744.354838709678,
+      "mean_predicted": 10290.860365802024,
+      "mean_residual": 453.494472907654,
+      "n": 31
+    },
+    {
+      "mean_actual": 10167.612903225807,
+      "mean_predicted": 12224.272738734153,
+      "mean_residual": -2056.6598355083465,
+      "n": 31
+    },
+    {
+      "mean_actual": 11020.193548387097,
+      "mean_predicted": 14799.358557131167,
+      "mean_residual": -3779.1650087440717,
+      "n": 31
+    },
+    {
+      "mean_actual": 16572.41935483871,
+      "mean_predicted": 17181.015008672075,
+      "mean_residual": -608.5956538333663,
+      "n": 31
+    },
+    {
+      "mean_actual": 16391.967741935485,
+      "mean_predicted": 19949.77487754389,
+      "mean_residual": -3557.807135608404,
+      "n": 31
+    },
+    {
+      "mean_actual": 17499.41935483871,
+      "mean_predicted": 22570.32069146905,
+      "mean_residual": -5070.901336630342,
+      "n": 31
+    },
+    {
+      "mean_actual": 205825.12903225806,
+      "mean_predicted": 25369.736734686037,
+      "mean_residual": 180455.39229757205,
+      "n": 31
+    },
+    {
+      "mean_actual": 28920.612903225807,
+      "mean_predicted": 30400.040321572524,
+      "mean_residual": -1479.4274183467126,
+      "n": 31
+    },
+    {
+      "mean_actual": 17207.16129032258,
+      "mean_predicted": 37995.290679645615,
+      "mean_residual": -20788.12938932304,
+      "n": 31
+    },
+    {
+      "mean_actual": 16229.193548387097,
+      "mean_predicted": 47996.884433497624,
+      "mean_residual": -31767.690885110515,
+      "n": 31
+    },
+    {
+      "mean_actual": 15357.935483870968,
+      "mean_predicted": 60704.83976738295,
+      "mean_residual": -45346.90428351198,
+      "n": 31
+    },
+    {
+      "mean_actual": 18119.774193548386,
+      "mean_predicted": 73257.46358321697,
+      "mean_residual": -55137.68938966858,
+      "n": 31
+    },
+    {
+      "mean_actual": 21042.322580645163,
+      "mean_predicted": 88947.6115589062,
+      "mean_residual": -67905.28897826104,
+      "n": 31
+    },
+    {
+      "mean_actual": 39083.096774193546,
+      "mean_predicted": 122525.48611234038,
+      "mean_residual": -83442.38933814684,
+      "n": 31
+    }
+  ],
+  "population": "development_oof",
+  "run_id": "used-car-e2e-20261028-03",
+  "schema_version": "1.0.0",
+  "source_digest": "40e09eacc995dacb31d0f0511eba6414bae877bb191b8de75134276e9af70731"
+}
