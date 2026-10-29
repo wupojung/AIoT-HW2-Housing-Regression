@@ -73,6 +73,20 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn("下載預測結果 CSV · 尚未開放", source)
         self.assertIn("不會產生或顯示預測價格", source)
 
+    def test_local_preview_routes_only_to_phase6_and_guards_other_routes(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        render = source[source.index("function render() {"):source.index("function csvRows(")]
+        self.assertLess(
+            render.index("if (LOCAL_CAR_PHASE6_PREVIEW) {\n    if (phase === 6)"),
+            render.index('if (state.route === "home")'),
+        )
+        self.assertIn("if (phase === 6)", render)
+        self.assertIn("此預覽僅包含 Phase 6", render)
+        self.assertIn("${esc(requested)} 未包含於此原型", render)
+        self.assertIn("不會顯示 Ames 或 CAR 的正式研究內容", render)
+        self.assertNotIn("renderDashboard()", render[:render.index('if (state.route === "home")')])
+        self.assertIn("const visiblePhases = LOCAL_CAR_PHASE6_PREVIEW ? [PHASES[5]] : PHASES", source)
+
 
 if __name__ == "__main__":
     unittest.main()

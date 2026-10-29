@@ -176,7 +176,8 @@ function updateShell() {
   const phase = routePhase();
   caseContext.hidden = !phase || state.route === "home" || state.route === "dashboard";
   phaseNav.hidden = !phase || state.route === "home" || state.route === "dashboard";
-  phaseNav.innerHTML = PHASES.map(([n, en, zh]) => `<a class="phase-tab" href="#phase-${n}" ${phase === n ? 'aria-current="page"' : ""}><span class="num">0${n}</span><span class="phase-zh">${esc(zh)}</span><span class="phase-en">${esc(en)}</span></a>`).join("");
+  const visiblePhases = LOCAL_CAR_PHASE6_PREVIEW ? [PHASES[5]] : PHASES;
+  phaseNav.innerHTML = visiblePhases.map(([n, en, zh]) => `<a class="phase-tab" href="#phase-${n}" ${phase === n ? 'aria-current="page"' : ""}><span class="num">0${n}</span><span class="phase-zh">${esc(zh)}</span><span class="phase-en">${esc(en)}</span></a>`).join("");
   document.querySelector("[data-home-link]").setAttribute("aria-current", state.route === "home" ? "page" : "false");
   document.querySelector("[data-crisp-link]").setAttribute("aria-current", phase ? "page" : "false");
   let publicCases = PUBLIC_CASE_IDS.filter((id) => CASES[id]).map((id) => [id, CASES[id]]);
@@ -1546,9 +1547,17 @@ function render() {
   }
   updateShell();
   const phase = routePhase();
+  if (LOCAL_CAR_PHASE6_PREVIEW) {
+    if (phase === 6) {
+      app.innerHTML = renderPhase6();
+    } else {
+      const requested = phase ? `Phase 0${phase}` : state.route === "dashboard" ? "Dashboard" : "首頁 Home";
+      app.innerHTML = `<div class="page">${pageHeading("LOCAL UI PREVIEW", "此預覽僅包含 Phase 6", "本機 CAR Prototype 不載入其他案例或研究階段資料。", "UNAVAILABLE")}<section class="state-panel" role="status"><h3>${esc(requested)} 未包含於此原型</h3><p>這個本機預覽只提供合成輸入欄位與靜態批次版面；不會顯示 Ames 或 CAR 的正式研究內容，也不會呼叫模型或 API。</p><a class="button primary" href="#phase-6">前往 Phase 6 原型</a></section></div>`;
+    }
+    return;
+  }
   if (state.route === "home") app.innerHTML = renderHome();
   else if (state.route === "dashboard") app.innerHTML = renderDashboard();
-  else if (LOCAL_CAR_PHASE6_PREVIEW && phase && state.caseId === CAR_CASE_ID && phase !== 6) app.innerHTML = `<div class="page">${pageHeading(`PHASE 0${phase} / ${PHASES[phase - 1][1].toUpperCase()}`, PHASES[phase - 1][2], "This local CAR UI prototype covers Phase 6 only. Other phase evidence is not included in these synthetic fixtures.", "UNAVAILABLE")}<section class="state-panel" role="status"><h3>Phase 6 UI prototype only</h3><p>This case option is a local synthetic preview and does not replace the published CAR research Case Package.</p><a class="button primary" href="#phase-6">Open Phase 6 →</a></section></div>`;
   else if (phase && caseData().packageMode === "reference") app.innerHTML = renderReferencePackagePhase(phase);
   else if (phase && caseData().packageMode === "exploration") app.innerHTML = renderExplorationPackagePhase(phase);
   else if (phase && caseData().packageMode === "car") app.innerHTML = renderCarPackagePhase(phase);
