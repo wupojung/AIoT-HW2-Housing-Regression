@@ -76,7 +76,7 @@ class PublishedCasePackageContractTests(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(raw_doc).hexdigest(), file_map[ref]["sha256"])
 
     def test_cli_template_is_explicitly_not_publishable(self):
-        template = ROOT / "docs/design/data-contracts/templates/package.template.json"
+        template = ROOT / "docs/contracts/templates/package.template.json"
         pkg = json.loads(template.read_text(encoding="utf-8"))
         self.assertEqual(pkg["package_schema_version"], "1.0.0")
         self.assertFalse(pkg["publication"]["approved"])
