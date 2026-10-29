@@ -31,12 +31,12 @@ PHASE_PATHS = {
     6: "phases/phase-06/inference-catalog.json",
 }
 SCHEMAS = {
-    1: "docs/design/data-contracts/schemas/phase-01.schema.json",
-    2: "docs/design/data-contracts/schemas/phase-02.schema.json",
-    3: "docs/design/data-contracts/schemas/phase-03.schema.json",
-    4: "docs/design/data-contracts/schemas/phase-04.schema.json",
-    5: "docs/design/data-contracts/schemas/phase-05.schema.json",
-    6: "docs/design/data-contracts/schemas/phase-06.schema.json",
+    1: "docs/contracts/schemas/phase-01.schema.json",
+    2: "docs/contracts/schemas/phase-02.schema.json",
+    3: "docs/contracts/schemas/phase-03.schema.json",
+    4: "docs/contracts/schemas/phase-04.schema.json",
+    5: "docs/contracts/schemas/phase-05.schema.json",
+    6: "docs/contracts/schemas/phase-06.schema.json",
 }
 
 
