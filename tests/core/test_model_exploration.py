@@ -216,7 +216,7 @@ class HistoricalModelExplorationTests(unittest.TestCase):
         self.assertTrue(all(metric["status"] == "VERIFIED"
                             for evaluation in document["evaluations"]
                             for metric in evaluation["metrics"].values()))
-        schema_path = Path("docs/ui-ux/case-package/phase-05/evaluation-index.schema.json")
+        schema_path = Path("docs/design/data-contracts/schemas/phase-05.schema.json")
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(document))
         self.assertEqual([], errors)
