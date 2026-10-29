@@ -1,11 +1,11 @@
 # RegScope — UI/UX specification entry point
 
-The current source-backed UI baseline and terminology governance live in **[PR #63](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/63)** while that PR remains unmerged. After its authorized merge, follow:
+The authoritative source-backed UI baseline and terminology documents are consolidated in **[PR #66](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/66)**. After Owner-authorized merge, use the following repository-local documents:
 
 - `REGSCOPE-PRODUCTION-UX-BASELINE.md` — source-backed navigation, per-phase presentation, UX state semantics, case transitions, responsive and accessibility notes.
 - `REGSCOPE-SPEC-RECONCILIATION.md` — CURRENT/STALE/PROPOSED/UNKNOWN matrix and terminology audit.
 
-**Do not treat missing documents on main as present.** PR #35 was **CLOSED/UNMERGED** and is only a historical reference. No Mock screenshots, proposed wireframes or experimental packages from that PR are production UI authority.
+**Before PR #66 is merged, these files exist only on its branch.** PR #35 was **CLOSED/UNMERGED** and is only a historical reference. No Mock screenshots, proposed wireframes or experimental packages from that PR are production UI authority.
 
 ## Scope separation
 
