@@ -83,6 +83,25 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('data-exploration-perspective="feature_count_cv_rmse"', self.js)
         self.assertNotIn('data-exploration-back', self.js)
 
+    def test_car_method_labels_are_exact_id_mapped_and_separate_from_regressor(self):
+        expected = {
+            'ols_baseline: { name: "OLS Baseline"',
+            'pearson: { name: "Pearson Correlation"',
+            'mutual_information: { name: "Mutual Information"',
+            'lasso: { name: "Lasso Selection"',
+            'elastic_net: { name: "Elastic Net"',
+            'ridge_rfe: { name: "Ridge RFE"'
+        }
+        for mapping in expected:
+            self.assertIn(mapping, self.js)
+        self.assertIn('explorationMethodLabel(doc, method.method_id)', self.js)
+        self.assertIn('explorationMethodLabel(doc, item.method_id)', self.js)
+        self.assertIn('<dt>Feature Selection</dt>', self.js)
+        self.assertIn('<dt>Regression Model</dt>', self.js)
+        self.assertIn('fold_local_selected_features_to_primary_ols: "OLS"', self.js)
+        self.assertIn('|| evaluation?.model_name', self.js)
+        self.assertIn('以互資訊評估特徵與目標值的統計依賴關係。', self.js)
+
     def test_phase5_uses_phase4_configuration_and_mean_fold_metrics_by_default(self):
         self.assertIn('item.metric_source === "cv_fold_mean"', self.js)
         self.assertIn('requestedId\n    ? phase4.configurations.find((item) => item.configuration_id === requestedId)', self.js)
