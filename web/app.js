@@ -442,8 +442,10 @@ async function loadExplorationPackage() {
     if (defaultConfig) {
       const [cvMetrics, selectedFeatures] = await Promise.all([boundJson(defaultConfig.cv_metrics_ref), boundJson(defaultConfig.selected_features_ref)]);
       if (cvMetrics.configuration_id !== defaultConfig.configuration_id || selectedFeatures.configuration_id !== defaultConfig.configuration_id || cvMetrics.run_id !== defaultConfig.execution_run_id || selectedFeatures.run_id !== defaultConfig.execution_run_id) throw new Error("Default Phase 4 configuration artifacts are not identity-bound.");
-      state.explorationConfigurationId = defaultConfig.configuration_id;
-      state.explorationMethodId = defaultConfig.method_id;
+      if (state.caseId === EXPLORATION_CASE_ID) {
+        state.explorationConfigurationId = defaultConfig.configuration_id;
+        state.explorationMethodId = defaultConfig.method_id;
+      }
     }
     explorationPackage = pkg;
     CASES[EXPLORATION_CASE_ID] = { id: EXPLORATION_CASE_ID, title: pkg.caseDoc.title, status: manifest.package_status, packageMode: "exploration", packageRevision: manifest.package_revision };
@@ -543,8 +545,10 @@ async function loadCarPackage() {
       id: CAR_CASE_ID, title: pkg.caseDoc.title, status: manifest.package_status,
       packageMode: "car", packageRevision: manifest.package_revision, analyses: []
     };
-    state.explorationConfigurationId = config.configuration_id;
-    state.explorationMethodId = config.method_id;
+    if (state.caseId === CAR_CASE_ID) {
+      state.explorationConfigurationId = config.configuration_id;
+      state.explorationMethodId = config.method_id;
+    }
   } catch (error) {
     carPackageError = error instanceof Error ? error.message : "Unable to verify CAR Case Package.";
     logPackageLoadFailure(CAR_CASE_ID, stage, error);

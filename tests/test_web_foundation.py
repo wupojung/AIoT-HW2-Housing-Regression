@@ -62,6 +62,8 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('async function loadCarPackage()', self.js)
         self.assertIn('loadCarPackage();', self.js)
         self.assertIn('if (!releaseCase) return;', self.js)
+        self.assertIn('if (state.caseId === EXPLORATION_CASE_ID)', self.js)
+        self.assertIn('if (state.caseId === CAR_CASE_ID)', self.js)
         self.assertIn('caseInfo.packageMode === "car"', self.js)
         self.assertIn('else if (phase && caseData().packageMode === "car") app.innerHTML = renderCarPackagePhase(phase);', self.js)
         self.assertIn('function renderCarPhase3(pkg, doc)', self.js)
