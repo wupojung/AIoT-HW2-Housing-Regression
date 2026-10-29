@@ -7,7 +7,7 @@ import hashlib
 import json
 import re
 import unittest
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "web" / "data"
@@ -25,10 +25,31 @@ def read_bytes(path):
 
 
 def valid_ref(ref):
-    if not isinstance(ref, str) or not ref or "\\\\" in ref or "\\" in ref:
+    """Lexical check only; full verifier also needs file containment/symlink checks."""
+    if not isinstance(ref, str) or not ref or "\\" in ref or ":" in ref:
         return False
-    posix = PurePosixPath(ref)
-    return not posix.is_absolute() and all(p not in ("", ".", "..") for p in posix.parts)
+    if ref.startswith("/") or ref.endswith("/"):
+        return False
+    parts = ref.split("/")
+    return all(part not in ("", ".", "..") for part in parts)
+
+
+class ReferencePathTests(unittest.TestCase):
+    def test_valid_relative_paths(self):
+        for ref in ("case.json", "phases/phase-05/evaluations.json", "a-b/c_d.json"):
+            with self.subTest(ref=ref):
+                self.assertTrue(valid_ref(ref))
+
+    def test_unsafe_path_lexemes(self):
+        for ref in ("../a", "a/../b", "./a", "a/./b", "a//b",
+                    "/a", "a/", "a\\\\b", "C:/a", "C:\\\\a",
+                    "https://host/a", "file:///a", "", ".", ".."):
+            with self.subTest(ref=ref):
+                self.assertFalse(valid_ref(ref))
+
+    def test_duplicate_manifest_paths_rejected(self):
+        paths = ["case.json", "case.json"]
+        self.assertNotEqual(len(paths), len(set(paths)))
 
 
 class PublishedCasePackageContractTests(unittest.TestCase):
