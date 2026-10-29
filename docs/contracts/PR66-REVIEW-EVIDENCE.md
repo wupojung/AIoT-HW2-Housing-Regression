@@ -89,3 +89,24 @@ Evidence: [Owner/local QA comment 6497387420](https://github.com/wupojung/AIoT-H
 **Root cause independently confirmed:** `python/src/housing_regression/contracts.py::phase_schema_path()` still returned `docs/design/data-contracts/schemas/phase-0N.schema.json` (active runtime helper). PR #66 commit `235866db4efd04b782f67e9517587f39323cd2b8` changed **only that location** to `docs/contracts/schemas/phase-0N.schema.json`. No changes to published web, Case Packages, schemas, model behavior, tests or assertions.
 
 **Post-fix test status:** **NOT RUN at new HEAD**. The prior 21/1 result applies **only** to the pre-fix commit, not to this correction. Rerun the same five suites, record full HEAD and exit codes, and run an active-source scan including Python string fragments `"design" / "data-contracts"`, not merely exact whole-path literals. Browser, Production HTTP, rights and scientific fitness remain UNKNOWN.
+
+## Final QA handoff for independent PR review — 2026-10-29
+
+**Review target:** PR #66 HEAD `2861b86cb8a3a6cc51afd7a9325795a3a19d3e79` (must re-check before review). Local QA ran in a new detached, isolated worktree with Python 3.12.15 / jsonschema 4.26.0 and `PYTHONPATH="$PWD/python/src"` for applicable suites. Evidence: [QA comment #6497463947](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/66#issuecomment-6497463947) and [raw logs / report](https://gist.github.com/wupojung/cc5eea417f00c72f9a25e68d0f289f08).
+
+| Focused suite | Result at stated HEAD |
+| --- | --- |
+| `tests/docs/test_case_package_contract.py` | 5 PASS |
+| `tests/core/test_phase5_evaluation.py` | 2 PASS |
+| `tests/core/test_model_exploration.py` | 10 PASS |
+| `tests/core/test_used_car_case_package.py` | 3 PASS |
+| `tests/e2e/test_minimal_e2e_package.py` | 2 PASS |
+| **Total** | **22 PASS / 0 FAIL / 0 ERROR / 0 NOT RUN / 0 SKIP** |
+
+The prior 21 PASS / 1 ERROR result applied to older HEAD `849d28d17507bf5a680e3372c51d1a1ea2189a30`. Its E2E FileNotFoundError originated in a split-string legacy schema path in `python/src/housing_regression/contracts.py::phase_schema_path`; fixed by commit `235866db4efd04b782f67e9517587f39323cd2b8`. New HEAD rerun is the authoritative focused Python regression result. This does **not** establish full scientific, rights, browser or Production verification.
+
+**Schema identity:** six relocated Phase schemas matched their original Git blobs 6/6 (see migration evidence above). **Repository scan:** local QA still reported `web/app.js:1061-1062` linking to old Schema locations. The footer URL builder pins historic commit `08413d08f5cabbbf519b8ceee4ed68b7187d2669`; the referenced historic files exist there. Treat as **historic/pinned provenance link in active UI**, not a claim that it points to the current canonical `docs/contracts/schemas/` location. Reviewer should decide if this UI wording/entrypoint merits a separate follow-up; this PR does not change shipped `web/app.js` or deploy. A pinned historic source link is different from an active runtime schema-loader dependency. Historical migration prose and retained Phase 5 `$id` are intentional.
+
+**QA worktree:** [cleanup note #6497522149](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/66#issuecomment-6497522149) confirms report/logs retained. Worktree intentionally **NOT REMOVED** because Herdr indicated another Agent might still use it; never force-delete until all users release it. This is operational cleanup, not an observed test failure.
+
+**Review requested:** independently inspect the full PR diff and tests, decide whether the pinned historical UI link may be deferred, verify the focused regression evidence at exact HEAD, confirm no runtime/schema semantic/release mutation, and issue APPROVE/REQUEST CHANGES with explicit scope. **PR stays Draft and Owner separately authorizes merge.**
