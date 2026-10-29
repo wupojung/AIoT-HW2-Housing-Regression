@@ -1,0 +1,15 @@
+{
+  "fixture_status": "SYNTHETIC_UI_ONLY",
+  "fixture_id": "car-batch-preview-v1",
+  "case_id": "used-car-price-optimized",
+  "mode": "batch_preview",
+  "columns": ["demo_vehicle_age_years", "demo_distance", "demo_make_category", "demo_fuel_category", "demo_row_status"],
+  "summary": { "total_rows": 4, "valid_rows": 3, "error_rows": 1 },
+  "preview_rows": [
+    { "demo_vehicle_age_years": 3, "demo_distance": 22000, "demo_make_category": "SYNTHETIC_OPTION_A", "demo_fuel_category": "SYNTHETIC_FUEL_A", "demo_row_status": "SYNTHETIC_VALID" },
+    { "demo_vehicle_age_years": 6, "demo_distance": 61000, "demo_make_category": "SYNTHETIC_OPTION_B", "demo_fuel_category": "SYNTHETIC_FUEL_B", "demo_row_status": "SYNTHETIC_VALID" },
+    { "demo_vehicle_age_years": 9, "demo_distance": 93000, "demo_make_category": "SYNTHETIC_OPTION_A", "demo_fuel_category": "SYNTHETIC_FUEL_B", "demo_row_status": "SYNTHETIC_VALID" },
+    { "demo_vehicle_age_years": "INVALID_DEMO", "demo_distance": 120000, "demo_make_category": "SYNTHETIC_OPTION_X", "demo_fuel_category": "SYNTHETIC_FUEL_A", "demo_row_status": "SYNTHETIC_ERROR" }
+  ],
+  "errors": ["Synthetic row 4: demo_vehicle_age_years is not numeric; demo_make_category is outside the demo options."]
+}
