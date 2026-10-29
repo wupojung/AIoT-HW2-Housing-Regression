@@ -32,7 +32,7 @@ _PHASE_REFS = {
     4: ("phases/phase-04/modeling.json", "docs/design/data-contracts/schemas/phase-04.schema.json"),
     5: (
         "phases/phase-05/evaluations.json",
-        "docs/ui-ux/case-package/phase-05/evaluation-index.schema.json",
+        "docs/design/data-contracts/schemas/phase-05.schema.json",
     ),
     6: ("phases/phase-06/inference-catalog.json", "docs/design/data-contracts/schemas/phase-06.schema.json"),
 }
