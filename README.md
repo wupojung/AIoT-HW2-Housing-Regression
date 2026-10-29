@@ -11,7 +11,7 @@ Both Case Packages are **PARTIAL**. Public presentation of recorded research evi
 
 ## Current UX and evidence
 
-The site offers Home, Dashboard, a case-wide selector and six CRISP-DM phases. The Dashboard distinguishes reviewed-research display from **browser-local Custom Dataset CSV preview** (not upload/model training). Phase 3 includes source/encoded feature lineage; Phase 4 offers method comparison and model exploration based on actual recorded configurations; Phase 5 distinguishes CV fold-mean from pooled OOF evaluation. Phase 6 presents case-specific readiness and unavailable states. **No online Prediction API or batch prediction service is deployed.**
+The site offers Home, Dashboard, a case-wide selector and six CRISP-DM phases. The Dashboard distinguishes reviewed-research display from **browser-local Custom Dataset CSV preview** (not upload/model training). Phase 3 includes source/encoded feature lineage; Phase 4 offers method comparison and model exploration based on actual recorded configurations; Phase 5 distinguishes CV fold-mean from pooled OOF evaluation. Phase 6, titled **模型預測與結果 (Model Prediction & Results)** in the approved UX specification, presents case-specific readiness and unavailable states; the released frontend may still show its historical title. **No online Prediction API or batch prediction service is deployed.**
 
 The selector no longer lists historical Mock, Placeholder or INIT B cases. Historical fixtures can remain in source control. PR #61 added a direct-route restriction to `main`, but it was **not present in `deploy`** at the documentation evidence watermark; do not claim production 404 until independently verified.
 
@@ -24,7 +24,7 @@ The selector no longer lists historical Mock, Placeholder or INIT B cases. Histo
 3. **Data Preparation — 資料準備:** transformation, excluded columns and feature lineage.
 4. **Modeling — 模型建立:** recorded configurations, methods and development cross-validation.
 5. **Evaluation — 模型評估:** scoped CV / out-of-fold metrics, evidence and limitations.
-6. **Deployment — 部署:** readiness and publication boundary; **not** an implemented online inference API.
+6. **Deployment — 部署:** the standard CRISP-DM phase; approved page heading **模型預測與結果 (Model Prediction & Results)**. Readiness and publication boundary only; **not** an implemented online inference API.
 
 Research protocols and validation status are governed by their source artifacts and [CRISP-DM documents](docs/crisp-dm/README.md), not by UI labels. Holdout results are not interchangeable with Development CV / OOF.
 
