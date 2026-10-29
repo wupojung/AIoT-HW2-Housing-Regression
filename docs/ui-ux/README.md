@@ -10,7 +10,7 @@ The current source-backed UI baseline and terminology governance live in **[PR #
 ## Scope separation
 
 - **UI/UX** owns the view: page structure, interaction, labels, accessible statuses and evidence disclosure.
-- **Data contracts** own JSON Schema validation: [canonical Phase 1–6 schemas](../design/data-contracts/schemas/README.md). In particular, **Phase 5** moved from this directory to `docs/design/data-contracts/schemas/phase-05.schema.json`. Do **not** recreate a Phase 5 Schema under UI/UX.
+- **Data contracts** own JSON Schema validation: [canonical Phase 1–6 schemas](../contracts/schemas/README.md). In particular, **Phase 5** moved from this directory to `docs/contracts/schemas/phase-05.schema.json`. Do **not** recreate a Phase 5 Schema under UI/UX.
 - **CRISP-DM** owns methodology: [research documentation](../crisp-dm/README.md).
 - **Case Package evidence** describes reviewed public artifacts; a UI badge cannot elevate a result's scientific status.
 
