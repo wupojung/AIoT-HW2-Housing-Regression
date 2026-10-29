@@ -167,6 +167,93 @@ def _adapt_phase4(doc: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+RAW_FIELD_TYPE_BY_SOURCE_TYPE = {
+    "nominal": "nominal",
+    "ordinal": "ordinal",
+    "discrete": "discrete",
+    "continuous": "continuous",
+    "identifier": "identifier",
+    "text": "text",
+    "temporal": "temporal",
+    "leakage_proxy": "other",
+}
+RAW_FIELD_TYPE_LABELS = {
+    "nominal": "名目類別 (Nominal)",
+    "ordinal": "有序類別 (Ordinal)",
+    "discrete": "離散數值 (Discrete)",
+    "continuous": "連續數值 (Continuous)",
+    "identifier": "識別碼 (Identifier)",
+    "text": "自由文字 (Text)",
+    "temporal": "時間欄位 (Temporal)",
+    "other": "其他／洩漏代理 (Other / Leakage Proxy)",
+}
+
+
+def classify_raw_source_fields(
+    decisions: list[tuple[str, str, str]],
+    lineage_decisions: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Build a verified, mutually exclusive classification from recorded source-field decisions."""
+    counts = {type_id: 0 for type_id in RAW_FIELD_TYPE_LABELS}
+    fields = []
+    seen: set[str] = set()
+    evidence_by_field = {item.get("field"): item for item in (lineage_decisions or [])}
+    for raw_name, source_type, decision in decisions:
+        field = raw_name.strip()
+        if field == "price":
+            continue
+        if not field or field in seen:
+            raise UsedCarPackageError("Phase 2 field decisions contain an empty or duplicate source field")
+        seen.add(field)
+        type_id = RAW_FIELD_TYPE_BY_SOURCE_TYPE.get(source_type)
+        # Run 03's mileage field is numeric in meaning but excluded as a
+        # potentially redundant representation; that decision does not change
+        # its raw measurement type. Its equivalence to odometer stays pending.
+        if source_type == "duplicate_representation" and field == "mileage":
+            type_id = "continuous"
+        if type_id is None:
+            raise UsedCarPackageError(f"no reviewed raw-field classification for source type: {source_type}")
+        if decision not in {"include", "exclude"}:
+            raise UsedCarPackageError("Phase 2 field decision is not include/exclude")
+        counts[type_id] += 1
+        exclusion_category = None
+        reason_status = "VERIFIED"
+        if decision == "exclude":
+            exclusion_category = {
+                "identifier": "Identifier",
+                "text": "Free Text",
+                "leakage_proxy": "Leakage Risk",
+                "temporal": "Temporal Metadata",
+                "duplicate_representation": "Redundant Feature",
+            }.get(source_type, "Reason pending verification")
+            if source_type == "duplicate_representation":
+                exclusion_category = "Redundant Feature — basis pending verification"
+                reason_status = "PENDING"
+        fields.append({
+            "field": field,
+            "type_id": type_id,
+            "source_semantic_type": source_type,
+            "decision": decision,
+            "reason": evidence_by_field.get(field, {}).get("reason", "eligible predictor" if decision == "include" else "Reason pending verification"),
+            "exclusion_category": exclusion_category,
+            "reason_status": reason_status,
+        })
+    total = len(fields)
+    if not total or sum(counts.values()) != total:
+        raise UsedCarPackageError("raw source-field classification does not reconcile to its field inventory")
+    return {
+        "status": "VERIFIED",
+        "total": total,
+        "counts": counts,
+        "feature_types": [{"type_id": type_id, "label": label} for type_id, label in RAW_FIELD_TYPE_LABELS.items()],
+        "fields": fields,
+        "evidence": {
+            "basis": "Run 03 Phase 2 field decisions and Phase 3 feature lineage, checked against the source CSV schema",
+            "mileage": "Numeric measurement. Excluded from modeling as a duplicate representation; exact equivalence to odometer remains pending.",
+        },
+    }
+
+
 def _adapt_phase5(doc: dict[str, Any], figure_specs: list[dict[str, Any]], source_digest: str) -> dict[str, Any]:
     result = copy.deepcopy(doc)
     # Metrics were computed and independently reconciled, while publication
@@ -263,6 +350,11 @@ def build_used_car_case_package(run_root: str | Path, package_root: str | Path) 
         decisions = re.findall(r"([^;]+?)\s+\[([^\]]+)\]\s+(include|exclude)", field_analysis["finding"])
         raw_predictors = [item for item in decisions if item[0].strip() != "price"]
         eligible_predictors = [item for item in raw_predictors if item[2] == "include"]
+        raw_classification = classify_raw_source_fields(decisions, phase3_lineage_doc.get("excluded_fields", []))
+        if raw_classification["total"] != len(raw_predictors):
+            raise UsedCarPackageError("raw field classification does not match Phase 2 candidate count")
+        raw_classification["evidence"]["source_data_sha256"] = checkpoint["source_sha256"]
+        raw_classification["evidence"]["schema_source"] = "train_data_v2.csv header reconciled with all Phase 2 field decisions; target price excluded"
         raw_stage = next(item for item in phase3_doc["stages"] if item["id"] == "raw")
         raw_stage["total"] = len(raw_predictors)
         raw_stage["segments"] = []
@@ -270,9 +362,13 @@ def build_used_car_case_package(run_root: str | Path, package_root: str | Path) 
         raw_stage["label"] = "目標以外的原始欄位（含排除候選）"
         lineage_raw = phase3_lineage_doc["stages"]["raw"]
         lineage_raw["total"] = len(raw_predictors)
-        lineage_raw["counts"] = {}
+        lineage_raw["counts"] = raw_classification["counts"]
         lineage_raw["eligible_predictor_columns"] = len(eligible_predictors)
-        lineage_raw["classification_status"] = "UNAVAILABLE"
+        lineage_raw["classification_status"] = raw_classification["status"]
+        phase3_lineage_doc["raw_classification"] = {
+            key: value for key, value in raw_classification.items() if key != "fields"
+        }
+        phase3_lineage_doc["raw_fields"] = raw_classification["fields"]
         treatments = phase3_doc.get("treatments", [])
         treatment_fields = {item.get("field") for item in treatments}
         automatic_text = config_doc.get("automatic_text_exclusion", {})

@@ -67,9 +67,24 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('caseInfo.packageMode === "car"', self.js)
         self.assertIn('else if (phase && caseData().packageMode === "car") app.innerHTML = renderCarPackagePhase(phase);', self.js)
         self.assertIn('function renderCarPhase3(pkg, doc)', self.js)
-        self.assertIn('One-Hot 編碼後產生 70 個模型特徵', self.js)
+        self.assertIn('One-Hot 編碼後產生 ${lineage.encoded_features.length.toLocaleString()} 個模型特徵', self.js)
         self.assertIn('Publication review：PENDING', self.js)
         self.assertIn('Prediction unavailable', self.js)
+
+    def test_car_phase3_raw_bar_is_lineage_derived_and_keeps_later_stages_dynamic(self):
+        self.assertIn('const rawFields = lineage.raw_fields || [];', self.js)
+        self.assertIn('const rawClassification = lineage.raw_classification || {};', self.js)
+        self.assertIn('const rawCountsMatch =', self.js)
+        self.assertIn('rawClassification.evidence.source_data_sha256 === lineage.source_data_sha256', self.js)
+        self.assertIn('rawClassification.total === rawFields.length', self.js)
+        self.assertIn('segments: Object.entries(rawClassification.counts)', self.js)
+        self.assertIn('stage.id === "raw");', self.js)
+        self.assertIn('const inlineLabels = !compactLabels || percent >= 16', self.js)
+        self.assertIn('const exclusionGroups = Object.entries(excludedFields.reduce', self.js)
+        self.assertIn('rawFields.map((item) =>', self.js)
+        self.assertNotIn('涵蓋 27 個目標以外', self.js)
+        self.assertNotIn('保留 15 個原始特徵。', self.js)
+        self.assertNotIn('產生 70 個模型特徵', self.js)
 
     def test_phase4_has_two_mode_controls_and_preserves_explorer_views(self):
         self.assertIn('explorationMode: "comparison"', self.js)

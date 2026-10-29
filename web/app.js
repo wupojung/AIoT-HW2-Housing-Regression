@@ -21,6 +21,12 @@ const TYPES = [
   ["discrete", "離散 (Discrete)", "#70b5e8"],
   ["continuous", "連續 (Continuous)", "#f1b45b"]
 ];
+const ADDITIONAL_FEATURE_TYPES = [
+  ["identifier", "識別碼 (Identifier)", "#b49ae8"],
+  ["text", "自由文字 (Text)", "#ed9b8b"],
+  ["temporal", "時間欄位 (Temporal)", "#8da3b8"],
+  ["other", "其他／洩漏代理 (Other / Leakage Proxy)", "#a6afb8"]
+];
 const AMES_NEIGHBORHOODS = ["Blmngtn", "Blueste", "BrDale", "BrkSide", "ClearCr", "CollgCr", "Crawfor", "Edwards", "Gilbert", "IDOTRR", "MeadowV", "Mitchel", "NAmes", "NPkVill", "NWAmes", "NoRidge", "NridgHt", "OldTown", "SWISU", "Sawyer", "SawyerW", "Somerst", "StoneBr", "Timber", "Veenker"];
 const OVERALL_QUALITY_LABELS = {
   1: "Very Poor · 非常差", 2: "Poor · 差", 3: "Fair · 尚可", 4: "Below Average · 低於平均", 5: "Average · 平均",
@@ -699,7 +705,7 @@ function renderReferencePhase2(pkg, doc) {
   } else content += `<p>${esc(selected.finding || "")}</p>`;
   return `<section class="card"><div class="card-head"><div><p class="eyebrow">DATA EXPLORATION</p><h2>選擇分析項目</h2></div>${badge(selected.status)}</div><div class="card-body"><div class="selector-row reference-analysis-selector" role="group" aria-label="Phase 2 analysis">${buttons}</div><p class="sr-only" aria-live="polite">${esc(selected.title)} selected.</p><section class="reference-analysis-panel"><div class="reference-analysis-heading"><div><p class="eyebrow">${esc(selected.figure_id)}</p><h2>${esc(selected.title)}</h2></div>${badge(selected.status)}</div>${content}<details class="disclosure"><summary>研究說明與限制</summary><div class="disclosure-body"><p>${esc(selected.limitations || "Package 未提供額外限制說明。")}</p><p>Phase 2 使用原始資料，尚未套用 Phase 3 補值或編碼。</p></div></details></section></div></section>`;
 }
-function typeLabel(type) { return ({ nominal: "名目", ordinal: "次序", discrete: "離散", continuous: "連續" })[type] || type; }
+function typeLabel(type) { return ({ nominal: "名目", ordinal: "次序", discrete: "離散", continuous: "連續", identifier: "識別碼", text: "自由文字", temporal: "時間欄位", other: "其他／洩漏代理" })[type] || type; }
 function renderReferencePhase3(pkg, doc) {
   const stages = Array.isArray(doc.stages) ? doc.stages : [];
   const fieldDecisionAnalysis = pkg.docs?.[2]?.analyses?.find((item) => item.figure_id === "figure-field-decisions");
@@ -960,14 +966,45 @@ function renderCarPhase1(pkg, doc) {
 }
 function renderCarPhase3(pkg, doc) {
   const lineage = pkg.phase3Lineage;
+  const rawFields = lineage.raw_fields || [];
+  const rawClassification = lineage.raw_classification || {};
+  const computedRawCounts = rawFields.reduce((counts, item) => {
+    counts[item.type_id] = (counts[item.type_id] || 0) + 1;
+    return counts;
+  }, {});
+  const rawCountsMatch = Object.entries(rawClassification.counts || {}).every(([typeId, count]) => (computedRawCounts[typeId] || 0) === count)
+    && Object.entries(computedRawCounts).every(([typeId, count]) => rawClassification.counts?.[typeId] === count);
+  const rawSourceMatches = /^[0-9a-f]{64}$/.test(rawClassification.evidence?.source_data_sha256 || "")
+    && rawClassification.evidence.source_data_sha256 === lineage.source_data_sha256;
+  const rawClassificationReady = rawClassification.status === "VERIFIED"
+    && rawClassification.total === rawFields.length
+    && rawFields.length === Number(doc.stages?.find((item) => item.id === "raw")?.total)
+    && Object.values(rawClassification.counts || {}).reduce((sum, count) => sum + count, 0) === rawClassification.total
+    && rawCountsMatch && rawSourceMatches;
+  const excludedFields = rawFields.filter((item) => item.decision === "exclude");
+  const exclusionGroups = Object.entries(excludedFields.reduce((groups, item) => {
+    const category = item.exclusion_category || "Reason pending verification";
+    groups[category] = (groups[category] || 0) + 1;
+    return groups;
+  }, {}));
+  const exclusionSummary = excludedFields.length ? `<section class="state-panel car-exclusion-summary"><strong>${rawFields.length} 個原始候選欄位 → 排除 ${excludedFields.length} 個 → 保留 ${rawFields.length - excludedFields.length} 個。</strong><p>排除原因依 Run 03 記錄：${exclusionGroups.map(([category, count]) => `${esc(category)} ${count}`).join(" · ")}。Mileage 的重複欄位依據仍待確認。</p><details class="disclosure"><summary>檢視原始欄位分類、決策與原因</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>欄位</th><th>資料分類</th><th>模型決策</th><th>排除原因／證據</th></tr></thead><tbody>${rawFields.map((item) => `<tr><td>${esc(item.field)}</td><td>${esc(typeLabel(item.type_id))}</td><td>${item.decision === "include" ? "保留" : "排除"}</td><td>${esc(item.reason || "Reason pending verification")}${item.reason_status === "PENDING" ? " · 待核實" : ""}</td></tr>`).join("")}</tbody></table></div><p class="stage-note">來源 SHA-256 ${esc(rawClassification.evidence?.source_data_sha256 || lineage.source_data_sha256)} · 分類依來源 Schema、Phase 2 欄位決策與 Phase 3 lineage。${esc(rawClassification.evidence?.mileage || "")}</p></details></section>` : "";
   const cards = (doc.stages || []).map((stage, index) => {
-    const total = Number(stage.total);
-    const segments = renderSegments(stage, doc.feature_types || []);
-    const note = stage.id === "raw" ? "目標 price 不列入預測特徵；原始資料共有 27 個其他欄位，分類比例未完整驗證。"
-      : stage.id === "filtered" ? "依欄位語意移除識別碼、自由文字、時間戳及洩漏代理欄位後，保留 15 個原始特徵。"
+    const visualStage = stage.id === "raw" && rawClassificationReady ? {
+      ...stage,
+      total: rawClassification.total,
+      total_status: "VERIFIED",
+      distribution_status: "VERIFIED",
+      segments: Object.entries(rawClassification.counts).filter(([, count]) => count > 0).map(([type_id, count]) => ({ type_id, count }))
+    } : stage;
+    const total = Number(visualStage.total);
+    const segments = renderSegments(visualStage, stage.id === "raw" && rawClassificationReady ? rawClassification.feature_types : doc.feature_types || [], stage.id === "raw");
+    const note = stage.id === "raw" ? rawClassificationReady
+      ? `目標 price 不計入候選欄位。此分布涵蓋 ${rawClassification.total} 個目標以外的原始欄位，包括後續排除的識別碼、文字、時間與價格代理欄位；分類依來源與欄位語意，不等於模型輸入清單。`
+      : "原始欄位分類證據不足，暫不繪製比例。"
+      : stage.id === "filtered" ? `依欄位語意排除不適用欄位後，保留 ${total.toLocaleString()} 個原始特徵。`
         : stage.id === "processed" ? "缺失值處理與類別編碼在每個 Development 訓練 Fold 內 fit，避免驗證折資料洩漏。"
-          : "One-Hot 編碼後產生 70 個模型特徵；分類依來源欄位語意及 feature lineage 記錄。";
-    return `<article class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index"><span>步驟 · STEP</span><b>0${index + 1}</b></span><h2>${esc(stage.label)}</h2></div><span class="stage-total">總數 Total: ${Number.isInteger(total) ? total.toLocaleString() : "—"} ${esc(stage.unit)} ${badge(stage.total_status)}</span></div>${segments}<p class="stage-note">${esc(note)}</p>${stage.id === "encoded" ? `<details class="disclosure"><summary>檢視 ${lineage.encoded_features.length} 個編碼特徵與來源欄位</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>#</th><th>編碼特徵</th><th>來源欄位</th><th>分類</th><th>轉換</th></tr></thead><tbody>${lineage.encoded_features.map((item) => `<tr><td>${Number(item.index) + 1}</td><td>${esc(item.encoded_feature)}</td><td>${esc((item.source_columns || []).join(", "))}</td><td>${esc(typeLabel(item.semantic_type))}</td><td>${esc(item.transformation)}</td></tr>`).join("")}</tbody></table></div><p class="stage-note">Source SHA-256 ${esc(lineage.source_data_sha256)} · Config SHA-256 ${esc(lineage.config_sha256)} · fit: ${esc(lineage.fit_population)}.</p></details>` : ""}</article>`;
+          : `One-Hot 編碼後產生 ${lineage.encoded_features.length.toLocaleString()} 個模型特徵；分類依來源欄位語意及 feature lineage 記錄。`;
+    return `<article class="stage-card"><div class="stage-head"><div class="stage-title"><span class="index"><span>步驟 · STEP</span><b>0${index + 1}</b></span><h2>${esc(stage.label)}</h2></div><span class="stage-total">總數 Total: ${Number.isInteger(total) ? total.toLocaleString() : "—"} ${esc(stage.unit)} ${badge(visualStage.total_status)}</span></div>${segments}<p class="stage-note">${esc(note)}</p>${stage.id === "raw" ? rawClassificationReady ? exclusionSummary : "" : ""}${stage.id === "encoded" ? `<details class="disclosure"><summary>檢視 ${lineage.encoded_features.length} 個編碼特徵與來源欄位</summary><div class="table-scroll"><table class="mock-data-table"><thead><tr><th>#</th><th>編碼特徵</th><th>來源欄位</th><th>分類</th><th>轉換</th></tr></thead><tbody>${lineage.encoded_features.map((item) => `<tr><td>${Number(item.index) + 1}</td><td>${esc(item.encoded_feature)}</td><td>${esc((item.source_columns || []).join(", "))}</td><td>${esc(typeLabel(item.semantic_type))}</td><td>${esc(item.transformation)}</td></tr>`).join("")}</tbody></table></div><p class="stage-note">Source SHA-256 ${esc(lineage.source_data_sha256)} · Config SHA-256 ${esc(lineage.config_sha256)} · fit: ${esc(lineage.fit_population)}.</p></details>` : ""}</article>`;
   }).join("");
   const split = doc.split || {};
   const totalRows = Number(split.training_rows || 0) + Number(split.holdout_rows || 0);
@@ -1148,9 +1185,9 @@ function loadPhase5Package() {
     });
 }
 
-function renderSegments(stage, featureTypes) {
+function renderSegments(stage, featureTypes, compactLabels = false) {
   const total = stage.total;
-  const colorsById = new Map(TYPES.map(([id, label, color]) => [id, { label, color }]));
+  const colorsById = new Map([...TYPES, ...ADDITIONAL_FEATURE_TYPES].map(([id, label, color]) => [id, { label, color }]));
   const dataTypes = featureTypes.map((item) => {
     const type = colorsById.get(item.type_id);
     return [item.type_id, type?.label || `${item.label} (${item.type_id})`, type?.color || "#ccc"];
@@ -1172,7 +1209,9 @@ function renderSegments(stage, featureTypes) {
     const type = dataTypes.find(([id]) => id === segment.type_id);
     const percent = (segment.count / total) * 100;
     const shortLabel = type?.[1]?.split(" ")[0] || segment.type_id;
-    return `<span class="stack-segment" style="width:${percent}%;background:${type?.[2] || "#ccc"}" title="${esc(type?.[1] || segment.type_id)} ${segment.count} / ${total} (${percent.toFixed(1)}%)"><span>${esc(shortLabel)}</span><span>${percent.toFixed(1)}%</span></span>`;
+    const inlineLabels = !compactLabels || percent >= 16
+      ? `<span>${esc(shortLabel)}</span><span>${percent.toFixed(1)}%</span>` : "";
+    return `<span class="stack-segment" style="width:${percent}%;background:${type?.[2] || "#ccc"}" title="${esc(type?.[1] || segment.type_id)} ${segment.count} / ${total} (${percent.toFixed(1)}%)">${inlineLabels}</span>`;
   }).join("");
   const legend = segments.map((segment) => {
     const type = dataTypes.find(([id]) => id === segment.type_id);
