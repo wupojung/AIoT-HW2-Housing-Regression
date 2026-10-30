@@ -74,6 +74,39 @@
     })[character]);
   }
 
+  async function verifySchemaBytes(bytes, claimedSha256, expectedSha256) {
+    if (!(bytes instanceof ArrayBuffer) && !ArrayBuffer.isView(bytes)) {
+      return { valid: false, errors: ["Input schema response must be raw bytes."] };
+    }
+    if (!SHA256.test(claimedSha256 || "") || !SHA256.test(expectedSha256 || "")) {
+      return { valid: false, errors: ["Input schema digest is invalid."] };
+    }
+    if (!globalThis.crypto?.subtle) {
+      return { valid: false, errors: ["Web Crypto is unavailable; input schema cannot be verified."] };
+    }
+    try {
+      const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+      const actualSha256 = [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
+      if (actualSha256 !== claimedSha256 || actualSha256 !== expectedSha256) {
+        return { valid: false, errors: ["Input schema SHA-256 does not match the pinned digest."] };
+      }
+      const schema = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+      return { valid: true, errors: [], schema };
+    } catch (_error) {
+      return { valid: false, errors: ["Input schema bytes are not valid UTF-8 JSON."] };
+    }
+  }
+
+  function validateLocalPredictionResponse(payload, expected = {}) {
+    const valid = payload && Number.isFinite(payload.prediction)
+      && payload.case_id === expected.caseId
+      && payload.model_id === expected.modelId
+      && payload.model_version === expected.modelVersion
+      && payload.run_id === expected.runId
+      && payload.configuration_id === expected.configurationId;
+    return { valid: Boolean(valid) };
+  }
+
   function renderFields(contract, renderOptions = {}) {
     if (!validate(contract).valid) throw new Error("Cannot render an invalid Prediction Input Schema.");
     const controls = contract.input_features.map((field, index) => {
@@ -106,5 +139,10 @@
     return `<div class="p6-feature-grid">${controls}</div>`;
   }
 
-  root.RegScopeInputContract = Object.freeze({ validateForUI: validate, renderFields });
+  root.RegScopeInputContract = Object.freeze({
+    validateForUI: validate,
+    renderFields,
+    verifySchemaBytes,
+    validateLocalPredictionResponse
+  });
 })(globalThis);

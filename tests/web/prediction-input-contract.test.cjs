@@ -120,3 +120,28 @@ test("local inference form starts unselected and can safely restore entered valu
   assert.match(restored, /value="1200\.5"/);
   assert.match(restored, /<option value="SYNTHETIC_Value A" selected>/);
 });
+
+test("verifies raw schema bytes against both API and pinned SHA-256", async () => {
+  const contract = syntheticContract(2);
+  const bytes = new TextEncoder().encode(JSON.stringify(contract));
+  const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))]
+    .map((value) => value.toString(16).padStart(2, "0")).join("");
+  const accepted = await globalThis.RegScopeInputContract.verifySchemaBytes(bytes, digest, digest);
+  assert.equal(accepted.valid, true);
+  assert.deepEqual(accepted.schema, contract);
+
+  const altered = new TextEncoder().encode(JSON.stringify({ ...contract, model_id: "attacker-model" }));
+  const rejected = await globalThis.RegScopeInputContract.verifySchemaBytes(altered, digest, digest);
+  assert.equal(rejected.valid, false);
+  assert.match(rejected.errors[0], /SHA-256/);
+});
+
+test("requires prediction response to match the pinned model version and run", () => {
+  const expected = { caseId: "car", modelId: "model", modelVersion: "v1", runId: "run", configurationId: "config" };
+  const payload = {
+    prediction: 1.25, case_id: "car", model_id: "model", model_version: "v1", run_id: "run", configuration_id: "config"
+  };
+  assert.deepEqual(globalThis.RegScopeInputContract.validateLocalPredictionResponse(payload, expected), { valid: true });
+  assert.equal(globalThis.RegScopeInputContract.validateLocalPredictionResponse({ ...payload, model_version: "v2" }, expected).valid, false);
+  assert.equal(globalThis.RegScopeInputContract.validateLocalPredictionResponse({ ...payload, prediction: Infinity }, expected).valid, false);
+});

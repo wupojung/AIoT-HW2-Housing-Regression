@@ -103,7 +103,11 @@ class LocalCarPredictionApiTests(unittest.TestCase):
         contract = synthetic_contract()
         bundle = {"features": ["mileage", "make"], "transformer": FakeTransformer(), "scaler": FakeScaler(),
                   "mask": np.asarray([True, False]), "estimator": FakeEstimator(), "target": "price"}
-        server = create_local_server(CarPredictionRuntime(contract=contract, bundle=bundle), 0)
+        schema_bytes = json.dumps(contract, separators=(",", ":")).encode("utf-8")
+        schema_sha256 = hashlib.sha256(schema_bytes).hexdigest()
+        server = create_local_server(CarPredictionRuntime(contract=contract, bundle=bundle,
+                                                          schema_sha256=schema_sha256,
+                                                          schema_bytes=schema_bytes), 0)
         thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True)
         thread.start()
         try:
@@ -113,7 +117,10 @@ class LocalCarPredictionApiTests(unittest.TestCase):
             response = connection.getresponse()
             self.assertEqual(response.status, 200)
             self.assertEqual(response.getheader("Access-Control-Allow-Origin"), "http://127.0.0.1:8766")
-            self.assertEqual(json.loads(response.read())["schema"]["case_id"], "synthetic-car")
+            schema_body = response.read()
+            self.assertEqual(response.getheader("X-Schema-SHA256"), hashlib.sha256(schema_body).hexdigest())
+            self.assertEqual(response.getheader("Access-Control-Expose-Headers"), "X-Schema-SHA256")
+            self.assertEqual(json.loads(schema_body)["case_id"], "synthetic-car")
 
             body = {"case_id": "synthetic-car", "model_id": "synthetic-model", "model_version": "synthetic-v1",
                     "inputs": {"mileage": 10, "make": "SYNTHETIC_A"}}

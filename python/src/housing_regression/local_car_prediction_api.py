@@ -188,7 +188,12 @@ def load_verified_car_runtime(run_root: Path, schema_path: Path) -> "CarPredicti
     runtime_names = [field.get("name") for field in features]
     if runtime_names != bundle["features"] or len(set(runtime_names)) != len(runtime_names):
         raise PredictionInputSchemaError("CAR input feature order does not match the fitted transformer")
-    return CarPredictionRuntime(contract=contract, bundle=bundle, schema_sha256=hashlib.sha256(schema_bytes).hexdigest())
+    return CarPredictionRuntime(
+        contract=contract,
+        bundle=bundle,
+        schema_sha256=hashlib.sha256(schema_bytes).hexdigest(),
+        schema_bytes=schema_bytes,
+    )
 
 
 def validate_inputs(contract: Mapping[str, Any], inputs: Any) -> dict[str, Any]:
@@ -240,10 +245,18 @@ def validate_inputs(contract: Mapping[str, Any], inputs: Any) -> dict[str, Any]:
 
 
 class CarPredictionRuntime:
-    def __init__(self, *, contract: Mapping[str, Any], bundle: Mapping[str, Any], schema_sha256: str | None = None):
+    def __init__(
+        self,
+        *,
+        contract: Mapping[str, Any],
+        bundle: Mapping[str, Any],
+        schema_sha256: str | None = None,
+        schema_bytes: bytes | None = None,
+    ):
         self.contract = contract
         self.bundle = bundle
         self.schema_sha256 = schema_sha256
+        self.schema_bytes = schema_bytes
 
     def predict(self, inputs: Any) -> dict[str, Any]:
         values = validate_inputs(self.contract, inputs)
@@ -297,6 +310,25 @@ def make_handler(runtime: CarPredictionRuntime, *, allowed_origin: str = LOCAL_W
             self.end_headers()
             self.wfile.write(payload)
 
+        def _send_schema(self, *, cors: bool = False) -> None:
+            payload = runtime.schema_bytes
+            digest = runtime.schema_sha256
+            if not isinstance(payload, bytes) or not isinstance(digest, str):
+                self._send(503, {"error": {"code": "schema_unavailable", "message": "已驗證的輸入契約目前不可用。"}}, cors=cors)
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("X-Schema-SHA256", digest)
+            self.send_header("Vary", "Origin")
+            if cors:
+                self.send_header("Access-Control-Allow-Origin", allowed_origin)
+                self.send_header("Access-Control-Expose-Headers", "X-Schema-SHA256")
+            self.end_headers()
+            self.wfile.write(payload)
+
         def _origin_allowed(self) -> bool:
             origin = self.headers.get("Origin")
             return origin is None or origin == allowed_origin
@@ -324,7 +356,8 @@ def make_handler(runtime: CarPredictionRuntime, *, allowed_origin: str = LOCAL_W
             if route == "/health":
                 document = {"status": "ready", "case_id": runtime.contract["case_id"], "model_id": runtime.contract["model_id"], "model_version": runtime.contract["model_version"], "run_id": runtime.contract["source_evidence"]["run_id"], "configuration_id": runtime.contract["source_evidence"]["configuration_id"], "mode": "LOCAL_EXPERIMENT"}
             else:
-                document = {"schema": runtime.contract, "schema_sha256": runtime.schema_sha256}
+                self._send_schema(cors=self.headers.get("Origin") == allowed_origin)
+                return
             self._send(200, document, cors=self.headers.get("Origin") == allowed_origin)
 
         def do_POST(self) -> None:  # noqa: N802

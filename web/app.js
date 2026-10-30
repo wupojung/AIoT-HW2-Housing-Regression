@@ -1488,10 +1488,15 @@ function loadLocalCarPredictionSchema() {
   fetch(`${LOCAL_CAR_API_BASE}/api/schema`, { cache: "no-store", credentials: "omit", mode: "cors", signal: controller.signal })
     .then(async (response) => {
       if (!response.ok) throw new Error(`本機 API 無法讀取輸入契約（HTTP ${response.status}）。`);
-      const payload = await response.json();
-      if (payload.schema_sha256 !== LOCAL_CAR_SCHEMA_SHA256) throw new Error("本機 API 的輸入契約 SHA-256 不符合此預覽版本。");
       if (!globalThis.RegScopeInputContract) throw new Error("輸入契約 UI 驗證器尚未載入。");
-      const checked = globalThis.RegScopeInputContract.validateForUI(payload.schema, {
+      const rawSchema = await response.arrayBuffer();
+      const verified = await globalThis.RegScopeInputContract.verifySchemaBytes(
+        rawSchema,
+        response.headers.get("X-Schema-SHA256"),
+        LOCAL_CAR_SCHEMA_SHA256
+      );
+      if (!verified.valid) throw new Error(`本機輸入契約完整性驗證失敗：${verified.errors.join(" ")}`);
+      const checked = globalThis.RegScopeInputContract.validateForUI(verified.schema, {
         caseId: LOCAL_CAR_MODEL.caseId,
         modelId: LOCAL_CAR_MODEL.modelId,
         modelVersion: LOCAL_CAR_MODEL.modelVersion,
@@ -1499,7 +1504,7 @@ function loadLocalCarPredictionSchema() {
         configurationId: LOCAL_CAR_MODEL.configurationId
       });
       if (!checked.valid) throw new Error(`本機輸入契約驗證失敗：${checked.errors.join(" ")}`);
-      localCarSchema = payload.schema;
+      localCarSchema = verified.schema;
       localCarApiReady = true;
     })
     .catch((error) => {
@@ -1570,9 +1575,14 @@ async function submitLocalCarPrediction() {
     });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload?.error?.message || `本機預測失敗（HTTP ${response.status}）。`);
-    if (!Number.isFinite(payload?.prediction) || payload.case_id !== LOCAL_CAR_MODEL.caseId
-        || payload.model_id !== LOCAL_CAR_MODEL.modelId || payload.run_id !== LOCAL_CAR_MODEL.runId
-        || payload.configuration_id !== LOCAL_CAR_MODEL.configurationId) {
+    const identity = globalThis.RegScopeInputContract.validateLocalPredictionResponse(payload, {
+      caseId: LOCAL_CAR_MODEL.caseId,
+      modelId: LOCAL_CAR_MODEL.modelId,
+      modelVersion: LOCAL_CAR_MODEL.modelVersion,
+      runId: LOCAL_CAR_MODEL.runId,
+      configurationId: LOCAL_CAR_MODEL.configurationId
+    });
+    if (!identity.valid) {
       throw new Error("本機 API 回應數值或模型來源識別不正確。");
     }
     localCarPrediction = payload;
