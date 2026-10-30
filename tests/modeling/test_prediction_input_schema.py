@@ -186,6 +186,37 @@ class PredictionInputSchemaTests(unittest.TestCase):
             with self.assertRaisesRegex(PredictionInputSchemaError, "missing"):
                 prediction_input_schema_path(temp)
 
+    def test_schema_path_rejects_canonical_and_legacy_symlinked_ancestors(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "repo"
+            outside = Path(temp) / "outside"
+            root.mkdir()
+            outside.mkdir()
+
+            # Canonical schema behind a symlinked docs/contracts ancestor.
+            canonical_outside = outside / "contracts/schemas/prediction-input-schema-v0.1.schema.json"
+            canonical_outside.parent.mkdir(parents=True)
+            canonical_outside.write_text("{}", encoding="utf-8")
+            (root / "docs").symlink_to(outside, target_is_directory=True)
+            with self.assertRaisesRegex(PredictionInputSchemaError, "symlink"):
+                prediction_input_schema_path(root)
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "repo"
+            outside = Path(temp) / "outside"
+            root.mkdir()
+            outside.mkdir()
+
+            # A regular canonical registry may exist while the legacy schema
+            # itself is reachable only through a symlinked ancestor.
+            (root / "docs/contracts/schemas").mkdir(parents=True)
+            legacy_outside = outside / "data-contracts/schemas/prediction-input-schema-v0.1.schema.json"
+            legacy_outside.parent.mkdir(parents=True)
+            legacy_outside.write_text("{}", encoding="utf-8")
+            (root / "docs/design").symlink_to(outside, target_is_directory=True)
+            with self.assertRaisesRegex(PredictionInputSchemaError, "symlink"):
+                prediction_input_schema_path(root)
+
     def test_manifest_identity_mismatch_fails_closed(self):
         bundle = self._bundle(5)
         manifest = self._manifest(bundle)

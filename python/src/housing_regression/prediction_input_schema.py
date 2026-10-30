@@ -42,9 +42,16 @@ def prediction_input_schema_path(repo_root: str | Path | None = None) -> Path:
     absent. An existing but unsafe canonical entry fails closed.
     """
     root = Path(repo_root) if repo_root is not None else Path(__file__).resolve().parents[3]
+    if root.is_symlink():
+        raise PredictionInputSchemaError("Prediction Input repository root must not be a symlink")
     canonical = root / PREDICTION_INPUT_SCHEMA_CANONICAL
     legacy = root / PREDICTION_INPUT_SCHEMA_LEGACY
     for candidate in (canonical, legacy):
+        current = root
+        for part in candidate.relative_to(root).parts:
+            current = current / part
+            if current.is_symlink():
+                raise PredictionInputSchemaError("Prediction Input JSON Schema path contains a symlink")
         if not candidate.exists() and not candidate.is_symlink():
             continue
         if candidate.is_symlink() or not candidate.is_file():
