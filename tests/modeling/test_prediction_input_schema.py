@@ -23,6 +23,7 @@ from housing_regression.prediction_input_schema import (
     _imputer_metadata,
     _source_for_encoded_name,
     build_prediction_input_schema,
+    prediction_input_schema_path,
     write_schema_new,
 )
 from housing_regression.contracts import validate_document
@@ -154,15 +155,67 @@ class PredictionInputSchemaTests(unittest.TestCase):
             self._bundle(15), case_id="synthetic-fifteen", model_id="model-fifteen", model_sha256="b" * 64
         )
         self.assertEqual(document["input_feature_count"], len(document["input_features"]))
-        schema_path = Path(__file__).resolve().parents[2] / "docs/design/data-contracts/schemas/prediction-input-schema-v0.1.schema.json"
-        validate_document(document, schema_path)
+        validate_document(document, prediction_input_schema_path())
 
     def test_documented_mock_example_validates(self):
         root = Path(__file__).resolve().parents[2]
         example = json.loads((root / "docs/design/data-contracts/examples/prediction-input-schema.example.json").read_text(encoding="utf-8"))
-        schema_path = root / "docs/design/data-contracts/schemas/prediction-input-schema-v0.1.schema.json"
+        schema_path = prediction_input_schema_path(root)
         validate_document(example, schema_path)
         self.assertEqual(example["input_feature_count"], len(example["input_features"]))
+
+    def test_schema_path_prefers_canonical_then_uses_legacy_until_migration(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            canonical = root / "docs/contracts/schemas/prediction-input-schema-v0.1.schema.json"
+            legacy = root / "docs/design/data-contracts/schemas/prediction-input-schema-v0.1.schema.json"
+            legacy.parent.mkdir(parents=True)
+            legacy.write_text("{}", encoding="utf-8")
+
+            # A Phase schema registry directory alone does not migrate the
+            # separate Prediction Input Schema; the existing legacy file is used.
+            (root / "docs/contracts/schemas").mkdir(parents=True)
+            (root / "docs/contracts/schemas/phase-01.schema.json").write_text("{}", encoding="utf-8")
+            self.assertEqual(prediction_input_schema_path(root), legacy)
+
+            canonical.write_text("{\"canonical\":true}", encoding="utf-8")
+            self.assertEqual(prediction_input_schema_path(root), canonical)
+
+    def test_schema_path_missing_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(PredictionInputSchemaError, "missing"):
+                prediction_input_schema_path(temp)
+
+    def test_schema_path_rejects_canonical_and_legacy_symlinked_ancestors(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "repo"
+            outside = Path(temp) / "outside"
+            root.mkdir()
+            outside.mkdir()
+
+            # Canonical schema behind a symlinked docs/contracts ancestor.
+            canonical_outside = outside / "contracts/schemas/prediction-input-schema-v0.1.schema.json"
+            canonical_outside.parent.mkdir(parents=True)
+            canonical_outside.write_text("{}", encoding="utf-8")
+            (root / "docs").symlink_to(outside, target_is_directory=True)
+            with self.assertRaisesRegex(PredictionInputSchemaError, "symlink"):
+                prediction_input_schema_path(root)
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "repo"
+            outside = Path(temp) / "outside"
+            root.mkdir()
+            outside.mkdir()
+
+            # A regular canonical registry may exist while the legacy schema
+            # itself is reachable only through a symlinked ancestor.
+            (root / "docs/contracts/schemas").mkdir(parents=True)
+            legacy_outside = outside / "data-contracts/schemas/prediction-input-schema-v0.1.schema.json"
+            legacy_outside.parent.mkdir(parents=True)
+            legacy_outside.write_text("{}", encoding="utf-8")
+            (root / "docs/design").symlink_to(outside, target_is_directory=True)
+            with self.assertRaisesRegex(PredictionInputSchemaError, "symlink"):
+                prediction_input_schema_path(root)
 
     def test_manifest_identity_mismatch_fails_closed(self):
         bundle = self._bundle(5)

@@ -25,6 +25,41 @@ class PredictionInputSchemaError(ValueError):
     """Raised when fitted model metadata is incomplete or inconsistent."""
 
 
+PREDICTION_INPUT_SCHEMA_CANONICAL = Path(
+    "docs/contracts/schemas/prediction-input-schema-v0.1.schema.json"
+)
+PREDICTION_INPUT_SCHEMA_LEGACY = Path(
+    "docs/design/data-contracts/schemas/prediction-input-schema-v0.1.schema.json"
+)
+
+
+def prediction_input_schema_path(repo_root: str | Path | None = None) -> Path:
+    """Resolve the canonical contract path, with a bounded migration fallback.
+
+    PR #66 relocates the Phase 1–6 schemas but currently leaves the separate
+    Prediction Input Schema at its legacy path. Prefer the canonical location
+    when that schema is migrated; use the legacy location only while it is
+    absent. An existing but unsafe canonical entry fails closed.
+    """
+    root = Path(repo_root) if repo_root is not None else Path(__file__).resolve().parents[3]
+    if root.is_symlink():
+        raise PredictionInputSchemaError("Prediction Input repository root must not be a symlink")
+    canonical = root / PREDICTION_INPUT_SCHEMA_CANONICAL
+    legacy = root / PREDICTION_INPUT_SCHEMA_LEGACY
+    for candidate in (canonical, legacy):
+        current = root
+        for part in candidate.relative_to(root).parts:
+            current = current / part
+            if current.is_symlink():
+                raise PredictionInputSchemaError("Prediction Input JSON Schema path contains a symlink")
+        if not candidate.exists() and not candidate.is_symlink():
+            continue
+        if candidate.is_symlink() or not candidate.is_file():
+            raise PredictionInputSchemaError("Prediction Input JSON Schema path is not a regular file")
+        return candidate
+    raise PredictionInputSchemaError("Prediction Input JSON Schema is missing from canonical and migration paths")
+
+
 def sha256_file(path: str | Path) -> str:
     digest = hashlib.sha256()
     with Path(path).open("rb") as stream:
@@ -350,7 +385,7 @@ def build_prediction_input_schema(
         "category_values_publication_review": "REQUIRED_BEFORE_PUBLICATION",
         "status": "VERIFIED" if evidence["evidence_status"] == "VERIFIED" else "PARTIAL",
     }
-    schema_path = Path(__file__).resolve().parents[3] / "docs/design/data-contracts/schemas/prediction-input-schema-v0.1.schema.json"
+    schema_path = prediction_input_schema_path()
     try:
         validate_document(document, schema_path)
     except ContractValidationError as exc:

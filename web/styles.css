@@ -369,6 +369,10 @@ h2 { color: #18374b; letter-spacing: -.025em; }
 .p6-prototype-state-icon { color: #087e82; font-size: 22px; font-weight: 800; }
 .p6-prototype-state strong { color: #203e52; font-size: 13px; }
 .p6-prototype-state p { margin: 5px 0 0; color: #71838e; font-size: 10px; line-height: 1.6; }
+.p6-local-prediction-result { display: grid; gap: 8px; margin: 4px 0 16px; padding: 20px; border: 1px solid #b9ddd9; border-radius: 10px; background: #f0faf8; }
+.p6-local-prediction-result span { color: #436b70; font-size: 11px; font-weight: 700; }
+.p6-local-prediction-result strong { color: #087e82; font-size: clamp(25px, 4vw, 38px); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.p6-local-prediction-result small { color: #71838e; font-size: 10px; }
 .p6-prototype-steps { display: grid; gap: 15px; margin: 0; padding-left: 23px; }
 .p6-prototype-steps li { display: grid; gap: 9px; color: #29495d; font-size: 11px; }
 .p6-prototype-steps .button { width: fit-content; }

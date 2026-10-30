@@ -29,6 +29,9 @@ const ADDITIONAL_FEATURE_TYPES = [
 ];
 const LOCAL_CAR_PHASE6_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname)
   && new URLSearchParams(location.search).get("car-phase6-prototype") === "1";
+const LOCAL_CAR_PREDICTION_API_MODE = LOCAL_CAR_PHASE6_PREVIEW
+  && location.origin === "http://127.0.0.1:8766"
+  && new URLSearchParams(location.search).get("car-local-inference") === "1";
 const AMES_NEIGHBORHOODS = ["Blmngtn", "Blueste", "BrDale", "BrkSide", "ClearCr", "CollgCr", "Crawfor", "Edwards", "Gilbert", "IDOTRR", "MeadowV", "Mitchel", "NAmes", "NPkVill", "NWAmes", "NoRidge", "NridgHt", "OldTown", "SWISU", "Sawyer", "SawyerW", "Somerst", "StoneBr", "Timber", "Veenker"];
 const OVERALL_QUALITY_LABELS = {
   1: "Very Poor · 非常差", 2: "Poor · 差", 3: "Fair · 尚可", 4: "Below Average · 低於平均", 5: "Average · 平均",
@@ -114,7 +117,7 @@ const state = {
   phase4RunId: "MOCK-RUN-02", phase6MockSubmitted: false,
   referenceAnalysisId: "figure-field-decisions",
   referenceFigureId: "FIG-P5-01",
-  phase6InputMode: "manual", phase6Csv: null, phase6CsvMessage: "尚未選擇 CSV 檔案。",
+  phase6InputMode: "manual", phase6ModelId: "", phase6Csv: null, phase6CsvMessage: "尚未選擇 CSV 檔案。",
   carUiPrototypeSize: "large",
   carUiGroupOpen: { number: true, category: true, text: true },
   phase6Values: { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" },
@@ -238,6 +241,24 @@ if (LOCAL_CAR_PHASE6_PREVIEW) {
 let carUiPrototypeFixtures = null;
 let carUiPrototypeFixtureError = null;
 let carUiPrototypeFixtureLoading = false;
+let localCarSchema = null;
+let localCarSchemaError = null;
+let localCarSchemaLoading = false;
+let localCarPrediction = null;
+let localCarPredictionError = null;
+let localCarPredictionPending = false;
+let localCarApiReady = false;
+let localCarFormValues = {};
+let localCarSyntheticInput = false;
+const LOCAL_CAR_API_BASE = "http://127.0.0.1:8767";
+const LOCAL_CAR_SCHEMA_SHA256 = "4fcb528328903e54fe39a214be682d437db26c2cd9655971a486170d513d881a";
+const LOCAL_CAR_MODEL = Object.freeze({
+  caseId: "used-car-price-optimized",
+  modelId: "used-car-price-optimized-car-mutual-information-8b59f9573a65",
+  modelVersion: "83caf79b21b8",
+  runId: "used-car-e2e-20261028-03",
+  configurationId: "car-mutual-information-8b59f9573a65"
+});
 const explorationArtifactPromises = new Map();
 function safePackageRef(ref) {
   return typeof ref === "string" && !ref.startsWith("/") && !ref.includes("\\")
@@ -547,6 +568,41 @@ async function loadCarPackage() {
       const ref = manifest.phases?.[`phase${phase}`]?.data_ref;
       const document = await boundJson(ref);
       pkg.docs[phase] = document;
+    }
+    stage = "phase6_input_contracts";
+    pkg.inputContracts = new Map();
+    pkg.phase6ContractErrors = [];
+    const phase6ModelIds = new Set();
+    const duplicatePhase6ModelIds = new Set();
+    for (const model of pkg.docs[6].models || []) {
+      if (phase6ModelIds.has(model.model_id)) {
+        duplicatePhase6ModelIds.add(model.model_id);
+        pkg.inputContracts.delete(model.model_id);
+        pkg.phase6ContractErrors.push("Phase 6 model identifiers are duplicated.");
+        continue;
+      }
+      phase6ModelIds.add(model.model_id);
+      if (duplicatePhase6ModelIds.has(model.model_id)) continue;
+      if (model.input_schema_ref === null) continue;
+      try {
+        if (typeof model.input_schema_ref !== "string") throw new Error("Input schema reference is invalid.");
+        if (model.input_schema_ref.split("/").at(-1) !== "prediction-input-schema.json") {
+          throw new Error("Input schema reference does not use the canonical filename.");
+        }
+        const contract = await boundJson(model.input_schema_ref);
+        if (!window.RegScopeInputContract) throw new Error("Input contract validator is unavailable.");
+        const result = window.RegScopeInputContract.validateForUI(contract, {
+          caseId: pkg.manifest.case_id,
+          modelId: model.model_id,
+          modelVersion: model.model_version,
+          runId: model.source_execution_run_id,
+          configurationId: model.source_configuration_id
+        });
+        if (!result.valid) throw new Error("Input contract metadata does not match its model record.");
+        pkg.inputContracts.set(model.model_id, { model, contract });
+      } catch (error) {
+        pkg.phase6ContractErrors.push(error instanceof Error ? error.message : "Input contract unavailable.");
+      }
     }
     pkg.caseDoc = await boundJson(manifest.case_ref);
     if (pkg.caseDoc.case_status !== manifest.package_status) throw new Error("CAR case document status mismatch.");
@@ -1038,9 +1094,24 @@ function renderCarPhase3(pkg, doc) {
   const treatments = (doc.treatments || []).map((item) => `<div class="treatment-item"><strong>${esc(item.field || "欄位處理")}</strong><span>${esc(item.reason || item.action)}</span></div>`).join("");
   return `<section class="card"><div class="card-head"><div><p class="eyebrow">FEATURE TRANSFORMATION · FOUR STAGES</p><h2>中古車資料的特徵處理</h2></div>${badge(doc.status)}</div><div class="card-body"><div class="stage-list">${cards}</div><section class="reference-split"><div class="reference-analysis-heading"><div><p class="eyebrow">DEVELOPMENT SPLIT</p><h2>Development／內部 Holdout</h2></div><strong>Seed ${esc(split.seed)}</strong></div><div class="row-split"><span style="width:${totalRows ? split.training_rows / totalRows * 100 : 0}%">Development · ${Number(split.training_rows).toLocaleString()}</span><span style="width:${totalRows ? split.holdout_rows / totalRows * 100 : 0}%">Internal Holdout · ${Number(split.holdout_rows).toLocaleString()}</span></div><p class="stage-note">${Number(split.source_labeled_rows).toLocaleString()} 筆有標籤資料 · 80/20 split · 前處理與特徵選擇只在訓練 Fold fit。此為內部分區，非 Kaggle competition test set。</p></section>${treatments ? `<details class="disclosure"><summary>查看欄位排除與處理紀錄</summary><div class="treatment-list">${treatments}</div></details>` : ""}</div></section>`;
 }
-function renderCarPhase6(doc) {
+function renderCarPhase6(pkg, doc) {
   const readiness = doc.readiness || {};
-  return `<section class="grid two"><article class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL SMOKE</p><h2>本機模型重載</h2></div>${badge("VERIFIED")}</div><div class="card-body"><p>${esc(readiness.message || "本機模型重載 Smoke 已完成；私有模型未放入 Case Package。")}</p><p class="stage-note">Reload Smoke 只確認本機載入及介面流程，不證明模型具有可靠預測能力。</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">ONLINE SERVING</p><h2>線上推論服務</h2></div>${badge(doc.status)}</div><div class="card-body"><p>Prediction unavailable。此案例目前沒有公開推論 API；網站僅展示經核對的研究結果。</p><p class="stage-note">${esc(readiness.reason_code || "NO_PUBLIC_INFERENCE_SERVICE")} · 未公開私有模型或逐筆資料。</p></div></article></section>`;
+  const contracts = [...(pkg.inputContracts || new Map()).values()];
+  const selected = contracts.find(({ model }) => model.model_id === state.phase6ModelId)
+    || (contracts.length === 1 ? contracts[0] : null);
+  const modelSelector = contracts.length > 1
+    ? `<label class="control">選擇模型<select id="p6-contract-model"><option value="">請選擇模型</option>${contracts.map(({ model }) => `<option value="${esc(model.model_id)}" ${model.model_id === selected?.model.model_id ? "selected" : ""}>${esc(model.model_id)} · ${esc(model.model_version)}</option>`).join("")}</select></label>`
+    : "";
+  const contractPanel = selected
+    ? `${modelSelector}${renderVerifiedInputContract(selected.contract, selected.model)}`
+    : contracts.length
+      ? `${modelSelector}<section class="card"><div class="card-body"><p>請先選擇模型，再載入該模型綁定的輸入契約。</p></div></section>`
+    : `<section class="card"><div class="card-head"><div><p class="eyebrow">PREDICTION INPUT CONTRACT</p><h2>模型輸入欄位</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><p>${pkg.phase6ContractErrors?.length ? "契約參照或身分驗證未通過；僅停用 Phase 6 輸入表單，其他 CAR 研究階段仍可使用。" : "此 Case Package 尚未提供通過 Manifest SHA-256 驗證的 prediction-input-schema.json 參照；因此不會猜測或生成輸入欄位。"}</p><p class="stage-note">待 Phase 4 Final Fit 產生契約並由 Phase 6 inference-catalog.json 的 <code>input_schema_ref</code> 綁定後，這裡才會依契約顯示欄位。模型預測仍未開放。</p></div></section>`;
+  return `${contractPanel}<section class="grid two"><article class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL SMOKE</p><h2>本機模型重載</h2></div>${badge("VERIFIED")}</div><div class="card-body"><p>${esc(readiness.message || "本機模型重載 Smoke 已完成；私有模型未放入 Case Package。")}</p><p class="stage-note">Reload Smoke 只確認本機載入及介面流程，不證明模型具有可靠預測能力。</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">ONLINE SERVING</p><h2>線上推論服務</h2></div>${badge(doc.status)}</div><div class="card-body"><p>Prediction unavailable。此案例目前沒有公開推論 API；網站僅展示經核對的研究結果。</p><p class="stage-note">${esc(readiness.reason_code || "NO_PUBLIC_INFERENCE_SERVICE")} · 未公開私有模型或逐筆資料。</p></div></article></section>`;
+}
+function renderVerifiedInputContract(contract, model) {
+  const fields = window.RegScopeInputContract.renderFields(contract);
+  return `<section class="card"><div class="card-head"><div><p class="eyebrow">MANIFEST-VERIFIED INPUT CONTRACT</p><h2>模型輸入欄位</h2></div>${badge(contract.status)}</div><div class="card-body"><p>欄位由 Case Package 中已驗證的 Input Contract 產生；僅供輸入介面預覽，尚未連接模型或 API。</p><dl class="data-row"><dt>Model</dt><dd>${esc(model.model_id)} · ${esc(model.model_version)}</dd></dl><dl class="data-row"><dt>欄位數</dt><dd>${contract.input_feature_count}</dd></dl>${fields}<p class="stage-note">類別選項來自已訓練 Encoder metadata，不代表 API allowlist；預測按鈕保持停用。</p><button class="button primary" type="button" disabled title="Prediction API 尚未開放">執行預測 · 尚未開放</button></div></section>`;
 }
 function renderCarPackagePhase(phase) {
   const pkg = carPackage;
@@ -1052,7 +1123,7 @@ function renderCarPackagePhase(phase) {
   else if (phase === 3) body = renderCarPhase3(pkg, doc);
   else if (phase === 4) body = renderExplorationPhase4(pkg, doc);
   else if (phase === 5) body = renderExplorationPhase5(pkg, doc);
-  else body = renderCarPhase6(doc);
+  else body = renderCarPhase6(pkg, doc);
   const prev = phase > 1 ? [phase - 1, PHASES[phase - 2][2]] : null;
   const next = phase < 6 ? [phase + 1, PHASES[phase][2]] : null;
   return `<div class="page reference-page" data-car-phase="${phase}"><div class="fixture-banner"><span><strong>中古車研究案例</strong> · ${esc(pkg.manifest.package_revision)} · 本機檢視；公開授權審查待確認。</span>${badge(pkg.manifest.package_status)}</div>${pageHeading(`PHASE 0${phase} / ${PHASES[phase-1][1].toUpperCase()}`, PHASES[phase-1][2], phase === 4 ? "Run 03 中已記錄的同一協定候選比較；失敗組態保留為錯誤狀態。" : phase === 5 ? "使用該 Run 的 Development CV／OOF 指標；Holdout 與 Development CV 分開呈現。" : referencePhaseSubtitle(phase), doc.status)}${body}<p class="stage-note package-verification-note">本機 Case Package 的 Manifest、Phase 文件與列入套件的檔案已逐一驗證 SHA-256／bytes。Publication review：PENDING。</p>${referenceFooterNav(prev, next)}</div>`;
@@ -1409,8 +1480,146 @@ function loadCarUiPrototypeFixtures() {
     render();
   });
 }
+function loadLocalCarPredictionSchema() {
+  if (!LOCAL_CAR_PREDICTION_API_MODE || localCarSchema || localCarSchemaError || localCarSchemaLoading) return;
+  localCarSchemaLoading = true;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  fetch(`${LOCAL_CAR_API_BASE}/api/schema`, { cache: "no-store", credentials: "omit", mode: "cors", signal: controller.signal })
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`本機 API 無法讀取輸入契約（HTTP ${response.status}）。`);
+      if (!globalThis.RegScopeInputContract) throw new Error("輸入契約 UI 驗證器尚未載入。");
+      const rawSchema = await response.arrayBuffer();
+      const verified = await globalThis.RegScopeInputContract.verifySchemaBytes(
+        rawSchema,
+        response.headers.get("X-Schema-SHA256"),
+        LOCAL_CAR_SCHEMA_SHA256
+      );
+      if (!verified.valid) throw new Error(`本機輸入契約完整性驗證失敗：${verified.errors.join(" ")}`);
+      const checked = globalThis.RegScopeInputContract.validateForUI(verified.schema, {
+        caseId: LOCAL_CAR_MODEL.caseId,
+        modelId: LOCAL_CAR_MODEL.modelId,
+        modelVersion: LOCAL_CAR_MODEL.modelVersion,
+        runId: LOCAL_CAR_MODEL.runId,
+        configurationId: LOCAL_CAR_MODEL.configurationId
+      });
+      if (!checked.valid) throw new Error(`本機輸入契約驗證失敗：${checked.errors.join(" ")}`);
+      localCarSchema = verified.schema;
+      localCarApiReady = true;
+    })
+    .catch((error) => {
+      localCarApiReady = false;
+      localCarSchemaError = error?.name === "AbortError"
+        ? "本機 API 連線逾時；請確認 127.0.0.1:8767 服務已啟動。"
+        : (error instanceof Error ? error.message : "無法連線到本機預測 API。");
+    })
+    .finally(() => {
+      clearTimeout(timeout);
+      localCarSchemaLoading = false;
+      render();
+    });
+}
+async function submitLocalCarPrediction() {
+  if (!localCarSchema || !localCarApiReady || localCarPredictionPending) return;
+  const form = app.querySelector("#car-local-prediction-form");
+  if (!form) return;
+  const values = {};
+  const missing = [];
+  for (const field of localCarSchema.input_features) {
+    const control = [...form.querySelectorAll("[name]")].find((item) => item.name === field.name);
+    localCarFormValues[field.name] = control?.value ?? "";
+    const hasEvidencedBlankCategory = field.data_type === "category"
+      && field.options.some((option) => option.value === "");
+    const isUnselectedCategory = control?.tagName === "SELECT"
+      ? control.selectedOptions?.[0]?.dataset?.contractPlaceholder === "true"
+      : control?.value === "" && !(field.data_type === "category" && hasEvidencedBlankCategory);
+    if (!control || isUnselectedCategory) {
+      if (field.nullable === true) values[field.name] = null;
+      else missing.push(field.name);
+      continue;
+    }
+    if (field.data_type === "number") {
+      const value = Number(control.value);
+      if (!Number.isFinite(value)) missing.push(field.name);
+      else values[field.name] = value;
+    } else {
+      values[field.name] = control.value;
+    }
+  }
+  if (missing.length) {
+    localCarPrediction = null;
+    localCarPredictionError = `請補齊必要欄位或修正數值格式（${missing.length} 欄）。`;
+    render();
+    return;
+  }
+  localCarPrediction = null;
+  localCarPredictionError = null;
+  localCarPredictionPending = true;
+  render();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(`${LOCAL_CAR_API_BASE}/api/predict`, {
+      method: "POST",
+      cache: "no-store",
+      credentials: "omit",
+      mode: "cors",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        case_id: localCarSchema.case_id,
+        model_id: localCarSchema.model_id,
+        model_version: localCarSchema.model_version,
+        inputs: values
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload?.error?.message || `本機預測失敗（HTTP ${response.status}）。`);
+    const identity = globalThis.RegScopeInputContract.validateLocalPredictionResponse(payload, {
+      caseId: LOCAL_CAR_MODEL.caseId,
+      modelId: LOCAL_CAR_MODEL.modelId,
+      modelVersion: LOCAL_CAR_MODEL.modelVersion,
+      runId: LOCAL_CAR_MODEL.runId,
+      configurationId: LOCAL_CAR_MODEL.configurationId
+    });
+    if (!identity.valid) {
+      throw new Error("本機 API 回應數值或模型來源識別不正確。");
+    }
+    localCarPrediction = payload;
+  } catch (error) {
+    localCarApiReady = error?.name !== "TypeError" && error?.name !== "AbortError";
+    localCarPredictionError = error?.name === "AbortError"
+      ? "本機推論逾時；沒有顯示預測結果。"
+      : (error instanceof Error ? error.message : "本機推論失敗；沒有顯示預測結果。");
+  } finally {
+    clearTimeout(timeout);
+    localCarPredictionPending = false;
+    render();
+  }
+}
+function fillLocalCarSyntheticInputs() {
+  if (!localCarSchema) return;
+  const values = {};
+  for (const field of localCarSchema.input_features) {
+    if (field.data_type === "number") values[field.name] = "0";
+    else if (field.data_type === "category" && Array.isArray(field.options) && field.options.length) {
+      const syntheticCategory = field.options.find((option) => typeof option.value === "string" && option.value.length > 0) || field.options[0];
+      values[field.name] = String(syntheticCategory.value ?? "");
+    } else {
+      localCarPredictionError = `無法為欄位 ${field.name} 建立合成測試值。`;
+      render();
+      return;
+    }
+  }
+  localCarFormValues = values;
+  localCarSyntheticInput = true;
+  localCarPrediction = null;
+  localCarPredictionError = null;
+  render();
+}
 function renderCarPhase6UiPrototype() {
   const mode = state.phase6InputMode;
+  if (LOCAL_CAR_PREDICTION_API_MODE && mode === "manual") return renderCarPhase6LocalInference();
   const pageIntro = pageHeading(
     "PHASE 06 / DEPLOYMENT",
     "模型預測與結果",
@@ -1479,6 +1688,24 @@ function renderCarPhase6UiPrototype() {
   const provenance = `<section class="card p6-prototype-provenance"><div class="card-head"><div><p class="eyebrow">資料身分與來源</p><h2>研究參考、合成範例與契約狀態</h2></div>${badge("MOCK")}</div><div class="card-body p6-prototype-provenance-grid"><article><strong>歷史研究／契約參考</strong><p>PR #35 提供既有 Case Package 與介面契約參考；本原型沒有更動其研究證據。</p><a class="text-link" href="https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35" target="_blank" rel="noreferrer">查看 PR #35 ↗</a></article><article><strong>目前使用的合成 Fixture</strong><p>僅用於檢視表單與批次摘要版面，欄位與選項均非正式 CAR 模型資訊。</p><a class="text-link" href="${WEB_BASE}/${selectedFixturePath}">查看目前 Fixture JSON ↗</a><small>Fixture ID: ${esc(fixture.fixture_id)} · SYNTHETIC_UI_ONLY</small></article><article><strong>Prediction Input Schema v0.1</strong><p>通用 Schema 尚未接入本原型，也不代表已核准的 CAR 輸入契約。</p><a class="text-link" href="https://github.com/wupojung/AIoT-HW2-Housing-Regression/blob/905c622aad4a9f8581b9c5b904200aa373e96c25/docs/design/data-contracts/schemas/prediction-input-schema-v0.1.schema.json" target="_blank" rel="noreferrer">查看通用 Schema ↗</a></article></div></section>`;
   return `<div class="page p6-prototype-page"><div class="fixture-banner"><span><strong>本機 UI 原型 · 合成資料</strong> · 非正式 Case Package、研究結果或 CAR Prediction Input Contract。</span>${badge("MOCK")}</div>${pageHeading("PHASE 06 / DEPLOYMENT", "模型預測與結果", "中古車預測介面原型；目前沒有連接模型或線上預測服務。", "MOCK")}<section class="card p6-prototype-context"><div class="card-body"><div><span class="eyebrow">目前案例</span><h2>${esc(CAR_DISPLAY_NAME)}</h2><code>${esc(CAR_CASE_ID)}</code></div><div><span class="eyebrow">Schema／預覽模式</span><strong>合成 UI Fixture</strong><span>欄位與選項僅供版面檢視，不是正式輸入契約。</span></div><div><span class="eyebrow">模型狀態</span><strong>預測功能尚未開放</strong><span>未載入模型，也不會呼叫 API。</span></div></div></section><div class="mode-switch p6-prototype-tabs" role="group" aria-label="輸入模式"><button type="button" data-phase6-mode="manual" aria-pressed="${mode === "manual"}">單筆輸入</button><button type="button" data-phase6-mode="csv" aria-pressed="${mode === "csv"}">CSV 批次輸入</button></div><div class="two-panel phase6-panels p6-prototype-panels" data-testid="car-phase6-${mode}">${mode === "csv" ? renderBatch() : renderSingleForm()}</div>${provenance}${footerNav([5,"模型評估"],null)}</div>`;
 }
+function renderCarPhase6LocalInference() {
+  if (localCarSchemaLoading || !localCarSchema && !localCarSchemaError) {
+    return `<div class="page p6-prototype-page"><div class="fixture-banner"><strong>LOCAL EXPERIMENT</strong> · 本機模型推論，不代表模型準確度已通過驗證。</div>${pageHeading("PHASE 06 / LOCAL INFERENCE", "模型預測與結果", "正在確認本機 Run 03 模型及 Input Contract。", "LOADING")}<section class="state-panel" role="status"><h3>正在驗證本機模型服務</h3><p>模型與契約必須通過 SHA、Run、Configuration 及欄位順序核對後，才會啟用輸入表單。</p></section></div>`;
+  }
+  if (localCarSchemaError || !localCarSchema) {
+    return `<div class="page p6-prototype-page"><div class="fixture-banner"><strong>LOCAL EXPERIMENT</strong> · 本機 API 不可用時不會顯示合成預測。</div>${pageHeading("PHASE 06 / LOCAL INFERENCE", "模型預測與結果", "模型、Schema 或 API 未通過本機檢查。", "UNAVAILABLE")}<section class="state-panel" role="alert"><h3>本機預測目前不可用</h3><p>${esc(localCarSchemaError || "輸入契約尚未載入。")}</p><button type="button" class="button" data-action="car-local-api-retry">重新連線</button></section></div>`;
+  }
+  const contract = localCarSchema;
+  const prediction = localCarPrediction;
+  const result = localCarPredictionPending
+    ? `<div class="p6-prototype-state" role="status"><span class="p6-prototype-state-icon" aria-hidden="true">…</span><div><strong>正在執行本機模型推論</strong><p>輸入只送至本機 loopback API。</p></div></div>`
+    : prediction
+      ? `<div class="p6-local-prediction-result" role="status"><span>模型輸出 · ${esc(prediction.target)}</span><strong>${Number(prediction.prediction).toLocaleString("en-US", { maximumFractionDigits: 2 })}</strong><small>單位未由目前 Input Contract 確認</small></div>`
+      : `<div class="p6-prototype-state" role="status"><span class="p6-prototype-state-icon" aria-hidden="true">—</span><div><strong>尚未執行預測</strong><p>此結果面板不會填入示意價格或預設預測值。</p></div></div>`;
+  const error = localCarPredictionError ? `<section class="state-panel" role="alert"><strong>推論未完成</strong><p>${esc(localCarPredictionError)}</p>${localCarApiReady ? "" : '<button type="button" class="button" data-action="car-local-api-retry">重新連線本機 API</button>'}</section>` : "";
+  const fields = globalThis.RegScopeInputContract.renderFields(contract, { emptySelect: true, values: localCarFormValues });
+  return `<div class="page p6-prototype-page"><div class="fixture-banner"><span><strong>LOCAL EXPERIMENT · 真實模型推論</strong> · 本機迴圈介面，不會對外提供 API。</span>${badge("LOCAL")}</div>${pageHeading("PHASE 06 / LOCAL INFERENCE", "模型預測與結果", "本機使用已核對的 CAR Run 03 Final Fit。推論成功不代表模型準確度已驗證。", "PARTIAL")}<section class="card p6-prototype-context"><div class="card-body"><div><span class="eyebrow">目前案例</span><h2>${esc(CAR_DISPLAY_NAME)}</h2><code>${esc(contract.case_id)}</code></div><div><span class="eyebrow">輸入契約</span><strong>${contract.input_feature_count} 個必要原始欄位</strong><span>SHA-256 已由本機 API 驗證 · ${esc(contract.model_version)}</span></div><div><span class="eyebrow">模型服務</span><strong>本機 API 已就緒</strong><span>${esc(contract.source_evidence.run_id)} · ${esc(contract.source_evidence.configuration_id)}</span></div></div></section><div class="mode-switch p6-prototype-tabs" role="group" aria-label="輸入模式"><button type="button" data-phase6-mode="manual" aria-pressed="true">單筆輸入</button><button type="button" data-phase6-mode="csv" aria-pressed="false">CSV 批次輸入 · 尚未開放</button></div><div class="two-panel phase6-panels p6-prototype-panels"><section class="card"><div class="card-head"><div><p class="eyebrow">15 RAW INPUTS · CONTRACT-DRIVEN</p><h2>車輛輸入欄位</h2></div>${badge("VERIFIED CONTRACT")}</div><div class="card-body"><p class="stage-note">表單欄位與順序由已驗證的 prediction-input-schema.json 產生。未提供預設值；未知缺值語意會由 API 拒絕。</p>${localCarSyntheticInput ? '<p class="state-panel" role="status">目前欄位為合成測試值，並非真實車輛紀錄。</p>' : ""}<form id="car-local-prediction-form" novalidate>${fields}<div class="button-row"><button type="button" class="button" data-action="car-local-fill-synthetic" ${localCarPredictionPending ? "disabled" : ""}>載入合成測試輸入</button><button type="button" class="button primary" data-action="car-local-predict" ${localCarPredictionPending || !localCarApiReady ? "disabled" : ""}>${localCarPredictionPending ? "推論中…" : "執行本機預測"}</button></div></form></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL RESULT</p><h2>推論結果</h2></div>${badge(prediction ? "LOCAL RESULT" : localCarPredictionPending ? "RUNNING" : "UNAVAILABLE")}</div><div class="card-body">${result}${error}<dl class="data-row"><dt>評估限制</dt><dd>CAR 模型 CV 表現低於 Dummy Baseline，且 R² 為負值。</dd></dl><p class="stage-note">這是固定 Run 03 模型對本次輸入的真實計算結果，不是已驗證可靠度的價格建議；不會讀取 Holdout 或重新訓練。</p><details class="disclosure"><summary>模型與 Run 身分</summary><p>Model ID ${esc(contract.model_id)} · Model SHA-256 ${esc(contract.model_sha256)}</p><p>Run ${esc(contract.source_evidence.run_id)} · Config ${esc(contract.source_evidence.configuration_id)}</p></details></div></section></div>${footerNav([5,"模型評估"],null)}</div>`;
+}
 function renderPhase6() {
   if (LOCAL_CAR_PHASE6_PREVIEW && state.caseId === CAR_CASE_ID) return renderCarPhase6UiPrototype();
   const c = caseData();
@@ -1541,6 +1768,7 @@ function renderDashboard() {
 function render() {
   if (LOCAL_CAR_PHASE6_PREVIEW) {
     if (!carUiPrototypeFixtures && !carUiPrototypeFixtureError && !carUiPrototypeFixtureLoading) loadCarUiPrototypeFixtures();
+    if (LOCAL_CAR_PREDICTION_API_MODE && !localCarSchema && !localCarSchemaError && !localCarSchemaLoading) loadLocalCarPredictionSchema();
   } else {
     if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage();
     if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage();
@@ -1598,6 +1826,7 @@ function routeFromHash() {
 
 caseSelect.addEventListener("change", () => {
   state.caseId = caseSelect.value;
+  state.phase6ModelId = "";
   state.analysisId = CASES[state.caseId].analyses?.[0]?.id || "";
   state.referenceAnalysisId = state.caseId === CAR_CASE_ID ? (carPackage?.docs[2]?.default_analysis_id || "field-decisions") : "figure-field-decisions";
   state.referenceEvaluationId = "initb-development-e2e-20261028-02.development-oof.cv-mean";
@@ -1638,6 +1867,12 @@ app.addEventListener("click", (event) => {
   else if (target.dataset.referenceEvaluation) { state.referenceEvaluationId = target.dataset.referenceEvaluation; state.referenceFigureId = "FIG-P5-02"; render(); }
   else if (target.dataset.referenceFigure) { state.referenceFigureId = target.dataset.referenceFigure; render(); }
   else if (target.dataset.phase6Mode) { state.phase6InputMode = target.dataset.phase6Mode; render(); }
+  else if (target.dataset.action === "car-local-predict") { void submitLocalCarPrediction(); }
+  else if (target.dataset.action === "car-local-fill-synthetic") { fillLocalCarSyntheticInputs(); }
+  else if (target.dataset.action === "car-local-api-retry") {
+    localCarSchemaError = null; localCarSchema = null; localCarApiReady = false;
+    loadLocalCarPredictionSchema(); render();
+  }
   else if (target.dataset.action === "phase6-use-csv-row") {
     const csv = state.phase6Csv; const row = csv?.rows[csv.selectedIndex] || [];
     const value = (name) => { const index = csv?.headers.indexOf(name) ?? -1; return index < 0 ? null : row[index]?.trim() ?? ""; };
@@ -1668,7 +1903,10 @@ app.addEventListener("toggle", (event) => {
   }
 }, true);
 app.addEventListener("change", (event) => {
-  if (event.target.id === "p6-csv-file") {
+  if (event.target.id === "p6-contract-model") {
+    state.phase6ModelId = event.target.value;
+    render();
+  } else if (event.target.id === "p6-csv-file") {
     const file = event.target.files?.[0]; if (!file) return;
     state.phase6Csv = null; state.phase6MockSubmitted = false;
     if (!file.name.toLowerCase().endsWith(".csv") || file.size === 0 || file.size > 20 * 1024 * 1024) { state.phase6CsvMessage = "請選擇非空且小於 20 MB 的 .csv 檔案。Choose a non-empty CSV under 20 MB."; render(); return; }
@@ -1733,7 +1971,11 @@ app.addEventListener("change", (event) => {
   }
 });
 app.addEventListener("input", (event) => {
-  if (event.target.id === "csv-url") {
+  if (LOCAL_CAR_PREDICTION_API_MODE && event.target.closest?.("#car-local-prediction-form [name]")) {
+    localCarSyntheticInput = false;
+    localCarPrediction = null;
+    localCarPredictionError = null;
+  } else if (event.target.id === "csv-url") {
     state.customUrl = event.target.value; state.customValidated = false;
     const urlOk = /^https:\/\//i.test(state.customUrl);
     state.csvMessage = urlOk ? "HTTPS URL format accepted; remote loading is disabled in this prototype." : "Enter an HTTPS URL. Remote loading is disabled in this prototype.";
