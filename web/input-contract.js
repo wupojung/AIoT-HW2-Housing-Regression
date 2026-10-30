@@ -74,7 +74,7 @@
     })[character]);
   }
 
-  function renderFields(contract) {
+  function renderFields(contract, renderOptions = {}) {
     if (!validate(contract).valid) throw new Error("Cannot render an invalid Prediction Input Schema.");
     const controls = contract.input_features.map((field, index) => {
       const id = `p6-contract-field-${index}`;
@@ -82,16 +82,24 @@
       const nullable = field.nullable === true ? "可留空" : field.nullable === false ? "不可留空" : "缺值規則未知";
       let control;
       if (field.control_type === "select") {
+        const currentValue = renderOptions.values?.[field.name];
+        let placeholderValue = "__REGSCOPE_SELECT__";
+        while (field.options.some((option) => String(option.value) === placeholderValue)) placeholderValue += "_";
         const options = field.options.map((option) => {
           const value = option.value === null ? "" : String(option.value);
-          return `<option value="${escapeHTML(value)}">${escapeHTML(value)}</option>`;
+          const selected = currentValue !== undefined && String(currentValue) === value ? "selected" : "";
+          return `<option value="${escapeHTML(value)}" ${selected}>${escapeHTML(value)}</option>`;
         }).join("");
-        const hasEmptyOption = field.options.some((option) => option.value === null || String(option.value) === "");
-        control = `<select id="${id}" name="${escapeHTML(field.name)}" ${required} aria-label="${escapeHTML(field.name)}">${field.nullable === true && !hasEmptyOption ? '<option value="">—</option>' : ""}${options}</select>`;
+        const emptyChoice = renderOptions.emptySelect && (currentValue === undefined || currentValue === placeholderValue)
+          ? `<option value="${escapeHTML(placeholderValue)}" data-contract-placeholder="true" selected disabled>請選擇類別</option>`
+          : field.nullable === true && !field.options.some((option) => option.value === null || String(option.value) === "")
+            ? '<option value="">—</option>' : "";
+        control = `<select id="${id}" name="${escapeHTML(field.name)}" ${required} aria-label="${escapeHTML(field.name)}">${emptyChoice}${options}</select>`;
       } else {
         const min = field.minimum === null ? "" : `min="${field.minimum}"`;
         const max = field.maximum === null ? "" : `max="${field.maximum}"`;
-        control = `<input id="${id}" name="${escapeHTML(field.name)}" type="${field.control_type === "number" ? "number" : "text"}" ${required} ${min} ${max} aria-label="${escapeHTML(field.name)}">`;
+        const value = renderOptions.values?.[field.name];
+        control = `<input id="${id}" name="${escapeHTML(field.name)}" type="${field.control_type === "number" ? "number" : "text"}" value="${value === undefined ? "" : escapeHTML(value)}" ${required} ${min} ${max} aria-label="${escapeHTML(field.name)}">`;
       }
       return `<article class="p6-feature-card"><label class="p6-field-label" for="${id}"><strong>${escapeHTML(field.name)}</strong><span>${escapeHTML(field.data_type)} · ${nullable}${field.unit ? ` · ${escapeHTML(field.unit)}` : ""}</span></label>${control}</article>`;
     }).join("");

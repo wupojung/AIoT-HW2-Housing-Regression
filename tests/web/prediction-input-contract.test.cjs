@@ -106,3 +106,17 @@ test("escapes field names and preserves category values in rendered controls", (
   assert.match(html, /SYNTHETIC &lt;A&amp;B&gt;/);
   assert.doesNotMatch(html, /<field>/);
 });
+
+test("local inference form starts unselected and can safely restore entered values", () => {
+  const contract = syntheticContract(2);
+  const initial = globalThis.RegScopeInputContract.renderFields(contract, { emptySelect: true });
+  assert.match(initial, /data-contract-placeholder="true" selected disabled>請選擇類別<\/option>/);
+  assert.match(initial, /name="demo_field_1" type="number" value=""/);
+
+  const restored = globalThis.RegScopeInputContract.renderFields(contract, {
+    emptySelect: true,
+    values: { demo_field_1: "1200.5", demo_field_2: "SYNTHETIC_Value A" }
+  });
+  assert.match(restored, /value="1200\.5"/);
+  assert.match(restored, /<option value="SYNTHETIC_Value A" selected>/);
+});
