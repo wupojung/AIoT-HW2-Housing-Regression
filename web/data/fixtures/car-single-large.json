@@ -1,0 +1,23 @@
+{
+  "fixture_status": "SYNTHETIC_UI_ONLY",
+  "fixture_id": "car-single-large-v1",
+  "case_id": "used-car-price-optimized",
+  "mode": "single_input_preview",
+  "input_features": [
+    { "name": "demo_vehicle_age_years", "data_type": "number", "required": true, "control_type": "number", "sample_value": 5, "options": null },
+    { "name": "demo_distance", "data_type": "number", "required": true, "control_type": "number", "sample_value": 48000, "options": null },
+    { "name": "demo_engine_size", "data_type": "number", "required": false, "control_type": "number", "sample_value": 1.8, "options": null },
+    { "name": "demo_owner_count", "data_type": "number", "required": false, "control_type": "number", "sample_value": 2, "options": null },
+    { "name": "demo_listing_age_days", "data_type": "number", "required": false, "control_type": "number", "sample_value": 21, "options": null },
+    { "name": "demo_make_category", "data_type": "category", "required": true, "control_type": "select", "sample_value": "SYNTHETIC_OPTION_A", "options": ["SYNTHETIC_OPTION_A", "SYNTHETIC_OPTION_B"] },
+    { "name": "demo_fuel_category", "data_type": "category", "required": true, "control_type": "select", "sample_value": "SYNTHETIC_FUEL_A", "options": ["SYNTHETIC_FUEL_A", "SYNTHETIC_FUEL_B"] },
+    { "name": "demo_transmission_category", "data_type": "category", "required": true, "control_type": "select", "sample_value": "SYNTHETIC_TRANSMISSION_A", "options": ["SYNTHETIC_TRANSMISSION_A", "SYNTHETIC_TRANSMISSION_B"] },
+    { "name": "demo_body_category", "data_type": "category", "required": false, "control_type": "select", "sample_value": "SYNTHETIC_BODY_A", "options": ["SYNTHETIC_BODY_A", "SYNTHETIC_BODY_B"] },
+    { "name": "demo_service_history", "data_type": "category", "required": false, "control_type": "select", "sample_value": "SYNTHETIC_HISTORY_A", "options": ["SYNTHETIC_HISTORY_A", "SYNTHETIC_HISTORY_B"] },
+    { "name": "demo_color_category", "data_type": "category", "required": false, "control_type": "select", "sample_value": "SYNTHETIC_COLOR_A", "options": ["SYNTHETIC_COLOR_A", "SYNTHETIC_COLOR_B"] },
+    { "name": "demo_region_category", "data_type": "category", "required": false, "control_type": "select", "sample_value": "SYNTHETIC_REGION_A", "options": ["SYNTHETIC_REGION_A", "SYNTHETIC_REGION_B"] },
+    { "name": "demo_accident_flag", "data_type": "category", "required": false, "control_type": "select", "sample_value": "SYNTHETIC_FLAG_NO", "options": ["SYNTHETIC_FLAG_NO", "SYNTHETIC_FLAG_YES"] },
+    { "name": "demo_condition_category", "data_type": "category", "required": false, "control_type": "select", "sample_value": "SYNTHETIC_CONDITION_A", "options": ["SYNTHETIC_CONDITION_A", "SYNTHETIC_CONDITION_B"] },
+    { "name": "demo_description", "data_type": "string", "required": false, "control_type": "text", "sample_value": "SYNTHETIC_TEXT_SAMPLE", "options": null }
+  ]
+}

@@ -14,9 +14,16 @@
       stylesheet.href = `${webBase}/styles.css`;
       document.head.append(stylesheet);
       document.addEventListener("DOMContentLoaded", () => {
-        const application = document.createElement("script");
-        application.src = `${webBase}/app.js`;
-        document.body.append(application);
+        const loadApplication = () => {
+          const application = document.createElement("script");
+          application.src = `${webBase}/app.js`;
+          document.body.append(application);
+        };
+        const contractHelpers = document.createElement("script");
+        contractHelpers.src = `${webBase}/input-contract.js`;
+        contractHelpers.onload = loadApplication;
+        contractHelpers.onerror = loadApplication;
+        document.body.append(contractHelpers);
       }, { once: true });
     </script>
   </head>
