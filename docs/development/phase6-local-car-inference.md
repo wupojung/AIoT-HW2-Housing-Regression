@@ -14,6 +14,14 @@ Development R² and performance below its Dummy baseline.
 - The local API pins the verified model and schema SHA-256 values in the
   adapter. It reads the model from the private Run 03 root and verifies the
   Run manifest before deserializing the artifact.
+- JSON Schema validation resolves
+  `docs/contracts/schemas/prediction-input-schema-v0.1.schema.json` first. As
+  of PR #66's current diff, that PR relocates Phase 1–6 schemas only and
+  explicitly leaves this separate Prediction Input Schema at its existing
+  `docs/design/data-contracts/schemas/` path. A fail-closed fallback supports
+  that current layout without copying the schema. Remove the fallback only
+  after a separately reviewed migration moves this schema and updates all
+  consumers to the canonical path.
 - Keep the model, generated input schema, input values, and predictions in
   ignored local storage. Do not add them to Git, a public package, or a hosted
   release. The API returns schema metadata only to the loopback UI origin.

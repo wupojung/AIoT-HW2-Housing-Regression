@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from housing_regression.contracts import ContractValidationError, validate_document
-from housing_regression.prediction_input_schema import PredictionInputSchemaError
+from housing_regression.prediction_input_schema import PredictionInputSchemaError, prediction_input_schema_path
 
 MAX_REQUEST_BYTES = 64 * 1024
 LOCAL_WEB_ORIGIN = "http://127.0.0.1:8766"
@@ -135,9 +135,8 @@ def load_verified_car_runtime(run_root: Path, schema_path: Path) -> "CarPredicti
     if not isinstance(contract, dict):
         raise PredictionInputSchemaError("input schema root must be an object")
 
-    schema_file = Path(__file__).resolve().parents[3] / "docs/design/data-contracts/schemas/prediction-input-schema-v0.1.schema.json"
     try:
-        validate_document(contract, schema_file)
+        validate_document(contract, prediction_input_schema_path())
     except ContractValidationError as exc:
         raise PredictionInputSchemaError("verified input schema fails the v0.1 contract") from exc
 
