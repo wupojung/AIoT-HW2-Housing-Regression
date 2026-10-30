@@ -114,7 +114,7 @@ const state = {
   phase4RunId: "MOCK-RUN-02", phase6MockSubmitted: false,
   referenceAnalysisId: "figure-field-decisions",
   referenceFigureId: "FIG-P5-01",
-  phase6InputMode: "manual", phase6Csv: null, phase6CsvMessage: "尚未選擇 CSV 檔案。",
+  phase6InputMode: "manual", phase6ModelId: "", phase6Csv: null, phase6CsvMessage: "尚未選擇 CSV 檔案。",
   carUiPrototypeSize: "large",
   carUiGroupOpen: { number: true, category: true, text: true },
   phase6Values: { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" },
@@ -547,6 +547,41 @@ async function loadCarPackage() {
       const ref = manifest.phases?.[`phase${phase}`]?.data_ref;
       const document = await boundJson(ref);
       pkg.docs[phase] = document;
+    }
+    stage = "phase6_input_contracts";
+    pkg.inputContracts = new Map();
+    pkg.phase6ContractErrors = [];
+    const phase6ModelIds = new Set();
+    const duplicatePhase6ModelIds = new Set();
+    for (const model of pkg.docs[6].models || []) {
+      if (phase6ModelIds.has(model.model_id)) {
+        duplicatePhase6ModelIds.add(model.model_id);
+        pkg.inputContracts.delete(model.model_id);
+        pkg.phase6ContractErrors.push("Phase 6 model identifiers are duplicated.");
+        continue;
+      }
+      phase6ModelIds.add(model.model_id);
+      if (duplicatePhase6ModelIds.has(model.model_id)) continue;
+      if (model.input_schema_ref === null) continue;
+      try {
+        if (typeof model.input_schema_ref !== "string") throw new Error("Input schema reference is invalid.");
+        if (model.input_schema_ref.split("/").at(-1) !== "prediction-input-schema.json") {
+          throw new Error("Input schema reference does not use the canonical filename.");
+        }
+        const contract = await boundJson(model.input_schema_ref);
+        if (!window.RegScopeInputContract) throw new Error("Input contract validator is unavailable.");
+        const result = window.RegScopeInputContract.validate(contract, {
+          caseId: pkg.manifest.case_id,
+          modelId: model.model_id,
+          modelVersion: model.model_version,
+          runId: model.source_execution_run_id,
+          configurationId: model.source_configuration_id
+        });
+        if (!result.valid) throw new Error("Input contract metadata does not match its model record.");
+        pkg.inputContracts.set(model.model_id, { model, contract });
+      } catch (error) {
+        pkg.phase6ContractErrors.push(error instanceof Error ? error.message : "Input contract unavailable.");
+      }
     }
     pkg.caseDoc = await boundJson(manifest.case_ref);
     if (pkg.caseDoc.case_status !== manifest.package_status) throw new Error("CAR case document status mismatch.");
@@ -1038,9 +1073,42 @@ function renderCarPhase3(pkg, doc) {
   const treatments = (doc.treatments || []).map((item) => `<div class="treatment-item"><strong>${esc(item.field || "欄位處理")}</strong><span>${esc(item.reason || item.action)}</span></div>`).join("");
   return `<section class="card"><div class="card-head"><div><p class="eyebrow">FEATURE TRANSFORMATION · FOUR STAGES</p><h2>中古車資料的特徵處理</h2></div>${badge(doc.status)}</div><div class="card-body"><div class="stage-list">${cards}</div><section class="reference-split"><div class="reference-analysis-heading"><div><p class="eyebrow">DEVELOPMENT SPLIT</p><h2>Development／內部 Holdout</h2></div><strong>Seed ${esc(split.seed)}</strong></div><div class="row-split"><span style="width:${totalRows ? split.training_rows / totalRows * 100 : 0}%">Development · ${Number(split.training_rows).toLocaleString()}</span><span style="width:${totalRows ? split.holdout_rows / totalRows * 100 : 0}%">Internal Holdout · ${Number(split.holdout_rows).toLocaleString()}</span></div><p class="stage-note">${Number(split.source_labeled_rows).toLocaleString()} 筆有標籤資料 · 80/20 split · 前處理與特徵選擇只在訓練 Fold fit。此為內部分區，非 Kaggle competition test set。</p></section>${treatments ? `<details class="disclosure"><summary>查看欄位排除與處理紀錄</summary><div class="treatment-list">${treatments}</div></details>` : ""}</div></section>`;
 }
-function renderCarPhase6(doc) {
+function renderCarPhase6(pkg, doc) {
   const readiness = doc.readiness || {};
-  return `<section class="grid two"><article class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL SMOKE</p><h2>本機模型重載</h2></div>${badge("VERIFIED")}</div><div class="card-body"><p>${esc(readiness.message || "本機模型重載 Smoke 已完成；私有模型未放入 Case Package。")}</p><p class="stage-note">Reload Smoke 只確認本機載入及介面流程，不證明模型具有可靠預測能力。</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">ONLINE SERVING</p><h2>線上推論服務</h2></div>${badge(doc.status)}</div><div class="card-body"><p>Prediction unavailable。此案例目前沒有公開推論 API；網站僅展示經核對的研究結果。</p><p class="stage-note">${esc(readiness.reason_code || "NO_PUBLIC_INFERENCE_SERVICE")} · 未公開私有模型或逐筆資料。</p></div></article></section>`;
+  const contracts = [...(pkg.inputContracts || new Map()).values()];
+  const selected = contracts.find(({ model }) => model.model_id === state.phase6ModelId)
+    || (contracts.length === 1 ? contracts[0] : null);
+  const modelSelector = contracts.length > 1
+    ? `<label class="control">選擇模型<select id="p6-contract-model"><option value="">請選擇模型</option>${contracts.map(({ model }) => `<option value="${esc(model.model_id)}" ${model.model_id === selected?.model.model_id ? "selected" : ""}>${esc(model.model_id)} · ${esc(model.model_version)}</option>`).join("")}</select></label>`
+    : "";
+  const contractPanel = selected
+    ? `${modelSelector}${renderVerifiedInputContract(selected.contract, selected.model)}`
+    : contracts.length
+      ? `${modelSelector}<section class="card"><div class="card-body"><p>請先選擇模型，再載入該模型綁定的輸入契約。</p></div></section>`
+    : `<section class="card"><div class="card-head"><div><p class="eyebrow">PREDICTION INPUT CONTRACT</p><h2>模型輸入欄位</h2></div>${badge("UNAVAILABLE")}</div><div class="card-body"><p>${pkg.phase6ContractErrors?.length ? "契約參照或身分驗證未通過；僅停用 Phase 6 輸入表單，其他 CAR 研究階段仍可使用。" : "此 Case Package 尚未提供通過 Manifest SHA-256 驗證的 prediction-input-schema.json 參照；因此不會猜測或生成輸入欄位。"}</p><p class="stage-note">待 Phase 4 Final Fit 產生契約並由 Phase 6 inference-catalog.json 的 <code>input_schema_ref</code> 綁定後，這裡才會依契約顯示欄位。模型預測仍未開放。</p></div></section>`;
+  return `${contractPanel}<section class="grid two"><article class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL SMOKE</p><h2>本機模型重載</h2></div>${badge("VERIFIED")}</div><div class="card-body"><p>${esc(readiness.message || "本機模型重載 Smoke 已完成；私有模型未放入 Case Package。")}</p><p class="stage-note">Reload Smoke 只確認本機載入及介面流程，不證明模型具有可靠預測能力。</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">ONLINE SERVING</p><h2>線上推論服務</h2></div>${badge(doc.status)}</div><div class="card-body"><p>Prediction unavailable。此案例目前沒有公開推論 API；網站僅展示經核對的研究結果。</p><p class="stage-note">${esc(readiness.reason_code || "NO_PUBLIC_INFERENCE_SERVICE")} · 未公開私有模型或逐筆資料。</p></div></article></section>`;
+}
+function renderVerifiedInputContract(contract, model) {
+  const controls = contract.input_features.map((field, index) => {
+    const id = `p6-contract-field-${index}`;
+    const required = field.required && field.nullable !== true ? "required" : "";
+    const nullable = field.nullable === true ? "可留空" : field.nullable === false ? "不可留空" : "缺值規則未知";
+    let control;
+    if (field.control_type === "select") {
+      const options = field.options.map((option) => {
+        const value = option.value === null ? "" : String(option.value);
+        return `<option value="${esc(value)}">${esc(value)}</option>`;
+      }).join("");
+      const hasEmptyOption = field.options.some((option) => option.value === null || String(option.value) === "");
+      control = `<select id="${id}" name="${esc(field.name)}" ${required} aria-label="${esc(field.name)}">${field.nullable === true && !hasEmptyOption ? '<option value="">—</option>' : ""}${options}</select>`;
+    } else {
+      const min = field.minimum === null ? "" : `min="${field.minimum}"`;
+      const max = field.maximum === null ? "" : `max="${field.maximum}"`;
+      control = `<input id="${id}" name="${esc(field.name)}" type="${field.control_type === "number" ? "number" : "text"}" ${required} ${min} ${max} aria-label="${esc(field.name)}">`;
+    }
+    return `<article class="p6-feature-card"><label class="p6-field-label" for="${id}"><strong>${esc(field.name)}</strong><span>${esc(field.data_type)} · ${nullable}${field.unit ? ` · ${esc(field.unit)}` : ""}</span></label>${control}</article>`;
+  }).join("");
+  return `<section class="card"><div class="card-head"><div><p class="eyebrow">MANIFEST-VERIFIED INPUT CONTRACT</p><h2>模型輸入欄位</h2></div>${badge(contract.status)}</div><div class="card-body"><p>欄位由 Case Package 中已驗證的 Input Contract 產生；僅供輸入介面預覽，尚未連接模型或 API。</p><dl class="data-row"><dt>Model</dt><dd>${esc(model.model_id)} · ${esc(model.model_version)}</dd></dl><dl class="data-row"><dt>欄位數</dt><dd>${contract.input_feature_count}</dd></dl><div class="p6-feature-grid">${controls}</div><p class="stage-note">類別選項來自已訓練 Encoder metadata，不代表 API allowlist；預測按鈕保持停用。</p><button class="button primary" type="button" disabled title="Prediction API 尚未開放">執行預測 · 尚未開放</button></div></section>`;
 }
 function renderCarPackagePhase(phase) {
   const pkg = carPackage;
@@ -1052,7 +1120,7 @@ function renderCarPackagePhase(phase) {
   else if (phase === 3) body = renderCarPhase3(pkg, doc);
   else if (phase === 4) body = renderExplorationPhase4(pkg, doc);
   else if (phase === 5) body = renderExplorationPhase5(pkg, doc);
-  else body = renderCarPhase6(doc);
+  else body = renderCarPhase6(pkg, doc);
   const prev = phase > 1 ? [phase - 1, PHASES[phase - 2][2]] : null;
   const next = phase < 6 ? [phase + 1, PHASES[phase][2]] : null;
   return `<div class="page reference-page" data-car-phase="${phase}"><div class="fixture-banner"><span><strong>中古車研究案例</strong> · ${esc(pkg.manifest.package_revision)} · 本機檢視；公開授權審查待確認。</span>${badge(pkg.manifest.package_status)}</div>${pageHeading(`PHASE 0${phase} / ${PHASES[phase-1][1].toUpperCase()}`, PHASES[phase-1][2], phase === 4 ? "Run 03 中已記錄的同一協定候選比較；失敗組態保留為錯誤狀態。" : phase === 5 ? "使用該 Run 的 Development CV／OOF 指標；Holdout 與 Development CV 分開呈現。" : referencePhaseSubtitle(phase), doc.status)}${body}<p class="stage-note package-verification-note">本機 Case Package 的 Manifest、Phase 文件與列入套件的檔案已逐一驗證 SHA-256／bytes。Publication review：PENDING。</p>${referenceFooterNav(prev, next)}</div>`;
@@ -1598,6 +1666,7 @@ function routeFromHash() {
 
 caseSelect.addEventListener("change", () => {
   state.caseId = caseSelect.value;
+  state.phase6ModelId = "";
   state.analysisId = CASES[state.caseId].analyses?.[0]?.id || "";
   state.referenceAnalysisId = state.caseId === CAR_CASE_ID ? (carPackage?.docs[2]?.default_analysis_id || "field-decisions") : "figure-field-decisions";
   state.referenceEvaluationId = "initb-development-e2e-20261028-02.development-oof.cv-mean";
@@ -1668,7 +1737,10 @@ app.addEventListener("toggle", (event) => {
   }
 }, true);
 app.addEventListener("change", (event) => {
-  if (event.target.id === "p6-csv-file") {
+  if (event.target.id === "p6-contract-model") {
+    state.phase6ModelId = event.target.value;
+    render();
+  } else if (event.target.id === "p6-csv-file") {
     const file = event.target.files?.[0]; if (!file) return;
     state.phase6Csv = null; state.phase6MockSubmitted = false;
     if (!file.name.toLowerCase().endsWith(".csv") || file.size === 0 || file.size > 20 * 1024 * 1024) { state.phase6CsvMessage = "請選擇非空且小於 20 MB 的 .csv 檔案。Choose a non-empty CSV under 20 MB."; render(); return; }

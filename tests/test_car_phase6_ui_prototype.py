@@ -87,6 +87,11 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertNotIn("renderDashboard()", render[:render.index('if (state.route === "home")')])
         self.assertIn("const visiblePhases = LOCAL_CAR_PHASE6_PREVIEW ? [PHASES[5]] : PHASES", source)
 
+    def test_contract_helper_failure_does_not_block_the_application(self):
+        source = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("contractHelpers.onload = loadApplication", source)
+        self.assertIn("contractHelpers.onerror = loadApplication", source)
+
 
 if __name__ == "__main__":
     unittest.main()
