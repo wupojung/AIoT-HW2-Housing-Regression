@@ -18,7 +18,7 @@ def phase_schema_path(phase: int) -> Path:
     if phase not in (1, 2):
         raise ValueError("G2 only bundles Phase 1 and Phase 2 schemas")
     repo_root = Path(__file__).resolve().parents[3]
-    return repo_root / "docs" / "design" / "data-contracts" / "schemas" / f"phase-0{phase}.schema.json"
+    return repo_root / "docs" / "contracts" / "schemas" / f"phase-0{phase}.schema.json"
 
 
 def validate_document(document: Any, schema_path: str | Path) -> None:
