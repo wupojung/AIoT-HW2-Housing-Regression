@@ -570,7 +570,7 @@ async function loadCarPackage() {
         }
         const contract = await boundJson(model.input_schema_ref);
         if (!window.RegScopeInputContract) throw new Error("Input contract validator is unavailable.");
-        const result = window.RegScopeInputContract.validate(contract, {
+        const result = window.RegScopeInputContract.validateForUI(contract, {
           caseId: pkg.manifest.case_id,
           modelId: model.model_id,
           modelVersion: model.model_version,
@@ -1089,26 +1089,8 @@ function renderCarPhase6(pkg, doc) {
   return `${contractPanel}<section class="grid two"><article class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL SMOKE</p><h2>本機模型重載</h2></div>${badge("VERIFIED")}</div><div class="card-body"><p>${esc(readiness.message || "本機模型重載 Smoke 已完成；私有模型未放入 Case Package。")}</p><p class="stage-note">Reload Smoke 只確認本機載入及介面流程，不證明模型具有可靠預測能力。</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">ONLINE SERVING</p><h2>線上推論服務</h2></div>${badge(doc.status)}</div><div class="card-body"><p>Prediction unavailable。此案例目前沒有公開推論 API；網站僅展示經核對的研究結果。</p><p class="stage-note">${esc(readiness.reason_code || "NO_PUBLIC_INFERENCE_SERVICE")} · 未公開私有模型或逐筆資料。</p></div></article></section>`;
 }
 function renderVerifiedInputContract(contract, model) {
-  const controls = contract.input_features.map((field, index) => {
-    const id = `p6-contract-field-${index}`;
-    const required = field.required && field.nullable !== true ? "required" : "";
-    const nullable = field.nullable === true ? "可留空" : field.nullable === false ? "不可留空" : "缺值規則未知";
-    let control;
-    if (field.control_type === "select") {
-      const options = field.options.map((option) => {
-        const value = option.value === null ? "" : String(option.value);
-        return `<option value="${esc(value)}">${esc(value)}</option>`;
-      }).join("");
-      const hasEmptyOption = field.options.some((option) => option.value === null || String(option.value) === "");
-      control = `<select id="${id}" name="${esc(field.name)}" ${required} aria-label="${esc(field.name)}">${field.nullable === true && !hasEmptyOption ? '<option value="">—</option>' : ""}${options}</select>`;
-    } else {
-      const min = field.minimum === null ? "" : `min="${field.minimum}"`;
-      const max = field.maximum === null ? "" : `max="${field.maximum}"`;
-      control = `<input id="${id}" name="${esc(field.name)}" type="${field.control_type === "number" ? "number" : "text"}" ${required} ${min} ${max} aria-label="${esc(field.name)}">`;
-    }
-    return `<article class="p6-feature-card"><label class="p6-field-label" for="${id}"><strong>${esc(field.name)}</strong><span>${esc(field.data_type)} · ${nullable}${field.unit ? ` · ${esc(field.unit)}` : ""}</span></label>${control}</article>`;
-  }).join("");
-  return `<section class="card"><div class="card-head"><div><p class="eyebrow">MANIFEST-VERIFIED INPUT CONTRACT</p><h2>模型輸入欄位</h2></div>${badge(contract.status)}</div><div class="card-body"><p>欄位由 Case Package 中已驗證的 Input Contract 產生；僅供輸入介面預覽，尚未連接模型或 API。</p><dl class="data-row"><dt>Model</dt><dd>${esc(model.model_id)} · ${esc(model.model_version)}</dd></dl><dl class="data-row"><dt>欄位數</dt><dd>${contract.input_feature_count}</dd></dl><div class="p6-feature-grid">${controls}</div><p class="stage-note">類別選項來自已訓練 Encoder metadata，不代表 API allowlist；預測按鈕保持停用。</p><button class="button primary" type="button" disabled title="Prediction API 尚未開放">執行預測 · 尚未開放</button></div></section>`;
+  const fields = window.RegScopeInputContract.renderFields(contract);
+  return `<section class="card"><div class="card-head"><div><p class="eyebrow">MANIFEST-VERIFIED INPUT CONTRACT</p><h2>模型輸入欄位</h2></div>${badge(contract.status)}</div><div class="card-body"><p>欄位由 Case Package 中已驗證的 Input Contract 產生；僅供輸入介面預覽，尚未連接模型或 API。</p><dl class="data-row"><dt>Model</dt><dd>${esc(model.model_id)} · ${esc(model.model_version)}</dd></dl><dl class="data-row"><dt>欄位數</dt><dd>${contract.input_feature_count}</dd></dl>${fields}<p class="stage-note">類別選項來自已訓練 Encoder metadata，不代表 API allowlist；預測按鈕保持停用。</p><button class="button primary" type="button" disabled title="Prediction API 尚未開放">執行預測 · 尚未開放</button></div></section>`;
 }
 function renderCarPackagePhase(phase) {
   const pkg = carPackage;

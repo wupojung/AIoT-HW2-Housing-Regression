@@ -4,6 +4,8 @@
   const SHA256 = /^[a-f0-9]{64}$/;
   const CONTROLS = new Set(["number", "text", "select"]);
 
+  // This guards the fields used to render UI; the package producer remains responsible
+  // for validating the complete document against the published JSON Schema.
   function validate(contract, expected = {}) {
     const errors = [];
     const fail = (message) => errors.push(message);
@@ -66,5 +68,35 @@
     return { valid: errors.length === 0, errors };
   }
 
-  root.RegScopeInputContract = Object.freeze({ validate });
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[character]);
+  }
+
+  function renderFields(contract) {
+    if (!validate(contract).valid) throw new Error("Cannot render an invalid Prediction Input Schema.");
+    const controls = contract.input_features.map((field, index) => {
+      const id = `p6-contract-field-${index}`;
+      const required = field.required && field.nullable !== true ? "required" : "";
+      const nullable = field.nullable === true ? "可留空" : field.nullable === false ? "不可留空" : "缺值規則未知";
+      let control;
+      if (field.control_type === "select") {
+        const options = field.options.map((option) => {
+          const value = option.value === null ? "" : String(option.value);
+          return `<option value="${escapeHTML(value)}">${escapeHTML(value)}</option>`;
+        }).join("");
+        const hasEmptyOption = field.options.some((option) => option.value === null || String(option.value) === "");
+        control = `<select id="${id}" name="${escapeHTML(field.name)}" ${required} aria-label="${escapeHTML(field.name)}">${field.nullable === true && !hasEmptyOption ? '<option value="">—</option>' : ""}${options}</select>`;
+      } else {
+        const min = field.minimum === null ? "" : `min="${field.minimum}"`;
+        const max = field.maximum === null ? "" : `max="${field.maximum}"`;
+        control = `<input id="${id}" name="${escapeHTML(field.name)}" type="${field.control_type === "number" ? "number" : "text"}" ${required} ${min} ${max} aria-label="${escapeHTML(field.name)}">`;
+      }
+      return `<article class="p6-feature-card"><label class="p6-field-label" for="${id}"><strong>${escapeHTML(field.name)}</strong><span>${escapeHTML(field.data_type)} · ${nullable}${field.unit ? ` · ${escapeHTML(field.unit)}` : ""}</span></label>${control}</article>`;
+    }).join("");
+    return `<div class="p6-feature-grid">${controls}</div>`;
+  }
+
+  root.RegScopeInputContract = Object.freeze({ validateForUI: validate, renderFields });
 })(globalThis);

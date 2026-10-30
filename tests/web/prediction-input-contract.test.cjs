@@ -28,36 +28,38 @@ function syntheticContract(count) {
 
 test("accepts both small and larger contract field sets without fixed counts", () => {
   for (const count of [5, 15]) {
-    const result = globalThis.RegScopeInputContract.validate(syntheticContract(count), {
+    const contract = syntheticContract(count);
+    const result = globalThis.RegScopeInputContract.validateForUI(contract, {
       caseId: "synthetic-case", modelId: "synthetic-model", modelVersion: "1", runId: "run-1", configurationId: "config-1"
     });
     assert.deepEqual(result, { valid: true, errors: [] });
+    assert.equal((globalThis.RegScopeInputContract.renderFields(contract).match(/class="p6-feature-card"/g) || []).length, count);
   }
 });
 
 test("keeps fitted category values as exact source values", () => {
   const contract = syntheticContract(2);
-  const result = globalThis.RegScopeInputContract.validate(contract);
+  const result = globalThis.RegScopeInputContract.validateForUI(contract);
   assert.equal(result.valid, true);
   assert.equal(contract.input_features[1].options[0].value, "SYNTHETIC_Value A");
 });
 
 test("rejects identity mismatch, invalid count, unsupported status and unreviewed category metadata", () => {
   const contract = syntheticContract(2);
-  const identity = globalThis.RegScopeInputContract.validate(contract, { caseId: "another-case" });
+  const identity = globalThis.RegScopeInputContract.validateForUI(contract, { caseId: "another-case" });
   assert.equal(identity.valid, false);
   assert.ok(identity.errors.some((error) => error.includes("Case ID mismatch")));
 
   contract.input_feature_count = 3;
   contract.status = "MOCK";
   contract.input_features[1].options[0].api_allowlisted = true;
-  const invalid = globalThis.RegScopeInputContract.validate(contract);
+  const invalid = globalThis.RegScopeInputContract.validateForUI(contract);
   assert.equal(invalid.valid, false);
   assert.ok(invalid.errors.some((error) => error.includes("feature count")));
   assert.ok(invalid.errors.some((error) => error.includes("evidence status")));
 
   contract.input_feature_count = 2;
-  const category = globalThis.RegScopeInputContract.validate(contract);
+  const category = globalThis.RegScopeInputContract.validateForUI(contract);
   assert.ok(category.errors.some((error) => error.includes("verified provenance")));
 });
 
@@ -65,7 +67,7 @@ test("rejects category-number controls and duplicate options", () => {
   const contract = syntheticContract(2);
   contract.input_features[1].control_type = "number";
   contract.input_features[1].options = [];
-  const mismatch = globalThis.RegScopeInputContract.validate(contract);
+  const mismatch = globalThis.RegScopeInputContract.validateForUI(contract);
   assert.ok(mismatch.errors.some((error) => error.includes("Category field control")));
 
   contract.input_features[1].control_type = "select";
@@ -73,22 +75,34 @@ test("rejects category-number controls and duplicate options", () => {
     { value: "same", source: "FITTED_ENCODER_CATEGORY", evidence_status: "VERIFIED", infrequent: false, api_allowlisted: false },
     { value: "same", source: "FITTED_ENCODER_CATEGORY", evidence_status: "VERIFIED", infrequent: false, api_allowlisted: false }
   ];
-  const duplicates = globalThis.RegScopeInputContract.validate(contract);
+  const duplicates = globalThis.RegScopeInputContract.validateForUI(contract);
   assert.ok(duplicates.errors.some((error) => error.includes("unique primitive values")));
 
   contract.input_features[1].options = [
     { value: 1, source: "FITTED_ENCODER_CATEGORY", evidence_status: "VERIFIED", infrequent: false, api_allowlisted: false },
     { value: "1", source: "FITTED_ENCODER_CATEGORY", evidence_status: "VERIFIED", infrequent: false, api_allowlisted: false }
   ];
-  const renderedCollision = globalThis.RegScopeInputContract.validate(contract);
+  const renderedCollision = globalThis.RegScopeInputContract.validateForUI(contract);
   assert.ok(renderedCollision.errors.some((error) => error.includes("unique primitive values")));
 });
 
 test("malformed input fails closed without throwing", () => {
-  const result = globalThis.RegScopeInputContract.validate({
+  const result = globalThis.RegScopeInputContract.validateForUI({
     ...syntheticContract(1), input_features: [{ name: "x" }], input_feature_count: 1,
     preprocessing_reference: { raw_input_order: ["x"] }
   });
   assert.equal(result.valid, false);
   assert.ok(result.errors.length > 0);
+  assert.throws(() => globalThis.RegScopeInputContract.renderFields(result), /invalid Prediction Input Schema/);
+});
+
+test("escapes field names and preserves category values in rendered controls", () => {
+  const contract = syntheticContract(2);
+  contract.input_features[0].name = 'demo_<field>"';
+  contract.preprocessing_reference.raw_input_order[0] = 'demo_<field>"';
+  contract.input_features[1].options[0].value = "SYNTHETIC <A&B>";
+  const html = globalThis.RegScopeInputContract.renderFields(contract);
+  assert.match(html, /demo_&lt;field&gt;&quot;/);
+  assert.match(html, /SYNTHETIC &lt;A&amp;B&gt;/);
+  assert.doesNotMatch(html, /<field>/);
 });
