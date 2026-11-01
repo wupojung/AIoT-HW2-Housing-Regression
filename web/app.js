@@ -1746,14 +1746,22 @@ function renderCarPhase6LocalInference() {
   }
   const contract = localCarSchema;
   const prediction = localCarPrediction;
+  const packageTargetUnit = prediction && carPackage?.caseDoc?.case_id === CAR_CASE_ID
+    ? window.RegScopeInputContract.resolveVerifiedTargetUnit(carPackage.caseDoc, prediction, CAR_CASE_ID)
+    : null;
+  const apiUnitText = prediction?.unit === null
+    ? "API 回應 unit=null"
+    : typeof prediction?.unit === "string" && prediction.unit.trim()
+      ? `API 回應 unit=${esc(prediction.unit.trim())}`
+      : "API 回應未提供單位";
   const result = localCarPredictionPending
     ? `<div class="p6-prototype-state" role="status"><span class="p6-prototype-state-icon" aria-hidden="true">…</span><div><strong>正在執行本機模型推論</strong><p>${LOCAL_CAR_TAILNET_PREVIEW ? "輸入經 Tailnet HTTPS 傳至此裝置的 loopback API；不會公開到網際網路。" : "輸入只送至本機 loopback API。"}</p></div></div>`
     : prediction
-      ? `<div class="p6-local-prediction-result" role="status"><span>模型原始數值輸出 · ${esc(prediction.target)}</span><strong>${esc(Number(prediction.prediction).toString())}</strong><small>單位／幣別未確認；未對輸出進行換算或校正</small></div>`
+      ? `<div class="p6-local-prediction-result" role="status"><span>模型原始數值輸出 · ${esc(prediction.target)}</span><strong>${esc(Number(prediction.prediction).toString())}</strong><small>${packageTargetUnit ? `顯示單位 ${esc(packageTargetUnit)} 取自已驗證 Case Package target.unit；${apiUnitText}。數值未換算或校正。` : `目標單位未知；${apiUnitText}。數值未換算或校正。`}</small></div>`
       : `<div class="p6-prototype-state" role="status"><span class="p6-prototype-state-icon" aria-hidden="true">—</span><div><strong>尚未執行預測</strong><p>此結果面板不會填入示意價格或預設預測值。</p></div></div>`;
   const error = localCarPredictionError ? `<section class="state-panel" role="alert"><strong>推論未完成</strong><p>${esc(localCarPredictionError)}</p>${localCarApiReady ? "" : '<button type="button" class="button" data-action="car-local-api-retry">重新連線本機 API</button>'}</section>` : "";
   const plausibilityWarning = prediction && Number(prediction.prediction) < 0
-    ? '<section class="state-panel" role="status"><strong>輸出合理性提醒</strong><p>模型回傳負值；畫面保留原始輸出，未截斷或取絕對值。目標單位與合理範圍未確認，此值可能不具實務價格解讀性。</p></section>'
+    ? `<section class="state-panel" role="status"><strong>輸出合理性提醒</strong><p>模型回傳負值；畫面保留原始輸出，未截斷或取絕對值。${packageTargetUnit ? `目標單位 ${esc(packageTargetUnit)} 來自已驗證 Case Package；` : "目標單位未確認；"}合理價格範圍與預測可靠性仍未驗證，此結果可能不具實務價格解讀性。</p></section>`
     : "";
   const fields = globalThis.RegScopeInputContract.renderFields(contract, {
     emptySelect: true,

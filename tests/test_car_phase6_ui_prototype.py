@@ -168,6 +168,18 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn("if (missing.length || domainErrors.length)", submit)
         self.assertIn("...domainErrors", submit)
 
+    def test_car_result_unit_comes_from_matching_loaded_package_and_keeps_raw_value(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        renderer = source[source.index("function renderCarPhase6LocalInference()"):source.index("function renderPhase6()")]
+        self.assertIn("carPackage?.caseDoc?.case_id === CAR_CASE_ID", renderer)
+        self.assertIn("resolveVerifiedTargetUnit(carPackage.caseDoc, prediction, CAR_CASE_ID)", renderer)
+        self.assertIn("API 回應 unit=null", renderer)
+        self.assertIn("取自已驗證 Case Package target.unit", renderer)
+        self.assertIn("Number(prediction.prediction).toString()", renderer)
+        self.assertIn("未換算或校正", renderer)
+        self.assertIn("合理價格範圍與預測可靠性仍未驗證", renderer)
+        self.assertNotIn("單位／幣別未確認", renderer)
+
 
 if __name__ == "__main__":
     unittest.main()

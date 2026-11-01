@@ -230,3 +230,14 @@ test("renders CAR plausibility rules separately from schema and observed ranges"
   assert.match(html, /API 合理性檢查：不可為負數，0 可接受；這不是契約或觀測範圍。/);
   assert.match(html, /契約未提供輸入上下限；觀測範圍未知/);
 });
+
+test("resolves a displayed unit only from a matching verified case target", () => {
+  const resolve = globalThis.RegScopeInputContract.resolveVerifiedTargetUnit;
+  const caseDocument = { case_id: "car", target: { raw_field_id: "price", unit: "USD" } };
+  const prediction = { case_id: "car", target: "price", unit: null };
+  assert.equal(resolve(caseDocument, prediction, "car"), "USD");
+  assert.equal(resolve(caseDocument, { ...prediction, case_id: "other" }, "car"), null);
+  assert.equal(resolve({ ...caseDocument, case_id: "other" }, prediction, "car"), null);
+  assert.equal(resolve(caseDocument, { ...prediction, target: "other_target" }, "car"), null);
+  assert.equal(resolve({ ...caseDocument, target: { raw_field_id: "price", unit: null } }, prediction, "car"), null);
+});

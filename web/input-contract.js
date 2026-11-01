@@ -170,6 +170,14 @@
     return { valid: Boolean(valid) };
   }
 
+  function resolveVerifiedTargetUnit(caseDocument, prediction, expectedCaseId) {
+    if (!caseDocument || !prediction || typeof expectedCaseId !== "string" || !expectedCaseId
+        || caseDocument.case_id !== expectedCaseId || prediction.case_id !== expectedCaseId
+        || typeof prediction.target !== "string" || caseDocument.target?.raw_field_id !== prediction.target) return null;
+    const unit = caseDocument.target.unit;
+    return typeof unit === "string" && unit.trim() ? unit.trim() : null;
+  }
+
   function validateCarNumericDomain(name, value) {
     if (typeof value !== "number" || !Number.isFinite(value)) return "請輸入有限的數值。";
     if (name === "year" && value <= 0) return "year 必須大於 0；目前未設定上限。";
@@ -237,6 +245,7 @@
     sha256Hex,
     sha256HexFallback,
     validateLocalPredictionResponse,
-    validateCarNumericDomain
+    validateCarNumericDomain,
+    resolveVerifiedTargetUnit
   });
 })(globalThis);
