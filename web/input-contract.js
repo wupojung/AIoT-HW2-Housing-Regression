@@ -174,8 +174,18 @@
     if (!validate(contract).valid) throw new Error("Cannot render an invalid Prediction Input Schema.");
     const controls = contract.input_features.map((field, index) => {
       const id = `p6-contract-field-${index}`;
+      const ui = renderOptions.fieldUi?.[field.name] || {};
+      const displayName = ui.title || field.name;
+      const description = ui.description || "欄位中文語意待來源確認。";
+      const evidence = ui.evidence === "PROPOSED" ? "建議翻譯" : "語意待確認";
       const required = field.required && field.nullable !== true ? "required" : "";
       const nullable = field.nullable === true ? "可留空" : field.nullable === false ? "不可留空" : "缺值規則未知";
+      const requirement = field.required === true ? "必填" : field.required === false ? "選填" : "必填狀態未知";
+      const limits = field.data_type === "number"
+        ? `${field.unit ? `單位：${escapeHTML(field.unit)}` : "單位未確認"} · ${field.minimum !== null || field.maximum !== null ? `契約範圍 ${field.minimum ?? "−∞"}–${field.maximum ?? "+∞"}` : "契約未提供輸入上下限；觀測範圍未知"}`
+        : field.data_type === "category"
+          ? `選項來源：${Array.isArray(field.options) && field.options.length ? "已擬合 Encoder 類別；非公開 API allowlist" : "未知"}`
+          : "輸入語意待確認";
       let control;
       if (field.control_type === "select") {
         const currentValue = renderOptions.values?.[field.name];
@@ -197,7 +207,7 @@
         const value = renderOptions.values?.[field.name];
         control = `<input id="${id}" name="${escapeHTML(field.name)}" type="${field.control_type === "number" ? "number" : "text"}" value="${value === undefined ? "" : escapeHTML(value)}" ${required} ${min} ${max} aria-label="${escapeHTML(field.name)}">`;
       }
-      return `<article class="p6-feature-card"><label class="p6-field-label" for="${id}"><strong>${escapeHTML(field.name)}</strong><span>${escapeHTML(field.data_type)} · ${nullable}${field.unit ? ` · ${escapeHTML(field.unit)}` : ""}</span></label>${control}</article>`;
+      return `<article class="p6-feature-card" data-contract-field="${escapeHTML(field.name)}"><label class="p6-field-label" for="${id}"><strong>${escapeHTML(displayName)}${displayName === field.name ? "" : ` · ${escapeHTML(field.name)}`}</strong><span>${escapeHTML(field.data_type)} · ${requirement} · ${nullable} · ${evidence}</span><span>${escapeHTML(description)}</span><span>${limits}</span></label>${control}</article>`;
     }).join("");
     return `<div class="p6-feature-grid">${controls}</div>`;
   }

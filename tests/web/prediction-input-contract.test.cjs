@@ -122,6 +122,20 @@ test("local inference form starts unselected and can safely restore entered valu
   assert.match(restored, /<option value="SYNTHETIC_Value A" selected>/);
 });
 
+test("display labels are escaped metadata and leave raw contract names intact", () => {
+  const contract = syntheticContract(2);
+  const html = globalThis.RegScopeInputContract.renderFields(contract, {
+    fieldUi: {
+      demo_field_1: { title: "<車輛欄位>", description: "待確認 & 暫譯", evidence: "PROPOSED" }
+    }
+  });
+  assert.match(html, /&lt;車輛欄位&gt; · demo_field_1/);
+  assert.match(html, /待確認 &amp; 暫譯/);
+  assert.match(html, /data-contract-field="demo_field_1"/);
+  assert.match(html, /name="demo_field_1"/);
+  assert.match(html, /單位未確認/);
+});
+
 test("verifies raw schema bytes against both API and pinned SHA-256", async () => {
   const contract = syntheticContract(2);
   const bytes = new TextEncoder().encode(JSON.stringify(contract));

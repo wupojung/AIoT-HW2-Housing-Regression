@@ -1,5 +1,6 @@
 """Safety and shape checks for the CAR Phase 6 synthetic UI fixtures."""
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -134,6 +135,24 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn("window.RegScopeInputContract.sha256Hex(", app_source)
         self.assertIn("function sha256HexFallback(input)", helper_source)
         self.assertIn("return sha256HexFallback(input)", helper_source)
+
+    def test_car_field_ui_mapping_is_display_only_and_caveated(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        mapping = source[source.index("const CAR_PHASE6_FIELD_UI ="):source.index("const explorationArtifactPromises")]
+        expected = {
+            "condition", "cylinders", "drive", "ext_color", "feature_count", "fuel", "image_count",
+            "int_color", "odometer", "paint_color", "title_status", "transmission", "trim", "type", "year"
+        }
+        self.assertEqual(set(re.findall(r"^  ([a-z_]+): \{", mapping, re.M)), expected)
+        self.assertIn('evidence: "UNKNOWN"', mapping)
+        self.assertIn('evidence: "PROPOSED"', mapping)
+        self.assertIn("fieldUi: CAR_PHASE6_FIELD_UI", source)
+        self.assertIn('values[field.name] = String(syntheticCategory.value ?? "")', source)
+        self.assertNotIn('values[field.name] = "0"', source)
+        self.assertIn("Number(prediction.prediction) < 0", source)
+        self.assertIn("模型原始數值輸出", source)
+        self.assertIn("Number(prediction.prediction).toString()", source)
+        self.assertIn("未截斷或取絕對值", source)
 
 
 if __name__ == "__main__":

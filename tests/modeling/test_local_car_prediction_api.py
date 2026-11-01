@@ -59,6 +59,9 @@ class LocalCarPredictionApiTests(unittest.TestCase):
         contract = synthetic_contract()
         values = validate_inputs(contract, {"mileage": 123.5, "make": "UNSEEN_SYNTHETIC"})
         self.assertEqual(values, {"mileage": 123.5, "make": "UNSEEN_SYNTHETIC"})
+        zero_values = validate_inputs(contract, {"mileage": 0, "make": "SYNTHETIC_A"})
+        self.assertEqual(zero_values["mileage"], 0)
+        self.assertEqual(zero_values["make"], "SYNTHETIC_A")
 
     def test_rejects_missing_extra_and_wrong_types(self):
         contract = synthetic_contract()
