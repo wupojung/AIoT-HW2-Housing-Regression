@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "web",
   "functions": {
-    "api/**/*.py": {
+    "api/*.py": {
       "excludeFiles": "{docs/**,tests/**,web/**,local/**,**/*.csv,**/*.joblib,**/*.pkl,**/*.parquet}"
     }
   },
