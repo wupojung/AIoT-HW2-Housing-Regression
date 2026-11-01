@@ -195,3 +195,15 @@ test("requires prediction response to match the pinned model version and run", (
   assert.equal(globalThis.RegScopeInputContract.validateLocalPredictionResponse({ ...payload, model_version: "v2" }, expected).valid, false);
   assert.equal(globalThis.RegScopeInputContract.validateLocalPredictionResponse({ ...payload, prediction: Infinity }, expected).valid, false);
 });
+
+test("CAR numeric pre-submit checks match API domain floors without inventing upper limits", () => {
+  const validate = globalThis.RegScopeInputContract.validateCarNumericDomain;
+  assert.equal(validate("year", 0), "year 必須大於 0；目前未設定上限。");
+  assert.equal(validate("year", -1), "year 必須大於 0；目前未設定上限。");
+  assert.equal(validate("year", 2018), null);
+  assert.equal(validate("odometer", -0.1), "odometer 不可為負數；單位與合理範圍未確認。");
+  assert.equal(validate("odometer", 0), null);
+  assert.equal(validate("image_count", -1), "image_count 不可為負數；0 可接受。");
+  assert.equal(validate("image_count", 0), null);
+  assert.equal(validate("feature_count", -1), null);
+});

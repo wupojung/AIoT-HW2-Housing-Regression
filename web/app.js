@@ -1559,6 +1559,7 @@ async function submitLocalCarPrediction() {
   if (!form) return;
   const values = {};
   const missing = [];
+  const domainErrors = [];
   for (const field of localCarSchema.input_features) {
     const control = [...form.querySelectorAll("[name]")].find((item) => item.name === field.name);
     localCarFormValues[field.name] = control?.value ?? "";
@@ -1573,16 +1574,24 @@ async function submitLocalCarPrediction() {
       continue;
     }
     if (field.data_type === "number") {
-      const value = Number(control.value);
-      if (!Number.isFinite(value)) missing.push(field.name);
-      else values[field.name] = value;
+      const rawValue = control.value.trim();
+      const value = Number(rawValue);
+      if (!rawValue || !Number.isFinite(value)) missing.push(field.name);
+      else {
+        const domainError = window.RegScopeInputContract.validateCarNumericDomain(field.name, value);
+        if (domainError) domainErrors.push(domainError);
+        else values[field.name] = value;
+      }
     } else {
       values[field.name] = control.value;
     }
   }
-  if (missing.length) {
+  if (missing.length || domainErrors.length) {
     localCarPrediction = null;
-    localCarPredictionError = `請補齊必要欄位或修正數值格式（${missing.length} 欄）。`;
+    localCarPredictionError = [
+      missing.length ? `請補齊必要欄位或修正數值格式（${missing.length} 欄）。` : "",
+      ...domainErrors
+    ].filter(Boolean).join(" ");
     render();
     return;
   }

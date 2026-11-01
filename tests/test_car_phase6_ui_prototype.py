@@ -155,6 +155,16 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn("Number(prediction.prediction).toString()", source)
         self.assertIn("未截斷或取絕對值", source)
 
+    def test_local_car_form_checks_numeric_domain_before_api_submission(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        submit = source[source.index("async function submitLocalCarPrediction()"):source.index("function fillLocalCarSyntheticInputs()")]
+        self.assertIn("window.RegScopeInputContract.validateCarNumericDomain(field.name, value)", submit)
+        self.assertIn("const rawValue = control.value.trim()", submit)
+        self.assertIn("if (!rawValue || !Number.isFinite(value)) missing.push(field.name)", submit)
+        self.assertIn("const domainErrors = []", submit)
+        self.assertIn("if (missing.length || domainErrors.length)", submit)
+        self.assertIn("...domainErrors", submit)
+
 
 if __name__ == "__main__":
     unittest.main()

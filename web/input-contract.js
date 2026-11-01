@@ -170,6 +170,14 @@
     return { valid: Boolean(valid) };
   }
 
+  function validateCarNumericDomain(name, value) {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "請輸入有限的數值。";
+    if (name === "year" && value <= 0) return "year 必須大於 0；目前未設定上限。";
+    if (name === "odometer" && value < 0) return "odometer 不可為負數；單位與合理範圍未確認。";
+    if (name === "image_count" && value < 0) return "image_count 不可為負數；0 可接受。";
+    return null;
+  }
+
   function renderFields(contract, renderOptions = {}) {
     if (!validate(contract).valid) throw new Error("Cannot render an invalid Prediction Input Schema.");
     const controls = contract.input_features.map((field, index) => {
@@ -228,6 +236,7 @@
     verifySchemaBytes,
     sha256Hex,
     sha256HexFallback,
-    validateLocalPredictionResponse
+    validateLocalPredictionResponse,
+    validateCarNumericDomain
   });
 })(globalThis);

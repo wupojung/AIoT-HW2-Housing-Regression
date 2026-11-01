@@ -226,6 +226,12 @@ def validate_inputs(contract: Mapping[str, Any], inputs: Any) -> dict[str, Any]:
         if data_type == "number":
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
                 raise PredictionApiError("invalid_number", "數值欄位必須是有限的 JSON 數字。", fields=[name])
+            if name == "year" and value <= 0:
+                raise PredictionApiError("invalid_domain_value", "年份必須大於 0；目前未設定上限。", fields=[name])
+            if name == "odometer" and value < 0:
+                raise PredictionApiError("invalid_domain_value", "里程數不可為負數；單位與合理範圍未確認。", fields=[name])
+            if name == "image_count" and value < 0:
+                raise PredictionApiError("invalid_domain_value", "圖片數量不可為負數；0 可接受。", fields=[name])
             normalized[name] = value
             continue
         if data_type != "category" or not isinstance(value, str):
