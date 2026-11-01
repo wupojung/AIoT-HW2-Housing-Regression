@@ -27,11 +27,19 @@ const ADDITIONAL_FEATURE_TYPES = [
   ["temporal", "時間欄位 (Temporal)", "#8da3b8"],
   ["other", "其他／洩漏代理 (Other / Leakage Proxy)", "#a6afb8"]
 ];
-const LOCAL_CAR_PHASE6_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname)
-  && new URLSearchParams(location.search).get("car-phase6-prototype") === "1";
-const LOCAL_CAR_PREDICTION_API_MODE = LOCAL_CAR_PHASE6_PREVIEW
-  && location.origin === "http://127.0.0.1:8766"
-  && new URLSearchParams(location.search).get("car-local-inference") === "1";
+const PHASE6_QUERY = new URLSearchParams(location.search);
+const LOCAL_CAR_TAILNET_PREVIEW = location.protocol === "https:"
+  && location.hostname.endsWith(".ts.net")
+  && PHASE6_QUERY.get("car-tailnet-preview") === "1";
+const LOCAL_CAR_LOOPBACK_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname)
+  && PHASE6_QUERY.get("car-phase6-prototype") === "1";
+const LOCAL_CAR_PHASE6_PREVIEW = LOCAL_CAR_LOOPBACK_PREVIEW || LOCAL_CAR_TAILNET_PREVIEW;
+const LOCAL_CAR_SAME_ORIGIN_API_MODE = LOCAL_CAR_PHASE6_PREVIEW
+  && PHASE6_QUERY.get("car-local-inference") === "1"
+  && (LOCAL_CAR_TAILNET_PREVIEW || location.origin === "http://127.0.0.1:8788");
+const LOCAL_CAR_PREDICTION_API_MODE = LOCAL_CAR_SAME_ORIGIN_API_MODE
+  || LOCAL_CAR_LOOPBACK_PREVIEW && location.origin === "http://127.0.0.1:8766"
+    && PHASE6_QUERY.get("car-local-inference") === "1";
 const AMES_NEIGHBORHOODS = ["Blmngtn", "Blueste", "BrDale", "BrkSide", "ClearCr", "CollgCr", "Crawfor", "Edwards", "Gilbert", "IDOTRR", "MeadowV", "Mitchel", "NAmes", "NPkVill", "NWAmes", "NoRidge", "NridgHt", "OldTown", "SWISU", "Sawyer", "SawyerW", "Somerst", "StoneBr", "Timber", "Veenker"];
 const OVERALL_QUALITY_LABELS = {
   1: "Very Poor · 非常差", 2: "Poor · 差", 3: "Fair · 尚可", 4: "Below Average · 低於平均", 5: "Average · 平均",
@@ -250,7 +258,7 @@ let localCarPredictionPending = false;
 let localCarApiReady = false;
 let localCarFormValues = {};
 let localCarSyntheticInput = false;
-const LOCAL_CAR_API_BASE = "http://127.0.0.1:8767";
+const LOCAL_CAR_API_BASE = LOCAL_CAR_SAME_ORIGIN_API_MODE ? "" : "http://127.0.0.1:8767";
 const LOCAL_CAR_SCHEMA_SHA256 = "4fcb528328903e54fe39a214be682d437db26c2cd9655971a486170d513d881a";
 const LOCAL_CAR_MODEL = Object.freeze({
   caseId: "used-car-price-optimized",
@@ -1510,7 +1518,7 @@ function loadLocalCarPredictionSchema() {
     .catch((error) => {
       localCarApiReady = false;
       localCarSchemaError = error?.name === "AbortError"
-        ? "本機 API 連線逾時；請確認 127.0.0.1:8767 服務已啟動。"
+    ? "本機 API 連線逾時；請確認本機預覽服務已啟動。"
         : (error instanceof Error ? error.message : "無法連線到本機預測 API。");
     })
     .finally(() => {
@@ -1698,13 +1706,13 @@ function renderCarPhase6LocalInference() {
   const contract = localCarSchema;
   const prediction = localCarPrediction;
   const result = localCarPredictionPending
-    ? `<div class="p6-prototype-state" role="status"><span class="p6-prototype-state-icon" aria-hidden="true">…</span><div><strong>正在執行本機模型推論</strong><p>輸入只送至本機 loopback API。</p></div></div>`
+    ? `<div class="p6-prototype-state" role="status"><span class="p6-prototype-state-icon" aria-hidden="true">…</span><div><strong>正在執行本機模型推論</strong><p>${LOCAL_CAR_TAILNET_PREVIEW ? "輸入經 Tailnet HTTPS 傳至此裝置的 loopback API；不會公開到網際網路。" : "輸入只送至本機 loopback API。"}</p></div></div>`
     : prediction
       ? `<div class="p6-local-prediction-result" role="status"><span>模型輸出 · ${esc(prediction.target)}</span><strong>${Number(prediction.prediction).toLocaleString("en-US", { maximumFractionDigits: 2 })}</strong><small>單位未由目前 Input Contract 確認</small></div>`
       : `<div class="p6-prototype-state" role="status"><span class="p6-prototype-state-icon" aria-hidden="true">—</span><div><strong>尚未執行預測</strong><p>此結果面板不會填入示意價格或預設預測值。</p></div></div>`;
   const error = localCarPredictionError ? `<section class="state-panel" role="alert"><strong>推論未完成</strong><p>${esc(localCarPredictionError)}</p>${localCarApiReady ? "" : '<button type="button" class="button" data-action="car-local-api-retry">重新連線本機 API</button>'}</section>` : "";
   const fields = globalThis.RegScopeInputContract.renderFields(contract, { emptySelect: true, values: localCarFormValues });
-  return `<div class="page p6-prototype-page"><div class="fixture-banner"><span><strong>LOCAL EXPERIMENT · 真實模型推論</strong> · 本機迴圈介面，不會對外提供 API。</span>${badge("LOCAL")}</div>${pageHeading("PHASE 06 / LOCAL INFERENCE", "模型預測與結果", "本機使用已核對的 CAR Run 03 Final Fit。推論成功不代表模型準確度已驗證。", "PARTIAL")}<section class="card p6-prototype-context"><div class="card-body"><div><span class="eyebrow">目前案例</span><h2>${esc(CAR_DISPLAY_NAME)}</h2><code>${esc(contract.case_id)}</code></div><div><span class="eyebrow">輸入契約</span><strong>${contract.input_feature_count} 個必要原始欄位</strong><span>SHA-256 已由本機 API 驗證 · ${esc(contract.model_version)}</span></div><div><span class="eyebrow">模型服務</span><strong>本機 API 已就緒</strong><span>${esc(contract.source_evidence.run_id)} · ${esc(contract.source_evidence.configuration_id)}</span></div></div></section><div class="mode-switch p6-prototype-tabs" role="group" aria-label="輸入模式"><button type="button" data-phase6-mode="manual" aria-pressed="true">單筆輸入</button><button type="button" data-phase6-mode="csv" aria-pressed="false">CSV 批次輸入 · 尚未開放</button></div><div class="two-panel phase6-panels p6-prototype-panels"><section class="card"><div class="card-head"><div><p class="eyebrow">15 RAW INPUTS · CONTRACT-DRIVEN</p><h2>車輛輸入欄位</h2></div>${badge("VERIFIED CONTRACT")}</div><div class="card-body"><p class="stage-note">表單欄位與順序由已驗證的 prediction-input-schema.json 產生。未提供預設值；未知缺值語意會由 API 拒絕。</p>${localCarSyntheticInput ? '<p class="state-panel" role="status">目前欄位為合成測試值，並非真實車輛紀錄。</p>' : ""}<form id="car-local-prediction-form" novalidate>${fields}<div class="button-row"><button type="button" class="button" data-action="car-local-fill-synthetic" ${localCarPredictionPending ? "disabled" : ""}>載入合成測試輸入</button><button type="button" class="button primary" data-action="car-local-predict" ${localCarPredictionPending || !localCarApiReady ? "disabled" : ""}>${localCarPredictionPending ? "推論中…" : "執行本機預測"}</button></div></form></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL RESULT</p><h2>推論結果</h2></div>${badge(prediction ? "LOCAL RESULT" : localCarPredictionPending ? "RUNNING" : "UNAVAILABLE")}</div><div class="card-body">${result}${error}<dl class="data-row"><dt>評估限制</dt><dd>CAR 模型 CV 表現低於 Dummy Baseline，且 R² 為負值。</dd></dl><p class="stage-note">這是固定 Run 03 模型對本次輸入的真實計算結果，不是已驗證可靠度的價格建議；不會讀取 Holdout 或重新訓練。</p><details class="disclosure"><summary>模型與 Run 身分</summary><p>Model ID ${esc(contract.model_id)} · Model SHA-256 ${esc(contract.model_sha256)}</p><p>Run ${esc(contract.source_evidence.run_id)} · Config ${esc(contract.source_evidence.configuration_id)}</p></details></div></section></div>${footerNav([5,"模型評估"],null)}</div>`;
+  return `<div class="page p6-prototype-page"><div class="fixture-banner"><span><strong>${LOCAL_CAR_TAILNET_PREVIEW ? "TAILNET-ONLY LOCAL EXPERIMENT" : "LOCAL EXPERIMENT"} · 真實模型推論</strong> · 僅限本機／授權 Tailnet 預覽；不提供公開 API。</span>${badge("LOCAL")}</div>${pageHeading("PHASE 06 / LOCAL INFERENCE", "模型預測與結果", "本機使用已核對的 CAR Run 03 Final Fit。推論成功不代表模型準確度已驗證。", "PARTIAL")}<section class="card p6-prototype-context"><div class="card-body"><div><span class="eyebrow">目前案例</span><h2>${esc(CAR_DISPLAY_NAME)}</h2><code>${esc(contract.case_id)}</code></div><div><span class="eyebrow">輸入契約</span><strong>${contract.input_feature_count} 個必要原始欄位</strong><span>SHA-256 已由本機 API 驗證 · ${esc(contract.model_version)}</span></div><div><span class="eyebrow">模型服務</span><strong>本機 API 已就緒</strong><span>${esc(contract.source_evidence.run_id)} · ${esc(contract.source_evidence.configuration_id)}</span></div></div></section><div class="mode-switch p6-prototype-tabs" role="group" aria-label="輸入模式"><button type="button" data-phase6-mode="manual" aria-pressed="true">單筆輸入</button><button type="button" data-phase6-mode="csv" aria-pressed="false">CSV 批次輸入 · 尚未開放</button></div><div class="two-panel phase6-panels p6-prototype-panels"><section class="card"><div class="card-head"><div><p class="eyebrow">15 RAW INPUTS · CONTRACT-DRIVEN</p><h2>車輛輸入欄位</h2></div>${badge("VERIFIED CONTRACT")}</div><div class="card-body"><p class="stage-note">表單欄位與順序由已驗證的 prediction-input-schema.json 產生。未提供預設值；未知缺值語意會由 API 拒絕。</p>${localCarSyntheticInput ? '<p class="state-panel" role="status">目前欄位為合成測試值，並非真實車輛紀錄。</p>' : ""}<form id="car-local-prediction-form" novalidate>${fields}<div class="button-row"><button type="button" class="button" data-action="car-local-fill-synthetic" ${localCarPredictionPending ? "disabled" : ""}>載入合成測試輸入</button><button type="button" class="button primary" data-action="car-local-predict" ${localCarPredictionPending || !localCarApiReady ? "disabled" : ""}>${localCarPredictionPending ? "推論中…" : "執行本機預測"}</button></div></form></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL RESULT</p><h2>推論結果</h2></div>${badge(prediction ? "LOCAL RESULT" : localCarPredictionPending ? "RUNNING" : "UNAVAILABLE")}</div><div class="card-body">${result}${error}<dl class="data-row"><dt>評估限制</dt><dd>CAR 模型 CV 表現低於 Dummy Baseline，且 R² 為負值。</dd></dl><p class="stage-note">這是固定 Run 03 模型對本次輸入的真實計算結果，不是已驗證可靠度的價格建議；不會讀取 Holdout 或重新訓練。</p><details class="disclosure"><summary>模型與 Run 身分</summary><p>Model ID ${esc(contract.model_id)} · Model SHA-256 ${esc(contract.model_sha256)}</p><p>Run ${esc(contract.source_evidence.run_id)} · Config ${esc(contract.source_evidence.configuration_id)}</p></details></div></section></div>${footerNav([5,"模型評估"],null)}</div>`;
 }
 function renderPhase6() {
   if (LOCAL_CAR_PHASE6_PREVIEW && state.caseId === CAR_CASE_ID) return renderCarPhase6UiPrototype();

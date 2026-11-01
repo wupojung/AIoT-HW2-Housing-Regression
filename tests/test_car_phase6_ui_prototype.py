@@ -40,7 +40,7 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
 
     def test_preview_is_local_opt_in_and_does_not_enable_prediction(self):
         source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
-        self.assertIn('new URLSearchParams(location.search).get("car-phase6-prototype") === "1"', source)
+        self.assertIn('PHASE6_QUERY.get("car-phase6-prototype") === "1"', source)
         self.assertIn('disabled title="預測功能尚未實作"', source)
         self.assertIn("未載入模型，也不會呼叫 API。", source)
         self.assertIn("執行批次預測 · 尚未開放", source)
@@ -91,6 +91,16 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         source = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
         self.assertIn("contractHelpers.onload = loadApplication", source)
         self.assertIn("contractHelpers.onerror = loadApplication", source)
+
+    def test_tailnet_preview_is_https_opt_in_and_uses_same_origin_api(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        self.assertIn('location.protocol === "https:"', source)
+        self.assertIn('location.hostname.endsWith(".ts.net")', source)
+        self.assertIn('PHASE6_QUERY.get("car-tailnet-preview") === "1"', source)
+        self.assertIn('const LOCAL_CAR_API_BASE = LOCAL_CAR_SAME_ORIGIN_API_MODE ? ""', source)
+        self.assertIn('fetch(`${LOCAL_CAR_API_BASE}/api/schema`', source)
+        self.assertIn('fetch(`${LOCAL_CAR_API_BASE}/api/predict`', source)
+        self.assertIn('location.origin === "http://127.0.0.1:8766"', source)
 
 
 if __name__ == "__main__":
