@@ -1497,7 +1497,12 @@ function loadLocalCarPredictionSchema() {
   localCarSchemaLoading = true;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
-  fetch(`${LOCAL_CAR_API_BASE}/api/schema`, { cache: "no-store", credentials: "omit", mode: "cors", signal: controller.signal })
+  fetch(`${LOCAL_CAR_API_BASE}/api/schema`, {
+    cache: "no-store",
+    credentials: LOCAL_CAR_SAME_ORIGIN_API_MODE ? "same-origin" : "omit",
+    mode: "cors",
+    signal: controller.signal
+  })
     .then(async (response) => {
       if (!response.ok) throw new Error(`本機 API 無法讀取輸入契約（HTTP ${response.status}）。`);
       if (!globalThis.RegScopeInputContract) throw new Error("輸入契約 UI 驗證器尚未載入。");
@@ -1574,7 +1579,7 @@ async function submitLocalCarPrediction() {
     const response = await fetch(`${LOCAL_CAR_API_BASE}/api/predict`, {
       method: "POST",
       cache: "no-store",
-      credentials: "omit",
+      credentials: LOCAL_CAR_SAME_ORIGIN_API_MODE ? "same-origin" : "omit",
       mode: "cors",
       signal: controller.signal,
       headers: { "Content-Type": "application/json" },

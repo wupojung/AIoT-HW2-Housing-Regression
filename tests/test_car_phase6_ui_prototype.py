@@ -102,6 +102,7 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn('const LOCAL_CAR_API_BASE = LOCAL_CAR_SAME_ORIGIN_API_MODE ? ""', source)
         self.assertIn('fetch(`${LOCAL_CAR_API_BASE}/api/schema`', source)
         self.assertIn('fetch(`${LOCAL_CAR_API_BASE}/api/predict`', source)
+        self.assertEqual(source.count('credentials: LOCAL_CAR_SAME_ORIGIN_API_MODE ? "same-origin" : "omit"'), 2)
         self.assertIn('location.origin === "http://127.0.0.1:8766"', source)
         self.assertIn("const LOCAL_CAR_PHASE6_PREVIEW = LOCAL_CAR_LOOPBACK_PREVIEW", source)
         self.assertIn("if (LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage)", source)
