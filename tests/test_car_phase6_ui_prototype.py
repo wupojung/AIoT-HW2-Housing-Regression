@@ -1,5 +1,6 @@
 """Safety and shape checks for the CAR Phase 6 synthetic UI fixtures."""
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -40,7 +41,7 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
 
     def test_preview_is_local_opt_in_and_does_not_enable_prediction(self):
         source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
-        self.assertIn('new URLSearchParams(location.search).get("car-phase6-prototype") === "1"', source)
+        self.assertIn('PHASE6_QUERY.get("car-phase6-prototype") === "1"', source)
         self.assertIn('disabled title="預測功能尚未實作"', source)
         self.assertIn("未載入模型，也不會呼叫 API。", source)
         self.assertIn("執行批次預測 · 尚未開放", source)
@@ -91,6 +92,93 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         source = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
         self.assertIn("contractHelpers.onload = loadApplication", source)
         self.assertIn("contractHelpers.onerror = loadApplication", source)
+
+    def test_tailnet_preview_is_https_opt_in_and_uses_same_origin_api(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        self.assertIn('location.protocol === "http:"', source)
+        self.assertIn("isTailscaleIPv4Host(location.hostname)", source)
+        self.assertIn("octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127", source)
+        self.assertIn('PHASE6_QUERY.get("car-tailnet-preview") === "1"', source)
+        self.assertIn('const LOCAL_CAR_SAME_ORIGIN_API_MODE = PHASE6_QUERY.get("car-local-inference") === "1"', source)
+        self.assertIn('const LOCAL_CAR_API_BASE = LOCAL_CAR_SAME_ORIGIN_API_MODE ? ""', source)
+        self.assertIn('fetch(`${LOCAL_CAR_API_BASE}/api/schema`', source)
+        self.assertIn('fetch(`${LOCAL_CAR_API_BASE}/api/predict`', source)
+        self.assertEqual(source.count('credentials: LOCAL_CAR_SAME_ORIGIN_API_MODE ? "same-origin" : "omit"'), 2)
+        self.assertIn('location.origin === "http://127.0.0.1:8766"', source)
+        self.assertIn("const LOCAL_CAR_PHASE6_PREVIEW = LOCAL_CAR_LOOPBACK_PREVIEW", source)
+        self.assertIn("if (LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage)", source)
+        self.assertIn("&& state.caseId === CAR_CASE_ID && routePhase() === 6", source)
+        self.assertIn("const visiblePhases = LOCAL_CAR_PHASE6_PREVIEW ? [PHASES[5]] : PHASES", source)
+        self.assertIn("if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage()", source)
+        self.assertIn("if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage()", source)
+
+    def test_tailnet_mode_preserves_normal_case_and_phase_navigation(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        self.assertIn("const LOCAL_CAR_PHASE6_PREVIEW = LOCAL_CAR_LOOPBACK_PREVIEW", source)
+        self.assertIn("const visiblePhases = LOCAL_CAR_PHASE6_PREVIEW ? [PHASES[5]] : PHASES", source)
+        self.assertIn("if (LOCAL_CAR_PHASE6_PREVIEW) publicCases = [[CAR_CASE_ID, CASES[CAR_CASE_ID]]];", source)
+        self.assertIn("if (LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage)", source)
+        render = source[source.index("function render() {"):source.index("function csvRows(")]
+        self.assertIn(
+            'else if (phase && caseData().packageMode === "car"\n'
+            '    && !(phase === 6 && LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE\n'
+            '      && state.caseId === CAR_CASE_ID && carPackage)) app.innerHTML = renderCarPackagePhase(phase);',
+            render,
+        )
+        self.assertIn("if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage()", source)
+        self.assertIn("if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage()", source)
+
+    def test_direct_ip_package_and_schema_hashes_do_not_require_webcrypto(self):
+        app_source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        helper_source = (ROOT / "web" / "input-contract.js").read_text(encoding="utf-8")
+        self.assertNotIn("crypto.subtle.digest", app_source)
+        self.assertIn("window.RegScopeInputContract.sha256Hex(", app_source)
+        self.assertIn("function sha256HexFallback(input)", helper_source)
+        self.assertIn("return sha256HexFallback(input)", helper_source)
+
+    def test_car_field_ui_mapping_is_display_only_and_caveated(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        mapping = source[source.index("const CAR_PHASE6_FIELD_UI ="):source.index("const explorationArtifactPromises")]
+        expected = {
+            "condition", "cylinders", "drive", "ext_color", "feature_count", "fuel", "image_count",
+            "int_color", "odometer", "paint_color", "title_status", "transmission", "trim", "type", "year"
+        }
+        self.assertEqual(set(re.findall(r"^  ([a-z_]+): \{", mapping, re.M)), expected)
+        self.assertIn('evidence: "UNKNOWN"', mapping)
+        self.assertIn('evidence: "PROPOSED"', mapping)
+        self.assertIn("API 合理性檢查：年份須大於 0，未設定上限；這不是契約或觀測範圍。", mapping)
+        self.assertIn("API 合理性檢查：不可為負數；這不是契約界限。距離單位、上限及觀測範圍均未知。", mapping)
+        self.assertIn("API 合理性檢查：不可為負數，0 可接受；這不是契約或觀測範圍。", mapping)
+        self.assertIn("fieldUi: CAR_PHASE6_FIELD_UI", source)
+        self.assertIn("runtimePolicy: { requiresCompleteFieldSet: true, acceptsNull: false }", source)
+        self.assertIn('values[field.name] = String(syntheticCategory.value ?? "")', source)
+        self.assertNotIn('values[field.name] = "0"', source)
+        self.assertIn("Number(prediction.prediction) < 0", source)
+        self.assertIn("模型原始數值輸出", source)
+        self.assertIn("Number(prediction.prediction).toString()", source)
+        self.assertIn("未截斷或取絕對值", source)
+
+    def test_local_car_form_checks_numeric_domain_before_api_submission(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        submit = source[source.index("async function submitLocalCarPrediction()"):source.index("function fillLocalCarSyntheticInputs()")]
+        self.assertIn("window.RegScopeInputContract.validateCarNumericDomain(field.name, value)", submit)
+        self.assertIn("const rawValue = control.value.trim()", submit)
+        self.assertIn("if (!rawValue || !Number.isFinite(value)) missing.push(field.name)", submit)
+        self.assertIn("const domainErrors = []", submit)
+        self.assertIn("if (missing.length || domainErrors.length)", submit)
+        self.assertIn("...domainErrors", submit)
+
+    def test_car_result_unit_comes_from_matching_loaded_package_and_keeps_raw_value(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        renderer = source[source.index("function renderCarPhase6LocalInference()"):source.index("function renderPhase6()")]
+        self.assertIn("carPackage?.caseDoc?.case_id === CAR_CASE_ID", renderer)
+        self.assertIn("resolveVerifiedTargetUnit(carPackage.caseDoc, prediction, CAR_CASE_ID)", renderer)
+        self.assertIn("API 回應 unit=null", renderer)
+        self.assertIn("取自已驗證 Case Package target.unit", renderer)
+        self.assertIn("Number(prediction.prediction).toString()", renderer)
+        self.assertIn("未換算或校正", renderer)
+        self.assertIn("合理價格範圍與預測可靠性仍未驗證", renderer)
+        self.assertNotIn("單位／幣別未確認", renderer)
 
 
 if __name__ == "__main__":

@@ -59,6 +59,9 @@ class LocalCarPredictionApiTests(unittest.TestCase):
         contract = synthetic_contract()
         values = validate_inputs(contract, {"mileage": 123.5, "make": "UNSEEN_SYNTHETIC"})
         self.assertEqual(values, {"mileage": 123.5, "make": "UNSEEN_SYNTHETIC"})
+        zero_values = validate_inputs(contract, {"mileage": 0, "make": "SYNTHETIC_A"})
+        self.assertEqual(zero_values["mileage"], 0)
+        self.assertEqual(zero_values["make"], "SYNTHETIC_A")
 
     def test_rejects_missing_extra_and_wrong_types(self):
         contract = synthetic_contract()
@@ -74,6 +77,26 @@ class LocalCarPredictionApiTests(unittest.TestCase):
                 with self.assertRaises(PredictionApiError) as caught:
                     validate_inputs(contract, values)
                 self.assertEqual(caught.exception.code, code)
+
+    def test_car_numeric_domain_floors_reject_implausible_values_and_keep_zero(self):
+        contract = synthetic_contract()
+        for name in ("year", "odometer", "image_count"):
+            contract["input_features"].append({
+                "name": name, "data_type": "number", "required": True,
+                "nullable": False, "options": [], "unknown_category_behavior": None,
+            })
+        base = {"mileage": 12.5, "make": "SYNTHETIC_A", "year": 2018, "odometer": 0, "image_count": 0}
+        accepted = validate_inputs(contract, base)
+        self.assertEqual(accepted["odometer"], 0)
+        self.assertEqual(accepted["image_count"], 0)
+
+        for name, bad_value in (("year", 0), ("year", -1), ("odometer", -0.1), ("image_count", -1)):
+            with self.subTest(name=name, bad_value=bad_value):
+                payload = dict(base)
+                payload[name] = bad_value
+                with self.assertRaises(PredictionApiError) as caught:
+                    validate_inputs(contract, payload)
+                self.assertEqual(caught.exception.code, "invalid_domain_value")
 
     def test_unknown_categories_fail_closed_when_encoder_errors(self):
         contract = synthetic_contract()

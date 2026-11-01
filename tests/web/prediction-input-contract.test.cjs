@@ -1,5 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
+const { createHash } = require("node:crypto");
 require("../../web/input-contract.js");
 
 const sha = "a".repeat(64);
@@ -121,6 +122,33 @@ test("local inference form starts unselected and can safely restore entered valu
   assert.match(restored, /<option value="SYNTHETIC_Value A" selected>/);
 });
 
+test("display labels are escaped metadata and leave raw contract names intact", () => {
+  const contract = syntheticContract(2);
+  const html = globalThis.RegScopeInputContract.renderFields(contract, {
+    fieldUi: {
+      demo_field_1: { title: "<車輛欄位>", description: "待確認 & 暫譯", evidence: "PROPOSED" }
+    }
+  });
+  assert.match(html, /&lt;車輛欄位&gt; · demo_field_1/);
+  assert.match(html, /待確認 &amp; 暫譯/);
+  assert.match(html, /data-contract-field="demo_field_1"/);
+  assert.match(html, /name="demo_field_1"/);
+  assert.match(html, /單位未確認/);
+});
+
+test("unknown contract nullability stays distinct from verified API null behavior", () => {
+  const contract = syntheticContract(2);
+  contract.input_features[0].nullable = null;
+  const contractOnly = globalThis.RegScopeInputContract.renderFields(contract);
+  assert.match(contractOnly, /契約未確認是否可為 null/);
+  assert.doesNotMatch(contractOnly, /此 API 拒絕 null/);
+
+  const withRuntime = globalThis.RegScopeInputContract.renderFields(contract, {
+    runtimePolicy: { requiresCompleteFieldSet: true, acceptsNull: false }
+  });
+  assert.match(withRuntime, /契約：必填 · 契約未確認是否可為 null · 此 API 要求完整欄位；此 API 拒絕 null/);
+});
+
 test("verifies raw schema bytes against both API and pinned SHA-256", async () => {
   const contract = syntheticContract(2);
   const bytes = new TextEncoder().encode(JSON.stringify(contract));
@@ -136,6 +164,28 @@ test("verifies raw schema bytes against both API and pinned SHA-256", async () =
   assert.match(rejected.errors[0], /SHA-256/);
 });
 
+test("SHA-256 stays available without Web Crypto on direct HTTP origins", async () => {
+  const helper = globalThis.RegScopeInputContract;
+  const known = new TextEncoder().encode("abc");
+  assert.equal(await helper.sha256HexFallback(known), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+
+  const longer = new Uint8Array(4097).map((_, index) => index % 251);
+  assert.equal(await helper.sha256HexFallback(longer), createHash("sha256").update(longer).digest("hex"));
+
+  const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  Object.defineProperty(globalThis, "crypto", { configurable: true, value: undefined });
+  try {
+    assert.equal(await helper.sha256Hex(known), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    const contract = syntheticContract(2);
+    const bytes = new TextEncoder().encode(JSON.stringify(contract));
+    const digest = await helper.sha256Hex(bytes);
+    const result = await helper.verifySchemaBytes(bytes, digest, digest);
+    assert.equal(result.valid, true);
+  } finally {
+    Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
+  }
+});
+
 test("requires prediction response to match the pinned model version and run", () => {
   const expected = { caseId: "car", modelId: "model", modelVersion: "v1", runId: "run", configurationId: "config" };
   const payload = {
@@ -144,4 +194,50 @@ test("requires prediction response to match the pinned model version and run", (
   assert.deepEqual(globalThis.RegScopeInputContract.validateLocalPredictionResponse(payload, expected), { valid: true });
   assert.equal(globalThis.RegScopeInputContract.validateLocalPredictionResponse({ ...payload, model_version: "v2" }, expected).valid, false);
   assert.equal(globalThis.RegScopeInputContract.validateLocalPredictionResponse({ ...payload, prediction: Infinity }, expected).valid, false);
+});
+
+test("CAR numeric pre-submit checks match API domain floors without inventing upper limits", () => {
+  const validate = globalThis.RegScopeInputContract.validateCarNumericDomain;
+  assert.equal(validate("year", 0), "year 必須大於 0；目前未設定上限。");
+  assert.equal(validate("year", -1), "year 必須大於 0；目前未設定上限。");
+  assert.equal(validate("year", 2018), null);
+  assert.equal(validate("odometer", -0.1), "odometer 不可為負數；單位與合理範圍未確認。");
+  assert.equal(validate("odometer", 0), null);
+  assert.equal(validate("image_count", -1), "image_count 不可為負數；0 可接受。");
+  assert.equal(validate("image_count", 0), null);
+  assert.equal(validate("feature_count", -1), null);
+});
+
+test("renders CAR plausibility rules separately from schema and observed ranges", () => {
+  const contract = syntheticContract(3);
+  const fields = ["year", "odometer", "image_count"];
+  contract.input_features.forEach((field, index) => {
+    field.name = fields[index];
+    field.data_type = "number";
+    field.control_type = "number";
+    field.options = [];
+  });
+  contract.preprocessing_reference.raw_input_order = fields;
+  const html = globalThis.RegScopeInputContract.renderFields(contract, {
+    fieldUi: {
+      year: { title: "車輛年份", description: "API 合理性檢查：年份須大於 0，未設定上限；這不是契約或觀測範圍。", evidence: "PROPOSED" },
+      odometer: { title: "里程數", description: "API 合理性檢查：不可為負數；這不是契約界限。距離單位、上限及觀測範圍均未知。", evidence: "PROPOSED" },
+      image_count: { title: "圖片數量", description: "API 合理性檢查：不可為負數，0 可接受；這不是契約或觀測範圍。", evidence: "PROPOSED" }
+    }
+  });
+  assert.match(html, /API 合理性檢查：年份須大於 0，未設定上限；這不是契約或觀測範圍。/);
+  assert.match(html, /API 合理性檢查：不可為負數；這不是契約界限。距離單位、上限及觀測範圍均未知。/);
+  assert.match(html, /API 合理性檢查：不可為負數，0 可接受；這不是契約或觀測範圍。/);
+  assert.match(html, /契約未提供輸入上下限；觀測範圍未知/);
+});
+
+test("resolves a displayed unit only from a matching verified case target", () => {
+  const resolve = globalThis.RegScopeInputContract.resolveVerifiedTargetUnit;
+  const caseDocument = { case_id: "car", target: { raw_field_id: "price", unit: "USD" } };
+  const prediction = { case_id: "car", target: "price", unit: null };
+  assert.equal(resolve(caseDocument, prediction, "car"), "USD");
+  assert.equal(resolve(caseDocument, { ...prediction, case_id: "other" }, "car"), null);
+  assert.equal(resolve({ ...caseDocument, case_id: "other" }, prediction, "car"), null);
+  assert.equal(resolve(caseDocument, { ...prediction, target: "other_target" }, "car"), null);
+  assert.equal(resolve({ ...caseDocument, target: { raw_field_id: "price", unit: null } }, prediction, "car"), null);
 });

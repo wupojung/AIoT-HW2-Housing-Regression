@@ -14,7 +14,7 @@ import os
 import stat
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path, PurePosixPath
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 from urllib.parse import urlsplit
 
 import numpy as np
@@ -226,6 +226,12 @@ def validate_inputs(contract: Mapping[str, Any], inputs: Any) -> dict[str, Any]:
         if data_type == "number":
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
                 raise PredictionApiError("invalid_number", "數值欄位必須是有限的 JSON 數字。", fields=[name])
+            if name == "year" and value <= 0:
+                raise PredictionApiError("invalid_domain_value", "年份必須大於 0；目前未設定上限。", fields=[name])
+            if name == "odometer" and value < 0:
+                raise PredictionApiError("invalid_domain_value", "里程數不可為負數；單位與合理範圍未確認。", fields=[name])
+            if name == "image_count" and value < 0:
+                raise PredictionApiError("invalid_domain_value", "圖片數量不可為負數；0 可接受。", fields=[name])
             normalized[name] = value
             continue
         if data_type != "category" or not isinstance(value, str):
@@ -284,7 +290,43 @@ class CarPredictionRuntime:
         }
 
 
-def make_handler(runtime: CarPredictionRuntime, *, allowed_origin: str = LOCAL_WEB_ORIGIN):
+def _validate_allowed_origins(origins: Iterable[str]) -> frozenset[str]:
+    checked: set[str] = set()
+    for origin in origins:
+        if not isinstance(origin, str):
+            raise ValueError("allowed API origins must be exact origin strings")
+        parsed = urlsplit(origin)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.netloc
+            or parsed.path
+            or parsed.query
+            or parsed.fragment
+            or parsed.username
+            or parsed.password
+            or origin.endswith("/")
+            or "*" in origin
+        ):
+            raise ValueError("allowed API origins must be exact HTTP(S) origins without paths")
+        if parsed.scheme == "http" and parsed.hostname not in {"127.0.0.1", "localhost"}:
+            raise ValueError("non-loopback API origins must use HTTPS")
+        checked.add(origin)
+    if not checked:
+        raise ValueError("at least one exact API origin is required")
+    return frozenset(checked)
+
+
+def make_handler(
+    runtime: CarPredictionRuntime,
+    *,
+    allowed_origin: str = LOCAL_WEB_ORIGIN,
+    allowed_origins: Iterable[str] | None = None,
+):
+    origins = _validate_allowed_origins(allowed_origins if allowed_origins is not None else [allowed_origin])
+
+    def cors_origin(request_origin: str | None) -> str | None:
+        return request_origin if request_origin in origins else None
+
     class LocalPredictionHandler(BaseHTTPRequestHandler):
         server_version = "RegScopeLocalPrediction/1"
         sys_version = ""
@@ -293,7 +335,7 @@ def make_handler(runtime: CarPredictionRuntime, *, allowed_origin: str = LOCAL_W
             # Request bodies and URLs are deliberately not written to logs.
             return
 
-        def _send(self, status: int, document: Mapping[str, Any], *, cors: bool = False) -> None:
+        def _send(self, status: int, document: Mapping[str, Any], *, cors: str | None = None) -> None:
             payload = json.dumps(document, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -302,14 +344,14 @@ def make_handler(runtime: CarPredictionRuntime, *, allowed_origin: str = LOCAL_W
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Vary", "Origin")
             if cors:
-                self.send_header("Access-Control-Allow-Origin", allowed_origin)
+                self.send_header("Access-Control-Allow-Origin", cors)
                 self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
                 self.send_header("Access-Control-Allow-Headers", "Content-Type")
                 self.send_header("Access-Control-Max-Age", "300")
             self.end_headers()
             self.wfile.write(payload)
 
-        def _send_schema(self, *, cors: bool = False) -> None:
+        def _send_schema(self, *, cors: str | None = None) -> None:
             payload = runtime.schema_bytes
             digest = runtime.schema_sha256
             if not isinstance(payload, bytes) or not isinstance(digest, str):
@@ -323,21 +365,21 @@ def make_handler(runtime: CarPredictionRuntime, *, allowed_origin: str = LOCAL_W
             self.send_header("X-Schema-SHA256", digest)
             self.send_header("Vary", "Origin")
             if cors:
-                self.send_header("Access-Control-Allow-Origin", allowed_origin)
+                self.send_header("Access-Control-Allow-Origin", cors)
                 self.send_header("Access-Control-Expose-Headers", "X-Schema-SHA256")
             self.end_headers()
             self.wfile.write(payload)
 
         def _origin_allowed(self) -> bool:
             origin = self.headers.get("Origin")
-            return origin is None or origin == allowed_origin
+            return origin is None or origin in origins
 
         def do_OPTIONS(self) -> None:  # noqa: N802
-            if urlsplit(self.path).path != "/api/predict" or not self._origin_allowed():
+            if urlsplit(self.path).path != "/api/predict" or not self.headers.get("Origin") or not self._origin_allowed():
                 self._send(403, {"error": {"code": "origin_or_route_rejected", "message": "請求來源或路徑不允許。"}})
                 return
             self.send_response(204)
-            self.send_header("Access-Control-Allow-Origin", allowed_origin)
+            self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin"))
             self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Access-Control-Max-Age", "300")
@@ -355,9 +397,9 @@ def make_handler(runtime: CarPredictionRuntime, *, allowed_origin: str = LOCAL_W
             if route == "/health":
                 document = {"status": "ready", "case_id": runtime.contract["case_id"], "model_id": runtime.contract["model_id"], "model_version": runtime.contract["model_version"], "run_id": runtime.contract["source_evidence"]["run_id"], "configuration_id": runtime.contract["source_evidence"]["configuration_id"], "mode": "LOCAL_EXPERIMENT"}
             else:
-                self._send_schema(cors=self.headers.get("Origin") == allowed_origin)
+                self._send_schema(cors=cors_origin(self.headers.get("Origin")))
                 return
-            self._send(200, document, cors=self.headers.get("Origin") == allowed_origin)
+            self._send(200, document, cors=cors_origin(self.headers.get("Origin")))
 
         def do_POST(self) -> None:  # noqa: N802
             route = urlsplit(self.path).path
@@ -388,17 +430,23 @@ def make_handler(runtime: CarPredictionRuntime, *, allowed_origin: str = LOCAL_W
                     raise PredictionApiError("model_version_mismatch", "指定模型版本與本機載入模型不一致。", 409)
                 result = runtime.predict(request["inputs"])
             except PredictionApiError as exc:
-                self._send(exc.status, {"error": {"code": exc.code, "message": str(exc), "fields": exc.fields}}, cors=self.headers.get("Origin") == allowed_origin)
+                self._send(exc.status, {"error": {"code": exc.code, "message": str(exc), "fields": exc.fields}}, cors=cors_origin(self.headers.get("Origin")))
                 return
             except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
-                self._send(400, {"error": {"code": "invalid_json", "message": "請求不是有效 JSON，或包含重複欄位／非有限數字。"}}, cors=self.headers.get("Origin") == allowed_origin)
+                self._send(400, {"error": {"code": "invalid_json", "message": "請求不是有效 JSON，或包含重複欄位／非有限數字。"}}, cors=cors_origin(self.headers.get("Origin")))
                 return
-            self._send(200, result, cors=self.headers.get("Origin") == allowed_origin)
+            self._send(200, result, cors=cors_origin(self.headers.get("Origin")))
 
     return LocalPredictionHandler
 
 
-def create_local_server(runtime: CarPredictionRuntime, port: int = 8767) -> HTTPServer:
+def create_local_server(
+    runtime: CarPredictionRuntime,
+    port: int = 8767,
+    *,
+    allowed_origins: Iterable[str] | None = None,
+) -> HTTPServer:
     if not isinstance(port, int) or not 0 <= port <= 65535:
         raise ValueError("local API port must be between 0 and 65535")
-    return HTTPServer(("127.0.0.1", port), make_handler(runtime))
+    handler = make_handler(runtime, allowed_origins=allowed_origins) if allowed_origins is not None else make_handler(runtime)
+    return HTTPServer(("127.0.0.1", port), handler)
