@@ -103,7 +103,7 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn('const LOCAL_CAR_API_BASE = LOCAL_CAR_SAME_ORIGIN_API_MODE ? ""', source)
         self.assertIn('fetch(`${LOCAL_CAR_API_BASE}/api/schema`', source)
         self.assertIn('fetch(`${LOCAL_CAR_API_BASE}/api/predict`', source)
-        self.assertEqual(source.count('credentials: LOCAL_CAR_SAME_ORIGIN_API_MODE ? "same-origin" : "omit"'), 2)
+        self.assertEqual(source.count('credentials: LOCAL_CAR_SAME_ORIGIN_API_MODE ? "same-origin" : "omit"'), 3)
         self.assertIn('location.origin === "http://127.0.0.1:8766"', source)
         self.assertIn("const LOCAL_CAR_PHASE6_PREVIEW = LOCAL_CAR_LOOPBACK_PREVIEW", source)
         self.assertIn("if (LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage)", source)
@@ -179,6 +179,24 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn("未換算或校正", renderer)
         self.assertIn("合理價格範圍與預測可靠性仍未驗證", renderer)
         self.assertNotIn("單位／幣別未確認", renderer)
+
+    def test_local_csv_batch_uses_contract_headers_and_authenticated_same_origin_api(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        helper = (ROOT / "web" / "input-contract.js").read_text(encoding="utf-8")
+        self.assertIn("/api/predict-batch`,", source)
+        self.assertIn('"Content-Type": "text/csv; charset=utf-8"', source)
+        self.assertIn("credentials: LOCAL_CAR_SAME_ORIGIN_API_MODE ? \"same-origin\" : \"omit\"", source)
+        self.assertIn("localCarSchema.input_features.map((field) => field.name)", source)
+        self.assertIn("LOCAL_CAR_BATCH_MAX_BYTES = 1024 * 1024", source)
+        self.assertIn('data-action="car-local-batch-template"', source)
+        self.assertIn('data-action="car-local-batch-download"', source)
+        self.assertIn('data-action="car-local-batch-run"', source)
+        self.assertIn("validateLocalBatchPredictionResponse", source)
+        self.assertIn('row.warning_code === "negative_prediction"', source)
+        self.assertIn("模型輸出為負值；已原樣保留，請審慎解讀。", source)
+        self.assertIn("function batchResultsCsv(columns, rows)", helper)
+        self.assertIn("function inspectCsvHeader(text, expectedNames)", helper)
+        self.assertIn("formula ? `'${text}` : text", helper)
 
 
 if __name__ == "__main__":

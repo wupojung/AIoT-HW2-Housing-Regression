@@ -21,6 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
 from urllib.parse import parse_qs, urlsplit
 
+from housing_regression.car_batch_prediction import MAX_BATCH_REQUEST_BYTES, MAX_BATCH_RESPONSE_BYTES
 from housing_regression.local_car_prediction_api import MAX_REQUEST_BYTES
 
 _ALLOWED_STATIC = frozenset({
@@ -34,7 +35,7 @@ _ALLOWED_STATIC = frozenset({
     "data/fixtures/car-single-large.json",
     "data/fixtures/car-batch-preview.json",
 })
-_API_PATHS = frozenset({"/api/health", "/api/schema", "/api/predict"})
+_API_PATHS = frozenset({"/api/health", "/api/schema", "/api/predict", "/api/predict-batch"})
 _PUBLIC_CASE_IDS = frozenset({"ames-full-model-exploration", "used-car-price-optimized"})
 _PUBLIC_MIME = {"application/json": ".json", "image/svg+xml": ".svg", "image/png": ".png"}
 _MAX_RELEASE_FILE_BYTES = 8 * 1024 * 1024
@@ -325,18 +326,21 @@ def make_preview_handler(
             forwarded_origin = local_origin
             headers = {"Origin": forwarded_origin, "Accept": "application/json"}
             if self.command == "POST":
-                if self.headers.get_content_type() != "application/json":
+                batch = request.path == "/api/predict-batch"
+                expected_content_type = "text/csv" if batch else "application/json"
+                if self.headers.get_content_type() != expected_content_type:
                     self._error(415, "content_type_required")
                     return
-                headers["Content-Type"] = "application/json"
+                headers["Content-Type"] = expected_content_type
                 headers["Content-Length"] = str(len(body))
             connection = HTTPConnection("127.0.0.1", api_port, timeout=20)
             try:
                 upstream_path = "/health" if request.path == "/api/health" else request.path
                 connection.request(self.command, upstream_path, body=body if self.command == "POST" else None, headers=headers)
                 response = connection.getresponse()
-                payload = response.read(MAX_REQUEST_BYTES + 8192)
-                if len(payload) > MAX_REQUEST_BYTES + 8192:
+                response_limit = MAX_BATCH_RESPONSE_BYTES if request.path == "/api/predict-batch" else MAX_REQUEST_BYTES + 8192
+                payload = response.read(response_limit + 1)
+                if len(payload) > response_limit:
                     self._error(502, "upstream_response_too_large")
                     return
                 self.send_response(response.status)
@@ -373,11 +377,13 @@ def make_preview_handler(
             if not self._authorized():
                 self._unauthorized()
                 return
-            if self.path != "/api/predict":
+            route = urlsplit(self.path).path
+            if route not in {"/api/predict", "/api/predict-batch"} or urlsplit(self.path).query:
                 self._error(404, "not_found")
                 return
             length_text = self.headers.get("Content-Length", "")
-            if not length_text.isdigit() or not 1 <= int(length_text) <= MAX_REQUEST_BYTES:
+            max_bytes = MAX_BATCH_REQUEST_BYTES if route == "/api/predict-batch" else MAX_REQUEST_BYTES
+            if not length_text.isdigit() or not 1 <= int(length_text) <= max_bytes:
                 self._error(413, "invalid_request_size")
                 return
             if self.headers.get("Transfer-Encoding"):
@@ -387,7 +393,7 @@ def make_preview_handler(
             self._proxy_api(body=body)
 
         def do_OPTIONS(self) -> None:  # noqa: N802
-            if self.path != "/api/predict" or self._origin_for_host() is None:
+            if urlsplit(self.path).path not in {"/api/predict", "/api/predict-batch"} or urlsplit(self.path).query or self._origin_for_host() is None:
                 self._error(403, "origin_or_route_rejected")
                 return
             if not self._authorized():

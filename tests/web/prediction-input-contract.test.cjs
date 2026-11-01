@@ -241,3 +241,84 @@ test("resolves a displayed unit only from a matching verified case target", () =
   assert.equal(resolve(caseDocument, { ...prediction, target: "other_target" }, "car"), null);
   assert.equal(resolve({ ...caseDocument, target: { raw_field_id: "price", unit: null } }, prediction, "car"), null);
 });
+
+test("checks CSV headers with BOM, quoted commas, reordering and exact field identity", () => {
+  const inspect = globalThis.RegScopeInputContract.inspectCsvHeader;
+  assert.deepEqual(inspect("\uFEFF\"make\",mileage\r\n", ["mileage", "make"]), {
+    valid: true, headers: ["make", "mileage"], missing: [], extra: [], error: null
+  });
+  assert.equal(inspect("mileage,make,make\n", ["mileage", "make"]).error, "CSV 標題列有重複欄位。");
+  assert.deepEqual(inspect("mileage,unexpected\n", ["mileage", "make"]).extra, ["unexpected"]);
+  assert.equal(inspect('mileage,"unterminated', ["mileage"]).valid, false);
+});
+
+test("batch response identity is pinned and CSV export escapes spreadsheet formulas", () => {
+  const helper = globalThis.RegScopeInputContract;
+  const expected = { caseId: "car", modelId: "model", modelVersion: "v1", runId: "run", configurationId: "cfg", schemaSha256: sha, inputNames: ["trim"] };
+  const response = {
+    case_id: "car", model_id: "model", model_version: "v1", run_id: "run", configuration_id: "cfg", schema_sha256: sha,
+    columns: ["trim", "row_number", "prediction", "prediction_unit", "prediction_status", "warning_code", "error_code", "error_message"], total_rows: 1, valid_rows: 1, error_rows: 0,
+    rows: [{ row_number: 2, input: { trim: "\t=1+1" }, prediction: -2, status: "SUCCESS", warning_code: "negative_prediction", error_code: null, error_message: null }]
+  };
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse(response, expected), { valid: true });
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, columns: ["other", ...response.columns.slice(1)] }, expected), { valid: false });
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, rows: [{ ...response.rows[0], row_number: 1 }] }, expected), { valid: false });
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, rows: [{ ...response.rows[0], warning_code: null }] }, expected), { valid: false });
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, rows: [response.rows[0], { row_number: 4, prediction: null, status: "ERROR", warning_code: null, error_code: "invalid_number", error_message: "bad" }], total_rows: 2, valid_rows: 1, error_rows: 1 }, expected), { valid: true });
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, rows: [null] }, expected), { valid: false });
+  assert.equal(helper.validateLocalBatchPredictionResponse({ ...response, model_version: "other" }, expected).valid, false);
+  assert.equal(helper.validateLocalBatchPredictionResponse({ ...response, schema_sha256: "0".repeat(64) }, expected).valid, false);
+  const csv = helper.batchResultsCsv(response.columns, response.rows);
+  assert.match(csv, /"'\t=1\+1"/);
+  assert.match(csv, /,2,-2,,"SUCCESS","negative_prediction"/);
+  assert.match(helper.batchResultsCsv(["x"], [{ input: { x: "@SUM(A1:A2)" } }]), /"'@SUM/);
+});
+
+test("CSV export preserves finite numbers as numeric cells and nulls as empty cells", () => {
+  const csv = globalThis.RegScopeInputContract.batchResultsCsv(
+    ["positive", "negative", "negative_zero", "formula", "tab_formula", "null_value", "undefined_value"],
+    [{ input: {
+      positive: 123.5,
+      negative: -45.25,
+      negative_zero: -0,
+      formula: "=SUM(A1:A2)",
+      tab_formula: "\t=1+1",
+      null_value: null
+    } }]
+  );
+  assert.equal(csv, '"positive","negative","negative_zero","formula","tab_formula","null_value","undefined_value"\r\n123.5,-45.25,-0,"\'=SUM(A1:A2)","\'\t=1+1",,\r\n');
+});
+
+test("case-package target unit is exported only for matching CAR case, target and model identity", () => {
+  const helper = globalThis.RegScopeInputContract;
+  const expected = { caseId: "car", modelId: "model", modelVersion: "v1", runId: "run", configurationId: "cfg", targetField: "price" };
+  const caseDocument = { case_id: "car", target: { raw_field_id: "price", unit: "USD" } };
+  const contract = { case_id: "car", model_id: "model", model_version: "v1", source_evidence: { run_id: "run", configuration_id: "cfg" } };
+  const batch = { case_id: "car", model_id: "model", model_version: "v1", run_id: "run", configuration_id: "cfg", schema_sha256: sha, columns: ["price", "prediction_unit"], rows: [{ input: { price: 1 }, prediction_unit: null }] };
+  const output = helper.addVerifiedCasePackageTargetUnit(batch.columns, batch.rows, caseDocument, batch, contract, expected);
+  assert.deepEqual(output.columns, ["price", "prediction_unit", "case_package_target_unit"]);
+  assert.equal(output.rows[0].case_package_target_unit, "USD");
+  assert.equal(output.rows[0].prediction_unit, null);
+  for (const [changedCase, changedBatch, changedContract, changedExpected] of [
+    [{ ...caseDocument, case_id: "other" }, batch, contract, expected],
+    [caseDocument, { ...batch, case_id: "other" }, contract, expected],
+    [caseDocument, { ...batch, model_version: "other" }, contract, expected],
+    [caseDocument, { ...batch, model_id: "other" }, contract, expected],
+    [caseDocument, { ...batch, run_id: "other" }, contract, expected],
+    [caseDocument, { ...batch, configuration_id: "other" }, contract, expected],
+    [caseDocument, batch, { ...contract, model_id: "other" }, expected],
+    [caseDocument, batch, { ...contract, source_evidence: { run_id: "other", configuration_id: "cfg" } }, expected],
+    [{ ...caseDocument, target: { ...caseDocument.target, raw_field_id: "other" } }, batch, contract, expected],
+    [{ ...caseDocument, target: { ...caseDocument.target, unit: null } }, batch, contract, expected]
+  ]) {
+    const unavailable = helper.addVerifiedCasePackageTargetUnit(batch.columns, batch.rows, changedCase, changedBatch, changedContract, changedExpected);
+    assert.deepEqual(unavailable, { columns: batch.columns, rows: batch.rows });
+  }
+  const collision = helper.addVerifiedCasePackageTargetUnit(
+    ["case_package_target_unit"], batch.rows, caseDocument, batch, contract, expected
+  );
+  assert.deepEqual(collision, { columns: ["case_package_target_unit"], rows: batch.rows });
+  const enriched = helper.addVerifiedCasePackageTargetUnit(batch.columns, batch.rows, caseDocument, batch, contract, expected);
+  const csv = helper.batchResultsCsv(enriched.columns, enriched.rows);
+  assert.match(csv, /prediction_unit","case_package_target_unit"\r\n[\s\S]*?,,"USD"\r\n/);
+});

@@ -191,6 +191,54 @@ class PreviewGatewayTests(unittest.TestCase):
                 server.shutdown(); server.server_close(); thread.join(timeout=2)
                 api.shutdown(); api.server_close(); api_thread.join(timeout=2)
 
+    def test_authenticated_gateway_proxies_batch_csv_without_weakening_single_route(self):
+        origin = "http://127.0.0.1:19041"
+        token = "synthetic-auth-token-" + "z" * 40
+        auth = "Basic " + base64.b64encode(f"regscope:{token}".encode()).decode("ascii")
+        api = create_local_server(runtime(), 0, allowed_origins=[origin])
+        api_thread = threading.Thread(target=api.serve_forever, daemon=True)
+        api_thread.start()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_test_site(root)
+            server = create_preview_server(root, api_port=api.server_address[1], web_port=19041, auth_token=token)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                csv_body = "mileage,make\r\n10,MOCK_A\r\nbad,MOCK_A\r\n"
+                status, _, body = self.request(server.server_address[1], "POST", "/api/predict-batch",
+                                               host="127.0.0.1:19041", origin=origin, body=csv_body,
+                                               authorization=auth, content_type="text/csv; charset=utf-8")
+                self.assertEqual(status, 200)
+                document = json.loads(body)
+                self.assertEqual(document["case_id"], "synthetic-car")
+                self.assertEqual((document["valid_rows"], document["error_rows"]), (1, 1))
+
+                unauthenticated = self.request(server.server_address[1], "POST", "/api/predict-batch",
+                                               host="127.0.0.1:19041", origin=origin, body=csv_body,
+                                               content_type="text/csv")
+                self.assertEqual(unauthenticated[0], 401)
+                rejected_origin = self.request(server.server_address[1], "POST", "/api/predict-batch",
+                                               host="127.0.0.1:19041", origin="http://attacker.invalid", body=csv_body,
+                                               authorization=auth, content_type="text/csv")
+                self.assertEqual(rejected_origin[0], 403)
+                rejected_content_type = self.request(server.server_address[1], "POST", "/api/predict-batch",
+                                                     host="127.0.0.1:19041", origin=origin, body=csv_body,
+                                                     authorization=auth, content_type="application/json")
+                self.assertEqual(rejected_content_type[0], 415)
+
+                # Existing single-row JSON endpoint remains unchanged.
+                single = {"case_id": "synthetic-car", "model_id": "synthetic-model", "model_version": "synthetic-v1",
+                          "inputs": {"mileage": 10, "make": "MOCK_A"}}
+                status, _, body = self.request(server.server_address[1], "POST", "/api/predict", host="127.0.0.1:19041",
+                                               origin=origin, body=json.dumps(single), authorization=auth,
+                                               content_type="application/json")
+                self.assertEqual(status, 200)
+                self.assertEqual(json.loads(body)["prediction"], 20.0)
+            finally:
+                server.shutdown(); server.server_close(); thread.join(timeout=2)
+                api.shutdown(); api.server_close(); api_thread.join(timeout=2)
+
     def test_api_unavailable_fails_closed(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -230,7 +278,7 @@ class PreviewGatewayTests(unittest.TestCase):
                 create_preview_server(root, api_port=19032, web_port=19031)
 
     @staticmethod
-    def request(port, method, path, *, host, origin=None, body=None, authorization=None):
+    def request(port, method, path, *, host, origin=None, body=None, authorization=None, content_type="application/json"):
         connection = HTTPConnection("127.0.0.1", port, timeout=3)
         headers = {"Host": host}
         if origin is not None:
@@ -238,7 +286,7 @@ class PreviewGatewayTests(unittest.TestCase):
         if authorization is not None:
             headers["Authorization"] = authorization
         if body is not None:
-            headers["Content-Type"] = "application/json"
+            headers["Content-Type"] = content_type
         connection.request(method, path, body=body, headers=headers)
         response = connection.getresponse()
         result = (response.status, dict(response.getheaders()), response.read())
