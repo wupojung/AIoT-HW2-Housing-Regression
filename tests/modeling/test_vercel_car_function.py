@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from housing_regression import vercel_car_function
+from housing_regression.prediction_input_schema import PredictionInputSchemaError
 
 
 class VercelCarFunctionGateTests(unittest.TestCase):
@@ -27,6 +28,11 @@ class VercelCarFunctionGateTests(unittest.TestCase):
                 with self.assertRaises(PermissionError):
                     vercel_car_function._runtime()
         load_model.assert_not_called()
+
+    def test_oversized_encoded_asset_fails_before_archive_decode(self):
+        with patch.dict(os.environ, {"REGSCOPE_P6_CAR_RUN03_ASSETS_ZIP_B64": "A" * (64 * 1024 + 1)}, clear=False):
+            with self.assertRaises(PredictionInputSchemaError):
+                vercel_car_function._decode_assets()
 
     def test_schema_get_is_the_only_public_asset_style_endpoint(self):
         from pathlib import Path

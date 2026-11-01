@@ -44,6 +44,8 @@ def _decode_assets() -> tuple[bytes, bytes, bytes]:
     encoded = os.environ.get("REGSCOPE_P6_CAR_RUN03_ASSETS_ZIP_B64")
     if not encoded:
         raise PredictionInputSchemaError("trusted Preview model assets are unavailable")
+    if len(encoded) > 64 * 1024:
+        raise PredictionInputSchemaError("trusted Preview asset archive exceeds the environment limit")
     try:
         archive_bytes = base64.b64decode(encoded, validate=True)
         with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
