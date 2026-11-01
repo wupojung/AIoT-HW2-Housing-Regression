@@ -28,8 +28,13 @@ const ADDITIONAL_FEATURE_TYPES = [
   ["other", "其他／洩漏代理 (Other / Leakage Proxy)", "#a6afb8"]
 ];
 const PHASE6_QUERY = new URLSearchParams(location.search);
-const LOCAL_CAR_TAILNET_PREVIEW = location.protocol === "https:"
-  && location.hostname.endsWith(".ts.net")
+function isTailscaleIPv4Host(hostname) {
+  const octets = hostname.split(".").map((part) => /^(0|[1-9]\d{0,2})$/.test(part) ? Number(part) : NaN);
+  return octets.length === 4 && octets.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)
+    && octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127;
+}
+const LOCAL_CAR_TAILNET_PREVIEW = location.protocol === "http:"
+  && isTailscaleIPv4Host(location.hostname)
   && PHASE6_QUERY.get("car-tailnet-preview") === "1";
 const LOCAL_CAR_LOOPBACK_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname)
   && PHASE6_QUERY.get("car-phase6-prototype") === "1";

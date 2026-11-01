@@ -94,8 +94,9 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
 
     def test_tailnet_preview_is_https_opt_in_and_uses_same_origin_api(self):
         source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
-        self.assertIn('location.protocol === "https:"', source)
-        self.assertIn('location.hostname.endsWith(".ts.net")', source)
+        self.assertIn('location.protocol === "http:"', source)
+        self.assertIn("isTailscaleIPv4Host(location.hostname)", source)
+        self.assertIn("octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127", source)
         self.assertIn('PHASE6_QUERY.get("car-tailnet-preview") === "1"', source)
         self.assertIn('const LOCAL_CAR_SAME_ORIGIN_API_MODE = PHASE6_QUERY.get("car-local-inference") === "1"', source)
         self.assertIn('const LOCAL_CAR_API_BASE = LOCAL_CAR_SAME_ORIGIN_API_MODE ? ""', source)

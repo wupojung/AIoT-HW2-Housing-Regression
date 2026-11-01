@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import base64
 import json
 import socket
 import tempfile
@@ -11,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
-from housing_regression.car_phase6_preview_server import create_preview_server, validate_tailnet_origin
+from housing_regression.car_phase6_preview_server import create_preview_server, validate_preview_bind_host
 from housing_regression.local_car_prediction_api import CarPredictionRuntime, create_local_server
 
 
@@ -82,11 +83,25 @@ def write_test_site(root: Path):
 
 
 class PreviewGatewayTests(unittest.TestCase):
-    def test_tailnet_origin_requires_one_exact_https_ts_net_origin(self):
-        self.assertEqual(validate_tailnet_origin("https://car-node.example.ts.net"), "https://car-node.example.ts.net")
-        for value in ("http://car-node.example.ts.net", "https://*.ts.net", "https://car-node.ts.net/path", "https://example.com"):
+    def test_bind_allowlist_and_missing_tailscale_ip_fail_closed(self):
+        self.assertEqual(validate_preview_bind_host("127.0.0.1"), "127.0.0.1")
+        self.assertEqual(validate_preview_bind_host("100.64.0.1", {"100.64.0.1"}), "100.64.0.1")
+        for value, addresses in (
+            ("100.64.0.1", set()),
+            ("192.168.1.20", {"192.168.1.20"}),
+            ("0.0.0.0", {"0.0.0.0"}),
+            ("::", {"::"}),
+        ):
             with self.subTest(value=value), self.assertRaises(ValueError):
-                validate_tailnet_origin(value)
+                validate_preview_bind_host(value, addresses)
+
+    def test_non_loopback_bind_requires_authentication_even_when_ip_is_present(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_test_site(root)
+            with self.assertRaisesRegex(ValueError, "requires application authentication"):
+                create_preview_server(root, api_port=19042, web_port=19041,
+                                      bind_host="100.64.0.1", tailscale_ipv4_addresses={"100.64.0.1"})
 
     def test_loopback_host_and_static_allowlist(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -126,45 +141,52 @@ class PreviewGatewayTests(unittest.TestCase):
             finally:
                 server.shutdown(); server.server_close(); thread.join(timeout=2)
 
-    def test_tailnet_host_is_exact_and_api_is_same_origin_proxy(self):
-        tailnet = "https://car-node.example.ts.net"
-        api = create_local_server(runtime(), 0, allowed_origins=["http://127.0.0.1:19011", tailnet])
+    def test_authenticated_gateway_restricts_host_origin_and_api_routes(self):
+        origin = "http://127.0.0.1:19011"
+        token = "synthetic-auth-token-" + "x" * 40
+        auth = "Basic " + base64.b64encode(f"regscope:{token}".encode()).decode("ascii")
+        api = create_local_server(runtime(), 0, allowed_origins=[origin])
         api_thread = threading.Thread(target=api.serve_forever, daemon=True)
         api_thread.start()
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             write_test_site(root)
-            server = create_preview_server(root, api_port=api.server_address[1], web_port=19011, tailnet_origin=tailnet)
+            server = create_preview_server(root, api_port=api.server_address[1], web_port=19011, auth_token=token)
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
             try:
                 self.assertEqual(server.server_address[0], "127.0.0.1")
-                # Normal Tailnet browsing gets the package-backed app and all
-                # phases; only the explicit query activates the CAR P6 API UI.
-                self.assertEqual(self.request(server.server_address[1], "GET", "/", host="car-node.example.ts.net")[0], 200)
-                self.assertEqual(self.request(server.server_address[1], "GET", "/app.js", host="car-node.example.ts.net")[0], 200)
-                self.assertEqual(self.request(server.server_address[1], "GET", "/?car-tailnet-preview=1&car-local-inference=1", host="car-node.example.ts.net")[0], 200)
-                self.assertEqual(self.request(server.server_address[1], "GET", "/?car-tailnet-preview=1&car-local-inference=1", host="127.0.0.1:19011")[0], 403)
-                self.assertEqual(self.request(server.server_address[1], "GET", "/data/fixtures/car-single-small.json", host="car-node.example.ts.net")[0], 404)
-                status, headers, body = self.request(server.server_address[1], "GET", "/api/schema", host="car-node.example.ts.net", origin=tailnet)
+                unauthenticated = self.request(server.server_address[1], "GET", "/", host="127.0.0.1:19011")
+                self.assertEqual(unauthenticated[0], 401)
+                self.assertIn("Basic", unauthenticated[1].get("WWW-Authenticate", ""))
+                self.assertEqual(self.request(server.server_address[1], "GET", "/", host="127.0.0.1:19011", authorization="Basic wrong")[0], 401)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/", host="127.0.0.1:19011", authorization=auth)[0], 200)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/app.js", host="attacker.invalid", authorization=auth)[0], 403)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/?car-tailnet-preview=1&car-local-inference=1", host="127.0.0.1:19011", authorization=auth)[0], 403)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/data/fixtures/car-single-small.json", host="127.0.0.1:19011", authorization=auth)[0], 404)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/api/schema", host="127.0.0.1:19011", origin=origin)[0], 401)
+                status, headers, body = self.request(server.server_address[1], "GET", "/api/schema", host="127.0.0.1:19011", origin=origin, authorization=auth)
                 self.assertEqual(status, 200)
                 self.assertEqual(headers.get("X-Schema-SHA256"), hashlib.sha256(body).hexdigest())
                 self.assertEqual(json.loads(body)["case_id"], "synthetic-car")
-                status, _, health_body = self.request(server.server_address[1], "GET", "/api/health", host="car-node.example.ts.net", origin=tailnet)
+                status, _, health_body = self.request(server.server_address[1], "GET", "/api/health", host="127.0.0.1:19011", origin=origin, authorization=auth)
                 self.assertEqual(status, 200)
                 self.assertEqual(json.loads(health_body)["status"], "ready")
                 payload = {"case_id": "synthetic-car", "model_id": "synthetic-model", "model_version": "synthetic-v1",
                            "inputs": {"mileage": 42, "make": "MOCK_A"}}
-                status, _, body = self.request(server.server_address[1], "POST", "/api/predict", host="car-node.example.ts.net", origin=tailnet, body=json.dumps(payload))
+                status, _, body = self.request(server.server_address[1], "POST", "/api/predict", host="127.0.0.1:19011", origin="http://attacker.invalid", body=json.dumps(payload), authorization=auth)
+                self.assertEqual(status, 403)
+                status, _, _ = self.request(server.server_address[1], "POST", "/api/predict", host="127.0.0.1:19011", body=json.dumps(payload), authorization=auth)
+                self.assertEqual(status, 403)
+                status, _, body = self.request(server.server_address[1], "POST", "/api/predict", host="127.0.0.1:19011", origin=origin, body=json.dumps(payload), authorization=auth)
                 self.assertEqual(status, 200)
                 self.assertEqual(json.loads(body)["prediction"], 52.0)
                 payload["model_version"] = "wrong-version"
-                status, _, body = self.request(server.server_address[1], "POST", "/api/predict", host="car-node.example.ts.net", origin=tailnet, body=json.dumps(payload))
+                status, _, body = self.request(server.server_address[1], "POST", "/api/predict", host="127.0.0.1:19011", origin=origin, body=json.dumps(payload), authorization=auth)
                 self.assertEqual(status, 409)
                 self.assertEqual(json.loads(body)["error"]["code"], "model_version_mismatch")
-                self.assertEqual(self.request(server.server_address[1], "GET", "/api/schema", host="attacker.example.ts.net", origin=tailnet)[0], 403)
-                self.assertEqual(self.request(server.server_address[1], "GET", "/api/schema", host="car-node.example.ts.net", origin="https://attacker.invalid")[0], 403)
-                self.assertEqual(self.request(server.server_address[1], "GET", "/api/private-model", host="car-node.example.ts.net", origin=tailnet)[0], 404)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/api/schema", host="127.0.0.1:19011", origin="http://attacker.invalid", authorization=auth)[0], 403)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/api/private-model", host="127.0.0.1:19011", origin=origin, authorization=auth)[0], 404)
             finally:
                 server.shutdown(); server.server_close(); thread.join(timeout=2)
                 api.shutdown(); api.server_close(); api_thread.join(timeout=2)
@@ -208,11 +230,13 @@ class PreviewGatewayTests(unittest.TestCase):
                 create_preview_server(root, api_port=19032, web_port=19031)
 
     @staticmethod
-    def request(port, method, path, *, host, origin=None, body=None):
+    def request(port, method, path, *, host, origin=None, body=None, authorization=None):
         connection = HTTPConnection("127.0.0.1", port, timeout=3)
         headers = {"Host": host}
         if origin is not None:
             headers["Origin"] = origin
+        if authorization is not None:
+            headers["Authorization"] = authorization
         if body is not None:
             headers["Content-Type"] = "application/json"
         connection.request(method, path, body=body, headers=headers)

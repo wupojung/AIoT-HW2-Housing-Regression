@@ -1,13 +1,16 @@
-"""Loopback-only static Phase 6 preview and same-origin API gateway.
+"""Allowlisted Phase 6 web preview and same-origin API gateway.
 
-The optional Tailnet origin is an exact local operator setting. Tailscale Serve
-must terminate HTTPS and proxy only to this loopback listener; this process
-never binds to a network interface other than 127.0.0.1.
+The web listener defaults to loopback and may optionally bind to one verified
+Tailscale IPv4 with application authentication. The prediction API remains
+loopback-only.
 """
 
 from __future__ import annotations
 
 import hashlib
+import base64
+import hmac
+import ipaddress
 import json
 import mimetypes
 import os
@@ -32,39 +35,25 @@ _ALLOWED_STATIC = frozenset({
     "data/fixtures/car-batch-preview.json",
 })
 _API_PATHS = frozenset({"/api/health", "/api/schema", "/api/predict"})
-_HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$", re.IGNORECASE)
 _PUBLIC_CASE_IDS = frozenset({"ames-full-model-exploration", "used-car-price-optimized"})
 _PUBLIC_MIME = {"application/json": ".json", "image/svg+xml": ".svg", "image/png": ".png"}
 _MAX_RELEASE_FILE_BYTES = 8 * 1024 * 1024
+_TAILSCALE_CGNAT = ipaddress.ip_network("100.64.0.0/10")
 
 
-def validate_tailnet_origin(origin: str | None) -> str | None:
-    """Require one explicit HTTPS *.ts.net origin; reject paths/wildcards."""
-    if origin is None:
-        return None
-    parsed = urlsplit(origin)
+def validate_preview_bind_host(bind_host: str, tailscale_ipv4_addresses=()) -> str:
+    """Allow loopback or an explicitly verified Tailscale CGNAT IPv4 only."""
     try:
-        port = parsed.port
+        address = ipaddress.ip_address(bind_host)
     except ValueError as exc:
-        raise ValueError("Tailnet preview origin has an invalid port") from exc
-    hostname = (parsed.hostname or "").casefold()
-    labels = hostname.split(".")
-    if (
-        parsed.scheme != "https"
-        or not parsed.netloc
-        or parsed.path
-        or parsed.query
-        or parsed.fragment
-        or parsed.username
-        or parsed.password
-        or port not in {None, 443}
-        or parsed.netloc.casefold() not in {hostname, f"{hostname}:443"}
-        or len(labels) < 3
-        or labels[-2:] != ["ts", "net"]
-        or any(not _HOST_LABEL.fullmatch(label) for label in labels)
-    ):
-        raise ValueError("Tailnet preview origin must be one exact https://<device>.<tailnet>.ts.net origin")
-    return f"https://{hostname}"
+        raise ValueError("preview bind host must be an IPv4 address") from exc
+    if not isinstance(address, ipaddress.IPv4Address) or str(address) != bind_host:
+        raise ValueError("preview bind host must be a canonical IPv4 address")
+    if address == ipaddress.IPv4Address("127.0.0.1"):
+        return bind_host
+    if address not in _TAILSCALE_CGNAT or bind_host not in set(tailscale_ipv4_addresses):
+        raise ValueError("non-loopback preview bind must be a verified local Tailscale IPv4 address")
+    return bind_host
 
 
 def _safe_relative_ref(ref: object) -> bool:
@@ -171,16 +160,19 @@ def make_preview_handler(
     *,
     api_port: int,
     web_port: int,
-    tailnet_origin: str | None = None,
+    bind_host: str = "127.0.0.1",
+    auth_token: str | None = None,
 ):
     root = web_root.resolve(strict=True)
-    tailnet_origin = validate_tailnet_origin(tailnet_origin)
+    if auth_token is not None and len(auth_token) < 32:
+        raise ValueError("preview authentication token must contain at least 32 characters")
+    if bind_host != "127.0.0.1" and not auth_token:
+        raise ValueError("non-loopback preview bind requires application authentication")
     release_assets, _, _ = _load_public_release_assets(root)
     data_root = (root / "data").resolve(strict=True)
     local_origin = f"http://127.0.0.1:{web_port}"
-    allowed_origins = {local_origin}
-    if tailnet_origin:
-        allowed_origins.add(tailnet_origin)
+    bound_origin = f"http://{bind_host}:{web_port}"
+    expected_netloc = f"{bind_host}:{web_port}".casefold()
 
     class Phase6PreviewHandler(BaseHTTPRequestHandler):
         server_version = "RegScopePhase6Preview/1"
@@ -192,10 +184,22 @@ def make_preview_handler(
 
         def _origin_for_host(self) -> str | None:
             host = self.headers.get("Host", "").casefold()
-            for origin in allowed_origins:
-                if urlsplit(origin).netloc.casefold() == host:
-                    return origin
-            return None
+            return bound_origin if host == expected_netloc else None
+
+        def _authorized(self) -> bool:
+            if auth_token is None:
+                return True
+            expected = "Basic " + base64.b64encode(f"regscope:{auth_token}".encode("utf-8")).decode("ascii")
+            supplied = self.headers.get("Authorization", "")
+            return hmac.compare_digest(supplied, expected)
+
+        def _unauthorized(self) -> None:
+            self.send_response(401)
+            self.send_header("WWW-Authenticate", 'Basic realm="RegScope local preview", charset="UTF-8"')
+            self.send_header("Content-Length", "0")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
 
         def _error(self, status: int, code: str) -> None:
             payload = ("{\"error\":{\"code\":\"" + code + "\"}}").encode("ascii")
@@ -216,7 +220,7 @@ def make_preview_handler(
             relative = request.path.lstrip("/")
             if relative in _ALLOWED_STATIC and relative.startswith("data/fixtures/"):
                 if (
-                    self._origin_for_host() != local_origin
+                    bound_origin != local_origin or self._origin_for_host() != local_origin
                     or query != {"car-phase6-prototype": ["1"], "car-local-inference": ["1"]}
                 ):
                     self._error(404, "not_found")
@@ -276,7 +280,7 @@ def make_preview_handler(
                 if query == valid_queries[0] and requested_origin != local_origin:
                     self._error(403, "origin_rejected")
                     return
-                if query == valid_queries[1] and requested_origin != tailnet_origin:
+                if query == valid_queries[1] and (bind_host == "127.0.0.1" or requested_origin != bound_origin):
                     self._error(403, "origin_rejected")
                     return
             elif query:
@@ -313,10 +317,12 @@ def make_preview_handler(
                 return
             origin = self.headers.get("Origin")
             expected_origin = self._origin_for_host()
-            if expected_origin is None or origin is not None and origin != expected_origin:
+            if expected_origin is None or origin is not None and origin != expected_origin or self.command == "POST" and origin != expected_origin:
                 self._error(403, "origin_rejected")
                 return
-            forwarded_origin = origin or expected_origin
+            # The backend only accepts loopback Origins. This gateway has
+            # already authenticated the client and checked its exact Origin.
+            forwarded_origin = local_origin
             headers = {"Origin": forwarded_origin, "Accept": "application/json"}
             if self.command == "POST":
                 if self.headers.get_content_type() != "application/json":
@@ -351,6 +357,8 @@ def make_preview_handler(
         def do_GET(self) -> None:  # noqa: N802
             if self._origin_for_host() is None:
                 self._error(403, "host_rejected")
+            elif not self._authorized():
+                self._unauthorized()
             elif urlsplit(self.path).path.startswith("/api/"):
                 self._proxy_api()
             elif self.path == "/" or urlsplit(self.path).path.lstrip("/") in _ALLOWED_STATIC or urlsplit(self.path).path.startswith("/data/"):
@@ -361,6 +369,9 @@ def make_preview_handler(
         def do_POST(self) -> None:  # noqa: N802
             if self._origin_for_host() is None:
                 self._error(403, "host_rejected")
+                return
+            if not self._authorized():
+                self._unauthorized()
                 return
             if self.path != "/api/predict":
                 self._error(404, "not_found")
@@ -378,6 +389,9 @@ def make_preview_handler(
         def do_OPTIONS(self) -> None:  # noqa: N802
             if self.path != "/api/predict" or self._origin_for_host() is None:
                 self._error(403, "origin_or_route_rejected")
+                return
+            if not self._authorized():
+                self._unauthorized()
                 return
             origin = self.headers.get("Origin")
             if origin != self._origin_for_host():
@@ -398,11 +412,14 @@ def create_preview_server(
     *,
     api_port: int,
     web_port: int,
-    tailnet_origin: str | None = None,
+    bind_host: str = "127.0.0.1",
+    tailscale_ipv4_addresses=(),
+    auth_token: str | None = None,
 ) -> ThreadingHTTPServer:
     if not 1 <= web_port <= 65535 or not 1 <= api_port <= 65535 or web_port == api_port:
         raise ValueError("preview and API ports must be distinct valid TCP ports")
-    handler = make_preview_handler(web_root, api_port=api_port, web_port=web_port, tailnet_origin=tailnet_origin)
-    server = ThreadingHTTPServer(("127.0.0.1", web_port), handler)
+    bind_host = validate_preview_bind_host(bind_host, tailscale_ipv4_addresses)
+    handler = make_preview_handler(web_root, api_port=api_port, web_port=web_port, bind_host=bind_host, auth_token=auth_token)
+    server = ThreadingHTTPServer((bind_host, web_port), handler)
     server.daemon_threads = True
     return server
