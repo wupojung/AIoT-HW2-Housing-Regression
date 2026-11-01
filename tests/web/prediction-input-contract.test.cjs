@@ -207,3 +207,26 @@ test("CAR numeric pre-submit checks match API domain floors without inventing up
   assert.equal(validate("image_count", 0), null);
   assert.equal(validate("feature_count", -1), null);
 });
+
+test("renders CAR plausibility rules separately from schema and observed ranges", () => {
+  const contract = syntheticContract(3);
+  const fields = ["year", "odometer", "image_count"];
+  contract.input_features.forEach((field, index) => {
+    field.name = fields[index];
+    field.data_type = "number";
+    field.control_type = "number";
+    field.options = [];
+  });
+  contract.preprocessing_reference.raw_input_order = fields;
+  const html = globalThis.RegScopeInputContract.renderFields(contract, {
+    fieldUi: {
+      year: { title: "車輛年份", description: "API 合理性檢查：年份須大於 0，未設定上限；這不是契約或觀測範圍。", evidence: "PROPOSED" },
+      odometer: { title: "里程數", description: "API 合理性檢查：不可為負數；這不是契約界限。距離單位、上限及觀測範圍均未知。", evidence: "PROPOSED" },
+      image_count: { title: "圖片數量", description: "API 合理性檢查：不可為負數，0 可接受；這不是契約或觀測範圍。", evidence: "PROPOSED" }
+    }
+  });
+  assert.match(html, /API 合理性檢查：年份須大於 0，未設定上限；這不是契約或觀測範圍。/);
+  assert.match(html, /API 合理性檢查：不可為負數；這不是契約界限。距離單位、上限及觀測範圍均未知。/);
+  assert.match(html, /API 合理性檢查：不可為負數，0 可接受；這不是契約或觀測範圍。/);
+  assert.match(html, /契約未提供輸入上下限；觀測範圍未知/);
+});

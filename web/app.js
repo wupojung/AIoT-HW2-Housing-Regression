@@ -278,15 +278,15 @@ const CAR_PHASE6_FIELD_UI = Object.freeze({
   ext_color: { title: "外觀顏色", description: "此為依欄位名稱提出的暫譯；與 paint_color 的資料定義差異未確認。", evidence: "PROPOSED" },
   feature_count: { title: "feature_count", description: "欄位的實際計數對象與中文語意待資料字典確認。", evidence: "UNKNOWN" },
   fuel: { title: "燃料類型", description: "車輛燃料類型；此為依欄位名稱提出的暫譯，各選項解釋待資料字典確認。", evidence: "PROPOSED" },
-  image_count: { title: "圖片數量", description: "欄位名稱可能指向圖片計數；是否代表刊登圖片及其統計方式待確認。", evidence: "PROPOSED" },
+  image_count: { title: "圖片數量", description: "API 合理性檢查：不可為負數，0 可接受；這不是契約或觀測範圍。欄位代表的計數定義仍待確認。", evidence: "PROPOSED" },
   int_color: { title: "內裝顏色", description: "此為依欄位名稱提出的暫譯；類別選項的正式說明未確認。", evidence: "PROPOSED" },
-  odometer: { title: "里程數", description: "里程欄位；距離單位、合理範圍及觀測範圍均未確認。", evidence: "PROPOSED" },
+  odometer: { title: "里程數", description: "API 合理性檢查：不可為負數；這不是契約界限。距離單位、上限及觀測範圍均未知。", evidence: "PROPOSED" },
   paint_color: { title: "paint_color", description: "欄位與 ext_color 的定義差異及中文語意待資料字典確認。", evidence: "UNKNOWN" },
   title_status: { title: "title_status", description: "車輛權利／登記分類的精確意義待資料字典確認。", evidence: "UNKNOWN" },
   transmission: { title: "變速箱類型", description: "此為依欄位名稱提出的暫譯；類別選項的正式說明未確認。", evidence: "PROPOSED" },
   trim: { title: "trim", description: "車型等級／配備版本的精確語意待資料字典確認。", evidence: "UNKNOWN" },
   type: { title: "車輛類型", description: "此為依欄位名稱提出的暫譯；各類別定義待資料字典確認。", evidence: "PROPOSED" },
-  year: { title: "車輛年份", description: "此為依欄位名稱提出的暫譯；年份範圍未由輸入契約確認。", evidence: "PROPOSED" }
+  year: { title: "車輛年份", description: "API 合理性檢查：年份須大於 0，未設定上限；這不是契約或觀測範圍。", evidence: "PROPOSED" }
 });
 const explorationArtifactPromises = new Map();
 function safePackageRef(ref) {
