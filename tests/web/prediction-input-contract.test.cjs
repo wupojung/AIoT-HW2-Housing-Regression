@@ -136,6 +136,19 @@ test("display labels are escaped metadata and leave raw contract names intact", 
   assert.match(html, /單位未確認/);
 });
 
+test("unknown contract nullability stays distinct from verified API null behavior", () => {
+  const contract = syntheticContract(2);
+  contract.input_features[0].nullable = null;
+  const contractOnly = globalThis.RegScopeInputContract.renderFields(contract);
+  assert.match(contractOnly, /契約未確認是否可為 null/);
+  assert.doesNotMatch(contractOnly, /此 API 拒絕 null/);
+
+  const withRuntime = globalThis.RegScopeInputContract.renderFields(contract, {
+    runtimePolicy: { requiresCompleteFieldSet: true, acceptsNull: false }
+  });
+  assert.match(withRuntime, /契約：必填 · 契約未確認是否可為 null · 此 API 要求完整欄位；此 API 拒絕 null/);
+});
+
 test("verifies raw schema bytes against both API and pinned SHA-256", async () => {
   const contract = syntheticContract(2);
   const bytes = new TextEncoder().encode(JSON.stringify(contract));

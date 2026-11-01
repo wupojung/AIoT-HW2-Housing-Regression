@@ -179,8 +179,18 @@
       const description = ui.description || "欄位中文語意待來源確認。";
       const evidence = ui.evidence === "PROPOSED" ? "建議翻譯" : "語意待確認";
       const required = field.required && field.nullable !== true ? "required" : "";
-      const nullable = field.nullable === true ? "可留空" : field.nullable === false ? "不可留空" : "缺值規則未知";
+      const nullable = field.nullable === true
+        ? "契約允許 null"
+        : field.nullable === false
+          ? "契約不允許 null"
+          : "契約未確認是否可為 null";
       const requirement = field.required === true ? "必填" : field.required === false ? "選填" : "必填狀態未知";
+      const runtimePolicy = renderOptions.runtimePolicy
+        ? [
+          renderOptions.runtimePolicy.requiresCompleteFieldSet === true ? "此 API 要求完整欄位" : null,
+          renderOptions.runtimePolicy.acceptsNull === false ? "此 API 拒絕 null" : renderOptions.runtimePolicy.acceptsNull === true ? "此 API 接受 null" : null
+        ].filter(Boolean).join("；")
+        : "";
       const limits = field.data_type === "number"
         ? `${field.unit ? `單位：${escapeHTML(field.unit)}` : "單位未確認"} · ${field.minimum !== null || field.maximum !== null ? `契約範圍 ${field.minimum ?? "−∞"}–${field.maximum ?? "+∞"}` : "契約未提供輸入上下限；觀測範圍未知"}`
         : field.data_type === "category"
@@ -207,7 +217,7 @@
         const value = renderOptions.values?.[field.name];
         control = `<input id="${id}" name="${escapeHTML(field.name)}" type="${field.control_type === "number" ? "number" : "text"}" value="${value === undefined ? "" : escapeHTML(value)}" ${required} ${min} ${max} aria-label="${escapeHTML(field.name)}">`;
       }
-      return `<article class="p6-feature-card" data-contract-field="${escapeHTML(field.name)}"><label class="p6-field-label" for="${id}"><strong>${escapeHTML(displayName)}${displayName === field.name ? "" : ` · ${escapeHTML(field.name)}`}</strong><span>${escapeHTML(field.data_type)} · ${requirement} · ${nullable} · ${evidence}</span><span>${escapeHTML(description)}</span><span>${limits}</span></label>${control}</article>`;
+      return `<article class="p6-feature-card" data-contract-field="${escapeHTML(field.name)}"><label class="p6-field-label" for="${id}"><strong>${escapeHTML(displayName)}${displayName === field.name ? "" : ` · ${escapeHTML(field.name)}`}</strong><span>${escapeHTML(field.data_type)} · 契約：${requirement} · ${nullable}${runtimePolicy ? ` · ${escapeHTML(runtimePolicy)}` : ""} · ${evidence}</span><span>${escapeHTML(description)}</span><span>${limits}</span></label>${control}</article>`;
     }).join("");
     return `<div class="p6-feature-grid">${controls}</div>`;
   }

@@ -147,6 +147,7 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn('evidence: "UNKNOWN"', mapping)
         self.assertIn('evidence: "PROPOSED"', mapping)
         self.assertIn("fieldUi: CAR_PHASE6_FIELD_UI", source)
+        self.assertIn("runtimePolicy: { requiresCompleteFieldSet: true, acceptsNull: false }", source)
         self.assertIn('values[field.name] = String(syntheticCategory.value ?? "")', source)
         self.assertNotIn('values[field.name] = "0"', source)
         self.assertIn("Number(prediction.prediction) < 0", source)
