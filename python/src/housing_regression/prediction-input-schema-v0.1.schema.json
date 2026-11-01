@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://regscope.example/schemas/prediction-input-schema-v0.1.schema.json",
+  "title": "RegScope Prediction Input Schema v0.1",
+  "description": "Per-model fitted-pipeline input metadata. Encoder categories are not an API allowlist.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "model_id",
+    "model_version",
+    "model_sha256",
+    "preprocessing_reference",
+    "input_feature_count",
+    "input_features",
+    "selected_encoded_features",
+    "raw_to_encoded_mapping",
+    "source_evidence",
+    "api_readiness",
+    "category_values_publication_review",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "case_id": {"type": "string", "minLength": 1},
+    "model_id": {"type": "string", "minLength": 1},
+    "model_version": {"type": ["string", "null"]},
+    "model_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "preprocessing_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bundle_type", "raw_input_order", "training_feature_count", "unused_training_features", "encoded_feature_count", "selected_encoded_feature_count", "transform_order"],
+      "properties": {
+        "bundle_type": {"type": "string", "minLength": 1},
+        "raw_input_order": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "training_feature_count": {"type": "integer", "minimum": 1},
+        "unused_training_features": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "encoded_feature_count": {"type": "integer", "minimum": 1},
+        "selected_encoded_feature_count": {"type": "integer", "minimum": 1},
+        "transform_order": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+      }
+    },
+    "input_feature_count": {"type": "integer", "minimum": 1},
+    "input_features": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "data_type", "required", "nullable", "control_type", "control_type_evidence", "options", "unit", "minimum", "maximum", "evidence_status", "unknown_category_behavior", "api_allowlist_status", "blank_policy", "missing_policy", "missing_marker", "missing_evidence_status", "encoded_features"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "data_type": {"enum": ["number", "category"]},
+          "required": {"type": "boolean"},
+          "nullable": {"type": ["boolean", "null"]},
+          "control_type": {"enum": ["number", "text", "select"]},
+          "control_type_evidence": {"enum": ["PROPOSED_BY_FITTED_CATEGORY_CARDINALITY", "PROPOSED_FROM_NUMERIC_TRANSFORMER"]},
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["value", "source", "evidence_status", "infrequent", "api_allowlisted"],
+              "properties": {
+                "value": {"type": ["string", "number", "integer", "boolean", "null"]},
+                "source": {"const": "FITTED_ENCODER_CATEGORY"},
+                "evidence_status": {"const": "VERIFIED"},
+                "infrequent": {"type": "boolean"},
+                "api_allowlisted": {"const": false}
+              }
+            }
+          },
+          "unit": {"type": ["string", "null"]},
+          "minimum": {"type": ["number", "null"]},
+          "maximum": {"type": ["number", "null"]},
+          "evidence_status": {"enum": ["VERIFIED", "UNKNOWN"]},
+          "unknown_category_behavior": {"type": ["string", "null"]},
+          "api_allowlist_status": {"enum": ["NOT_ESTABLISHED", "NOT_APPLICABLE"]},
+          "encoder_metadata": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "minimum_frequency", "maximum_categories", "infrequent_category_count"],
+            "properties": {
+              "name": {"const": "OneHotEncoder"},
+              "minimum_frequency": {"type": ["integer", "number", "string", "null"]},
+              "maximum_categories": {"type": ["integer", "null"]},
+              "infrequent_category_count": {"type": "integer", "minimum": 0}
+            }
+          },
+          "blank_policy": {"enum": ["TRAINED_CATEGORY_VALUE", "UNKNOWN_OR_UNKNOWN_CATEGORY", "REJECT_OR_NORMALIZE_BEFORE_TRANSFORM"]},
+          "missing_policy": {"type": "string"},
+          "missing_marker": {"type": ["string", "null"]},
+          "missing_evidence_status": {"enum": ["VERIFIED", "UNKNOWN"]},
+          "encoded_features": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+        },
+        "allOf": [
+          {"if": {"properties": {"data_type": {"const": "number"}}}, "then": {"properties": {"options": {"maxItems": 0}, "encoder_metadata": false, "unknown_category_behavior": {"const": null}, "api_allowlist_status": {"const": "NOT_APPLICABLE"}}}},
+          {"if": {"properties": {"data_type": {"const": "category"}}}, "then": {"required": ["encoder_metadata"], "properties": {"control_type": {"enum": ["text", "select"]}, "api_allowlist_status": {"const": "NOT_ESTABLISHED"}}}}
+        ]
+      }
+    },
+    "selected_encoded_features": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["index", "name", "source_feature"],
+        "properties": {
+          "index": {"type": "integer", "minimum": 0},
+          "name": {"type": "string", "minLength": 1},
+          "source_feature": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "raw_to_encoded_mapping": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["raw_name", "encoded_names"],
+        "properties": {
+          "raw_name": {"type": "string", "minLength": 1},
+          "encoded_names": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+        }
+      }
+    },
+    "source_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "configuration_id", "source_data_sha256", "config_sha256", "code_sha256", "evidence_status", "manifest_verification"],
+      "properties": {
+        "run_id": {"type": ["string", "null"]},
+        "configuration_id": {"type": ["string", "null"]},
+        "source_data_sha256": {"type": ["string", "null"]},
+        "config_sha256": {"type": ["string", "null"]},
+        "code_sha256": {"type": ["string", "null"]},
+        "evidence_status": {"enum": ["VERIFIED", "PARTIAL"]},
+        "manifest_verification": {"enum": ["MODEL_RUN_SOURCE_CONFIG_AND_CODE_BOUND", "PARTIAL_MANIFEST_METADATA", "NOT_PROVIDED"]}
+      }
+    },
+    "api_readiness": {"const": "BLOCKED_NOT_AN_API_ALLOWLIST_OR_ENDPOINT"},
+    "category_values_publication_review": {"const": "REQUIRED_BEFORE_PUBLICATION"},
+    "status": {"enum": ["VERIFIED", "PARTIAL", "MOCK"]}
+  }
+}

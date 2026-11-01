@@ -1,7 +1,24 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "web",
+  "functions": {
+    "api/**/*.py": {
+      "excludeFiles": "{docs/**,tests/**,web/**,local/**,**/*.csv,**/*.joblib,**/*.pkl,**/*.parquet}"
+    }
+  },
   "routes": [
+    {
+      "src": "^/api/schema/?$",
+      "dest": "/api/schema.py"
+    },
+    {
+      "src": "^/api/predict/?$",
+      "dest": "/api/predict.py"
+    },
+    {
+      "src": "^/api/predict-batch/?$",
+      "dest": "/api/predict-batch.py"
+    },
     {
       "src": "^/data/releases/(?!ames-full-model-exploration-20261028-02/cases/ames-full-model-exploration(?:/|$)|run03-r1/cases/used-car-price-optimized(?:/|$)).*",
       "status": 404

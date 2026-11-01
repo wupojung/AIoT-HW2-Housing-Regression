@@ -36,11 +36,15 @@ function isTailscaleIPv4Host(hostname) {
 const LOCAL_CAR_TAILNET_PREVIEW = location.protocol === "http:"
   && isTailscaleIPv4Host(location.hostname)
   && PHASE6_QUERY.get("car-tailnet-preview") === "1";
+const LOCAL_CAR_VERCEL_PREVIEW_MODE = location.protocol === "https:"
+  && location.hostname.endsWith(".vercel.app")
+  && PHASE6_QUERY.get("car-online-preview") === "1";
 const LOCAL_CAR_LOOPBACK_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname)
   && PHASE6_QUERY.get("car-phase6-prototype") === "1";
 const LOCAL_CAR_PHASE6_PREVIEW = LOCAL_CAR_LOOPBACK_PREVIEW;
 const LOCAL_CAR_SAME_ORIGIN_API_MODE = PHASE6_QUERY.get("car-local-inference") === "1"
-  && (LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_LOOPBACK_PREVIEW && location.origin === "http://127.0.0.1:8788");
+  && (LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_LOOPBACK_PREVIEW && location.origin === "http://127.0.0.1:8788")
+  || LOCAL_CAR_VERCEL_PREVIEW_MODE;
 const LOCAL_CAR_PREDICTION_API_MODE = LOCAL_CAR_SAME_ORIGIN_API_MODE
   || LOCAL_CAR_LOOPBACK_PREVIEW && location.origin === "http://127.0.0.1:8766"
     && PHASE6_QUERY.get("car-local-inference") === "1";
@@ -250,6 +254,7 @@ if (LOCAL_CAR_PHASE6_PREVIEW) {
   };
   state.caseId = CAR_CASE_ID;
 }
+if (LOCAL_CAR_VERCEL_PREVIEW_MODE) state.caseId = CAR_CASE_ID;
 let carUiPrototypeFixtures = null;
 let carUiPrototypeFixtureError = null;
 let carUiPrototypeFixtureLoading = false;
@@ -1887,7 +1892,7 @@ function renderCarPhase6LocalInference() {
       ? `API 回應 unit=${esc(prediction.unit.trim())}`
       : "API 回應未提供單位";
   const result = localCarPredictionPending
-    ? `<div class="p6-prototype-state" role="status"><span class="p6-prototype-state-icon" aria-hidden="true">…</span><div><strong>正在執行本機模型推論</strong><p>${LOCAL_CAR_TAILNET_PREVIEW ? "輸入經 Tailnet HTTPS 傳至此裝置的 loopback API；不會公開到網際網路。" : "輸入只送至本機 loopback API。"}</p></div></div>`
+    ? `<div class="p6-prototype-state" role="status"><span class="p6-prototype-state-icon" aria-hidden="true">…</span><div><strong>正在執行模型推論</strong><p>${LOCAL_CAR_VERCEL_PREVIEW_MODE ? "輸入只傳送至目前受保護的同源 Preview API。" : LOCAL_CAR_TAILNET_PREVIEW ? "輸入經 Tailnet HTTPS 傳至此裝置的 loopback API；不會公開到網際網路。" : "輸入只送至本機 loopback API。"}</p></div></div>`
     : prediction
       ? `<div class="p6-local-prediction-result" role="status"><span>模型原始數值輸出 · ${esc(prediction.target)}</span><strong>${esc(Number(prediction.prediction).toString())}</strong><small>${packageTargetUnit ? `顯示單位 ${esc(packageTargetUnit)} 取自已驗證 Case Package target.unit；${apiUnitText}。數值未換算或校正。` : `目標單位未知；${apiUnitText}。數值未換算或校正。`}</small></div>`
       : `<div class="p6-prototype-state" role="status"><span class="p6-prototype-state-icon" aria-hidden="true">—</span><div><strong>尚未執行預測</strong><p>此結果面板不會填入示意價格或預設預測值。</p></div></div>`;
@@ -1905,11 +1910,14 @@ function renderCarPhase6LocalInference() {
   const tabs = `<div class="mode-switch p6-prototype-tabs" role="group" aria-label="輸入模式"><button type="button" data-phase6-mode="manual" aria-pressed="${mode === "manual"}">單筆輸入</button><button type="button" data-phase6-mode="csv" aria-pressed="${mode === "csv"}">CSV 批次輸入</button></div>`;
   const manualPanel = `<div class="two-panel phase6-panels p6-prototype-panels"><section class="card"><div class="card-head"><div><p class="eyebrow">${contract.input_feature_count} RAW INPUTS · CONTRACT-DRIVEN</p><h2>車輛輸入欄位</h2></div>${badge("VERIFIED CONTRACT")}</div><div class="card-body"><p class="stage-note">${contract.input_feature_count} 個欄位均為必填；API 要求完整欄位且拒絕 JSON null。前處理器的補值設定不代表 API 接受空值。數值單位、輸入界限與觀測範圍未由目前契約確認。類別選項取自本機已擬合 Encoder，不等同公開 API allowlist。</p>${localCarSyntheticInput ? '<p class="state-panel" role="status">目前為明確合成測試輸入：類別值取自已擬合 Encoder；數值是未驗證範圍的展示用提案，不代表觀測資料或建議車況。</p>' : ""}<form id="car-local-prediction-form" novalidate>${fields}<div class="button-row"><button type="button" class="button" data-action="car-local-fill-synthetic" ${localCarPredictionPending ? "disabled" : ""}>載入合成測試輸入</button><button type="button" class="button primary" data-action="car-local-predict" ${localCarPredictionPending || !localCarApiReady ? "disabled" : ""}>${localCarPredictionPending ? "推論中…" : "執行本機預測"}</button></div></form></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">LOCAL MODEL RESULT</p><h2>推論結果</h2></div>${badge(prediction ? "LOCAL RESULT" : localCarPredictionPending ? "RUNNING" : "UNAVAILABLE")}</div><div class="card-body">${result}${error}${plausibilityWarning}<dl class="data-row"><dt>研究品質限制</dt><dd>Run 03 的 Development CV 表現低於 Dummy Baseline，且 R² 為負值；單筆推論結果不是模型準確度證據。</dd></dl><p class="stage-note">API 原樣回傳模型數值；不會讀取 Holdout 或重新訓練。單筆推論不是準確度或價格建議。</p><details class="disclosure"><summary>模型與 Run 身分</summary><p>Model ID ${esc(contract.model_id)} · Model SHA-256 ${esc(contract.model_sha256)}</p><p>Run ${esc(contract.source_evidence.run_id)} · Config ${esc(contract.source_evidence.configuration_id)}</p></details></div></section></div>`;
   const content = mode === "csv" ? `<div class="two-panel phase6-panels p6-prototype-panels">${renderLocalCarBatchPanels(contract)}</div>` : manualPanel;
-  return `<div class="page p6-prototype-page"><div class="fixture-banner"><span><strong>${LOCAL_CAR_TAILNET_PREVIEW ? "TAILNET-ONLY LOCAL EXPERIMENT" : "LOCAL EXPERIMENT"} · 真實模型推論</strong> · 僅限本機／授權 Tailnet 預覽；不提供公開 API。</span>${badge("LOCAL")}</div>${pageHeading("PHASE 06 / LOCAL INFERENCE", "模型預測與結果", "本機使用已核對的 CAR Run 03 Final Fit。推論成功不代表模型準確度已驗證。", "PARTIAL")}<section class="card p6-prototype-context"><div class="card-body"><div><span class="eyebrow">目前案例</span><h2>${esc(CAR_DISPLAY_NAME)}</h2><code>${esc(contract.case_id)}</code></div><div><span class="eyebrow">輸入契約</span><strong>${contract.input_feature_count} 個必要原始欄位</strong><span>SHA-256 已由本機 API 驗證 · ${esc(contract.model_version)}</span></div><div><span class="eyebrow">模型服務</span><strong>本機 API 已就緒</strong><span>${esc(contract.source_evidence.run_id)} · ${esc(contract.source_evidence.configuration_id)}</span></div></div></section>${tabs}${content}${footerNav([5,"模型評估"],null)}</div>`;
+  const previewLabel = LOCAL_CAR_VERCEL_PREVIEW_MODE ? "PROTECTED VERCEL PREVIEW" : LOCAL_CAR_TAILNET_PREVIEW ? "TAILNET-ONLY LOCAL EXPERIMENT" : "LOCAL EXPERIMENT";
+  const previewNote = LOCAL_CAR_VERCEL_PREVIEW_MODE ? "僅限受保護 Preview；Production 未啟用。" : "僅限本機／授權 Tailnet 預覽；不提供公開 API。";
+  const serviceLabel = LOCAL_CAR_VERCEL_PREVIEW_MODE ? "受保護 Preview API 已就緒" : "本機 API 已就緒";
+  return `<div class="page p6-prototype-page"><div class="fixture-banner"><span><strong>${previewLabel} · 真實模型推論</strong> · ${previewNote}</span>${badge(LOCAL_CAR_VERCEL_PREVIEW_MODE ? "PREVIEW" : "LOCAL")}</div>${pageHeading("PHASE 06 / PROTECTED PREVIEW INFERENCE", "模型預測與結果", "本頁使用已核對的 CAR Run 03 Final Fit。推論成功不代表模型準確度已驗證。", "PARTIAL")}<section class="card p6-prototype-context"><div class="card-body"><div><span class="eyebrow">目前案例</span><h2>${esc(CAR_DISPLAY_NAME)}</h2><code>${esc(contract.case_id)}</code></div><div><span class="eyebrow">輸入契約</span><strong>${contract.input_feature_count} 個必要原始欄位</strong><span>SHA-256 已驗證 · ${esc(contract.model_version)}</span></div><div><span class="eyebrow">模型服務</span><strong>${serviceLabel}</strong><span>${esc(contract.source_evidence.run_id)} · ${esc(contract.source_evidence.configuration_id)}</span></div></div></section>${tabs}${content}${footerNav([5,"模型評估"],null)}</div>`;
 }
 function renderPhase6() {
   if (LOCAL_CAR_PHASE6_PREVIEW && state.caseId === CAR_CASE_ID) return renderCarPhase6UiPrototype();
-  if (LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage) return renderCarPhase6LocalInference();
+  if ((LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_VERCEL_PREVIEW_MODE) && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage) return renderCarPhase6LocalInference();
   const c = caseData();
   if (c.status === "PLANNED") return `<div class="page">${banner(c)}${pageHeading("PHASE 06 / MODEL PREDICTION LAB", "房價預測實驗室", "單筆推論需要通過核准的模型、輸入 Schema 與已部署 API。", "PLANNED")}${plannedPanel(c.inference.message)}${footerNav([5,"模型評估"],null)}</div>`;
   const mock = c.mockInference;
@@ -1994,7 +2002,7 @@ function render() {
   else if (phase && caseData().packageMode === "reference") app.innerHTML = renderReferencePackagePhase(phase);
   else if (phase && caseData().packageMode === "exploration") app.innerHTML = renderExplorationPackagePhase(phase);
   else if (phase && caseData().packageMode === "car"
-    && !(phase === 6 && LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE
+    && !(phase === 6 && (LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_VERCEL_PREVIEW_MODE) && LOCAL_CAR_PREDICTION_API_MODE
       && state.caseId === CAR_CASE_ID && carPackage)) app.innerHTML = renderCarPackagePhase(phase);
   else if (phase === 1) app.innerHTML = renderPhase1();
   else if (phase === 2) app.innerHTML = renderPhase2();
