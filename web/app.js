@@ -274,7 +274,8 @@ const LOCAL_CAR_MODEL = Object.freeze({
   modelId: "used-car-price-optimized-car-mutual-information-8b59f9573a65",
   modelVersion: "83caf79b21b8",
   runId: "used-car-e2e-20261028-03",
-  configurationId: "car-mutual-information-8b59f9573a65"
+  configurationId: "car-mutual-information-8b59f9573a65",
+  targetField: "price"
 });
 const CAR_PHASE6_FIELD_UI = Object.freeze({
   condition: { title: "condition", description: "欄位語意與各類別定義待資料字典確認。", evidence: "UNKNOWN" },
@@ -1758,9 +1759,17 @@ async function submitLocalCarBatchPrediction() {
 }
 function downloadLocalCarBatchResults() {
   if (!localCarBatchResult) return;
+  const output = window.RegScopeInputContract.addVerifiedCasePackageTargetUnit(
+    localCarBatchResult.columns,
+    localCarBatchResult.rows,
+    carPackage?.caseDoc,
+    localCarBatchResult,
+    localCarSchema,
+    LOCAL_CAR_MODEL
+  );
   downloadLocalCsv(
     "car-prediction-results.csv",
-    window.RegScopeInputContract.batchResultsCsv(localCarBatchResult.columns, localCarBatchResult.rows)
+    window.RegScopeInputContract.batchResultsCsv(output.columns, output.rows)
   );
 }
 function renderCarPhase6UiPrototype() {
@@ -1855,7 +1864,7 @@ function renderLocalCarBatchPanels(contract) {
     return `<tr><td>${row.row_number}</td><td>${statusLabel}</td><td>${row.prediction === null ? "—" : esc(String(row.prediction))}${negativeWarning}</td><td>${row.error_code ? esc(row.error_code) : "—"}</td><td><details><summary>輸入明細</summary>${inputs}${row.error_message ? `<p>${esc(row.error_message)}</p>` : ""}</details></td></tr>`;
   }).join("") : "";
   const resultPanel = result
-    ? `<div class="p6-prototype-counts"><article><span>總筆數</span><strong>${result.total_rows}</strong></article><article><span>有效筆數</span><strong>${result.valid_rows}</strong></article><article><span>錯誤筆數</span><strong>${result.error_rows}</strong></article></div><div class="table-scroll p6-local-batch-table"><table><thead><tr><th>列</th><th>狀態</th><th>模型原始輸出</th><th>錯誤代碼</th><th>資料列</th></tr></thead><tbody>${resultRows}</tbody></table></div><details class="disclosure"><summary>Run／Model／Schema 身分</summary><p>${esc(result.case_id)} · ${esc(result.model_id)} · ${esc(result.model_version)}</p><p>${esc(result.run_id)} · ${esc(result.configuration_id)} · Schema SHA-256 ${esc(result.schema_sha256)}</p></details><p class="stage-note">CSV 下載會對試算表公式前綴加上文字跳脫；畫面及記憶體中的 API 原始值不會修改。</p><button type="button" class="button" data-action="car-local-batch-download">下載預測結果 CSV</button>`
+    ? `<div class="p6-prototype-counts"><article><span>總筆數</span><strong>${result.total_rows}</strong></article><article><span>有效筆數</span><strong>${result.valid_rows}</strong></article><article><span>錯誤筆數</span><strong>${result.error_rows}</strong></article></div><div class="table-scroll p6-local-batch-table"><table><thead><tr><th>列</th><th>狀態</th><th>模型原始輸出</th><th>錯誤代碼</th><th>資料列</th></tr></thead><tbody>${resultRows}</tbody></table></div><details class="disclosure"><summary>Run／Model／Schema 身分</summary><p>${esc(result.case_id)} · ${esc(result.model_id)} · ${esc(result.model_version)}</p><p>${esc(result.run_id)} · ${esc(result.configuration_id)} · Schema SHA-256 ${esc(result.schema_sha256)}</p></details><p class="stage-note">CSV 下載會對文字公式前綴加上文字跳脫，有限數值保持數值格式；prediction_unit 保留 API 原值。若身份相符，另列 case_package_target_unit，來源為已驗證 Case Package。</p><button type="button" class="button" data-action="car-local-batch-download">下載預測結果 CSV</button>`
     : `<div class="p6-prototype-state" role="status"><div><strong>${localCarBatchPending ? "正在逐列執行本機模型" : "尚未執行批次預測"}</strong><p>${localCarBatchPending ? "資料僅在記憶體處理；請勿關閉此頁。" : "尚未產生或顯示預測結果。"}</p></div></div>`;
   return `<section class="card"><div class="card-head"><div><p class="eyebrow">CSV BATCH · LOCAL INFERENCE</p><h2>批次輸入</h2></div>${badge(localCarBatchPending ? "RUNNING" : result ? "LOCAL RESULT" : "LOCAL")}</div><div class="card-body"><ol class="p6-prototype-steps"><li><strong>1. 下載契約欄位範本</strong><button type="button" class="button" data-action="car-local-batch-template">下載 CSV 範本</button></li><li><strong>2. 選擇並檢查 CSV</strong><label class="p6-local-batch-upload"><span class="p6-demo-upload-icon" aria-hidden="true">↥</span><span>UTF-8 CSV · 最大 1 MiB／100 筆</span><input id="car-local-batch-file" type="file" accept=".csv,text/csv" ${localCarBatchPending ? "disabled" : ""}><small>預覽與標題檢查在本機瀏覽器執行；送出前不會上傳。</small></label>${fileState}${headerDetails}${preview}</li><li><strong>3. 執行本機批次預測</strong><button type="button" class="button primary" data-action="car-local-batch-run" ${!file?.headerCheck?.valid || !localCarApiReady || localCarBatchPending ? "disabled" : ""}>${localCarBatchPending ? "預測中…" : "執行批次預測"}</button></li></ol>${localCarBatchError ? `<section class="state-panel" role="alert"><p>${esc(localCarBatchError)}</p></section>` : ""}<p class="stage-note">伺服器會再次檢查檔案大小、標題、列數、欄位型別與類別。上傳內容不寫入磁碟或日誌。</p></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">BATCH RESULT · DEVELOPMENT MODEL</p><h2>批次結果</h2></div>${badge(result ? result.error_rows ? "PARTIAL" : "LOCAL RESULT" : localCarBatchPending ? "RUNNING" : "UNAVAILABLE")}</div><div class="card-body">${resultPanel}<dl class="data-row"><dt>模型品質限制</dt><dd>Run 03 的 Development CV 表現低於 Dummy Baseline，且 R² 為負值；單筆或批次推論均不代表模型準確度。</dd></dl><p class="stage-note">每列狀態、模型原始輸出及錯誤均保持輸入順序。失敗列不會呼叫模型；批次推論不會讀取 Holdout 或重新訓練。</p></div></section>`;
 }

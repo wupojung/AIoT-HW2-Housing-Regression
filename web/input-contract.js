@@ -178,12 +178,33 @@
     return typeof unit === "string" && unit.trim() ? unit.trim() : null;
   }
 
+  function addVerifiedCasePackageTargetUnit(columns, rows, caseDocument, batch, contract, expected) {
+    const evidence = contract?.source_evidence;
+    const target = caseDocument?.target;
+    if (!Array.isArray(columns) || !Array.isArray(rows) || !caseDocument || !batch || !contract || !expected
+        || caseDocument.case_id !== expected.caseId || batch.case_id !== expected.caseId
+        || batch.model_id !== expected.modelId || contract.model_id !== expected.modelId
+        || batch.model_version !== expected.modelVersion || contract.model_version !== expected.modelVersion
+        || batch.run_id !== expected.runId || evidence?.run_id !== expected.runId
+        || batch.configuration_id !== expected.configurationId || evidence?.configuration_id !== expected.configurationId
+        || typeof expected.targetField !== "string" || target?.raw_field_id !== expected.targetField
+        || typeof target.unit !== "string" || !target.unit.trim()
+        || columns.includes("case_package_target_unit")) return { columns, rows };
+    const unit = target.unit.trim();
+    return {
+      columns: [...columns, "case_package_target_unit"],
+      rows: rows.map((row) => ({ ...row, case_package_target_unit: unit }))
+    };
+  }
+
   function batchResultsCsv(columns, rows) {
     if (!Array.isArray(columns) || !columns.every((column) => typeof column === "string") || !Array.isArray(rows)) {
       throw new TypeError("Batch result columns and rows are required.");
     }
     const cell = (value) => {
-      const text = value === null || value === undefined ? "" : String(value);
+      if (value === null || value === undefined) return "";
+      if (typeof value === "number" && Number.isFinite(value)) return Object.is(value, -0) ? "-0" : String(value);
+      const text = String(value);
       let firstMeaningful = 0;
       while (firstMeaningful < text.length) {
         const code = text.charCodeAt(firstMeaningful);
@@ -346,6 +367,7 @@
     validateLocalPredictionResponse,
     validateCarNumericDomain,
     resolveVerifiedTargetUnit,
+    addVerifiedCasePackageTargetUnit,
     batchResultsCsv,
     inspectCsvHeader,
     validateLocalBatchPredictionResponse
