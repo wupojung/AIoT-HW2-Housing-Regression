@@ -1,5 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
+const { createHash } = require("node:crypto");
 require("../../web/input-contract.js");
 
 const sha = "a".repeat(64);
@@ -134,6 +135,28 @@ test("verifies raw schema bytes against both API and pinned SHA-256", async () =
   const rejected = await globalThis.RegScopeInputContract.verifySchemaBytes(altered, digest, digest);
   assert.equal(rejected.valid, false);
   assert.match(rejected.errors[0], /SHA-256/);
+});
+
+test("SHA-256 stays available without Web Crypto on direct HTTP origins", async () => {
+  const helper = globalThis.RegScopeInputContract;
+  const known = new TextEncoder().encode("abc");
+  assert.equal(await helper.sha256HexFallback(known), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+
+  const longer = new Uint8Array(4097).map((_, index) => index % 251);
+  assert.equal(await helper.sha256HexFallback(longer), createHash("sha256").update(longer).digest("hex"));
+
+  const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  Object.defineProperty(globalThis, "crypto", { configurable: true, value: undefined });
+  try {
+    assert.equal(await helper.sha256Hex(known), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    const contract = syntheticContract(2);
+    const bytes = new TextEncoder().encode(JSON.stringify(contract));
+    const digest = await helper.sha256Hex(bytes);
+    const result = await helper.verifySchemaBytes(bytes, digest, digest);
+    assert.equal(result.valid, true);
+  } finally {
+    Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
+  }
 });
 
 test("requires prediction response to match the pinned model version and run", () => {

@@ -336,7 +336,7 @@ async function loadReferencePackage() {
     const packageResponse = await fetch(`${WEB_BASE}/data/${packageRef}`);
     if (!packageResponse.ok) throw new Error(`Case Package request failed (${packageResponse.status}).`);
     const packageBytes = await packageResponse.arrayBuffer();
-    const packageDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", packageBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    const packageDigest = await window.RegScopeInputContract.sha256Hex(packageBytes);
     if (packageDigest !== releaseCase.package_sha256 || packageBytes.byteLength !== releaseCase.package_bytes) throw new Error("Release index package digest/size mismatch.");
     const manifest = JSON.parse(new TextDecoder().decode(packageBytes));
     if (manifest.package_revision !== packagePath[1] || manifest.package_status !== releaseCase.package_status) throw new Error("Release index and Case Package metadata disagree.");
@@ -352,7 +352,7 @@ async function loadReferencePackage() {
       const response = await fetch(`${REFERENCE_PACKAGE_ROOT}/${ref}`);
       if (!response.ok) throw new Error(`Phase ${phase} request failed (${response.status}).`);
       const bytes = await response.arrayBuffer();
-      const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+      const digest = await window.RegScopeInputContract.sha256Hex(bytes);
       if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error(`Phase ${phase} manifest digest/size mismatch.`);
       docs[phase] = JSON.parse(new TextDecoder().decode(bytes));
       if (docs[phase].case_id !== manifest.case_id) throw new Error(`Phase ${phase} Case ID mismatch.`);
@@ -364,7 +364,7 @@ async function loadReferencePackage() {
     const phase3LineageResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${phase3LineageRef}`);
     if (!phase3LineageResponse.ok) throw new Error(`Phase 3 lineage request failed (${phase3LineageResponse.status}).`);
     const phase3LineageBytes = await phase3LineageResponse.arrayBuffer();
-    const phase3LineageDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", phase3LineageBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    const phase3LineageDigest = await window.RegScopeInputContract.sha256Hex(phase3LineageBytes);
     if (phase3LineageDigest !== phase3LineageEntry.sha256 || phase3LineageBytes.byteLength !== phase3LineageEntry.bytes) throw new Error("Phase 3 lineage manifest digest/size mismatch.");
     const phase3LineageDocument = JSON.parse(new TextDecoder().decode(phase3LineageBytes));
     stage = "execution_manifest";
@@ -373,7 +373,7 @@ async function loadReferencePackage() {
     const executionResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/assets/execution-manifest.json`);
     if (!executionResponse.ok) throw new Error(`Execution manifest request failed (${executionResponse.status}).`);
     const executionBytes = await executionResponse.arrayBuffer();
-    const executionDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", executionBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    const executionDigest = await window.RegScopeInputContract.sha256Hex(executionBytes);
     if (executionDigest !== executionEntry.sha256 || executionBytes.byteLength !== executionEntry.bytes) throw new Error("Execution manifest digest/size mismatch.");
     const executionManifest = JSON.parse(new TextDecoder().decode(executionBytes));
     if (executionManifest.case_id !== manifest.case_id) throw new Error("Execution manifest Case ID mismatch.");
@@ -384,7 +384,7 @@ async function loadReferencePackage() {
     const caseResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${manifest.case_ref}`);
     if (!caseResponse.ok) throw new Error(`Case document request failed (${caseResponse.status}).`);
     const caseBytes = await caseResponse.arrayBuffer();
-    const caseDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", caseBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    const caseDigest = await window.RegScopeInputContract.sha256Hex(caseBytes);
     if (caseDigest !== caseEntry.sha256 || caseBytes.byteLength !== caseEntry.bytes) throw new Error("Case document manifest digest/size mismatch.");
     const caseDoc = JSON.parse(new TextDecoder().decode(caseBytes));
     if (caseDoc.case_id !== manifest.case_id || caseDoc.case_status !== manifest.package_status) throw new Error("Case document identity/status mismatch.");
@@ -394,7 +394,7 @@ async function loadReferencePackage() {
       const response = await fetch(`${REFERENCE_PACKAGE_ROOT}/${entry.path}`);
       if (!response.ok) throw new Error(`Figure request failed (${response.status}).`);
       const bytes = await response.arrayBuffer();
-      const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+      const digest = await window.RegScopeInputContract.sha256Hex(bytes);
       if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error("Figure manifest digest/size mismatch.");
     }
     stage = "phase4_metrics";
@@ -405,7 +405,7 @@ async function loadReferencePackage() {
     const metricsResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${metricsRef}`);
     if (!metricsResponse.ok) throw new Error(`Phase 4 metrics request failed (${metricsResponse.status}).`);
     const metricsBytes = await metricsResponse.arrayBuffer();
-    const metricsDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", metricsBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    const metricsDigest = await window.RegScopeInputContract.sha256Hex(metricsBytes);
     if (metricsDigest !== metricsEntry.sha256 || metricsBytes.byteLength !== metricsEntry.bytes) throw new Error("Phase 4 metrics manifest digest/size mismatch.");
     const cvMetrics = JSON.parse(new TextDecoder().decode(metricsBytes));
     if (cvMetrics.case_id !== manifest.case_id || cvMetrics.run_id !== defaultConfig.execution_run_id) throw new Error("Phase 4 metrics identity mismatch.");
@@ -416,7 +416,7 @@ async function loadReferencePackage() {
     const smokeResponse = await fetch(`${REFERENCE_PACKAGE_ROOT}/${smokeRef}`);
     if (!smokeResponse.ok) throw new Error(`Phase 6 smoke evidence request failed (${smokeResponse.status}).`);
     const smokeBytes = await smokeResponse.arrayBuffer();
-    const smokeDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", smokeBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    const smokeDigest = await window.RegScopeInputContract.sha256Hex(smokeBytes);
     if (smokeDigest !== smokeEntry.sha256 || smokeBytes.byteLength !== smokeEntry.bytes) throw new Error("Phase 6 smoke evidence manifest digest/size mismatch.");
     const phase6Smoke = JSON.parse(new TextDecoder().decode(smokeBytes));
     referencePackage = { manifest, caseDoc, docs, cvMetrics, phase6Smoke, phase3Lineage, executionManifest, root: REFERENCE_PACKAGE_ROOT, figurePaths: manifest.files.filter((item) => ["image/svg+xml", "image/png"].includes(item.mime)).map((item) => item.path) };
@@ -449,7 +449,7 @@ async function loadExplorationPackage() {
     const packageResponse = await fetch(`${WEB_BASE}/data/${packageRef}`);
     if (!packageResponse.ok) throw new Error(`Model Exploration package request failed (${packageResponse.status}).`);
     const packageBytes = await packageResponse.arrayBuffer();
-    const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", packageBytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    const digest = await window.RegScopeInputContract.sha256Hex(packageBytes);
     if (digest !== releaseCase.package_sha256 || packageBytes.byteLength !== releaseCase.package_bytes) throw new Error("Model Exploration release pointer digest/size mismatch.");
     const manifest = JSON.parse(new TextDecoder().decode(packageBytes));
     if (manifest.case_id !== EXPLORATION_CASE_ID || manifest.package_revision !== parts[1] || manifest.package_status !== releaseCase.package_status || !Array.isArray(manifest.files)) throw new Error("Model Exploration package identity/revision mismatch.");
@@ -463,7 +463,7 @@ async function loadExplorationPackage() {
       const response = await fetch(`${root}/${encodeURI(ref)}`);
       if (!response.ok) throw new Error(`Model Exploration asset request failed (${response.status}).`);
       const bytes = await response.arrayBuffer();
-      const actual = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+      const actual = await window.RegScopeInputContract.sha256Hex(bytes);
       if (actual !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error(`Model Exploration manifest digest/size mismatch: ${ref}`);
       return bytes;
     }
@@ -547,7 +547,7 @@ async function loadCarPackage() {
     const manifestResponse = await fetch(`${WEB_BASE}/data/${packageRef}`);
     if (!manifestResponse.ok) throw new Error(`CAR Case Package request failed (${manifestResponse.status}).`);
     const manifestBytes = await manifestResponse.arrayBuffer();
-    const manifestDigest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", manifestBytes))].map((v) => v.toString(16).padStart(2, "0")).join("");
+    const manifestDigest = await window.RegScopeInputContract.sha256Hex(manifestBytes);
     if (manifestDigest !== releaseCase.package_sha256 || manifestBytes.byteLength !== releaseCase.package_bytes) throw new Error("CAR release pointer digest/size mismatch.");
     const manifest = JSON.parse(new TextDecoder().decode(manifestBytes));
     if (manifest.case_id !== CAR_CASE_ID || manifest.package_revision !== parts[1]
@@ -564,7 +564,7 @@ async function loadCarPackage() {
       const response = await fetch(`${root}/${encodeURI(ref)}`);
       if (!response.ok) throw new Error(`CAR asset request failed (${response.status}): ${ref}`);
       const bytes = await response.arrayBuffer();
-      const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2, "0")).join("");
+      const digest = await window.RegScopeInputContract.sha256Hex(bytes);
       if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error(`CAR manifest digest/size mismatch: ${ref}`);
       return bytes;
     }
@@ -668,7 +668,7 @@ async function loadExplorationArtifact(pkg, ref) {
     if (!response.ok) throw new Error(`Artifact request failed (${response.status}).`);
     const bytes = await response.arrayBuffer();
     const entry = pkg.manifest.files.find((item) => item.path === ref);
-    const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((v) => v.toString(16).padStart(2,"0")).join("");
+    const digest = await window.RegScopeInputContract.sha256Hex(bytes);
     if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error("Artifact manifest digest/size mismatch.");
     const value = JSON.parse(new TextDecoder().decode(bytes));
     if (value.case_id !== pkg.manifest.case_id) throw new Error("Artifact Case ID mismatch.");

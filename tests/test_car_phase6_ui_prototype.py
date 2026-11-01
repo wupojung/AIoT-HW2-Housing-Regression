@@ -119,6 +119,14 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn("if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage()", source)
         self.assertIn("if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage()", source)
 
+    def test_direct_ip_package_and_schema_hashes_do_not_require_webcrypto(self):
+        app_source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        helper_source = (ROOT / "web" / "input-contract.js").read_text(encoding="utf-8")
+        self.assertNotIn("crypto.subtle.digest", app_source)
+        self.assertIn("window.RegScopeInputContract.sha256Hex(", app_source)
+        self.assertIn("function sha256HexFallback(input)", helper_source)
+        self.assertIn("return sha256HexFallback(input)", helper_source)
+
 
 if __name__ == "__main__":
     unittest.main()
