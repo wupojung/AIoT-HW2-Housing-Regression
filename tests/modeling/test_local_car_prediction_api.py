@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import threading
 import unittest
+from contextlib import redirect_stderr
 from http.client import HTTPConnection
 
 import numpy as np
@@ -161,6 +163,51 @@ class LocalCarPredictionApiTests(unittest.TestCase):
             self.assertEqual(result["error"]["code"], "model_not_available")
 
             connection.request("GET", "/api/schema", headers={"Origin": "https://attacker.invalid"})
+            response = connection.getresponse()
+            self.assertEqual(response.status, 403)
+            connection.close()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+    def test_http_batch_route_accepts_csv_reuses_runtime_and_does_not_log_values(self):
+        contract = synthetic_contract()
+        bundle = {"features": ["mileage", "make"], "transformer": FakeTransformer(), "scaler": FakeScaler(),
+                  "mask": np.asarray([True, False]), "estimator": FakeEstimator(), "target": "price"}
+        schema_bytes = json.dumps(contract, separators=(",", ":")).encode("utf-8")
+        runtime = CarPredictionRuntime(contract=contract, bundle=bundle,
+                                       schema_sha256=hashlib.sha256(schema_bytes).hexdigest(),
+                                       schema_bytes=schema_bytes)
+        server = create_local_server(runtime, 0, allowed_origins=["http://127.0.0.1:8766"])
+        thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True)
+        thread.start()
+        try:
+            host, port = server.server_address
+            connection = HTTPConnection(host, port, timeout=3)
+            with redirect_stderr(io.StringIO()) as logs:
+                connection.request("POST", "/api/predict-batch", body="mileage,make\r\n10,SYNTHETIC_A\r\nbad,SYNTHETIC_A\r\n",
+                                   headers={"Content-Type": "text/csv; charset=utf-8", "Origin": "http://127.0.0.1:8766"})
+                response = connection.getresponse()
+                body = response.read()
+            self.assertEqual(response.status, 200)
+            document = json.loads(body)
+            self.assertEqual(document["case_id"], "synthetic-car")
+            self.assertEqual(document["run_id"], "synthetic-run")
+            self.assertEqual(document["total_rows"], 2)
+            self.assertEqual(document["valid_rows"], 1)
+            self.assertEqual(document["rows"][0]["prediction"], 20.0)
+            self.assertEqual(document["rows"][1]["error_code"], "invalid_number")
+            self.assertNotIn("SYNTHETIC_A", logs.getvalue())
+
+            connection.request("POST", "/api/predict-batch", body="mileage,make\n10,SYNTHETIC_A\n",
+                               headers={"Content-Type": "application/json", "Origin": "http://127.0.0.1:8766"})
+            response = connection.getresponse()
+            self.assertEqual(response.status, 415)
+            self.assertEqual(json.loads(response.read())["error"]["code"], "content_type_required")
+
+            connection.request("POST", "/api/predict-batch", body="mileage,make\n10,SYNTHETIC_A\n",
+                               headers={"Content-Type": "text/csv", "Origin": "https://attacker.invalid"})
             response = connection.getresponse()
             self.assertEqual(response.status, 403)
             connection.close()

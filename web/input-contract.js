@@ -178,6 +178,94 @@
     return typeof unit === "string" && unit.trim() ? unit.trim() : null;
   }
 
+  function batchResultsCsv(columns, rows) {
+    if (!Array.isArray(columns) || !columns.every((column) => typeof column === "string") || !Array.isArray(rows)) {
+      throw new TypeError("Batch result columns and rows are required.");
+    }
+    const cell = (value) => {
+      const text = value === null || value === undefined ? "" : String(value);
+      let firstMeaningful = 0;
+      while (firstMeaningful < text.length) {
+        const code = text.charCodeAt(firstMeaningful);
+        if (text[firstMeaningful].trim() === "" || code < 0x20 || code === 0x7f) firstMeaningful += 1;
+        else break;
+      }
+      const formula = firstMeaningful < text.length && "=+-@".includes(text[firstMeaningful]);
+      const safe = formula ? `'${text}` : text;
+      return `"${safe.replaceAll('"', '""')}"`;
+    };
+    const data = rows.map((row) => columns.map((column) => {
+      if (Object.hasOwn(row?.input || {}, column)) return row.input[column];
+      if (column === "prediction_status") return row?.status;
+      return row?.[column];
+    }));
+    return [columns, ...data].map((record) => record.map(cell).join(",")).join("\r\n") + "\r\n";
+  }
+
+  function inspectCsvHeader(text, expectedNames) {
+    if (typeof text !== "string" || !Array.isArray(expectedNames)) return { valid: false, error: "CSV 內容或輸入契約不可用。" };
+    const source = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+    const headers = [];
+    let cell = "";
+    let quoted = false;
+    let afterQuote = false;
+    let ended = false;
+    for (let index = 0; index < source.length; index += 1) {
+      const character = source[index];
+      if (quoted) {
+        if (character === '"' && source[index + 1] === '"') { cell += '"'; index += 1; }
+        else if (character === '"') { quoted = false; afterQuote = true; }
+        else cell += character;
+        continue;
+      }
+      if (afterQuote && character !== "," && character !== "\r" && character !== "\n") {
+        return { valid: false, error: "CSV 標題列的引號格式錯誤。" };
+      }
+      if (character === '"') {
+        if (cell !== "" || afterQuote) return { valid: false, error: "CSV 標題列的引號格式錯誤。" };
+        quoted = true;
+      } else if (character === ",") {
+        headers.push(cell); cell = ""; afterQuote = false;
+      } else if (character === "\r" || character === "\n") {
+        headers.push(cell); ended = true;
+        if (character === "\r" && source[index + 1] === "\n") index += 1;
+        break;
+      } else {
+        cell += character;
+      }
+    }
+    if (quoted) return { valid: false, error: "CSV 標題列缺少結尾引號。" };
+    if (!ended) headers.push(cell);
+    if (!headers.length || headers.every((header) => header === "")) return { valid: false, error: "CSV 缺少標題列。" };
+    if (new Set(headers).size !== headers.length) return { valid: false, headers, error: "CSV 標題列有重複欄位。" };
+    const missing = expectedNames.filter((name) => !headers.includes(name));
+    const extra = headers.filter((name) => !expectedNames.includes(name));
+    return { valid: missing.length === 0 && extra.length === 0, headers, missing, extra,
+      error: missing.length || extra.length ? "CSV 欄位與目前模型輸入契約不一致。" : null };
+  }
+
+  function validateLocalBatchPredictionResponse(payload, expected = {}) {
+    const resultColumns = ["row_number", "prediction", "prediction_unit", "prediction_status", "error_code", "error_message"];
+    const expectedColumns = Array.isArray(expected.inputNames) ? [...expected.inputNames, ...resultColumns] : null;
+    if (!payload || payload.case_id !== expected.caseId || payload.model_id !== expected.modelId
+        || payload.model_version !== expected.modelVersion || payload.run_id !== expected.runId
+        || payload.configuration_id !== expected.configurationId || payload.schema_sha256 !== expected.schemaSha256
+        || !Array.isArray(payload.rows) || !Array.isArray(payload.columns)
+        || !expectedColumns || payload.columns.length !== expectedColumns.length
+        || payload.columns.some((column, index) => column !== expectedColumns[index])
+        || payload.total_rows !== payload.rows.length
+        || payload.valid_rows + payload.error_rows !== payload.total_rows
+        || !Number.isInteger(payload.total_rows) || payload.total_rows < 1 || payload.total_rows > 100) {
+      return { valid: false };
+    }
+    const validRows = payload.rows.filter((row) => row && row.status === "SUCCESS");
+    const errorRows = payload.rows.filter((row) => row && row.status === "ERROR");
+    const rowsWellFormed = payload.rows.every((row, index) => row.row_number === index + 1
+      && (row.status === "SUCCESS" && Number.isFinite(row.prediction)
+        || row.status === "ERROR" && typeof row.error_code === "string" && typeof row.error_message === "string"));
+    return { valid: rowsWellFormed && validRows.length === payload.valid_rows && errorRows.length === payload.error_rows };
+  }
+
   function validateCarNumericDomain(name, value) {
     if (typeof value !== "number" || !Number.isFinite(value)) return "請輸入有限的數值。";
     if (name === "year" && value <= 0) return "year 必須大於 0；目前未設定上限。";
@@ -246,6 +334,9 @@
     sha256HexFallback,
     validateLocalPredictionResponse,
     validateCarNumericDomain,
-    resolveVerifiedTargetUnit
+    resolveVerifiedTargetUnit,
+    batchResultsCsv,
+    inspectCsvHeader,
+    validateLocalBatchPredictionResponse
   });
 })(globalThis);

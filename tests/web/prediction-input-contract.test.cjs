@@ -241,3 +241,31 @@ test("resolves a displayed unit only from a matching verified case target", () =
   assert.equal(resolve(caseDocument, { ...prediction, target: "other_target" }, "car"), null);
   assert.equal(resolve({ ...caseDocument, target: { raw_field_id: "price", unit: null } }, prediction, "car"), null);
 });
+
+test("checks CSV headers with BOM, quoted commas, reordering and exact field identity", () => {
+  const inspect = globalThis.RegScopeInputContract.inspectCsvHeader;
+  assert.deepEqual(inspect("\uFEFF\"make\",mileage\r\n", ["mileage", "make"]), {
+    valid: true, headers: ["make", "mileage"], missing: [], extra: [], error: null
+  });
+  assert.equal(inspect("mileage,make,make\n", ["mileage", "make"]).error, "CSV 標題列有重複欄位。");
+  assert.deepEqual(inspect("mileage,unexpected\n", ["mileage", "make"]).extra, ["unexpected"]);
+  assert.equal(inspect('mileage,"unterminated', ["mileage"]).valid, false);
+});
+
+test("batch response identity is pinned and CSV export escapes spreadsheet formulas", () => {
+  const helper = globalThis.RegScopeInputContract;
+  const expected = { caseId: "car", modelId: "model", modelVersion: "v1", runId: "run", configurationId: "cfg", schemaSha256: sha, inputNames: ["trim"] };
+  const response = {
+    case_id: "car", model_id: "model", model_version: "v1", run_id: "run", configuration_id: "cfg", schema_sha256: sha,
+    columns: ["trim", "row_number", "prediction", "prediction_unit", "prediction_status", "error_code", "error_message"], total_rows: 1, valid_rows: 1, error_rows: 0,
+    rows: [{ row_number: 1, input: { trim: "\t=1+1" }, prediction: -2, status: "SUCCESS", error_code: null, error_message: null }]
+  };
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse(response, expected), { valid: true });
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, columns: ["other", ...response.columns.slice(1)] }, expected), { valid: false });
+  assert.equal(helper.validateLocalBatchPredictionResponse({ ...response, model_version: "other" }, expected).valid, false);
+  assert.equal(helper.validateLocalBatchPredictionResponse({ ...response, schema_sha256: "0".repeat(64) }, expected).valid, false);
+  const csv = helper.batchResultsCsv(response.columns, response.rows);
+  assert.match(csv, /"'\t=1\+1"/);
+  assert.match(csv, /"'-2"/);
+  assert.match(helper.batchResultsCsv(["x"], [{ input: { x: "@SUM(A1:A2)" } }]), /"'@SUM/);
+});

@@ -375,7 +375,7 @@ def make_handler(
             return origin is None or origin in origins
 
         def do_OPTIONS(self) -> None:  # noqa: N802
-            if urlsplit(self.path).path != "/api/predict" or not self.headers.get("Origin") or not self._origin_allowed():
+            if urlsplit(self.path).path not in {"/api/predict", "/api/predict-batch"} or not self.headers.get("Origin") or not self._origin_allowed():
                 self._send(403, {"error": {"code": "origin_or_route_rejected", "message": "請求來源或路徑不允許。"}})
                 return
             self.send_response(204)
@@ -403,25 +403,43 @@ def make_handler(
 
         def do_POST(self) -> None:  # noqa: N802
             route = urlsplit(self.path).path
-            if route != "/api/predict":
+            if route not in {"/api/predict", "/api/predict-batch"}:
                 self._send(404, {"error": {"code": "not_found", "message": "找不到此 API 路徑。"}})
                 return
             if not self._origin_allowed():
                 self._send(403, {"error": {"code": "origin_rejected", "message": "請求來源不允許。"}})
                 return
-            if self.headers.get_content_type() != "application/json":
-                self._send(415, {"error": {"code": "content_type_required", "message": "請使用 application/json。"}})
+            is_batch = route == "/api/predict-batch"
+            expected_content_type = "text/csv" if is_batch else "application/json"
+            if self.headers.get_content_type() != expected_content_type:
+                message = "請使用 text/csv。" if is_batch else "請使用 application/json。"
+                self._send(415, {"error": {"code": "content_type_required", "message": message}})
                 return
             length_text = self.headers.get("Content-Length")
             if length_text is None or not length_text.isdigit():
                 self._send(400, {"error": {"code": "content_length_required", "message": "請求長度無效。"}})
                 return
             length = int(length_text)
-            if length < 1 or length > MAX_REQUEST_BYTES:
+            if is_batch:
+                from housing_regression.car_batch_prediction import MAX_BATCH_REQUEST_BYTES, predict_csv_batch
+
+                max_bytes = MAX_BATCH_REQUEST_BYTES
+            else:
+                max_bytes = MAX_REQUEST_BYTES
+            if length < 1 or length > max_bytes:
                 self._send(413, {"error": {"code": "request_too_large", "message": "請求內容大小不允許。"}})
                 return
+            payload = self.rfile.read(length)
+            if is_batch:
+                try:
+                    result = predict_csv_batch(runtime, payload)
+                except PredictionApiError as exc:
+                    self._send(exc.status, {"error": {"code": exc.code, "message": str(exc), "fields": exc.fields}}, cors=cors_origin(self.headers.get("Origin")))
+                    return
+                self._send(200, result, cors=cors_origin(self.headers.get("Origin")))
+                return
             try:
-                request = _decode_json(self.rfile.read(length))
+                request = _decode_json(payload)
                 if not isinstance(request, dict) or set(request) != {"case_id", "model_id", "model_version", "inputs"}:
                     raise PredictionApiError("invalid_request", "請求只能包含案例、模型版本與一筆輸入。", 400)
                 if request["case_id"] != runtime.contract["case_id"] or request["model_id"] != runtime.contract["model_id"]:
