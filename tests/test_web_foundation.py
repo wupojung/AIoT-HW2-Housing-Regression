@@ -65,7 +65,16 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('if (state.caseId === EXPLORATION_CASE_ID)', self.js)
         self.assertIn('if (state.caseId === CAR_CASE_ID)', self.js)
         self.assertIn('caseInfo.packageMode === "car"', self.js)
-        self.assertIn('else if (phase && caseData().packageMode === "car") app.innerHTML = renderCarPackagePhase(phase);', self.js)
+        self.assertRegex(
+            self.js,
+            re.compile(
+                r'else if \(phase && caseData\(\)\.packageMode === "car"\s+'
+                r'&& !\(phase === 6 && LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE\s+'
+                r'&& state\.caseId === CAR_CASE_ID && carPackage\)\) '
+                r'app\.innerHTML = renderCarPackagePhase\(phase\);'
+            ),
+        )
+        self.assertIn('else if (phase === 6) app.innerHTML = renderPhase6();', self.js)
         self.assertIn('function renderCarPhase3(pkg, doc)', self.js)
         self.assertIn('One-Hot 編碼後產生 ${lineage.encoded_features.length.toLocaleString()} 個模型特徵', self.js)
         self.assertIn('Publication review：PENDING', self.js)
