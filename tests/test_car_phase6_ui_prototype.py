@@ -192,6 +192,8 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn('data-action="car-local-batch-download"', source)
         self.assertIn('data-action="car-local-batch-run"', source)
         self.assertIn("validateLocalBatchPredictionResponse", source)
+        self.assertIn('row.warning_code === "negative_prediction"', source)
+        self.assertIn("模型輸出為負值；已原樣保留，請審慎解讀。", source)
         self.assertIn("function batchResultsCsv(columns, rows)", helper)
         self.assertIn("function inspectCsvHeader(text, expectedNames)", helper)
         self.assertIn("formula ? `'${text}` : text", helper)

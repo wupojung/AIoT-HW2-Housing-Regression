@@ -1848,7 +1848,11 @@ function renderLocalCarBatchPanels(contract) {
   const result = localCarBatchResult;
   const resultRows = result ? result.rows.map((row) => {
     const inputs = Object.entries(row.input || {}).map(([name, value]) => `<dl class="data-row"><dt>${esc(name)}</dt><dd>${esc(String(value).slice(0, 200))}${String(value).length > 200 ? "…" : ""}</dd></dl>`).join("");
-    return `<tr><td>${row.row_number}</td><td>${row.status === "SUCCESS" ? "成功" : "錯誤"}</td><td>${row.prediction === null ? "—" : esc(String(row.prediction))}</td><td>${row.error_code ? esc(row.error_code) : "—"}</td><td><details><summary>輸入明細</summary>${inputs}${row.error_message ? `<p>${esc(row.error_message)}</p>` : ""}</details></td></tr>`;
+    const negativeWarning = row.warning_code === "negative_prediction"
+      ? '<small class="p6-local-batch-warning">模型輸出為負值；已原樣保留，請審慎解讀。</small>'
+      : "";
+    const statusLabel = row.status === "SUCCESS" ? (row.warning_code ? "成功 · 注意" : "成功") : "錯誤";
+    return `<tr><td>${row.row_number}</td><td>${statusLabel}</td><td>${row.prediction === null ? "—" : esc(String(row.prediction))}${negativeWarning}</td><td>${row.error_code ? esc(row.error_code) : "—"}</td><td><details><summary>輸入明細</summary>${inputs}${row.error_message ? `<p>${esc(row.error_message)}</p>` : ""}</details></td></tr>`;
   }).join("") : "";
   const resultPanel = result
     ? `<div class="p6-prototype-counts"><article><span>總筆數</span><strong>${result.total_rows}</strong></article><article><span>有效筆數</span><strong>${result.valid_rows}</strong></article><article><span>錯誤筆數</span><strong>${result.error_rows}</strong></article></div><div class="table-scroll p6-local-batch-table"><table><thead><tr><th>列</th><th>狀態</th><th>模型原始輸出</th><th>錯誤代碼</th><th>資料列</th></tr></thead><tbody>${resultRows}</tbody></table></div><details class="disclosure"><summary>Run／Model／Schema 身分</summary><p>${esc(result.case_id)} · ${esc(result.model_id)} · ${esc(result.model_version)}</p><p>${esc(result.run_id)} · ${esc(result.configuration_id)} · Schema SHA-256 ${esc(result.schema_sha256)}</p></details><p class="stage-note">CSV 下載會對試算表公式前綴加上文字跳脫；畫面及記憶體中的 API 原始值不會修改。</p><button type="button" class="button" data-action="car-local-batch-download">下載預測結果 CSV</button>`

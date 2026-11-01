@@ -257,11 +257,15 @@ test("batch response identity is pinned and CSV export escapes spreadsheet formu
   const expected = { caseId: "car", modelId: "model", modelVersion: "v1", runId: "run", configurationId: "cfg", schemaSha256: sha, inputNames: ["trim"] };
   const response = {
     case_id: "car", model_id: "model", model_version: "v1", run_id: "run", configuration_id: "cfg", schema_sha256: sha,
-    columns: ["trim", "row_number", "prediction", "prediction_unit", "prediction_status", "error_code", "error_message"], total_rows: 1, valid_rows: 1, error_rows: 0,
-    rows: [{ row_number: 1, input: { trim: "\t=1+1" }, prediction: -2, status: "SUCCESS", error_code: null, error_message: null }]
+    columns: ["trim", "row_number", "prediction", "prediction_unit", "prediction_status", "warning_code", "error_code", "error_message"], total_rows: 1, valid_rows: 1, error_rows: 0,
+    rows: [{ row_number: 2, input: { trim: "\t=1+1" }, prediction: -2, status: "SUCCESS", warning_code: "negative_prediction", error_code: null, error_message: null }]
   };
   assert.deepEqual(helper.validateLocalBatchPredictionResponse(response, expected), { valid: true });
   assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, columns: ["other", ...response.columns.slice(1)] }, expected), { valid: false });
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, rows: [{ ...response.rows[0], row_number: 1 }] }, expected), { valid: false });
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, rows: [{ ...response.rows[0], warning_code: null }] }, expected), { valid: false });
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, rows: [response.rows[0], { row_number: 4, prediction: null, status: "ERROR", warning_code: null, error_code: "invalid_number", error_message: "bad" }], total_rows: 2, valid_rows: 1, error_rows: 1 }, expected), { valid: true });
+  assert.deepEqual(helper.validateLocalBatchPredictionResponse({ ...response, rows: [null] }, expected), { valid: false });
   assert.equal(helper.validateLocalBatchPredictionResponse({ ...response, model_version: "other" }, expected).valid, false);
   assert.equal(helper.validateLocalBatchPredictionResponse({ ...response, schema_sha256: "0".repeat(64) }, expected).valid, false);
   const csv = helper.batchResultsCsv(response.columns, response.rows);

@@ -245,7 +245,7 @@
   }
 
   function validateLocalBatchPredictionResponse(payload, expected = {}) {
-    const resultColumns = ["row_number", "prediction", "prediction_unit", "prediction_status", "error_code", "error_message"];
+    const resultColumns = ["row_number", "prediction", "prediction_unit", "prediction_status", "warning_code", "error_code", "error_message"];
     const expectedColumns = Array.isArray(expected.inputNames) ? [...expected.inputNames, ...resultColumns] : null;
     if (!payload || payload.case_id !== expected.caseId || payload.model_id !== expected.modelId
         || payload.model_version !== expected.modelVersion || payload.run_id !== expected.runId
@@ -260,9 +260,20 @@
     }
     const validRows = payload.rows.filter((row) => row && row.status === "SUCCESS");
     const errorRows = payload.rows.filter((row) => row && row.status === "ERROR");
-    const rowsWellFormed = payload.rows.every((row, index) => row.row_number === index + 1
-      && (row.status === "SUCCESS" && Number.isFinite(row.prediction)
-        || row.status === "ERROR" && typeof row.error_code === "string" && typeof row.error_message === "string"));
+    let previousSourceLine = 1;
+    const rowsWellFormed = payload.rows.every((row) => {
+      if (!row || typeof row !== "object" || Array.isArray(row)) return false;
+      const validLine = Number.isInteger(row.row_number) && row.row_number > previousSourceLine;
+      previousSourceLine = row.row_number;
+      const warningMatchesValue = row.warning_code === "negative_prediction"
+        ? Number.isFinite(row.prediction) && row.prediction < 0
+        : row.warning_code === null && row.status === "SUCCESS" && row.prediction >= 0;
+      return validLine && (
+        row.status === "SUCCESS" && Number.isFinite(row.prediction) && warningMatchesValue
+        || row.status === "ERROR" && row.prediction === null && row.warning_code === null
+          && typeof row.error_code === "string" && typeof row.error_message === "string"
+      );
+    });
     return { valid: rowsWellFormed && validRows.length === payload.valid_rows && errorRows.length === payload.error_rows };
   }
 

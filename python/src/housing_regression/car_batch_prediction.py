@@ -20,6 +20,7 @@ _RESULT_COLUMNS = (
     "prediction",
     "prediction_unit",
     "prediction_status",
+    "warning_code",
     "error_code",
     "error_message",
 )
@@ -37,7 +38,7 @@ def batch_result_columns(contract: Mapping[str, Any]) -> list[str]:
     return names + list(_RESULT_COLUMNS)
 
 
-def _parse_csv(payload: bytes, expected_names: list[str]) -> tuple[list[str], list[list[str]]]:
+def _parse_csv(payload: bytes, expected_names: list[str]) -> tuple[list[str], list[tuple[int, list[str]]]]:
     if not isinstance(payload, bytes) or not payload:
         raise PredictionApiError("empty_csv", "CSV 檔案沒有內容。", 400)
     if len(payload) > MAX_BATCH_REQUEST_BYTES:
@@ -63,11 +64,14 @@ def _parse_csv(payload: bytes, expected_names: list[str]) -> tuple[list[str], li
                 422,
                 missing + extra,
             )
-        records: list[list[str]] = []
+        records: list[tuple[int, list[str]]] = []
+        previous_physical_line = reader.line_num
         for row in reader:
             if len(records) >= MAX_BATCH_ROWS:
                 raise PredictionApiError("too_many_rows", "CSV 最多可包含 100 筆資料列。", 413)
-            records.append(row)
+            source_line = previous_physical_line + 1
+            previous_physical_line = reader.line_num
+            records.append((source_line, row))
     except StopIteration as exc:
         raise PredictionApiError("empty_csv", "CSV 必須包含標題列與資料列。", 400) from exc
     except csv.Error as exc:
@@ -117,14 +121,15 @@ def predict_csv_batch(runtime: Any, payload: bytes) -> dict[str, Any]:
     headers, records = _parse_csv(payload, input_names)
     rows: list[dict[str, Any]] = []
     successful = 0
-    for row_number, csv_row in enumerate(records, start=1):
+    for source_line, csv_row in records:
         raw_inputs, typed_inputs = _typed_inputs(csv_row, headers, contract)
         item: dict[str, Any] = {
-            "row_number": row_number,
+            "row_number": source_line,
             "input": raw_inputs,
             "prediction": None,
             "prediction_unit": None,
             "status": "ERROR",
+            "warning_code": None,
             "error_code": None,
             "error_message": None,
             "error_fields": [],
@@ -140,6 +145,8 @@ def predict_csv_batch(runtime: Any, payload: bytes) -> dict[str, Any]:
             item["prediction"] = result["prediction"]
             item["prediction_unit"] = result.get("unit")
             item["status"] = "SUCCESS"
+            if result["prediction"] < 0:
+                item["warning_code"] = "negative_prediction"
             successful += 1
         except PredictionApiError as exc:
             item["error_code"] = exc.code

@@ -81,6 +81,7 @@ class CarBatchPredictionTests(unittest.TestCase):
         self.assertEqual(result["total_rows"], 1)
         self.assertEqual(result["valid_rows"], 1)
         self.assertEqual(result["rows"][0]["status"], "SUCCESS")
+        self.assertEqual(result["rows"][0]["row_number"], 2)
         self.assertEqual(result["rows"][0]["input"]["trim"], record["trim"])
         self.assertAlmostEqual(result["rows"][0]["prediction"], expected["prediction"], delta=1e-12)
         self.assertEqual(result["schema_sha256"], runtime.schema_sha256)
@@ -93,12 +94,32 @@ class CarBatchPredictionTests(unittest.TestCase):
         ragged = list(good.values())[:-1]
         payload = make_csv([good, bad_number]) + b",".join(str(value).encode() for value in ragged) + b"\r\n"
         result = predict_csv_batch(runtime, payload)
-        self.assertEqual([row["row_number"] for row in result["rows"]], [1, 2, 3])
+        self.assertEqual([row["row_number"] for row in result["rows"]], [2, 4, 6])
         self.assertEqual([row["status"] for row in result["rows"]], ["SUCCESS", "ERROR", "ERROR"])
         self.assertEqual(result["rows"][1]["error_code"], "invalid_number")
         self.assertEqual(result["rows"][2]["error_code"], "csv_row_width_mismatch")
         self.assertEqual((result["valid_rows"], result["error_rows"]), (1, 2))
         self.assertEqual(len(runtime.calls), 1)
+
+    def test_negative_prediction_is_preserved_and_counted_with_warning(self):
+        runtime = SyntheticRuntime()
+        runtime.predict = lambda _inputs: {"prediction": -123.45, "unit": "USD"}
+        result = predict_csv_batch(runtime, make_csv([values()]))
+        row = result["rows"][0]
+        self.assertEqual(row["prediction"], -123.45)
+        self.assertEqual(row["prediction_unit"], "USD")
+        self.assertEqual(row["status"], "SUCCESS")
+        self.assertEqual(row["warning_code"], "negative_prediction")
+        self.assertEqual((result["valid_rows"], result["error_rows"]), (1, 0))
+
+    def test_physical_line_numbers_account_for_quoted_multiline_fields(self):
+        runtime = SyntheticRuntime()
+        result = predict_csv_batch(runtime, make_csv([values(), values()]))
+        self.assertEqual([row["row_number"] for row in result["rows"]], [2, 4])
+        self.assertEqual(result["columns"][-7:], [
+            "row_number", "prediction", "prediction_unit", "prediction_status", "warning_code",
+            "error_code", "error_message",
+        ])
 
     def test_all_invalid_rows_make_no_model_calls(self):
         runtime = SyntheticRuntime()
