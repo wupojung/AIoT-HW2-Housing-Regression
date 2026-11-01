@@ -30,6 +30,7 @@ from housing_regression.local_car_prediction_api import (
 from housing_regression.prediction_input_schema import PredictionInputSchemaError
 
 _BRANCH = "feat/phase6-online-preview-delivery-20261102"
+_PREVIEW_BRANCH_ALIAS = "regscope-git-feat-phase6-online-8ac39b-wupojung-8919s-projects.vercel.app"
 _RUNTIME: Any | None = None
 
 
@@ -38,6 +39,18 @@ def _preview_branch_allowed() -> bool:
         os.environ.get("VERCEL_ENV") == "preview"
         and os.environ.get("VERCEL_GIT_COMMIT_REF") == _BRANCH
     )
+
+
+def _origin_is_authorized_preview(origin: str | None, *, required: bool) -> bool:
+    if not origin:
+        return not required
+    expected_host = os.environ.get("VERCEL_URL", "")
+    if not expected_host or "/" in expected_host:
+        return False
+    allowed_origins = {f"https://{expected_host}"}
+    if _preview_branch_allowed():
+        allowed_origins.add(f"https://{_PREVIEW_BRANCH_ALIAS}")
+    return origin in allowed_origins
 
 
 def _decode_assets() -> tuple[bytes, bytes, bytes]:
@@ -124,13 +137,7 @@ def create_handler():
             self._send_json(status, {"error": {"code": code, "message": message}})
 
         def _origin_is_same_preview(self, *, required: bool) -> bool:
-            origin = self.headers.get("Origin")
-            expected_host = os.environ.get("VERCEL_URL", "")
-            if not origin:
-                return not required
-            if not expected_host or "/" in expected_host:
-                return False
-            return origin == f"https://{expected_host}"
+            return _origin_is_authorized_preview(self.headers.get("Origin"), required=required)
 
         def _read_body(self, maximum: int) -> bytes | None:
             length = self.headers.get("Content-Length", "")

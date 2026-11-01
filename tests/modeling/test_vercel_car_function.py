@@ -15,6 +15,52 @@ class VercelCarFunctionGateTests(unittest.TestCase):
     def tearDown(self):
         vercel_car_function._RUNTIME = None
 
+    def test_canonical_deployment_origin_is_accepted(self):
+        with patch.dict(os.environ, {
+            "VERCEL_ENV": "preview",
+            "VERCEL_GIT_COMMIT_REF": vercel_car_function._BRANCH,
+            "VERCEL_URL": "regscope-deployment.example.vercel.app",
+        }, clear=False):
+            self.assertTrue(vercel_car_function._origin_is_authorized_preview(
+                "https://regscope-deployment.example.vercel.app", required=True
+            ))
+
+    def test_exact_preview_branch_alias_is_accepted(self):
+        with patch.dict(os.environ, {
+            "VERCEL_ENV": "preview",
+            "VERCEL_GIT_COMMIT_REF": vercel_car_function._BRANCH,
+            "VERCEL_URL": "regscope-deployment.example.vercel.app",
+        }, clear=False):
+            self.assertTrue(vercel_car_function._origin_is_authorized_preview(
+                f"https://{vercel_car_function._PREVIEW_BRANCH_ALIAS}", required=True
+            ))
+
+    def test_unrelated_origin_and_missing_post_origin_are_rejected(self):
+        with patch.dict(os.environ, {
+            "VERCEL_ENV": "preview",
+            "VERCEL_GIT_COMMIT_REF": vercel_car_function._BRANCH,
+            "VERCEL_URL": "regscope-deployment.example.vercel.app",
+        }, clear=False):
+            self.assertFalse(vercel_car_function._origin_is_authorized_preview(
+                "https://attacker.example", required=True
+            ))
+            self.assertFalse(vercel_car_function._origin_is_authorized_preview(None, required=True))
+
+    def test_branch_alias_is_rejected_outside_authorized_preview_branch(self):
+        alias = f"https://{vercel_car_function._PREVIEW_BRANCH_ALIAS}"
+        with patch.dict(os.environ, {
+            "VERCEL_ENV": "production",
+            "VERCEL_GIT_COMMIT_REF": "deploy",
+            "VERCEL_URL": "regscope-deployment.example.vercel.app",
+        }, clear=False):
+            self.assertFalse(vercel_car_function._origin_is_authorized_preview(alias, required=True))
+        with patch.dict(os.environ, {
+            "VERCEL_ENV": "preview",
+            "VERCEL_GIT_COMMIT_REF": "another-preview-branch",
+            "VERCEL_URL": "regscope-deployment.example.vercel.app",
+        }, clear=False):
+            self.assertFalse(vercel_car_function._origin_is_authorized_preview(alias, required=True))
+
     def test_model_loading_is_rejected_outside_exact_preview_branch(self):
         with patch.dict(os.environ, {"VERCEL_ENV": "production", "VERCEL_GIT_COMMIT_REF": "deploy"}, clear=False):
             with patch.object(vercel_car_function, "load_verified_car_runtime") as load_model:
