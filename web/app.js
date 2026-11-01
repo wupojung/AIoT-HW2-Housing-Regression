@@ -36,8 +36,12 @@ function isTailscaleIPv4Host(hostname) {
 const LOCAL_CAR_TAILNET_PREVIEW = location.protocol === "http:"
   && isTailscaleIPv4Host(location.hostname)
   && PHASE6_QUERY.get("car-tailnet-preview") === "1";
+const LOCAL_CAR_VERCEL_PREVIEW_HOST = "regscope-git-feat-phase6-online-8ac39b-wupojung-8919s-projects.vercel.app";
+function isAuthorizedCarOnlinePreviewHost(hostname) {
+  return hostname === LOCAL_CAR_VERCEL_PREVIEW_HOST;
+}
 const LOCAL_CAR_VERCEL_PREVIEW_MODE = location.protocol === "https:"
-  && location.hostname.endsWith(".vercel.app")
+  && isAuthorizedCarOnlinePreviewHost(location.hostname)
   && PHASE6_QUERY.get("car-online-preview") === "1";
 const LOCAL_CAR_LOOPBACK_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname)
   && PHASE6_QUERY.get("car-phase6-prototype") === "1";

@@ -1,6 +1,8 @@
 import re
 import hashlib
 import json
+import shutil
+import subprocess
 import unittest
 from html.parser import HTMLParser
 from pathlib import Path
@@ -66,11 +68,19 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('if (state.caseId === CAR_CASE_ID)', self.js)
         self.assertIn('caseInfo.packageMode === "car"', self.js)
         self.assertIn('else if (phase && caseData().packageMode === "car"', self.js)
-        self.assertIn('&& !(phase === 6 && LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE', self.js)
+        self.assertIn('&& !(phase === 6 && (LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_VERCEL_PREVIEW_MODE) && LOCAL_CAR_PREDICTION_API_MODE', self.js)
         self.assertIn('&& state.caseId === CAR_CASE_ID && carPackage)) app.innerHTML = renderCarPackagePhase(phase);', self.js)
-        self.assertIn('if (LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage) return renderCarPhase6LocalInference();', self.js)
+        self.assertIn('if ((LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_VERCEL_PREVIEW_MODE) && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage) return renderCarPhase6LocalInference();', self.js)
         self.assertIn('const LOCAL_CAR_TAILNET_PREVIEW = location.protocol === "http:"', self.js)
         self.assertIn('PHASE6_QUERY.get("car-tailnet-preview") === "1"', self.js)
+        self.assertIn('isTailscaleIPv4Host(location.hostname)', self.js)
+        self.assertIn('const LOCAL_CAR_LOOPBACK_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname)', self.js)
+        self.assertIn('PHASE6_QUERY.get("car-phase6-prototype") === "1"', self.js)
+        self.assertIn('location.origin === "http://127.0.0.1:8788"', self.js)
+        self.assertIn('location.origin === "http://127.0.0.1:8766"', self.js)
+        self.assertIn('const LOCAL_CAR_VERCEL_PREVIEW_MODE = location.protocol === "https:"', self.js)
+        self.assertIn('&& isAuthorizedCarOnlinePreviewHost(location.hostname)', self.js)
+        self.assertNotIn('location.hostname.endsWith(".vercel.app")', self.js)
         self.assertIn('const LOCAL_CAR_PREDICTION_API_MODE =', self.js)
         self.assertIn('const localCarPhase6Route = LOCAL_CAR_PREDICTION_API_MODE', self.js)
         self.assertIn('&& state.caseId === CAR_CASE_ID && routePhase() === 6', self.js)
@@ -80,6 +90,29 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('One-Hot 編碼後產生 ${lineage.encoded_features.length.toLocaleString()} 個模型特徵', self.js)
         self.assertIn('Publication review：PENDING', self.js)
         self.assertIn('Prediction unavailable', self.js)
+
+    def test_car_online_preview_host_allows_only_authorized_branch_alias(self):
+        host = "regscope-git-feat-phase6-online-8ac39b-wupojung-8919s-projects.vercel.app"
+        self.assertIn(f'const LOCAL_CAR_VERCEL_PREVIEW_HOST = "{host}";', self.js)
+        self.assertIn('return hostname === LOCAL_CAR_VERCEL_PREVIEW_HOST;', self.js)
+        node = shutil.which("node")
+        if node is None:
+            self.skipTest("Node.js is unavailable; exact-host source assertions still apply")
+        function = re.search(
+            r"function isAuthorizedCarOnlinePreviewHost\(hostname\) \{\s*return hostname === LOCAL_CAR_VERCEL_PREVIEW_HOST;\s*\}",
+            self.js,
+        )
+        self.assertIsNotNone(function)
+        script = (
+            f'const LOCAL_CAR_VERCEL_PREVIEW_HOST = "{host}";\n'
+            f'{function.group(0)}\n'
+            'const assert = require("node:assert/strict");\n'
+            f'assert.equal(isAuthorizedCarOnlinePreviewHost("{host}"), true);\n'
+            'assert.equal(isAuthorizedCarOnlinePreviewHost("regscope-aiot.vercel.app"), false);\n'
+            'assert.equal(isAuthorizedCarOnlinePreviewHost("regscope-other-preview.vercel.app"), false);\n'
+        )
+        result = subprocess.run([node, "-e", script], capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_car_phase3_raw_bar_is_lineage_derived_and_keeps_later_stages_dynamic(self):
         self.assertIn('const rawFields = lineage.raw_fields || [];', self.js)
