@@ -116,6 +116,13 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn("const visiblePhases = LOCAL_CAR_PHASE6_PREVIEW ? [PHASES[5]] : PHASES", source)
         self.assertIn("if (LOCAL_CAR_PHASE6_PREVIEW) publicCases = [[CAR_CASE_ID, CASES[CAR_CASE_ID]]];", source)
         self.assertIn("if (LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage)", source)
+        render = source[source.index("function render() {"):source.index("function csvRows(")]
+        self.assertIn(
+            'else if (phase && caseData().packageMode === "car"\n'
+            '    && !(phase === 6 && LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE\n'
+            '      && state.caseId === CAR_CASE_ID && carPackage)) app.innerHTML = renderCarPackagePhase(phase);',
+            render,
+        )
         self.assertIn("if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage()", source)
         self.assertIn("if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage()", source)
 

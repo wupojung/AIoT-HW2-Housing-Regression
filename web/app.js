@@ -1804,7 +1804,9 @@ function render() {
   else if (state.route === "dashboard") app.innerHTML = renderDashboard();
   else if (phase && caseData().packageMode === "reference") app.innerHTML = renderReferencePackagePhase(phase);
   else if (phase && caseData().packageMode === "exploration") app.innerHTML = renderExplorationPackagePhase(phase);
-  else if (phase && caseData().packageMode === "car") app.innerHTML = renderCarPackagePhase(phase);
+  else if (phase && caseData().packageMode === "car"
+    && !(phase === 6 && LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE
+      && state.caseId === CAR_CASE_ID && carPackage)) app.innerHTML = renderCarPackagePhase(phase);
   else if (phase === 1) app.innerHTML = renderPhase1();
   else if (phase === 2) app.innerHTML = renderPhase2();
   else if (phase === 3) app.innerHTML = renderPhase3();
