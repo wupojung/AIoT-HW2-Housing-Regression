@@ -97,10 +97,26 @@ class CarPhase6UiPrototypeTests(unittest.TestCase):
         self.assertIn('location.protocol === "https:"', source)
         self.assertIn('location.hostname.endsWith(".ts.net")', source)
         self.assertIn('PHASE6_QUERY.get("car-tailnet-preview") === "1"', source)
+        self.assertIn('const LOCAL_CAR_SAME_ORIGIN_API_MODE = PHASE6_QUERY.get("car-local-inference") === "1"', source)
         self.assertIn('const LOCAL_CAR_API_BASE = LOCAL_CAR_SAME_ORIGIN_API_MODE ? ""', source)
         self.assertIn('fetch(`${LOCAL_CAR_API_BASE}/api/schema`', source)
         self.assertIn('fetch(`${LOCAL_CAR_API_BASE}/api/predict`', source)
         self.assertIn('location.origin === "http://127.0.0.1:8766"', source)
+        self.assertIn("const LOCAL_CAR_PHASE6_PREVIEW = LOCAL_CAR_LOOPBACK_PREVIEW", source)
+        self.assertIn("if (LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage)", source)
+        self.assertIn("&& state.caseId === CAR_CASE_ID && routePhase() === 6", source)
+        self.assertIn("const visiblePhases = LOCAL_CAR_PHASE6_PREVIEW ? [PHASES[5]] : PHASES", source)
+        self.assertIn("if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage()", source)
+        self.assertIn("if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage()", source)
+
+    def test_tailnet_mode_preserves_normal_case_and_phase_navigation(self):
+        source = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        self.assertIn("const LOCAL_CAR_PHASE6_PREVIEW = LOCAL_CAR_LOOPBACK_PREVIEW", source)
+        self.assertIn("const visiblePhases = LOCAL_CAR_PHASE6_PREVIEW ? [PHASES[5]] : PHASES", source)
+        self.assertIn("if (LOCAL_CAR_PHASE6_PREVIEW) publicCases = [[CAR_CASE_ID, CASES[CAR_CASE_ID]]];", source)
+        self.assertIn("if (LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage)", source)
+        self.assertIn("if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage()", source)
+        self.assertIn("if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage()", source)
 
 
 if __name__ == "__main__":

@@ -49,6 +49,38 @@ def runtime():
                                 schema_sha256=hashlib.sha256(schema_bytes).hexdigest(), schema_bytes=schema_bytes)
 
 
+def write_test_site(root: Path):
+    (root / "index.html").write_text("synthetic preview", encoding="utf-8")
+    (root / "app.js").write_text("// synthetic", encoding="utf-8")
+    data = root / "data"
+    fixtures = data / "fixtures"
+    fixtures.mkdir(parents=True)
+    (fixtures / "car-single-small.json").write_text('{"fixture_status":"SYNTHETIC_UI_ONLY"}', encoding="utf-8")
+    cases = []
+    assets = {}
+    for case_id, revision in (
+        ("ames-full-model-exploration", "test-ames-r1"),
+        ("used-car-price-optimized", "test-car-r1"),
+    ):
+        prefix = f"releases/{revision}/cases/{case_id}"
+        asset_ref = "phases/phase-01/content.json"
+        content = json.dumps({"case_id": case_id}, separators=(",", ":")).encode()
+        asset_path = data / prefix / asset_ref
+        asset_path.parent.mkdir(parents=True, exist_ok=True)
+        asset_path.write_bytes(content)
+        entry = {"path": asset_ref, "sha256": hashlib.sha256(content).hexdigest(), "bytes": len(content), "mime": "application/json"}
+        manifest = {"case_id": case_id, "package_revision": revision, "package_status": "PARTIAL", "files": [entry]}
+        package_bytes = json.dumps(manifest, separators=(",", ":")).encode()
+        package_path = data / prefix / "package.json"
+        package_path.write_bytes(package_bytes)
+        cases.append({"case_id": case_id, "package_ref": f"{prefix}/package.json", "package_status": "PARTIAL",
+                      "package_sha256": hashlib.sha256(package_bytes).hexdigest(), "package_bytes": len(package_bytes)})
+        assets[case_id] = (asset_path, prefix, asset_ref)
+    index_bytes = json.dumps({"schema_version": "1.0.0", "release_id": "synthetic-release", "cases": cases}, separators=(",", ":")).encode()
+    (data / "current-release.json").write_bytes(index_bytes)
+    return assets
+
+
 class PreviewGatewayTests(unittest.TestCase):
     def test_tailnet_origin_requires_one_exact_https_ts_net_origin(self):
         self.assertEqual(validate_tailnet_origin("https://car-node.example.ts.net"), "https://car-node.example.ts.net")
@@ -59,20 +91,36 @@ class PreviewGatewayTests(unittest.TestCase):
     def test_loopback_host_and_static_allowlist(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            (root / "index.html").write_text("synthetic preview", encoding="utf-8")
-            (root / "app.js").write_text("// synthetic", encoding="utf-8")
+            write_test_site(root)
             (root / "private.json").write_text("must not be served", encoding="utf-8")
             server = create_preview_server(root, api_port=19002, web_port=19001)
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
             try:
                 self.assertEqual(server.server_address[0], "127.0.0.1")
-                self.assertEqual(self.request(server.server_address[1], "GET", "/", host="127.0.0.1:19001")[0], 404)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/", host="127.0.0.1:19001")[0], 200)
                 self.assertEqual(self.request(server.server_address[1], "GET", "/?car-phase6-prototype=1&car-local-inference=1", host="127.0.0.1:19001")[0], 200)
+                fixture_path = "/data/fixtures/car-single-small.json"
+                self.assertEqual(self.request(server.server_address[1], "GET", fixture_path + "?car-phase6-prototype=1&car-local-inference=1", host="127.0.0.1:19001")[0], 200)
                 self.assertEqual(self.request(server.server_address[1], "GET", "/private.json", host="127.0.0.1:19001")[0], 404)
                 for private_path in ("/data/cases/car/package.json", "/local/run-03/model.joblib", "/private/final-model.joblib", "/docs/contracts/schemas/phase-06.json"):
                     with self.subTest(private_path=private_path):
                         self.assertEqual(self.request(server.server_address[1], "GET", private_path, host="127.0.0.1:19001")[0], 404)
+                index_status, index_headers, index_body = self.request(server.server_address[1], "GET", "/data/current-release.json", host="127.0.0.1:19001")
+                self.assertEqual(index_status, 200)
+                self.assertEqual(index_headers.get("Content-Type"), "application/json")
+                self.assertEqual(hashlib.sha256(index_body).hexdigest(), hashlib.sha256((root / "data/current-release.json").read_bytes()).hexdigest())
+                package_url = "/data/releases/test-car-r1/cases/used-car-price-optimized/package.json"
+                package_status, _, package_body = self.request(server.server_address[1], "GET", package_url, host="127.0.0.1:19001")
+                self.assertEqual(package_status, 200)
+                manifest = json.loads(package_body)
+                public_asset = "/data/releases/test-car-r1/cases/used-car-price-optimized/phases/phase-01/content.json"
+                asset_status, _, asset_body = self.request(server.server_address[1], "GET", public_asset, host="127.0.0.1:19001")
+                self.assertEqual(asset_status, 200)
+                self.assertEqual(hashlib.sha256(asset_body).hexdigest(), manifest["files"][0]["sha256"])
+                self.assertEqual(self.request(server.server_address[1], "GET", public_asset + ".unlisted", host="127.0.0.1:19001")[0], 404)
+                (root / "data/releases/test-car-r1/cases/used-car-price-optimized/phases/phase-01/content.json").write_text("changed", encoding="utf-8")
+                self.assertEqual(self.request(server.server_address[1], "GET", public_asset, host="127.0.0.1:19001")[0], 502)
                 self.assertEqual(self.request(server.server_address[1], "GET", "/?unexpected=1", host="127.0.0.1:19001")[0], 404)
                 self.assertEqual(self.request(server.server_address[1], "GET", "/", host="attacker.invalid")[0], 403)
             finally:
@@ -85,16 +133,26 @@ class PreviewGatewayTests(unittest.TestCase):
         api_thread.start()
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            (root / "index.html").write_text("synthetic preview", encoding="utf-8")
+            write_test_site(root)
             server = create_preview_server(root, api_port=api.server_address[1], web_port=19011, tailnet_origin=tailnet)
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
             try:
                 self.assertEqual(server.server_address[0], "127.0.0.1")
+                # Normal Tailnet browsing gets the package-backed app and all
+                # phases; only the explicit query activates the CAR P6 API UI.
+                self.assertEqual(self.request(server.server_address[1], "GET", "/", host="car-node.example.ts.net")[0], 200)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/app.js", host="car-node.example.ts.net")[0], 200)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/?car-tailnet-preview=1&car-local-inference=1", host="car-node.example.ts.net")[0], 200)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/?car-tailnet-preview=1&car-local-inference=1", host="127.0.0.1:19011")[0], 403)
+                self.assertEqual(self.request(server.server_address[1], "GET", "/data/fixtures/car-single-small.json", host="car-node.example.ts.net")[0], 404)
                 status, headers, body = self.request(server.server_address[1], "GET", "/api/schema", host="car-node.example.ts.net", origin=tailnet)
                 self.assertEqual(status, 200)
                 self.assertEqual(headers.get("X-Schema-SHA256"), hashlib.sha256(body).hexdigest())
                 self.assertEqual(json.loads(body)["case_id"], "synthetic-car")
+                status, _, health_body = self.request(server.server_address[1], "GET", "/api/health", host="car-node.example.ts.net", origin=tailnet)
+                self.assertEqual(status, 200)
+                self.assertEqual(json.loads(health_body)["status"], "ready")
                 payload = {"case_id": "synthetic-car", "model_id": "synthetic-model", "model_version": "synthetic-v1",
                            "inputs": {"mileage": 42, "make": "MOCK_A"}}
                 status, _, body = self.request(server.server_address[1], "POST", "/api/predict", host="car-node.example.ts.net", origin=tailnet, body=json.dumps(payload))
@@ -114,7 +172,7 @@ class PreviewGatewayTests(unittest.TestCase):
     def test_api_unavailable_fails_closed(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            (root / "index.html").write_text("synthetic preview", encoding="utf-8")
+            write_test_site(root)
             with socket.socket() as probe:
                 probe.bind(("127.0.0.1", 0)); port = probe.getsockname()[1]
             server = create_preview_server(root, api_port=port, web_port=19021)
@@ -126,6 +184,28 @@ class PreviewGatewayTests(unittest.TestCase):
                 self.assertEqual(json.loads(body)["error"]["code"], "local_api_unavailable")
             finally:
                 server.shutdown(); server.server_close(); thread.join(timeout=2)
+
+    def test_private_package_manifest_entry_prevents_gateway_startup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            assets = write_test_site(root)
+            _, package_root, _ = assets["used-car-price-optimized"]
+            data_root = root / "data"
+            package_path = data_root / package_root / "package.json"
+            manifest = json.loads(package_path.read_text(encoding="utf-8"))
+            private_bytes = b"synthetic-private-marker"
+            manifest["files"].append({"path": "private/model-metadata.json", "sha256": hashlib.sha256(private_bytes).hexdigest(),
+                                      "bytes": len(private_bytes), "mime": "application/json"})
+            package_bytes = json.dumps(manifest, separators=(",", ":")).encode()
+            package_path.write_bytes(package_bytes)
+            index_path = data_root / "current-release.json"
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            release_case = next(item for item in index["cases"] if item["case_id"] == "used-car-price-optimized")
+            release_case["package_sha256"] = hashlib.sha256(package_bytes).hexdigest()
+            release_case["package_bytes"] = len(package_bytes)
+            index_path.write_text(json.dumps(index, separators=(",", ":")), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "unsafe or unsupported"):
+                create_preview_server(root, api_port=19032, web_port=19031)
 
     @staticmethod
     def request(port, method, path, *, host, origin=None, body=None):

@@ -33,10 +33,9 @@ const LOCAL_CAR_TAILNET_PREVIEW = location.protocol === "https:"
   && PHASE6_QUERY.get("car-tailnet-preview") === "1";
 const LOCAL_CAR_LOOPBACK_PREVIEW = ["localhost", "127.0.0.1"].includes(location.hostname)
   && PHASE6_QUERY.get("car-phase6-prototype") === "1";
-const LOCAL_CAR_PHASE6_PREVIEW = LOCAL_CAR_LOOPBACK_PREVIEW || LOCAL_CAR_TAILNET_PREVIEW;
-const LOCAL_CAR_SAME_ORIGIN_API_MODE = LOCAL_CAR_PHASE6_PREVIEW
-  && PHASE6_QUERY.get("car-local-inference") === "1"
-  && (LOCAL_CAR_TAILNET_PREVIEW || location.origin === "http://127.0.0.1:8788");
+const LOCAL_CAR_PHASE6_PREVIEW = LOCAL_CAR_LOOPBACK_PREVIEW;
+const LOCAL_CAR_SAME_ORIGIN_API_MODE = PHASE6_QUERY.get("car-local-inference") === "1"
+  && (LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_LOOPBACK_PREVIEW && location.origin === "http://127.0.0.1:8788");
 const LOCAL_CAR_PREDICTION_API_MODE = LOCAL_CAR_SAME_ORIGIN_API_MODE
   || LOCAL_CAR_LOOPBACK_PREVIEW && location.origin === "http://127.0.0.1:8766"
     && PHASE6_QUERY.get("car-local-inference") === "1";
@@ -1716,6 +1715,7 @@ function renderCarPhase6LocalInference() {
 }
 function renderPhase6() {
   if (LOCAL_CAR_PHASE6_PREVIEW && state.caseId === CAR_CASE_ID) return renderCarPhase6UiPrototype();
+  if (LOCAL_CAR_TAILNET_PREVIEW && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage) return renderCarPhase6LocalInference();
   const c = caseData();
   if (c.status === "PLANNED") return `<div class="page">${banner(c)}${pageHeading("PHASE 06 / MODEL PREDICTION LAB", "房價預測實驗室", "單筆推論需要通過核准的模型、輸入 Schema 與已部署 API。", "PLANNED")}${plannedPanel(c.inference.message)}${footerNav([5,"模型評估"],null)}</div>`;
   const mock = c.mockInference;
@@ -1776,11 +1776,14 @@ function renderDashboard() {
 function render() {
   if (LOCAL_CAR_PHASE6_PREVIEW) {
     if (!carUiPrototypeFixtures && !carUiPrototypeFixtureError && !carUiPrototypeFixtureLoading) loadCarUiPrototypeFixtures();
-    if (LOCAL_CAR_PREDICTION_API_MODE && !localCarSchema && !localCarSchemaError && !localCarSchemaLoading) loadLocalCarPredictionSchema();
   } else {
     if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage();
     if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage();
   }
+  const localCarPhase6Route = LOCAL_CAR_PREDICTION_API_MODE
+    && state.caseId === CAR_CASE_ID && routePhase() === 6
+    && (LOCAL_CAR_PHASE6_PREVIEW || Boolean(carPackage));
+  if (localCarPhase6Route && !localCarSchema && !localCarSchemaError && !localCarSchemaLoading) loadLocalCarPredictionSchema();
   updateShell();
   const phase = routePhase();
   if (LOCAL_CAR_PHASE6_PREVIEW) {
@@ -1847,7 +1850,9 @@ caseSelect.addEventListener("change", () => {
   state.explorationMethodId = selectedExplorationPackage?.docs[4]?.configurations.find((item) => item.configuration_id === state.explorationConfigurationId)?.method_id || "";
   state.phase5ConfigId = "";
   state.perspective = "method_comparison"; state.phase5Figure = "FIG-P5-02";
-  state.p5Population = "development_oof"; state.phase6MockSubmitted = false; state.phase6InputMode = "manual"; state.phase6Csv = null; state.phase6Values = { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" }; resetCustom(); render();
+  state.p5Population = "development_oof"; state.phase6MockSubmitted = false; state.phase6InputMode = "manual"; state.phase6Csv = null; state.phase6Values = { neighborhood: "CollgCr", quality: "6", bedrooms: "3", area: "1800" }; resetCustom();
+  localCarPrediction = null; localCarPredictionError = null; localCarSyntheticInput = false; localCarFormValues = {};
+  render();
 });
 window.addEventListener("hashchange", () => {
   routeFromHash();

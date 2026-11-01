@@ -7,11 +7,15 @@ never binds to a network interface other than 127.0.0.1.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import mimetypes
+import os
 import re
+import stat
 from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from urllib.parse import parse_qs, urlsplit
 
 from housing_regression.local_car_prediction_api import MAX_REQUEST_BYTES
@@ -22,12 +26,16 @@ _ALLOWED_STATIC = frozenset({
     "app.js",
     "styles.css",
     "input-contract.js",
+    "data/current-release.json",
     "data/fixtures/car-single-small.json",
     "data/fixtures/car-single-large.json",
     "data/fixtures/car-batch-preview.json",
 })
 _API_PATHS = frozenset({"/api/health", "/api/schema", "/api/predict"})
 _HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$", re.IGNORECASE)
+_PUBLIC_CASE_IDS = frozenset({"ames-full-model-exploration", "used-car-price-optimized"})
+_PUBLIC_MIME = {"application/json": ".json", "image/svg+xml": ".svg", "image/png": ".png"}
+_MAX_RELEASE_FILE_BYTES = 8 * 1024 * 1024
 
 
 def validate_tailnet_origin(origin: str | None) -> str | None:
@@ -59,6 +67,105 @@ def validate_tailnet_origin(origin: str | None) -> str | None:
     return f"https://{hostname}"
 
 
+def _safe_relative_ref(ref: object) -> bool:
+    if not isinstance(ref, str) or not ref or "\\" in ref or ref.startswith("/"):
+        return False
+    path = PurePosixPath(ref)
+    return path.as_posix() == ref and all(part not in {"", ".", ".."} for part in path.parts)
+
+
+def _read_bound_file(data_root: Path, ref: str, expected_sha256: str, expected_bytes: int) -> bytes:
+    if not _safe_relative_ref(ref) or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256) or not 0 <= expected_bytes <= _MAX_RELEASE_FILE_BYTES:
+        raise ValueError("public release file binding is invalid")
+    candidate = data_root
+    for part in PurePosixPath(ref).parts:
+        candidate = candidate / part
+        if candidate.is_symlink():
+            raise ValueError("public release files may not traverse symlinks")
+    resolved = candidate.resolve(strict=True)
+    if not resolved.is_relative_to(data_root) or not stat.S_ISREG(resolved.stat().st_mode):
+        raise ValueError("public release reference is not a regular file under web/data")
+    with resolved.open("rb") as stream:
+        opened = os.fstat(stream.fileno())
+        named = resolved.lstat()
+        if not stat.S_ISREG(opened.st_mode) or not os.path.samestat(opened, named):
+            raise ValueError("public release file changed during verification")
+        content = stream.read(_MAX_RELEASE_FILE_BYTES + 1)
+    if len(content) != expected_bytes or len(content) > _MAX_RELEASE_FILE_BYTES or hashlib.sha256(content).hexdigest() != expected_sha256:
+        raise ValueError("public release file does not match its verified digest and size")
+    return content
+
+
+def _load_public_release_assets(web_root: Path) -> tuple[dict[str, tuple[str, int, str]], str, int]:
+    """Build a strict web/data allowlist from the current index and bound manifests."""
+    data_root = (web_root / "data").resolve(strict=True)
+    if (web_root / "data").is_symlink():
+        raise ValueError("web/data must not be a symlink")
+    index_path = data_root / "current-release.json"
+    if index_path.is_symlink() or not index_path.is_file():
+        raise ValueError("current public release index is missing or unsafe")
+    index_bytes = index_path.read_bytes()
+    index_digest = hashlib.sha256(index_bytes).hexdigest()
+    if len(index_bytes) > _MAX_RELEASE_FILE_BYTES:
+        raise ValueError("current public release index is too large")
+    index = json.loads(index_bytes)
+    if not isinstance(index, dict) or index.get("schema_version") != "1.0.0" or not isinstance(index.get("cases"), list):
+        raise ValueError("current public release index schema is invalid")
+    indexed_cases = {case.get("case_id"): case for case in index["cases"] if isinstance(case, dict)}
+    if len(indexed_cases) != len(index["cases"]) or set(indexed_cases) != _PUBLIC_CASE_IDS:
+        raise ValueError("current release must contain the two expected public research cases")
+
+    bound: dict[str, tuple[str, int, str]] = {
+        "data/current-release.json": (index_digest, len(index_bytes), "application/json")
+    }
+    for case_id in sorted(_PUBLIC_CASE_IDS):
+        release_case = indexed_cases[case_id]
+        package_ref = release_case.get("package_ref")
+        parts = package_ref.split("/") if isinstance(package_ref, str) else []
+        if (
+            len(parts) != 5 or parts[0] != "releases" or parts[2] != "cases"
+            or parts[3] != case_id or parts[4] != "package.json"
+            or not re.fullmatch(r"[a-z0-9][a-z0-9._-]{2,79}", parts[1])
+            or not _safe_relative_ref(package_ref)
+        ):
+            raise ValueError("public Case Package path does not match the current release layout")
+        package_sha = release_case.get("package_sha256")
+        package_size = release_case.get("package_bytes")
+        if not isinstance(package_size, int) or isinstance(package_size, bool):
+            raise ValueError("public Case Package size is invalid")
+        package_bytes = _read_bound_file(data_root, package_ref, package_sha, package_size)
+        try:
+            manifest = json.loads(package_bytes)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("public Case Package manifest is invalid JSON") from exc
+        if (
+            not isinstance(manifest, dict) or manifest.get("case_id") != case_id
+            or manifest.get("package_status") != release_case.get("package_status")
+            or manifest.get("package_revision") != parts[1]
+            or not isinstance(manifest.get("files"), list)
+        ):
+            raise ValueError("public release index and Case Package manifest disagree")
+        package_root = "/".join(parts[:-1])
+        bound[f"data/{package_ref}"] = (package_sha, package_size, "application/json")
+        seen: set[str] = set()
+        for entry in manifest["files"]:
+            if not isinstance(entry, dict):
+                raise ValueError("public Case Package file entry is invalid")
+            ref, digest, size, mime = entry.get("path"), entry.get("sha256"), entry.get("bytes"), entry.get("mime")
+            if (
+                not _safe_relative_ref(ref) or ref in seen
+                or not isinstance(size, int) or isinstance(size, bool) or not 0 <= size <= _MAX_RELEASE_FILE_BYTES
+                or not re.fullmatch(r"[0-9a-f]{64}", digest or "")
+                or mime not in _PUBLIC_MIME or not ref.endswith(_PUBLIC_MIME[mime])
+                or any(part.lower() in {"private", "models", "raw", "rows", "holdout-records", "oof-predictions"} for part in PurePosixPath(ref).parts)
+                or PurePosixPath(ref).name == "prediction-input-schema.json"
+            ):
+                raise ValueError("public Case Package contains an unsafe or unsupported file reference")
+            seen.add(ref)
+            bound[f"data/{package_root}/{ref}"] = (digest, size, mime)
+    return bound, index_digest, len(index_bytes)
+
+
 def make_preview_handler(
     web_root: Path,
     *,
@@ -68,6 +175,8 @@ def make_preview_handler(
 ):
     root = web_root.resolve(strict=True)
     tailnet_origin = validate_tailnet_origin(tailnet_origin)
+    release_assets, _, _ = _load_public_release_assets(root)
+    data_root = (root / "data").resolve(strict=True)
     local_origin = f"http://127.0.0.1:{web_port}"
     allowed_origins = {local_origin}
     if tailnet_origin:
@@ -105,6 +214,53 @@ def make_preview_handler(
                 self._error(404, "not_found")
                 return
             relative = request.path.lstrip("/")
+            if relative in _ALLOWED_STATIC and relative.startswith("data/fixtures/"):
+                if (
+                    self._origin_for_host() != local_origin
+                    or query != {"car-phase6-prototype": ["1"], "car-local-inference": ["1"]}
+                ):
+                    self._error(404, "not_found")
+                    return
+                candidate = root / relative
+                if candidate.is_symlink() or not candidate.resolve(strict=False).is_relative_to(root):
+                    self._error(404, "not_found")
+                    return
+                try:
+                    data = candidate.read_bytes()
+                except OSError:
+                    self._error(404, "not_found")
+                    return
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.send_header("Referrer-Policy", "no-referrer")
+                self.send_header("X-Frame-Options", "DENY")
+                self.end_headers()
+                self.wfile.write(data)
+                return
+            if relative.startswith("data/"):
+                binding = release_assets.get(relative)
+                if binding is None:
+                    self._error(404, "not_found")
+                    return
+                try:
+                    data = _read_bound_file(data_root, relative[5:], binding[0], binding[1])
+                except (OSError, ValueError):
+                    self._error(502, "public_asset_integrity_failed")
+                    return
+                mime = binding[2]
+                self.send_response(200)
+                self.send_header("Content-Type", mime)
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.send_header("Referrer-Policy", "no-referrer")
+                self.send_header("X-Frame-Options", "DENY")
+                self.end_headers()
+                self.wfile.write(data)
+                return
             if relative not in _ALLOWED_STATIC:
                 self._error(404, "not_found")
                 return
@@ -113,8 +269,15 @@ def make_preview_handler(
                     {"car-phase6-prototype": ["1"], "car-local-inference": ["1"]},
                     {"car-tailnet-preview": ["1"], "car-local-inference": ["1"]},
                 )
-                if query not in valid_queries:
+                if query and query not in valid_queries:
                     self._error(404, "not_found")
+                    return
+                requested_origin = self._origin_for_host()
+                if query == valid_queries[0] and requested_origin != local_origin:
+                    self._error(403, "origin_rejected")
+                    return
+                if query == valid_queries[1] and requested_origin != tailnet_origin:
+                    self._error(403, "origin_rejected")
                     return
             elif query:
                 self._error(404, "not_found")
@@ -163,7 +326,8 @@ def make_preview_handler(
                 headers["Content-Length"] = str(len(body))
             connection = HTTPConnection("127.0.0.1", api_port, timeout=20)
             try:
-                connection.request(self.command, request.path, body=body if self.command == "POST" else None, headers=headers)
+                upstream_path = "/health" if request.path == "/api/health" else request.path
+                connection.request(self.command, upstream_path, body=body if self.command == "POST" else None, headers=headers)
                 response = connection.getresponse()
                 payload = response.read(MAX_REQUEST_BYTES + 8192)
                 if len(payload) > MAX_REQUEST_BYTES + 8192:
@@ -189,7 +353,7 @@ def make_preview_handler(
                 self._error(403, "host_rejected")
             elif urlsplit(self.path).path.startswith("/api/"):
                 self._proxy_api()
-            elif self.path == "/" or urlsplit(self.path).path.lstrip("/") in _ALLOWED_STATIC:
+            elif self.path == "/" or urlsplit(self.path).path.lstrip("/") in _ALLOWED_STATIC or urlsplit(self.path).path.startswith("/data/"):
                 self._serve_static()
             else:
                 self._error(404, "not_found")
