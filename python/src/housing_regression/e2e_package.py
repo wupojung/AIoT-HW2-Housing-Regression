@@ -26,15 +26,15 @@ from housing_regression.phase2_core import build_phase2
 
 
 _PHASE_REFS = {
-    1: ("phases/phase-01/content.json", "docs/design/data-contracts/schemas/phase-01.schema.json"),
-    2: ("phases/phase-02/analyses.json", "docs/design/data-contracts/schemas/phase-02.schema.json"),
-    3: ("phases/phase-03/preparation.json", "docs/design/data-contracts/schemas/phase-03.schema.json"),
-    4: ("phases/phase-04/modeling.json", "docs/design/data-contracts/schemas/phase-04.schema.json"),
+    1: ("phases/phase-01/content.json", "docs/contracts/schemas/phase-01.schema.json"),
+    2: ("phases/phase-02/analyses.json", "docs/contracts/schemas/phase-02.schema.json"),
+    3: ("phases/phase-03/preparation.json", "docs/contracts/schemas/phase-03.schema.json"),
+    4: ("phases/phase-04/modeling.json", "docs/contracts/schemas/phase-04.schema.json"),
     5: (
         "phases/phase-05/evaluations.json",
-        "docs/ui-ux/case-package/phase-05/evaluation-index.schema.json",
+        "docs/contracts/schemas/phase-05.schema.json",
     ),
-    6: ("phases/phase-06/inference-catalog.json", "docs/design/data-contracts/schemas/phase-06.schema.json"),
+    6: ("phases/phase-06/inference-catalog.json", "docs/contracts/schemas/phase-06.schema.json"),
 }
 class PackageValidationError(PhaseCoreError):
     """A Case Package reference, schema, privacy, or integrity check failed."""

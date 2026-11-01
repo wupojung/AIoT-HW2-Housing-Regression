@@ -20,7 +20,7 @@ from housing_regression.contracts import validate_document
 class Phase5EvaluationTests(unittest.TestCase):
     def test_synthetic_oof_handoff_recalculates_metrics_and_validates_contract(self) -> None:
         repo = Path(__file__).resolve().parents[2]
-        schema = repo / "docs/ui-ux/case-package/phase-05/evaluation-index.schema.json"
+        schema = repo / "docs/contracts/schemas/phase-05.schema.json"
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             oof = root / "oof.csv"
@@ -76,7 +76,7 @@ class Phase5EvaluationTests(unittest.TestCase):
                     run_id="run", configuration_id="cfg", config_sha256="a" * 64, source_sha256="b" * 64,
                     development_data_sha256="c" * 64, fold_sha256="d" * 64,
                     phase4_summary={"fold_results": []},
-                    schema_path=Path(__file__).resolve().parents[2] / "docs/ui-ux/case-package/phase-05/evaluation-index.schema.json",
+                    schema_path=Path(__file__).resolve().parents[2] / "docs/contracts/schemas/phase-05.schema.json",
                 )
 
 

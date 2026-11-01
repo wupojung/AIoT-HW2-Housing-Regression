@@ -1,35 +1,41 @@
-# RegScope functional desktop prototype
+# RegScope — Static Web Research Explorer
 
-This is a lightweight static HTML/CSS/JavaScript prototype. It has no application backend, model runtime, data-processing runtime, or third-party runtime packages.
+`web/` is a static HTML/CSS/JavaScript client. It uses reviewed JSON Case Packages and browser-side presentation/validation logic. It has **no production server-side model inference or Prediction API**. The platform is a research evidence explorer, not an online model-training service.
+
+**Current public release-index cases** (`web/data/current-release.json`):
+
+- **Ames Housing — Full Model Exploration** (`ames-full-model-exploration`, default; package `PARTIAL`).
+- **Used Car Price Prediction — Optimized Modeling** (`used-car-price-optimized`; package `PARTIAL`).
+
+Mock, Placeholder and INIT B are **retired from the active selector**, not necessarily removed from historical source, test fixtures or local-only preview branches. Do not use old prototype code as evidence that a mock is publicly selectable.
+
+## Routes and interactions
+
+- Hash routes: `#home`, `#dashboard`, `#phase-1` through `#phase-6`; case picker applies across the six-phase journey.
+- **Dashboard:** Verified Research presentation and Custom Dataset preview are separate modes. Custom Dataset reads a local CSV header/sample in the browser; a URL field is format-validated only; remote loading/training/Run is disabled.
+- **Phase 3:** transformation stages and source-feature lineage. CAR distinguishes raw fields, excluded/retained fields and post-encoding feature counts. These are not interchangeable denominators.
+- **Phase 4:** Method Comparison and Explorer present recorded configurations, fold metrics and feature-count/CV-RMSE curves when package-bound and eligible. Unexecuted configurations are not filled in.
+- **Phase 5:** distinguishes `cv_fold_mean` and `pooled_oof`, ties evaluations to the chosen configuration and run, and renders diagnostics only when eligible public evidence exists. Neither calculation is automatically Holdout.
+- **Phase 6 — 模型預測與結果 (Model Prediction & Results):** Owner-approved future-facing page heading while the CRISP-DM stage stays **Deployment／部署**. The released source still contains historical `模型預測實驗室` / `房價預測實驗室` UI copy, not updated by this docs-only PR. Current readiness/status panels; CAR local model reload smoke does not certify predictive fitness. Legacy manual / CSV mock UI in the source is not deployed model inference; **no online Prediction API is implemented**. Do not interpret fixed mock outputs as calculated predictions.
+
+The public loader validates package identity, manifest paths, size and SHA-256 before using source-bound artifacts. These checks prove file integrity within their scope, **not** model quality, license clearance or scientific publication approval. CAR's CV modeling result did **not** beat the Dummy baseline. CAR competition-specific redistribution Rules remain `PENDING`.
 
 ## Preview locally
 
-From the repository root:
+From the repository root, with Python installed:
 
-```powershell
+```sh
 python -m http.server 8000 --bind 127.0.0.1
 ```
 
-Open <http://127.0.0.1:8000/web/>. The Home / CRISP-DM route begins at Phase 1. The shared six-phase navigation, case switch, phase controls, dashboard mode switch, CSV header preview, and unavailable states work in the browser. The repository root is served only on loopback so the local preview can read the ignored staging package; do not expose this server to a network.
+Then open http://127.0.0.1:8000/web/ . This loopback-only static preview does not run the Python model; do not expose a local checkout/server to a network. Some historical code may reference ignored private staging packages for local-only experiments; that does not make them production artifacts.
 
-The case selector keeps the MOCK UI fixture as its own selectable case and adds the formal Ames Case Package as a separate option. Selecting the formal package loads its static Phase 5 evaluation index and displays the indexed CV fold mean and pooled OOF metrics. Other phase pages continue to show their existing preview content. Diagnostic figures remain unavailable because the evaluation records do not reference figures and the package marks its figure assets as `PLANNED`; those assets are not substituted with mock charts. A planned placeholder case remains available to demonstrate state clearing. Dashboard Custom Dataset can preview a small local CSV header and sample; the file is not uploaded or stored. Direct URL is format-checked only, and Run stays disabled.
+## Deployment and limitations
 
-## Ames Case Package static reference
+The repository root `vercel.json` sets `web/` as the static output directory. `main` is integration; `deploy` is reserved for production releases. At Issue #62's 2026-10-29 baseline, PR #61's direct-route blocking was merged to `main` but not yet released to `deploy`; **production HTTP 404 behavior for retired package URLs remained UNKNOWN**, even though the selector was reduced to two cases.
 
-The complete Case Package copy is kept outside the static site at the ignored private path `local/staging/formal-data-test-20261027-01/case-package/`. Keep the package root, `package.json`, all manifest-listed files, and relative paths together. It contains 236 files (235 package manifest entries plus `package.json`); all manifest file hashes and byte counts match. This is staging, not a public release.
+Traditional Chinese (`zh-Hant`) and English are mixed in the visible UI; this is **not** a verified complete two-language locale system. Responsive CSS breakpoints exist, but no independent browser breakpoint acceptance is claimed by these docs.
 
-The frontend reads this private staging path only on a loopback preview. On other hosts it shows an unavailable state until an approved immutable release is produced. The PR #35 release layout is `/data/current-release.json` plus `/data/releases/<release_id>/cases/<case_id>/...`; this staging copy is not placed under `web/` and will not leak into the static output. Its package content and Phases 1–4 are marked `VERIFIED` for the requested UI state check. Phase 5 retains `PLANNED` / independent review `PENDING`, and each evaluation remains `AWAITING_REVIEW`. The Kaggle source page identifies the dataset license as MIT. The Phase 5 index has 60 evaluations, while figure references are empty and the figure manifest marks its 90 PNG assets `PLANNED`.
+For the canonical navigation, status, terminology and research-evidence boundaries, consult [Production UX Baseline](../docs/ui-ux/REGSCOPE-PRODUCTION-UX-BASELINE.md) and [Reconciliation / Terminology Audit](../docs/ui-ux/REGSCOPE-SPEC-RECONCILIATION.md). [Historical PR #35](https://github.com/wupojung/AIoT-HW2-Housing-Regression/pull/35) is CLOSED/UNMERGED and non-normative.
 
-## Public Ames Case Packages
-
-The case selector offers the unchanged `Ames Housing — INIT B Reference Baseline` and the separate `Ames Housing — Full Model Exploration` package. Each `package_ref` points to its own immutable release revision; `current-release.json` may therefore list cases from different release IDs. The browser checks each package pointer digest/size, phase documents and manifest-bound figures. The exploration consumer additionally verifies chart, Phase 5 aggregate and selected-configuration artifacts before display.
-
-The exploration release reuses Phase 2/3 documents from INIT B with explicit source-package provenance and presents the historical Phase 4 Development run as a separate run. Its public aggregate package has 32 configurations (30 completed, 2 invalid) and 60 Phase 5 mean-fold/pooled-OOF evaluations. Phase 5 remains publication `PENDING`; private row-level OOF, fitted model files and residual plots are not included. Phase 6 inference is `UNAVAILABLE` because this historical exploration run has no matching final-fit model. The package remains `PARTIAL`.
-
-Phase 6 offers manual entry and an alternate browser-local CSV flow. CSV headers are matched only by the exact names `Neighborhood`, `OverallQual`, `BedroomAbvGr`, and `GrLivArea`; a selected row can populate the matching manual controls. The file is read in browser memory, is not uploaded or persisted, and unsupported or out-of-range values are not applied. The mock estimate remains fixed and is not calculated from either manual or CSV input.
-
-The site remains a static prototype. Its loopback-only Reference Baseline preview reads an ignored local Case Package and displays package-bound calculations and local inference smoke evidence; the browser itself does not train or evaluate a model, and it does not expose a remote prediction service. Do not copy raw datasets, private research, credentials, or unreviewed working files into `web/`.
-
-## Vercel output
-
-The root `vercel.json` sets `web/` as the static output directory. There is no build command or install step. Deployment and security checks require their separate authorization gates. Do not add local data, credentials, research PDFs, or raw datasets to `web/`.
+Never place source datasets, raw vehicle records/VIN, private model binaries, row-level OOF, credentials or unreviewed artifacts in `web/`. Follow [Security and Data Policy](../docs/SECURITY_AND_DATA_POLICY.md).
