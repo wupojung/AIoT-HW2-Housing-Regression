@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import io
 import json
 import logging
@@ -37,6 +38,33 @@ _PRODUCTION_ORIGIN = "https://regscope-aiot.vercel.app"
 PRODUCTION_MAX_BATCH_ROWS = 10
 _RUNTIME: Any | None = None
 _LOGGER = logging.getLogger(__name__)
+_ASSET_DECODE_STAGES = {
+    "asset_env_presence",
+    "asset_env_size",
+    "base64_decode",
+    "zip_open",
+    "archive_inventory",
+    "member_size_limit",
+    "member_read",
+}
+_ASSET_DECODE_CATEGORIES = {
+    "missing_configuration",
+    "encoded_size_limit",
+    "invalid_base64",
+    "invalid_archive",
+    "inventory_mismatch",
+    "member_size_invalid",
+    "member_read_failure",
+}
+
+
+class _AssetDecodeFailure(PredictionInputSchemaError):
+    """Internal asset error carrying only fixed diagnostic enums."""
+
+    def __init__(self, message: str, stage: str, category: str):
+        super().__init__(message)
+        self.diagnostic_stage = stage
+        self.diagnostic_category = category
 
 
 def _runtime_error_category(exc: Exception) -> str:
@@ -65,13 +93,20 @@ def _runtime_error_category(exc: Exception) -> str:
     return "unexpected_error"
 
 
-def _log_runtime_failure(stage: str, exc: Exception) -> None:
-    allowed_stages = {"asset_decode", "ephemeral_asset_write", "model_contract_load"}
+def _log_runtime_failure(stage: str, category: str) -> None:
+    allowed_stages = _ASSET_DECODE_STAGES | {
+        "asset_decode", "ephemeral_asset_write", "model_contract_load"
+    }
+    allowed_categories = _ASSET_DECODE_CATEGORIES | {
+        "import_error", "file_missing", "permission_error", "file_io_error",
+        "schema_or_asset_validation_error", "invalid_asset_error", "unexpected_error",
+    }
     safe_stage = stage if stage in allowed_stages else "runtime_initialization"
+    safe_category = category if category in allowed_categories else "unexpected_error"
     _LOGGER.error(
         "car_runtime_initialization_failed stage=%s category=%s",
         safe_stage,
-        _runtime_error_category(exc),
+        safe_category,
     )
 
 
@@ -108,31 +143,75 @@ def _origin_is_authorized(origin: str | None, *, required: bool) -> bool:
 def _decode_assets() -> tuple[bytes, bytes, bytes]:
     encoded = os.environ.get("REGSCOPE_P6_CAR_RUN03_ASSETS_ZIP_B64")
     if not encoded:
-        raise PredictionInputSchemaError("trusted Preview model assets are unavailable")
+        raise _AssetDecodeFailure(
+            "trusted Preview model assets are unavailable",
+            "asset_env_presence",
+            "missing_configuration",
+        )
     if len(encoded) > 64 * 1024:
-        raise PredictionInputSchemaError("trusted Preview asset archive exceeds the environment limit")
+        raise _AssetDecodeFailure(
+            "trusted Preview asset archive exceeds the environment limit",
+            "asset_env_size",
+            "encoded_size_limit",
+        )
     try:
         archive_bytes = base64.b64decode(encoded, validate=True)
-        with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
+    except (binascii.Error, ValueError, TypeError) as exc:
+        raise _AssetDecodeFailure(
+            "trusted Preview model assets are malformed",
+            "base64_decode",
+            "invalid_base64",
+        ) from exc
+
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(archive_bytes))
+    except Exception as exc:
+        raise _AssetDecodeFailure(
+            "trusted Preview model assets are malformed",
+            "zip_open",
+            "invalid_archive",
+        ) from exc
+
+    with archive:
+        try:
             expected = {"final-model.joblib", "prediction-input-schema.json", "run-manifest.json"}
             infos = archive.infolist()
-            if {item.filename for item in infos} != expected or len(infos) != len(expected):
-                raise PredictionInputSchemaError("trusted Preview asset archive has unexpected files")
-            limits = {
-                "final-model.joblib": 1024 * 1024,
-                "prediction-input-schema.json": 1024 * 1024,
-                "run-manifest.json": 256 * 1024,
-            }
-            if any(item.file_size < 1 or item.file_size > limits[item.filename] for item in infos):
-                raise PredictionInputSchemaError("trusted Preview asset archive exceeds a file limit")
-            assets = {name: archive.read(name) for name in expected}
-            return (
-                assets["final-model.joblib"],
-                assets["prediction-input-schema.json"],
-                assets["run-manifest.json"],
+        except Exception as exc:
+            raise _AssetDecodeFailure(
+                "trusted Preview model assets are malformed",
+                "archive_inventory",
+                "invalid_archive",
+            ) from exc
+        if {item.filename for item in infos} != expected or len(infos) != len(expected):
+            raise _AssetDecodeFailure(
+                "trusted Preview asset archive has unexpected files",
+                "archive_inventory",
+                "inventory_mismatch",
             )
-    except (ValueError, TypeError, zipfile.BadZipFile, KeyError, OSError) as exc:
-        raise PredictionInputSchemaError("trusted Preview model assets are malformed") from exc
+        limits = {
+            "final-model.joblib": 1024 * 1024,
+            "prediction-input-schema.json": 1024 * 1024,
+            "run-manifest.json": 256 * 1024,
+        }
+        if any(item.file_size < 1 or item.file_size > limits[item.filename] for item in infos):
+            raise _AssetDecodeFailure(
+                "trusted Preview asset archive exceeds a file limit",
+                "member_size_limit",
+                "member_size_invalid",
+            )
+        try:
+            assets = {name: archive.read(name) for name in expected}
+        except Exception as exc:
+            raise _AssetDecodeFailure(
+                "trusted Preview model assets are malformed",
+                "member_read",
+                "member_read_failure",
+            ) from exc
+        return (
+            assets["final-model.joblib"],
+            assets["prediction-input-schema.json"],
+            assets["run-manifest.json"],
+        )
 
 
 def _runtime() -> Any:
@@ -165,7 +244,10 @@ def _runtime() -> Any:
             contract_schema = Path(__file__).resolve().parent / "prediction-input-schema-v0.1.schema.json"
             _RUNTIME = load_verified_car_runtime(root, schema_path, contract_schema_path=contract_schema)
     except Exception as exc:
-        _log_runtime_failure(stage, exc)
+        if isinstance(exc, _AssetDecodeFailure):
+            _log_runtime_failure(exc.diagnostic_stage, exc.diagnostic_category)
+        else:
+            _log_runtime_failure(stage, _runtime_error_category(exc))
         raise
     return _RUNTIME
 
