@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "steam-review-multiplier",
+  "release_id": null,
+  "generated_at": "2026-11-02T11:35:39.486403+00:00",
+  "status": "PLANNED",
+  "reason_code": "LOCAL_CANDIDATE_PUBLICATION_REVIEW_PENDING",
+  "publication_review": "PENDING",
+  "default_evaluation_id": "steam-review-multiplier-run-01.holdout.ml",
+  "evaluations": [
+    {
+      "evaluation_id": "steam-review-multiplier-run-01.holdout.ml",
+      "execution_run_id": "steam-review-multiplier-run-01",
+      "configuration_id": "random_forest-all",
+      "final_fit_id": "steam-review-multiplier-run-01.development-refit",
+      "model_id": "steam-review-multiplier-random-forest",
+      "model_version": "1.0.0",
+      "evaluation_population": "holdout",
+      "prediction_origin": "Development refit; holdout scored once",
+      "metric_source": "holdout_aggregate",
+      "n": 7589,
+      "target": {
+        "column": "K midpoint proxy",
+        "unit": "multiplier"
+      },
+      "metrics": {
+        "mae": {
+          "value": 267.2588610302585,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/evaluation-summary.json"
+        },
+        "rmse": {
+          "value": 1011.3837552542055,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/evaluation-summary.json"
+        },
+        "r2": {
+          "value": 0.016333586940154077,
+          "status": "VERIFIED",
+          "reason_code": null,
+          "evidence_ref": "phases/phase-05/evaluation-summary.json"
+        }
+      },
+      "fold_summary": null,
+      "figures": [],
+      "interval": {
+        "int_f": {
+          "status": "UNAVAILABLE",
+          "reason_code": "NO_FORMAL_INTERVAL_METHOD",
+          "method": null,
+          "assumptions_ref": null
+        },
+        "int_s": {
+          "status": "UNAVAILABLE",
+          "reason_code": "MODEL_UNCERTAINTY_INTERVAL_NOT_ESTIMATED",
+          "interval_type": null,
+          "method": null,
+          "nominal_level": null,
+          "population": null,
+          "asset_ref": null,
+          "coverage_evidence": null,
+          "review_url": null
+        }
+      },
+      "evidence": {
+        "source_artifact_sha256": "04d8df2778aaa8f8b575934b7072d55224d37a2ded23e8261583f0fcf668dfab",
+        "source_ref": "https://www.kaggle.com/datasets/artermiloff/steam-games-dataset",
+        "protocol_version": "steam-3fold-log-k-seed42",
+        "review_url": null
+      },
+      "asset_status": "AVAILABLE",
+      "review_status": "AWAITING_REVIEW",
+      "limitations": [
+        "SteamSpy estimated_owners are interval estimates, not observed sales.",
+        "The single-value target is the interval midpoint divided by review count.",
+        "Rows with fewer than 20 reviews are excluded from the primary model due to unstable ratios.",
+        "The 2025 snapshot is cross-sectional and does not establish causal effects.",
+        "Random split metrics describe this dataset's proxy target, not future sales accuracy.",
+        "Holdout metrics were inspected during implementation and rerun after correcting missing-list handling; no model or feature-selection choice was changed from holdout results, but this is not a sealed preregistered test."
+      ],
+      "linked_evaluation_ids": []
+    }
+  ],
+  "ui": {
+    "default_population": "holdout",
+    "population_options": [
+      {
+        "id": "holdout",
+        "label": "Independent holdout"
+      }
+    ],
+    "figure_tabs": [
+      {
+        "figure_id": "FIG-P5-01",
+        "label": "Actual vs predicted",
+        "kind": "actual_vs_predicted"
+      },
+      {
+        "figure_id": "FIG-P5-02",
+        "label": "Ownership intervals",
+        "kind": "residual_vs_predicted"
+      },
+      {
+        "figure_id": "FIG-P5-03",
+        "label": "Residuals",
+        "kind": "residual_distribution"
+      }
+    ],
+    "metric_order": [
+      "mae",
+      "rmse",
+      "r2"
+    ],
+    "interval_figure_id": "FIG-P5-04"
+  }
+}

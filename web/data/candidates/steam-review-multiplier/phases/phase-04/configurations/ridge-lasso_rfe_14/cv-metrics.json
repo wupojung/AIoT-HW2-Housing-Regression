@@ -1,0 +1,21 @@
+{
+  "configuration_id": "ridge-lasso_rfe_14",
+  "model_id": "ridge",
+  "feature_selection": "lasso_rfe_14",
+  "fold_count": 3,
+  "estimator_parameters": {
+    "alpha": 10.0
+  },
+  "selector_parameters": {
+    "estimator": "Ridge(alpha=10.0)",
+    "n_features_to_select": 14,
+    "step": 0.5
+  },
+  "fold_log_rmse": [
+    0.9809099575308967,
+    0.9975845368337878,
+    0.9938290039285476
+  ],
+  "mean_log_rmse": 0.9907744994310773,
+  "sd_log_rmse": 0.00874687927354094
+}

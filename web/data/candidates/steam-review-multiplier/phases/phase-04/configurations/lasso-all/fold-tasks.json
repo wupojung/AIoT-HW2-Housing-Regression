@@ -1,0 +1,10 @@
+{
+  "configuration_id": "lasso-all",
+  "fold_count": 3,
+  "seed": 42,
+  "fold_log_rmse": [
+    0.9783160553575023,
+    0.9963079494832671,
+    0.9906173211203526
+  ]
+}

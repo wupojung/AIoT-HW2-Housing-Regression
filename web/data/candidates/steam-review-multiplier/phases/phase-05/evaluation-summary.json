@@ -1,0 +1,557 @@
+{
+  "case_id": "steam-review-multiplier",
+  "run_id": "steam-review-multiplier-run-01",
+  "source_file": "games_march2025_cleaned.csv",
+  "data_sha256": "04d8df2778aaa8f8b575934b7072d55224d37a2ded23e8261583f0fcf668dfab",
+  "target": "log1p((estimated_owners_low + estimated_owners_high) / 2 / review_count)",
+  "target_transform": "log1p(K midpoint proxy); inverse with expm1 and clip negative predictions to zero",
+  "review_minimum": 20,
+  "source_rows": 89618,
+  "eligible_rows": 37941,
+  "train_rows": 30352,
+  "holdout_rows": 7589,
+  "split": {
+    "type": "random row split on unique AppID snapshot",
+    "holdout_fraction": 0.2,
+    "seed": 42,
+    "appids_unique": true,
+    "development_appid_sha256": "f387c8bc010c97c91455a67f8c5813b02d3826869e0227150313a708970240c5",
+    "holdout_appid_sha256": "f7efc8a8b1e0918c3ce024bc8899ab4bdf70407ffeedeae5c891b30458df4713"
+  },
+  "cv": {
+    "folds": 3,
+    "shuffle": true,
+    "seed": 42,
+    "preprocessing_and_selection_fit_inside_each_fold": true,
+    "fold_membership_sha256": [
+      {
+        "fold": 1,
+        "train_appid_sha256": "ffa65da480024b38b3afe7f2b2f3965dafdd62912c392ddd10cfaa3c27337b35",
+        "validation_appid_sha256": "3986927909716e340364d5d035c2bc99dc9b227e92ce59639d25c0e62998a52d"
+      },
+      {
+        "fold": 2,
+        "train_appid_sha256": "b77b79ca82342b544712ff9c6521fda6720eefca65eed6c7b0b54e5abcc81695",
+        "validation_appid_sha256": "0cb544fc5f9b60f230913cee72b06e4986df59c518e70120d4b311f6696ac4de"
+      },
+      {
+        "fold": 3,
+        "train_appid_sha256": "ad58941e242ac4578a013492761c1508e578ccf59a168b5449001f9d11fe5068",
+        "validation_appid_sha256": "386adad92a49b14dfa451b48b06c05e6424a671e8d79f6ee73c0ef867c848c27"
+      }
+    ]
+  },
+  "raw_candidate_field_count": 19,
+  "raw_candidate_fields": [
+    "genres",
+    "categories",
+    "tags",
+    "price",
+    "required_age",
+    "dlc_count",
+    "achievements",
+    "release_date",
+    "windows",
+    "mac",
+    "linux",
+    "supported_languages",
+    "full_audio_languages",
+    "discount",
+    "developers",
+    "publishers",
+    "screenshots",
+    "movies",
+    "website"
+  ],
+  "model_input_fields": [
+    "genres",
+    "price",
+    "required_age",
+    "dlc_count",
+    "achievements",
+    "release_year",
+    "windows",
+    "mac",
+    "linux",
+    "genre_count",
+    "category_count",
+    "tag_count",
+    "supported_language_count",
+    "full_audio_language_count",
+    "has_english",
+    "has_traditional_chinese",
+    "discount",
+    "developer_count",
+    "publisher_count",
+    "screenshot_count",
+    "movie_count",
+    "has_website"
+  ],
+  "cv_configurations": [
+    {
+      "configuration_id": "ols-all",
+      "model_id": "ols",
+      "feature_selection": "all",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "fit_intercept": true
+      },
+      "selector_parameters": {},
+      "fold_log_rmse": [
+        0.9781863551136062,
+        0.9965832777310227,
+        0.9905557108409015
+      ],
+      "mean_log_rmse": 0.9884417812285102,
+      "sd_log_rmse": 0.009378870627768144
+    },
+    {
+      "configuration_id": "ridge-all",
+      "model_id": "ridge",
+      "feature_selection": "all",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "alpha": 10.0
+      },
+      "selector_parameters": {},
+      "fold_log_rmse": [
+        0.9781877088073816,
+        0.9965764763681326,
+        0.990556632468885
+      ],
+      "mean_log_rmse": 0.9884402725481332,
+      "sd_log_rmse": 0.009375282800345611
+    },
+    {
+      "configuration_id": "lasso-all",
+      "model_id": "lasso",
+      "feature_selection": "all",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "alpha": 0.001,
+        "max_iter": 5000
+      },
+      "selector_parameters": {},
+      "fold_log_rmse": [
+        0.9783160553575023,
+        0.9963079494832671,
+        0.9906173211203526
+      ],
+      "mean_log_rmse": 0.988413775320374,
+      "sd_log_rmse": 0.009196128213962356
+    },
+    {
+      "configuration_id": "random_forest-all",
+      "model_id": "random_forest",
+      "feature_selection": "all",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "n_estimators": 100,
+        "min_samples_leaf": 5,
+        "max_features": 0.8,
+        "random_state": 42,
+        "n_jobs": -1
+      },
+      "selector_parameters": {},
+      "fold_log_rmse": [
+        0.9292370153632153,
+        0.9391193103754405,
+        0.9431454898608581
+      ],
+      "mean_log_rmse": 0.9371672718665046,
+      "sd_log_rmse": 0.007156762988123272
+    },
+    {
+      "configuration_id": "ridge-select_k_14",
+      "model_id": "ridge",
+      "feature_selection": "select_k_14",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "alpha": 10.0
+      },
+      "selector_parameters": {
+        "k": 14
+      },
+      "fold_log_rmse": [
+        0.9859772852395616,
+        1.0008493415064312,
+        0.998441914693041
+      ],
+      "mean_log_rmse": 0.9950895138130113,
+      "sd_log_rmse": 0.00798269742296123
+    },
+    {
+      "configuration_id": "ridge-lasso_rfe_14",
+      "model_id": "ridge",
+      "feature_selection": "lasso_rfe_14",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "alpha": 10.0
+      },
+      "selector_parameters": {
+        "estimator": "Ridge(alpha=10.0)",
+        "n_features_to_select": 14,
+        "step": 0.5
+      },
+      "fold_log_rmse": [
+        0.9809099575308967,
+        0.9975845368337878,
+        0.9938290039285476
+      ],
+      "mean_log_rmse": 0.9907744994310773,
+      "sd_log_rmse": 0.00874687927354094
+    }
+  ],
+  "selected_configuration": "random_forest-all",
+  "holdout_metrics": [
+    {
+      "model": "fixed-k-20",
+      "mae": 375.83054040767814,
+      "rmse": 1086.7018031641223,
+      "r2": -0.13562951332214634,
+      "owners_interval_compatibility_rate": 0.5401238634866253,
+      "median_estimated_owners": 1920.0
+    },
+    {
+      "model": "fixed-k-30",
+      "mae": 366.365100891555,
+      "rmse": 1083.286566426341,
+      "r2": -0.12850272081020808,
+      "owners_interval_compatibility_rate": 0.5564633021478456,
+      "median_estimated_owners": 2880.0
+    },
+    {
+      "model": "fixed-k-50",
+      "mae": 348.93972629736885,
+      "rmse": 1076.7022508562911,
+      "r2": -0.11482612427091099,
+      "owners_interval_compatibility_rate": 0.5876927131374358,
+      "median_estimated_owners": 4800.0
+    },
+    {
+      "model": "genre-training-median",
+      "mae": 290.2479645695962,
+      "rmse": 1035.9570200282405,
+      "r2": -0.03204675031523552,
+      "owners_interval_compatibility_rate": 0.5112663064962446,
+      "median_estimated_owners": 20434.782608695652
+    },
+    {
+      "model": "machine-learning",
+      "mae": 267.2588610302585,
+      "rmse": 1011.3837552542055,
+      "r2": 0.016333586940154077,
+      "owners_interval_compatibility_rate": 0.5757016734747661,
+      "median_estimated_owners": 20684.46720440338
+    }
+  ],
+  "genre_holdout_summary": [
+    {
+      "genre": "Indie",
+      "n": 5386,
+      "median_observed_k_proxy": 219.092868338558,
+      "median_predicted_k": 213.82858058805596,
+      "median_training_genre_baseline_k": 211.32515425455588
+    },
+    {
+      "genre": "Adventure",
+      "n": 3271,
+      "median_observed_k_proxy": 204.08163265306123,
+      "median_predicted_k": 202.9116665611797,
+      "median_training_genre_baseline_k": 208.57487922705317
+    },
+    {
+      "genre": "Action",
+      "n": 3100,
+      "median_observed_k_proxy": 217.03184060765327,
+      "median_predicted_k": 216.32855742512268,
+      "median_training_genre_baseline_k": 211.32515425455588
+    },
+    {
+      "genre": "Casual",
+      "n": 2840,
+      "median_observed_k_proxy": 232.5581395348837,
+      "median_predicted_k": 218.03343133380156,
+      "median_training_genre_baseline_k": 215.98594642072905
+    },
+    {
+      "genre": "Simulation",
+      "n": 1822,
+      "median_observed_k_proxy": 167.03869047619048,
+      "median_predicted_k": 177.40774652593558,
+      "median_training_genre_baseline_k": 200.6491211157171
+    },
+    {
+      "genre": "RPG",
+      "n": 1609,
+      "median_observed_k_proxy": 169.4915254237288,
+      "median_predicted_k": 173.67293704132297,
+      "median_training_genre_baseline_k": 199.3328212131558
+    },
+    {
+      "genre": "Strategy",
+      "n": 1512,
+      "median_observed_k_proxy": 200.26737967914437,
+      "median_predicted_k": 205.1138059108523,
+      "median_training_genre_baseline_k": 206.75571997814842
+    },
+    {
+      "genre": "Early Access",
+      "n": 686,
+      "median_observed_k_proxy": 170.88466779764718,
+      "median_predicted_k": 180.42219200455787,
+      "median_training_genre_baseline_k": 200.96868294111138
+    },
+    {
+      "genre": "Free To Play",
+      "n": 631,
+      "median_observed_k_proxy": 270.27027027027026,
+      "median_predicted_k": 264.7939345812807,
+      "median_training_genre_baseline_k": 225.53997848297413
+    },
+    {
+      "genre": "Sports",
+      "n": 339,
+      "median_observed_k_proxy": 217.3913043478261,
+      "median_predicted_k": 199.2137384513302,
+      "median_training_genre_baseline_k": 208.70696877737993
+    },
+    {
+      "genre": "Racing",
+      "n": 258,
+      "median_observed_k_proxy": 203.19688569069245,
+      "median_predicted_k": 218.96774636756163,
+      "median_training_genre_baseline_k": 211.29183475156333
+    },
+    {
+      "genre": "Massively Multiplayer",
+      "n": 203,
+      "median_observed_k_proxy": 213.67521367521368,
+      "median_predicted_k": 221.82967688054072,
+      "median_training_genre_baseline_k": 212.99308480881987
+    },
+    {
+      "genre": "Utilities",
+      "n": 66,
+      "median_observed_k_proxy": 277.1195365982096,
+      "median_predicted_k": 255.09680117709954,
+      "median_training_genre_baseline_k": 225.1303912840488
+    },
+    {
+      "genre": "Design & Illustration",
+      "n": 50,
+      "median_observed_k_proxy": 204.14116638487366,
+      "median_predicted_k": 217.32352682689572,
+      "median_training_genre_baseline_k": 215.6682627322801
+    },
+    {
+      "genre": "Animation & Modeling",
+      "n": 44,
+      "median_observed_k_proxy": 202.59186351706037,
+      "median_predicted_k": 223.04832737406258,
+      "median_training_genre_baseline_k": 211.60741025970137
+    },
+    {
+      "genre": "Violent",
+      "n": 39,
+      "median_observed_k_proxy": 256.4102564102564,
+      "median_predicted_k": 319.32016213841007,
+      "median_training_genre_baseline_k": 247.98693034498748
+    },
+    {
+      "genre": "Gore",
+      "n": 32,
+      "median_observed_k_proxy": 278.8888888888889,
+      "median_predicted_k": 308.5825508910573,
+      "median_training_genre_baseline_k": 249.98952794963128
+    }
+  ],
+  "selected_features": [
+    "price",
+    "required_age",
+    "dlc_count",
+    "achievements",
+    "release_year",
+    "windows",
+    "mac",
+    "linux",
+    "genre_count",
+    "category_count",
+    "tag_count",
+    "supported_language_count",
+    "full_audio_language_count",
+    "has_english",
+    "has_traditional_chinese",
+    "discount",
+    "developer_count",
+    "publisher_count",
+    "screenshot_count",
+    "movie_count",
+    "has_website",
+    "genre::Indie",
+    "genre::Adventure",
+    "genre::Action",
+    "genre::Casual",
+    "genre::Simulation",
+    "genre::RPG",
+    "genre::Strategy",
+    "genre::Early Access",
+    "genre::Free To Play",
+    "genre::Sports",
+    "genre::Racing",
+    "genre::Massively Multiplayer"
+  ],
+  "feature_importance": [
+    {
+      "feature": "price",
+      "importance": 0.1906740966598208
+    },
+    {
+      "feature": "release_year",
+      "importance": 0.09689687124997651
+    },
+    {
+      "feature": "achievements",
+      "importance": 0.09186365857241854
+    },
+    {
+      "feature": "supported_language_count",
+      "importance": 0.08610650347529461
+    },
+    {
+      "feature": "tag_count",
+      "importance": 0.08479013480619488
+    },
+    {
+      "feature": "screenshot_count",
+      "importance": 0.07322700075598265
+    },
+    {
+      "feature": "category_count",
+      "importance": 0.053943750422892574
+    },
+    {
+      "feature": "dlc_count",
+      "importance": 0.034338164644792106
+    },
+    {
+      "feature": "genre_count",
+      "importance": 0.03251776820891563
+    },
+    {
+      "feature": "full_audio_language_count",
+      "importance": 0.027697829863332708
+    },
+    {
+      "feature": "has_traditional_chinese",
+      "importance": 0.026280426930193355
+    },
+    {
+      "feature": "movie_count",
+      "importance": 0.023971530131445748
+    },
+    {
+      "feature": "discount",
+      "importance": 0.021106940466528484
+    },
+    {
+      "feature": "genre::Action",
+      "importance": 0.01548165778680715
+    },
+    {
+      "feature": "genre::Adventure",
+      "importance": 0.01545036446694764
+    },
+    {
+      "feature": "genre::Simulation",
+      "importance": 0.014765589471083852
+    },
+    {
+      "feature": "genre::Casual",
+      "importance": 0.014532477658312839
+    },
+    {
+      "feature": "has_website",
+      "importance": 0.014134584568012958
+    },
+    {
+      "feature": "mac",
+      "importance": 0.011753237380507415
+    },
+    {
+      "feature": "genre::Indie",
+      "importance": 0.011616198331553503
+    },
+    {
+      "feature": "genre::RPG",
+      "importance": 0.010706338911586113
+    },
+    {
+      "feature": "genre::Strategy",
+      "importance": 0.010595343878022
+    },
+    {
+      "feature": "linux",
+      "importance": 0.007654338756088638
+    },
+    {
+      "feature": "developer_count",
+      "importance": 0.00575174931751389
+    },
+    {
+      "feature": "genre::Free To Play",
+      "importance": 0.005247892758559851
+    },
+    {
+      "feature": "genre::Early Access",
+      "importance": 0.0043995106094150025
+    },
+    {
+      "feature": "has_english",
+      "importance": 0.004172698501041465
+    },
+    {
+      "feature": "publisher_count",
+      "importance": 0.0037647810181454227
+    },
+    {
+      "feature": "required_age",
+      "importance": 0.0021442789509839998
+    },
+    {
+      "feature": "genre::Sports",
+      "importance": 0.0019440145839839218
+    },
+    {
+      "feature": "genre::Massively Multiplayer",
+      "importance": 0.0012656207769027852
+    },
+    {
+      "feature": "genre::Racing",
+      "importance": 0.0012046460867429498
+    },
+    {
+      "feature": "windows",
+      "importance": 0.0
+    }
+  ],
+  "feature_selection_note": "RFE configuration is available as a distinct CV candidate; final feature names reflect selected winner.",
+  "software": {
+    "python": "3.12.15",
+    "pandas": "3.1.0",
+    "numpy": "2.5.4",
+    "scikit_learn": "1.9.1"
+  },
+  "source_code_sha256": {
+    "research_module": "c7ec8d1a9132aa96e6cbb5a0bcf60ed1ff89c33169bace078cc922a6d13faafd",
+    "runner": "44c0426b9691713208c92421974452ac6a3de55b68d3e7b5e177b9e843c76c89"
+  },
+  "limitations": [
+    "SteamSpy estimated_owners are interval estimates, not observed sales.",
+    "The single-value target is the interval midpoint divided by review count.",
+    "Rows with fewer than 20 reviews are excluded from the primary model due to unstable ratios.",
+    "The 2025 snapshot is cross-sectional and does not establish causal effects.",
+    "Random split metrics describe this dataset's proxy target, not future sales accuracy.",
+    "Holdout metrics were inspected during implementation and rerun after correcting missing-list handling; no model or feature-selection choice was changed from holdout results, but this is not a sealed preregistered test."
+  ]
+}

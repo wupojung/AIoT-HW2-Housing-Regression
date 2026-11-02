@@ -1,0 +1,235 @@
+{
+  "selected_configuration": "random_forest-all",
+  "selected_features": [
+    "price",
+    "required_age",
+    "dlc_count",
+    "achievements",
+    "release_year",
+    "windows",
+    "mac",
+    "linux",
+    "genre_count",
+    "category_count",
+    "tag_count",
+    "supported_language_count",
+    "full_audio_language_count",
+    "has_english",
+    "has_traditional_chinese",
+    "discount",
+    "developer_count",
+    "publisher_count",
+    "screenshot_count",
+    "movie_count",
+    "has_website",
+    "genre::Indie",
+    "genre::Adventure",
+    "genre::Action",
+    "genre::Casual",
+    "genre::Simulation",
+    "genre::RPG",
+    "genre::Strategy",
+    "genre::Early Access",
+    "genre::Free To Play",
+    "genre::Sports",
+    "genre::Racing",
+    "genre::Massively Multiplayer"
+  ],
+  "feature_importance": [
+    {
+      "feature": "price",
+      "importance": 0.1906740966598208
+    },
+    {
+      "feature": "release_year",
+      "importance": 0.09689687124997651
+    },
+    {
+      "feature": "achievements",
+      "importance": 0.09186365857241854
+    },
+    {
+      "feature": "supported_language_count",
+      "importance": 0.08610650347529461
+    },
+    {
+      "feature": "tag_count",
+      "importance": 0.08479013480619488
+    },
+    {
+      "feature": "screenshot_count",
+      "importance": 0.07322700075598265
+    },
+    {
+      "feature": "category_count",
+      "importance": 0.053943750422892574
+    },
+    {
+      "feature": "dlc_count",
+      "importance": 0.034338164644792106
+    },
+    {
+      "feature": "genre_count",
+      "importance": 0.03251776820891563
+    },
+    {
+      "feature": "full_audio_language_count",
+      "importance": 0.027697829863332708
+    },
+    {
+      "feature": "has_traditional_chinese",
+      "importance": 0.026280426930193355
+    },
+    {
+      "feature": "movie_count",
+      "importance": 0.023971530131445748
+    },
+    {
+      "feature": "discount",
+      "importance": 0.021106940466528484
+    },
+    {
+      "feature": "genre::Action",
+      "importance": 0.01548165778680715
+    },
+    {
+      "feature": "genre::Adventure",
+      "importance": 0.01545036446694764
+    },
+    {
+      "feature": "genre::Simulation",
+      "importance": 0.014765589471083852
+    },
+    {
+      "feature": "genre::Casual",
+      "importance": 0.014532477658312839
+    },
+    {
+      "feature": "has_website",
+      "importance": 0.014134584568012958
+    },
+    {
+      "feature": "mac",
+      "importance": 0.011753237380507415
+    },
+    {
+      "feature": "genre::Indie",
+      "importance": 0.011616198331553503
+    }
+  ],
+  "cv_configurations": [
+    {
+      "configuration_id": "ols-all",
+      "model_id": "ols",
+      "feature_selection": "all",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "fit_intercept": true
+      },
+      "selector_parameters": {},
+      "fold_log_rmse": [
+        0.9781863551136062,
+        0.9965832777310227,
+        0.9905557108409015
+      ],
+      "mean_log_rmse": 0.9884417812285102,
+      "sd_log_rmse": 0.009378870627768144
+    },
+    {
+      "configuration_id": "ridge-all",
+      "model_id": "ridge",
+      "feature_selection": "all",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "alpha": 10.0
+      },
+      "selector_parameters": {},
+      "fold_log_rmse": [
+        0.9781877088073816,
+        0.9965764763681326,
+        0.990556632468885
+      ],
+      "mean_log_rmse": 0.9884402725481332,
+      "sd_log_rmse": 0.009375282800345611
+    },
+    {
+      "configuration_id": "lasso-all",
+      "model_id": "lasso",
+      "feature_selection": "all",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "alpha": 0.001,
+        "max_iter": 5000
+      },
+      "selector_parameters": {},
+      "fold_log_rmse": [
+        0.9783160553575023,
+        0.9963079494832671,
+        0.9906173211203526
+      ],
+      "mean_log_rmse": 0.988413775320374,
+      "sd_log_rmse": 0.009196128213962356
+    },
+    {
+      "configuration_id": "random_forest-all",
+      "model_id": "random_forest",
+      "feature_selection": "all",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "n_estimators": 100,
+        "min_samples_leaf": 5,
+        "max_features": 0.8,
+        "random_state": 42,
+        "n_jobs": -1
+      },
+      "selector_parameters": {},
+      "fold_log_rmse": [
+        0.9292370153632153,
+        0.9391193103754405,
+        0.9431454898608581
+      ],
+      "mean_log_rmse": 0.9371672718665046,
+      "sd_log_rmse": 0.007156762988123272
+    },
+    {
+      "configuration_id": "ridge-select_k_14",
+      "model_id": "ridge",
+      "feature_selection": "select_k_14",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "alpha": 10.0
+      },
+      "selector_parameters": {
+        "k": 14
+      },
+      "fold_log_rmse": [
+        0.9859772852395616,
+        1.0008493415064312,
+        0.998441914693041
+      ],
+      "mean_log_rmse": 0.9950895138130113,
+      "sd_log_rmse": 0.00798269742296123
+    },
+    {
+      "configuration_id": "ridge-lasso_rfe_14",
+      "model_id": "ridge",
+      "feature_selection": "lasso_rfe_14",
+      "fold_count": 3,
+      "estimator_parameters": {
+        "alpha": 10.0
+      },
+      "selector_parameters": {
+        "estimator": "Ridge(alpha=10.0)",
+        "n_features_to_select": 14,
+        "step": 0.5
+      },
+      "fold_log_rmse": [
+        0.9809099575308967,
+        0.9975845368337878,
+        0.9938290039285476
+      ],
+      "mean_log_rmse": 0.9907744994310773,
+      "sd_log_rmse": 0.00874687927354094
+    }
+  ]
+}

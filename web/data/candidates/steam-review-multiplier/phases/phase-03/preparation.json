@@ -1,0 +1,111 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "steam-review-multiplier",
+  "status": "VERIFIED",
+  "feature_types": [
+    {
+      "type_id": "nominal",
+      "label": "Multi-label game genre"
+    },
+    {
+      "type_id": "discrete",
+      "label": "Counts and binary platform/language indicators"
+    },
+    {
+      "type_id": "continuous",
+      "label": "Price, release year and discount"
+    }
+  ],
+  "stages": [
+    {
+      "id": "raw",
+      "label": "Source dataset",
+      "unit": "raw_columns",
+      "total": 47,
+      "total_status": "VERIFIED",
+      "segments": [],
+      "distribution_status": "VERIFIED"
+    },
+    {
+      "id": "filtered",
+      "label": "Selected raw candidate fields",
+      "unit": "pre_encoding_columns",
+      "total": 19,
+      "total_status": "VERIFIED",
+      "segments": [],
+      "distribution_status": "VERIFIED"
+    },
+    {
+      "id": "processed",
+      "label": "Engineered model inputs",
+      "unit": "pre_encoding_columns",
+      "total": 22,
+      "total_status": "VERIFIED",
+      "segments": [
+        {
+          "type_id": "nominal",
+          "count": 1
+        },
+        {
+          "type_id": "discrete",
+          "count": 18
+        },
+        {
+          "type_id": "continuous",
+          "count": 3
+        }
+      ],
+      "distribution_status": "VERIFIED",
+      "fit_population": "development partition / training fold"
+    },
+    {
+      "id": "encoded",
+      "label": "Selected model features",
+      "unit": "encoded_features",
+      "total": 33,
+      "total_status": "VERIFIED",
+      "segments": [
+        {
+          "type_id": "nominal",
+          "count": 12
+        },
+        {
+          "type_id": "discrete",
+          "count": 18
+        },
+        {
+          "type_id": "continuous",
+          "count": 3
+        }
+      ],
+      "distribution_status": "VERIFIED",
+      "fit_population": "development partition / training fold"
+    }
+  ],
+  "treatments": [
+    {
+      "id": "target-proxy",
+      "description": "K interval midpoint proxy; log1p response; zero upper-bound owners excluded"
+    },
+    {
+      "id": "review-minimum",
+      "description": "At least 20 num_reviews_total reviews"
+    },
+    {
+      "id": "imputation-scaling",
+      "description": "Median imputation and StandardScaler inside CV pipeline"
+    },
+    {
+      "id": "leakage-control",
+      "description": "Identifier, review counts, owners and popularity fields excluded from model input"
+    }
+  ],
+  "split": {
+    "source_labeled_rows": 37941,
+    "training_rows": 30352,
+    "holdout_rows": 7589,
+    "seed": 42,
+    "status": "VERIFIED"
+  },
+  "lineage_ref": "phases/phase-03/feature-lineage.json"
+}

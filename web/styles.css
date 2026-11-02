@@ -619,3 +619,18 @@ details.disclosure summary { color: #126879; }
 
 .package-figure { display: block; width: 100%; max-height: 560px; object-fit: contain; margin: 18px 0; background: #fff; border: 1px solid #d9e2e7; border-radius: 8px; }
 .package-json { overflow-x: auto; padding: 12px; background: #f4f7f8; border-radius: 8px; }
+:root { --steam-accent: #4f8292; }
+.steam-evidence-figure { margin: 0 0 18px; }
+.steam-evidence-figure img { display: block; width: 100%; height: auto; border: 1px solid rgba(180,205,215,.2); border-radius: 10px; background: #fff; }
+.steam-evidence-figure figcaption { margin-top: 8px; color: var(--muted, #aab7c0); font-size: .88rem; }
+.steam-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.steam-form > label { display: grid; gap: 6px; color: #244153; font-weight: 650; }
+.steam-form input[type="number"] { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid rgba(180,205,215,.32); border-radius: 7px; color: inherit; background: rgba(8,20,27,.72); }
+.steam-checks { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0; padding: 12px; border: 1px solid rgba(180,205,215,.25); border-radius: 8px; }
+.steam-checks legend { padding: 0 6px; color: #244153; font-weight: 650; }
+.steam-checks label { display: inline-flex; gap: 6px; align-items: center; }
+.steam-form button { justify-self: start; }
+.steam-form [role="alert"] { grid-column: 1/-1; color: #9b2d24; }
+.steam-result { margin-top: 18px; padding: 18px; border: 1px solid rgba(102,190,159,.45); border-radius: 10px; background: rgba(44,94,79,.2); }
+.steam-result h2 { margin-top: 0; }
+@media (max-width: 680px) { .steam-form { grid-template-columns: 1fr; } }

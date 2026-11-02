@@ -28,6 +28,12 @@ const ADDITIONAL_FEATURE_TYPES = [
   ["other", "其他／洩漏代理 (Other / Leakage Proxy)", "#a6afb8"]
 ];
 const PHASE6_QUERY = new URLSearchParams(location.search);
+const IS_STEAM_LOCAL_PREVIEW = location.protocol === "http:"
+  && ["localhost", "127.0.0.1"].includes(location.hostname)
+  && location.pathname.startsWith("/web/")
+  && PHASE6_QUERY.get("steam-homework-preview") === "1";
+const STEAM_CASE_ID = "steam-review-multiplier";
+const STEAM_CASE_ROOT = `${location.pathname.startsWith("/web/") ? "/web" : ""}/data/candidates/${STEAM_CASE_ID}`;
 function isTailscaleIPv4Host(hostname) {
   const octets = hostname.split(".").map((part) => /^(0|[1-9]\d{0,2})$/.test(part) ? Number(part) : NaN);
   return octets.length === 4 && octets.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)
@@ -123,9 +129,15 @@ CASES["ames-housing-formal"] = {
   packageRevision: "local-staging-p5-formal-data-test-20261027-01"
 };
 CASES["ames-housing"].packageMode = "mock";
+CASES[STEAM_CASE_ID] = {
+  id: STEAM_CASE_ID, title: "Steam Review Multiplier · Homework Candidate", status: "PARTIAL",
+  packageMode: "steam", packageRevision: "steam-homework-20261102-01", source: "Kaggle Steam Games Dataset 2025",
+  sourceUrl: "https://www.kaggle.com/datasets/artermiloff/steam-games-dataset", license: "MIT (Kaggle-listed; review pending)",
+  sections: [], analyses: [], inference: { status: "UNAVAILABLE", models: [], reasonCode: "LOADING", message: "Steam candidate package is loading." }
+};
 
 const state = {
-  caseId: "ames-full-model-exploration", route: "home", analysisId: "overview", perspective: "method_comparison",
+  caseId: IS_STEAM_LOCAL_PREVIEW ? STEAM_CASE_ID : "ames-full-model-exploration", route: "home", analysisId: "overview", perspective: "method_comparison",
   phase4RunId: "MOCK-RUN-02", phase6MockSubmitted: false,
   referenceAnalysisId: "figure-field-decisions",
   referenceFigureId: "FIG-P5-01",
@@ -138,6 +150,12 @@ const state = {
   dashboardMode: "verified", customSource: "file", customFile: null, customUrl: "", customHeaders: [], customRows: [],
   targetField: "", featureFields: [], csvMessage: "尚未載入資料。CSV 僅在此瀏覽器本機預覽，不會上傳。", customValidated: false
 };
+let steamCandidate = null;
+let steamCandidateError = null;
+let steamCandidateLoading = false;
+let steamAssetUrls = {};
+let steamPredictionResult = null;
+let steamPredictionError = null;
 const app = document.querySelector("#app");
 const phaseNav = document.querySelector("#phase-nav");
 const caseContext = document.querySelector("#case-context");
@@ -181,11 +199,13 @@ function banner(caseInfo = caseData()) {
     ? `公開 Case Package ${caseInfo.packageRevision} · INIT B 正式 Development 計算；Phase 5 為 OOF 評估，研究發布審查仍待完成。`
     : explorationPackageMode
     ? `Historical Development model exploration · package revision ${caseInfo.packageRevision} · completed configurations only; publication review pending.`
+    : caseInfo.packageMode === "steam"
+    ? `Local homework candidate ${caseInfo.packageRevision} · real aggregate evidence and loopback-only fitted model; publication review pending.`
     : caseInfo.status === "MOCK"
     ? `UI fixture only · package revision ${caseInfo.packageRevision} · ${SOURCE}. These values are not approved research results.`
     : "Planned placeholder only · no research package, data, or model is available.";
   const bannerStatus = caseInfo.status;
-  return `<div class="fixture-banner"><span><strong>${formalPackage ? "Formal package preview" : explorationPackageMode ? "Historical exploration package" : caseInfo.status === "MOCK" ? "Fixture preview" : "Planned case"}</strong> · ${esc(reason)}</span>${badge(bannerStatus)}</div>`;
+  return `<div class="fixture-banner"><span><strong>${formalPackage ? "Formal package preview" : caseInfo.packageMode === "steam" ? "Steam homework candidate" : explorationPackageMode ? "Historical exploration package" : caseInfo.status === "MOCK" ? "Fixture preview" : "Planned case"}</strong> · ${esc(reason)}</span>${badge(bannerStatus)}</div>`;
 }
 function updateShell() {
   const phase = routePhase();
@@ -197,6 +217,7 @@ function updateShell() {
   document.querySelector("[data-crisp-link]").setAttribute("aria-current", phase ? "page" : "false");
   let publicCases = PUBLIC_CASE_IDS.filter((id) => CASES[id]).map((id) => [id, CASES[id]]);
   if (LOCAL_CAR_PHASE6_PREVIEW) publicCases = [[CAR_CASE_ID, CASES[CAR_CASE_ID]]];
+  if (IS_STEAM_LOCAL_PREVIEW) publicCases.push([STEAM_CASE_ID, CASES[STEAM_CASE_ID]]);
   caseSelect.innerHTML = publicCases.map(([key, c]) => `<option value="${esc(key)}" ${key === state.caseId ? "selected" : ""}>${esc(c.title)} · ${esc(c.status)}</option>`).join("");
   const caseLoadStatus = document.querySelector("#case-load-status");
   const loading = explorationPackageLoading || carPackageLoading;
@@ -1204,6 +1225,136 @@ function footerNav(prev, next) {
 function plannedPanel(message = "此案例目前沒有可用的研究資料。") {
   return `<section class="state-panel"><span class="state-icon" aria-hidden="true">i</span><h3>此階段尚未提供資料</h3><p>${esc(message)}切換至此案例不會沿用 Ames 的文字、圖表或狀態。</p>${badge("PLANNED")}</section>`;
 }
+async function loadSteamCandidate() {
+  if (steamCandidate || steamCandidateLoading || steamCandidateError) return;
+  steamCandidateLoading = true;
+  render();
+  try {
+    const manifestResponse = await fetch(`${STEAM_CASE_ROOT}/package.json`, { cache: "no-store" });
+    if (!manifestResponse.ok) throw new Error("Candidate package manifest could not be loaded.");
+    const manifest = await manifestResponse.json();
+    if (manifest.case_id !== STEAM_CASE_ID || manifest.package_status !== "PARTIAL" || !Array.isArray(manifest.files)) throw new Error("Candidate package identity or status is invalid.");
+    const seen = new Set();
+    const files = {};
+    for (const entry of manifest.files) {
+      if (!entry || typeof entry.path !== "string" || entry.path.startsWith("/") || entry.path.split("/").includes("..") || seen.has(entry.path)) throw new Error("Candidate manifest contains an invalid path.");
+      seen.add(entry.path);
+      const response = await fetch(`${STEAM_CASE_ROOT}/${entry.path}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Candidate asset unavailable: ${entry.path}`);
+      const bytes = await response.arrayBuffer();
+      const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((x) => x.toString(16).padStart(2, "0")).join("");
+      if (bytes.byteLength !== entry.bytes || digest !== entry.sha256) throw new Error(`Candidate asset integrity check failed: ${entry.path}`);
+      files[entry.path] = { bytes, mime: entry.mime };
+      if (entry.mime.startsWith("image/")) steamAssetUrls[entry.path] = URL.createObjectURL(new Blob([bytes], { type: entry.mime }));
+    }
+    const phaseDocs = {};
+    for (let phase = 1; phase <= 6; phase++) {
+      const ref = manifest.phases?.[`phase${phase}`]?.data_ref;
+      if (!seen.has(ref)) throw new Error(`Phase ${phase} reference is not manifest-listed.`);
+      phaseDocs[phase] = JSON.parse(new TextDecoder().decode(files[ref].bytes));
+      if (phaseDocs[phase].case_id !== STEAM_CASE_ID) throw new Error(`Phase ${phase} case identity mismatch.`);
+    }
+    const caseBytes = files[manifest.case_ref]?.bytes;
+    if (!caseBytes) throw new Error("Candidate case narrative is absent from the manifest.");
+    steamCandidate = { manifest, case: JSON.parse(new TextDecoder().decode(caseBytes)), phases: phaseDocs, files };
+    CASES[STEAM_CASE_ID].sections = steamCandidate.case.sections || [];
+    CASES[STEAM_CASE_ID].analyses = phaseDocs[2].analyses || [];
+    CASES[STEAM_CASE_ID].inference = phaseDocs[6];
+    steamCandidateError = null;
+  } catch (error) {
+    steamCandidateError = error.message || "Candidate package failed to load.";
+  } finally {
+    steamCandidateLoading = false;
+    render();
+  }
+}
+function steamPackageFile(path) {
+  const item = steamCandidate?.files?.[path];
+  if (!item) return null;
+  try { return JSON.parse(new TextDecoder().decode(item.bytes)); } catch { return null; }
+}
+function steamImage(path, alt) {
+  const src = steamAssetUrls[path];
+  return src ? `<figure class="steam-evidence-figure"><img src="${esc(src)}" alt="${esc(alt)}"><figcaption>${esc(alt)}</figcaption></figure>` : `<p role="status">圖表尚未載入。</p>`;
+}
+function steamTable(headers, rows) {
+  return `<div class="table-wrap"><table><thead><tr>${headers.map((x) => `<th scope="col">${esc(x)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((x) => `<td>${esc(x)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+function steamFooter(phase) {
+  const prev = phase > 1 ? `<a class="button" href="#phase-${phase-1}">← ${esc(PHASES[phase-2][2])}</a>` : "<span></span>";
+  const next = phase < 6 ? `<a class="button primary" href="#phase-${phase+1}">${esc(PHASES[phase][2])} →</a>` : "<span></span>";
+  return `<nav class="phase-footer" aria-label="前後階段">${prev}${next}</nav>`;
+}
+function steamPage(phase, title, subtitle, body) {
+  const doc = steamCandidate?.phases?.[phase];
+  return `<div class="page">${banner(CASES[STEAM_CASE_ID])}${pageHeading(`PHASE 0${phase} / ${PHASES[phase-1][1].toUpperCase()}`, title, subtitle, doc?.status || "UNAVAILABLE")}${body}${steamFooter(phase)}<p class="stage-note">Candidate ${esc(steamCandidate?.manifest?.package_revision || "loading")} · publication review pending · local research only.</p></div>`;
+}
+function renderSteamPhase(phase) {
+  if (steamCandidateError) return `<div class="page">${banner(CASES[STEAM_CASE_ID])}${pageHeading("LOCAL CANDIDATE ERROR", "Steam package unavailable", "The candidate evidence could not be verified.", "ERROR")}<section class="state-panel" role="alert"><p>${esc(steamCandidateError)}</p></section></div>`;
+  if (!steamCandidate) return `<div class="page">${banner(CASES[STEAM_CASE_ID])}${pageHeading("LOCAL CANDIDATE", "Loading Steam evidence", "Verifying the local candidate package and every asset digest.", "PLANNED")}<section class="state-panel" role="status"><p>Loading aggregate research artifacts…</p></section></div>`;
+  const pkg = steamCandidate;
+  if (phase === 1) {
+    const sections = pkg.case.sections.map((s) => `<article class="card"><div class="card-head"><h2>${esc(s.title)}</h2>${badge("VERIFIED")}</div><div class="card-body"><p class="body-copy">${esc(s.body)}</p></div></article>`).join("");
+    return steamPage(phase, "Business Understanding · 業務理解", "研究背景、問題、假設、基準與資料來源。", `<div class="grid two">${sections}</div><article class="card"><div class="card-body"><p>公式：K = Estimated Owners / Review Count；Estimated Ownership = Review Count × Predicted K。K=30 是經驗基準，不是標籤。</p><a class="text-link" href="https://www.kaggle.com/datasets/artermiloff/steam-games-dataset" target="_blank" rel="noreferrer">Kaggle dataset ↗</a></div></article>`);
+  }
+  if (phase === 2) {
+    const audit = steamPackageFile("phases/phase-02/data-understanding.json") || {};
+    const analyses = pkg.phases[2].analyses;
+    const gallery = analyses.map((a) => `<article class="card"><div class="card-head"><h2>${esc(a.title)}</h2>${badge(a.status)}</div><div class="card-body">${steamImage(a.image_ref, a.description)}<p>${esc(a.description)}</p></div></article>`).join("");
+    const counts = (audit.inventory || []).map((x) => [x.file, x.rows.toLocaleString(), x.columns, x.appid_field, x.duplicate_appids]);
+    return steamPage(phase, "Data Understanding · 資料理解", "原始 Steam 快照的串流盤點與 aggregate-only EDA。", `<article class="card"><div class="card-body">${steamTable(["Dataset", "Rows", "Columns", "AppID field", "Duplicate AppIDs"], counts)}<p>Review Count 用 num_reviews_total；與 positive + negative 不相等比例：${((audit.review_total_disagreement_rate || 0)*100).toFixed(1)}%。主分析樣本 ${Number(audit.analysis_rows_after_review_minimum || 0).toLocaleString()}；零評論 ${Number(audit.zero_review_rows || 0).toLocaleString()}、1–19 評論 ${Number(audit.low_review_rows_1_to_19 || 0).toLocaleString()}、owners 上界為 0 ${Number(audit.zero_owner_interval_rows || 0).toLocaleString()}。</p><p>免費／付費遊戲：${Number(audit.price_groups?.free || 0).toLocaleString()}／${Number(audit.price_groups?.paid || 0).toLocaleString()}；平台支援列數 Windows ${Number(audit.platform_support_counts?.windows || 0).toLocaleString()}、macOS ${Number(audit.platform_support_counts?.mac || 0).toLocaleString()}、Linux ${Number(audit.platform_support_counts?.linux || 0).toLocaleString()}。發售年份分布以 5 年區間彙總於分析資料。</p><p>同 AppID 跨快照有效配對：${Number(audit.cross_snapshot_overlap?.both_snapshots_valid_k_n || 0).toLocaleString()}；Spearman ρ=${Number(audit.cross_snapshot_overlap?.log_k_spearman_rank_correlation || 0).toFixed(3)}（描述性，不代表時間外推）。</p></div></article><div class="grid two">${gallery}</div>`);
+  }
+  if (phase === 3) {
+    const prep = pkg.phases[3]; const lineage = steamPackageFile("phases/phase-03/feature-lineage.json") || {};
+    const stages = prep.stages.map((s) => [s.label, s.total, s.unit, s.fit_population || "—"]);
+    const features = (lineage.model_inputs || []).map((x) => [x.field, x.meaning, x.source_fields.join(", "), x.transformation]);
+    return steamPage(phase, "Data Preparation · 資料準備", "以可追溯特徵轉換與 train-only fit 防止資料洩漏。", `<article class="card"><div class="card-head"><h2>資料流程與切分</h2>${badge(prep.status)}</div><div class="card-body">${steamTable(["Stage", "Count", "Unit", "Fit population"], stages)}<p>Eligible ${Number(lineage.eligible_rows || 0).toLocaleString()} → development ${Number(lineage.train_rows || 0).toLocaleString()} → reserved holdout ${Number(lineage.holdout_rows || 0).toLocaleString()} · seed 42.</p><p>Holdout 未參與 fit 或 CV；實作期間曾查看初次分數，之後只因修正缺失 list 語意而重算，未用 holdout 分數調參或選特徵，故不是封存的 preregistered test。</p><p>標籤為 SteamSpy owner interval 中點除以 review count；owners 上界 0 和低於 20 reviews 不作主要模型標籤。</p></div></article><article class="card"><div class="card-head"><h2>${Number(lineage.raw_candidate_field_count || lineage.raw_candidate_fields?.length || 0)} 個原始候選欄位與 ${features.length} 個工程輸入</h2>${badge("VERIFIED")}</div><div class="card-body">${steamTable(["Input", "Meaning", "Source field", "Transformation"], features)}<p>One-hot 展開維度另依模型 lineage 列示，不計入原始欄位數。排除 AppID、遊戲名稱、評論數與 popularity outcome，避免識別碼與目標分母洩漏。</p></div></article>`);
+  }
+  if (phase === 4) {
+    const modeling = pkg.phases[4]; const details = steamPackageFile("phases/phase-04/modeling-details.json") || {};
+    const cvRows = (details.cv_configurations || []).map((x) => [x.configuration_id, x.fold_log_rmse.map((v) => v.toFixed(4)).join(" / "), x.mean_log_rmse.toFixed(4), x.sd_log_rmse.toFixed(4)]);
+    const importance = (details.feature_importance || []).slice(0, 12).map((x) => [x.feature, Number(x.importance).toFixed(4)]);
+    return steamPage(phase, "Modeling · 模型建立", "三折訓練內比較模型及特徵選擇；以 CV RMSE(log(1+K)) 選擇配置。", `<article class="card"><div class="card-head"><h2>Model and Feature Selection CV</h2>${badge(modeling.status)}</div><div class="card-body">${steamImage("phases/phase-04/figures/cv-model-comparison.png", "三折 CV configuration comparison")}<p>選中：${esc(details.selected_configuration)} · fold preprocessing、imputation、scaling 與 selection 均在各折訓練資料內 fit。</p>${steamTable(["Configuration", "Fold RMSE", "Mean", "Sample SD"], cvRows)}</div></article><article class="card"><div class="card-head"><h2>模型重要性摘要</h2></div><div class="card-body">${steamTable(["Feature", "Importance"], importance)}<p>Random Forest impurity importance 是模型內部排序，不能解讀為因果效果。</p></div></article>`);
+  }
+  if (phase === 5) {
+    const evaluation = steamPackageFile("phases/phase-05/evaluation-summary.json") || {};
+    const baseline = evaluation.holdout_metrics || [];
+    const genres = evaluation.genre_holdout_summary || [];
+    const rows = baseline.map((x) => [x.model, x.mae.toFixed(2), x.rmse.toFixed(2), x.r2.toFixed(4), (x.owners_interval_compatibility_rate*100).toFixed(1)+"%"]);
+    const genreRows = genres.slice(0, 20).map((x) => [x.genre, x.n, x.median_observed_k_proxy.toFixed(1), x.median_predicted_k.toFixed(1), x.median_training_genre_baseline_k.toFixed(1)]);
+    return steamPage(phase, "Evaluation · 模型評估", "獨立 holdout 對 K 中點 proxy 與 SteamSpy owners 區間比較。", `<div class="grid two"><article class="card"><div class="card-head"><h2>Holdout baseline comparison</h2>${badge("VERIFIED")}</div><div class="card-body">${steamImage("phases/phase-05/figures/holdout-baseline-comparison.png", "K proxy MAE by baseline and model")}${steamTable(["Model", "MAE", "RMSE", "R²", "Owners interval compatible"], rows)}<p>ML K 降低 K proxy MAE，但 R² 接近 0；owners 區間相容率未勝過固定 K=50。</p></div></article><article class="card"><div class="card-head"><h2>Ownership interval check</h2></div><div class="card-body">${steamImage("phases/phase-05/figures/holdout-interval-compatibility.png", "Share of predicted owners inside SteamSpy intervals")}${steamImage("phases/phase-05/figures/actual-vs-predicted.png", "Aggregated holdout calibration bins")}${steamImage("phases/phase-05/figures/residual-distribution.png", "Holdout K proxy residual histogram")}</div></article></div><article class="card"><div class="card-head"><h2>Genre holdout summary (multi-label)</h2></div><div class="card-body">${steamImage("phases/phase-05/figures/genre-predicted-k.png", "Median predicted K by genre")} ${steamTable(["Genre", "n", "Observed median proxy K", "Predicted median K", "Train-only genre baseline"], genreRows)}</div></article>`);
+  }
+  if (phase === 6) {
+    const input = steamPackageFile("phases/phase-06/input-schema.json") || {};
+    const options = input.genre_options || [];
+    const checks = (name, values, selected) => `<fieldset class="steam-checks"><legend>${name}</legend>${values.map((v) => `<label><input type="checkbox" name="${selected}" value="${esc(v)}" ${v === "Action" ? "checked" : ""}> ${esc(v)}</label>`).join("")}</fieldset>`;
+    const result = steamPredictionResult ? `<section class="steam-result" role="status"><h2>Predicted K ${steamPredictionResult.predicted_k.toFixed(2)}</h2><p>Estimated ownership: ${Math.round(steamPredictionResult.estimated_ownership).toLocaleString()} (K × review count)</p><p>Fixed K=30: ${Math.round(steamPredictionResult.fixed_k_30_ownership).toLocaleString()} · Model ${esc(steamPredictionResult.model_name)} v${esc(steamPredictionResult.model_version)}</p><p>Interval compatibility is a dataset-level holdout metric; an individual estimate is not verified sales.</p></section>` : "";
+    return steamPage(phase, "Deployment · K Prediction Lab", "本機 loopback 推論；使用 Phase 3 定義的模型輸入。", `<div class="grid two"><article class="card"><div class="card-head"><h2>Game features</h2>${badge("LOCAL_PRIVATE_VERIFIED")}</div><div class="card-body"><form id="steam-predict-form" class="steam-form"><label>Review count<input name="review_count" type="number" min="1" max="10000000" value="500" required></label><label>Price<input name="price" type="number" min="0" max="1000" step="0.01" value="19.99" required></label><label>Release year<input name="release_year" type="number" min="1970" max="2035" value="2023" required></label><label>Required age<input name="required_age" type="number" min="0" max="21" value="0" required></label><label>DLC count<input name="dlc_count" type="number" min="0" value="0" required></label><label>Achievements<input name="achievements" type="number" min="0" value="20" required></label><label>Category count<input name="category_count" type="number" min="0" value="5" required></label><label>Tag count<input name="tag_count" type="number" min="0" value="20" required></label><label>Supported language count<input name="supported_language_count" type="number" min="0" value="10" required></label><label>Full audio language count<input name="full_audio_language_count" type="number" min="0" value="2" required></label><label>Discount<input name="discount" type="number" min="0" max="100" value="0" required></label><label>Developer count<input name="developer_count" type="number" min="0" value="1" required></label><label>Publisher count<input name="publisher_count" type="number" min="0" value="1" required></label><label>Screenshot count<input name="screenshot_count" type="number" min="0" value="8" required></label><label>Video count<input name="movie_count" type="number" min="0" value="1" required></label>${checks("Genres", options.slice(0, 16), "steam_genre")}<fieldset class="steam-checks"><legend>Platforms, languages and store metadata</legend>${[["windows","Windows",true],["mac","macOS",false],["linux","Linux",false],["has_english","English",true],["has_traditional_chinese","Traditional Chinese",false],["has_website","Website listed",false]].map(([key,label,on])=>`<label><input type="checkbox" name="${key}" ${on?"checked":""}> ${label}</label>`).join("")}</fieldset><button class="button primary" type="submit">Predict K with fitted model</button><p id="steam-prediction-error" role="alert">${esc(steamPredictionError || "")}</p></form></div></article><div><article class="card"><div class="card-head"><h2>Model evidence</h2>${badge("VERIFIED")}</div><div class="card-body"><p>Random Forest Regressor · ${esc(input.model_version || "1.0.0")}</p><p>Independent holdout K-proxy MAE ${Number((steamPackageFile("phases/phase-05/evaluation-summary.json")?.holdout_metrics || []).find((x)=>x.model==="machine-learning")?.mae || 0).toFixed(2)}; R² ${Number((steamPackageFile("phases/phase-05/evaluation-summary.json")?.holdout_metrics || []).find((x)=>x.model==="machine-learning")?.r2 || 0).toFixed(3)}.</p><p>Predictions run on this machine through a loopback-only service. The model file is not part of the candidate package.</p></div></article>${result}</div></div>`);
+  }
+  return "";
+}
+async function submitSteamPrediction(form) {
+  steamPredictionError = null; steamPredictionResult = null; render();
+  const data = new FormData(form); const number = (key) => Number(data.get(key));
+  const checkbox = (key) => form.elements.namedItem(key).checked ? 1 : 0;
+  const features = {
+    genres: [...form.querySelectorAll('input[name="steam_genre"]:checked')].map((x) => x.value),
+    price: number("price"), required_age: number("required_age"), dlc_count: number("dlc_count"), achievements: number("achievements"), release_year: number("release_year"),
+    windows: checkbox("windows"), mac: checkbox("mac"), linux: checkbox("linux"),
+    genre_count: [...form.querySelectorAll('input[name="steam_genre"]:checked')].length,
+    category_count: number("category_count"), tag_count: number("tag_count"), supported_language_count: number("supported_language_count"),
+    full_audio_language_count: number("full_audio_language_count"), has_english: checkbox("has_english"), has_traditional_chinese: checkbox("has_traditional_chinese"), discount: number("discount"),
+    developer_count: number("developer_count"), publisher_count: number("publisher_count"), screenshot_count: number("screenshot_count"), movie_count: number("movie_count"), has_website: checkbox("has_website")
+  };
+  try {
+    const response = await fetch("/api/steam/predict", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ case_id: STEAM_CASE_ID, review_count: number("review_count"), features }) });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error?.message || "Prediction request failed.");
+    steamPredictionResult = payload;
+  } catch (error) { steamPredictionError = error.message || "Local model inference is unavailable."; }
+  render();
+}
 function renderHome() {
   return `<div class="page home-page"><section class="home-hero"><div class="home-copy"><p class="kicker">研究入口 · RESEARCH WORKSPACE</p><h1>從研究問題<br>走向可追溯的證據</h1><p class="home-en-title">From research questions to traceable evidence</p><p>以清楚可追溯的方式呈現住宅迴歸研究。<br>Explore housing regression research through a clear, traceable workflow.</p><a class="button" href="#phase-1">進入 CRISP-DM · Enter CRISP-DM <span aria-hidden="true">→</span></a></div><div class="home-visual" aria-hidden="true"><svg viewBox="0 0 440 390" role="presentation"><circle class="home-orbit home-orbit-outer" cx="220" cy="195" r="145"/><circle class="home-orbit home-orbit-inner" cx="220" cy="195" r="93"/><path class="home-trace" d="M92 113 169 160 268 117 344 177 290 270 177 251 92 113M169 160 177 251M268 117 290 270"/><circle class="home-trace-node" cx="92" cy="113" r="8"/><circle class="home-trace-node" cx="169" cy="160" r="7"/><circle class="home-trace-node" cx="268" cy="117" r="7"/><circle class="home-trace-node" cx="344" cy="177" r="8"/><circle class="home-trace-node" cx="290" cy="270" r="7"/><circle class="home-trace-node" cx="177" cy="251" r="7"/></svg><div class="home-visual-core"><span>RESEARCH</span><b>→</b><span>EVIDENCE</span></div><span class="home-visual-label label-a">01 · CASE</span><span class="home-visual-label label-b">02 · DATA</span><span class="home-visual-label label-c">03 · MODEL</span><span class="home-visual-label label-d">04 · RESULT</span></div></section></div>`;
 }
@@ -1968,6 +2119,8 @@ function renderDashboard() {
   return `<div class="page">${banner(c)}${pageHeading("INTEGRATED REGRESSION ANALYSIS", "Dashboard", "獨立的分析工作區。Verified Research 與 Custom Dataset 互斥；兩種模式不共享研究結果。", c.status)}<div class="mode-switch" role="group" aria-label="Dashboard mode"><button type="button" data-dashboard-mode="verified" aria-pressed="${state.dashboardMode === "verified"}">Verified Research</button><button type="button" data-dashboard-mode="custom" aria-pressed="${state.dashboardMode === "custom"}">Custom Dataset</button></div><div style="margin-top:18px">${state.dashboardMode === "verified" ? renderDashboardVerified() : customPanel()}</div><div class="button-row" style="margin-top:22px"><a class="button" href="#phase-1">← Back to CRISP-DM Home</a></div></div>`;
 }
 function render() {
+  if (IS_STEAM_LOCAL_PREVIEW && state.caseId === STEAM_CASE_ID
+      && !steamCandidate && !steamCandidateError && !steamCandidateLoading) loadSteamCandidate();
   if (LOCAL_CAR_PHASE6_PREVIEW) {
     if (!carUiPrototypeFixtures && !carUiPrototypeFixtureError && !carUiPrototypeFixtureLoading) loadCarUiPrototypeFixtures();
   } else {
@@ -1991,6 +2144,7 @@ function render() {
   }
   if (state.route === "home") app.innerHTML = renderHome();
   else if (state.route === "dashboard") app.innerHTML = renderDashboard();
+  else if (phase && state.caseId === STEAM_CASE_ID) app.innerHTML = renderSteamPhase(phase);
   else if (phase && caseData().packageMode === "reference") app.innerHTML = renderReferencePackagePhase(phase);
   else if (phase && caseData().packageMode === "exploration") app.innerHTML = renderExplorationPackagePhase(phase);
   else if (phase && caseData().packageMode === "car"
@@ -2106,6 +2260,12 @@ app.addEventListener("click", (event) => {
     state.customValidated = true;
     state.csvMessage = valid ? "Validation passed for selected columns. Run remains disabled; no model was trained." : "Choose one target and at least one distinct feature before validation.";
     render();
+  }
+});
+app.addEventListener("submit", (event) => {
+  if (event.target?.id === "steam-predict-form") {
+    event.preventDefault();
+    void submitSteamPrediction(event.target);
   }
 });
 app.addEventListener("toggle", (event) => {

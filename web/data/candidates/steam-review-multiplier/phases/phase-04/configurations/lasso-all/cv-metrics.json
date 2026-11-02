@@ -1,0 +1,18 @@
+{
+  "configuration_id": "lasso-all",
+  "model_id": "lasso",
+  "feature_selection": "all",
+  "fold_count": 3,
+  "estimator_parameters": {
+    "alpha": 0.001,
+    "max_iter": 5000
+  },
+  "selector_parameters": {},
+  "fold_log_rmse": [
+    0.9783160553575023,
+    0.9963079494832671,
+    0.9906173211203526
+  ],
+  "mean_log_rmse": 0.988413775320374,
+  "sd_log_rmse": 0.009196128213962356
+}
