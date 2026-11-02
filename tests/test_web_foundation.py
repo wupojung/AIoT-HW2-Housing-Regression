@@ -114,6 +114,19 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn("MAX_BATCH_ROWS = 100", batch_source)
         self.assertIn("MAX_BATCH_RESPONSE_BYTES = 4_000_000", batch_source)
 
+    def test_car_batch_result_renderer_uses_defined_environment_gates(self):
+        match = re.search(
+            r"function renderLocalCarBatchPanels\(contract\) \{(?P<body>.*?)\n\}",
+            self.js,
+            re.S,
+        )
+        self.assertIsNotNone(match)
+        source = match.group("body")
+        self.assertNotIn("onlinePreview", source)
+        self.assertIn('LOCAL_CAR_VERCEL_PRODUCTION_MODE ? "BATCH RESULT · PRODUCTION MODEL"', source)
+        self.assertIn('"BATCH RESULT · PROTECTED PREVIEW MODEL"', source)
+        self.assertIn('"BATCH RESULT · DEVELOPMENT MODEL"', source)
+
     def test_car_production_mode_is_exact_https_host_without_query_flag(self):
         host = "regscope-aiot.vercel.app"
         self.assertIn(f'const LOCAL_CAR_VERCEL_PRODUCTION_HOST = "{host}";', self.js)
