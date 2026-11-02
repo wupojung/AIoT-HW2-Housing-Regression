@@ -379,6 +379,8 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('fetch("/api/predict"', self.js)
         self.assertIn('fetch("/api/predict-batch?case_id=steam-review-multiplier"', self.js)
         self.assertIn('data-action="steam-batch-download"', self.js)
+        self.assertIn("CSV 的 genres 欄位可用直線符號（|）分隔多個契約選項。", self.js)
+        self.assertNotIn("CSV 的 genres 欄可用 `|` 分隔", self.js)
         self.assertIn('22 個工程輸入均須提供', self.js)
         self.assertIn('K = 30 基準', self.js)
         self.assertIn('不會改用固定 K', self.js)
