@@ -1,0 +1,552 @@
+{
+  "case_id": "steam-review-multiplier",
+  "source_file": "games_march2025_cleaned.csv",
+  "raw_candidate_fields": [
+    "genres",
+    "categories",
+    "tags",
+    "price",
+    "required_age",
+    "dlc_count",
+    "achievements",
+    "release_date",
+    "windows",
+    "mac",
+    "linux",
+    "supported_languages",
+    "full_audio_languages",
+    "discount",
+    "developers",
+    "publishers",
+    "screenshots",
+    "movies",
+    "website"
+  ],
+  "raw_candidate_field_count": 19,
+  "model_inputs": [
+    {
+      "field": "genres",
+      "meaning": "Genre membership",
+      "source_fields": [
+        "genres"
+      ],
+      "transformation": "Top 12 genre indicators learned from training fold; multi-label"
+    },
+    {
+      "field": "price",
+      "meaning": "Store price",
+      "source_fields": [
+        "price"
+      ],
+      "transformation": "Numeric USD; median imputation fitted on train"
+    },
+    {
+      "field": "required_age",
+      "meaning": "Age rating",
+      "source_fields": [
+        "required_age"
+      ],
+      "transformation": "Numeric"
+    },
+    {
+      "field": "dlc_count",
+      "meaning": "DLC count",
+      "source_fields": [
+        "dlc_count"
+      ],
+      "transformation": "Numeric"
+    },
+    {
+      "field": "achievements",
+      "meaning": "Achievement count",
+      "source_fields": [
+        "achievements"
+      ],
+      "transformation": "Numeric"
+    },
+    {
+      "field": "release_year",
+      "meaning": "Release year",
+      "source_fields": [
+        "release_date"
+      ],
+      "transformation": "Four-digit year parse; malformed dates missing"
+    },
+    {
+      "field": "windows",
+      "meaning": "Windows support",
+      "source_fields": [
+        "windows"
+      ],
+      "transformation": "Boolean to 0/1"
+    },
+    {
+      "field": "mac",
+      "meaning": "macOS support",
+      "source_fields": [
+        "mac"
+      ],
+      "transformation": "Boolean to 0/1"
+    },
+    {
+      "field": "linux",
+      "meaning": "Linux support",
+      "source_fields": [
+        "linux"
+      ],
+      "transformation": "Boolean to 0/1"
+    },
+    {
+      "field": "genre_count",
+      "meaning": "Number of genres",
+      "source_fields": [
+        "genres"
+      ],
+      "transformation": "List length"
+    },
+    {
+      "field": "category_count",
+      "meaning": "Number of categories",
+      "source_fields": [
+        "categories"
+      ],
+      "transformation": "Parsed list length"
+    },
+    {
+      "field": "tag_count",
+      "meaning": "Number of tags",
+      "source_fields": [
+        "tags"
+      ],
+      "transformation": "Parsed mapping/list length; no tag identities used"
+    },
+    {
+      "field": "supported_language_count",
+      "meaning": "Supported language count",
+      "source_fields": [
+        "supported_languages"
+      ],
+      "transformation": "Parsed list length"
+    },
+    {
+      "field": "full_audio_language_count",
+      "meaning": "Full audio language count",
+      "source_fields": [
+        "full_audio_languages"
+      ],
+      "transformation": "Parsed list length"
+    },
+    {
+      "field": "has_english",
+      "meaning": "English support",
+      "source_fields": [
+        "supported_languages"
+      ],
+      "transformation": "Case-insensitive list membership"
+    },
+    {
+      "field": "has_traditional_chinese",
+      "meaning": "Traditional Chinese support",
+      "source_fields": [
+        "supported_languages"
+      ],
+      "transformation": "Case-insensitive list membership"
+    },
+    {
+      "field": "discount",
+      "meaning": "Snapshot discount",
+      "source_fields": [
+        "discount"
+      ],
+      "transformation": "Numeric; 2024 snapshot lacks field and is not in main model"
+    },
+    {
+      "field": "developer_count",
+      "meaning": "Number of listed developers",
+      "source_fields": [
+        "developers"
+      ],
+      "transformation": "Parsed list length; names and identities excluded"
+    },
+    {
+      "field": "publisher_count",
+      "meaning": "Number of listed publishers",
+      "source_fields": [
+        "publishers"
+      ],
+      "transformation": "Parsed list length; names and identities excluded"
+    },
+    {
+      "field": "screenshot_count",
+      "meaning": "Number of store screenshots",
+      "source_fields": [
+        "screenshots"
+      ],
+      "transformation": "Parsed media list length; URLs excluded"
+    },
+    {
+      "field": "movie_count",
+      "meaning": "Number of store videos",
+      "source_fields": [
+        "movies"
+      ],
+      "transformation": "Parsed media list length; URLs excluded"
+    },
+    {
+      "field": "has_website",
+      "meaning": "Website listed on store metadata",
+      "source_fields": [
+        "website"
+      ],
+      "transformation": "Binary presence indicator"
+    }
+  ],
+  "excluded_fields": [
+    {
+      "field": "appid",
+      "reason": "Identifier; no predictive meaning"
+    },
+    {
+      "field": "name",
+      "reason": "Identifier/free text"
+    },
+    {
+      "field": "positive / negative / num_reviews_total",
+      "reason": "Outcome-adjacent and would leak the ratio denominator"
+    },
+    {
+      "field": "estimated_owners",
+      "reason": "Target construction only"
+    },
+    {
+      "field": "recommendations / peak_ccu / playtime",
+      "reason": "Popularity outcomes and leakage proxies"
+    },
+    {
+      "field": "developer / publisher identities, descriptions, media / website URLs",
+      "reason": "High-cardinality identity, free-text, or raw URL content excluded; low-cardinality counts/presence may be used"
+    },
+    {
+      "field": "pct_pos_total / pct_pos_recent",
+      "reason": "Review outcome proxies, excluded from game-attribute model"
+    }
+  ],
+  "missing_value_treatment": "Blank list fields remain missing; explicit empty lists map to count 0. Median imputation is inside every CV/development-fit pipeline; missing dates remain missing until imputation.",
+  "split": {
+    "type": "random row split on unique AppID snapshot",
+    "holdout_fraction": 0.2,
+    "seed": 42,
+    "appids_unique": true,
+    "development_appid_sha256": "f387c8bc010c97c91455a67f8c5813b02d3826869e0227150313a708970240c5",
+    "holdout_appid_sha256": "f7efc8a8b1e0918c3ce024bc8899ab4bdf70407ffeedeae5c891b30458df4713"
+  },
+  "train_rows": 30352,
+  "holdout_rows": 7589,
+  "eligible_rows": 37941,
+  "excluded_rows": 51677,
+  "target": "log1p((estimated_owners_low + estimated_owners_high) / 2 / review_count)",
+  "thresholds": {
+    "minimum_reviews": 20,
+    "positive_owner_upper_bound": true
+  },
+  "encoded_features": [
+    {
+      "index": 0,
+      "encoded_feature": "price",
+      "source_columns": [
+        "price"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "Numeric USD; median imputation fitted on train"
+    },
+    {
+      "index": 1,
+      "encoded_feature": "required_age",
+      "source_columns": [
+        "required_age"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Numeric"
+    },
+    {
+      "index": 2,
+      "encoded_feature": "dlc_count",
+      "source_columns": [
+        "dlc_count"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Numeric"
+    },
+    {
+      "index": 3,
+      "encoded_feature": "achievements",
+      "source_columns": [
+        "achievements"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Numeric"
+    },
+    {
+      "index": 4,
+      "encoded_feature": "release_year",
+      "source_columns": [
+        "release_date"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "Four-digit year parse; malformed dates missing"
+    },
+    {
+      "index": 5,
+      "encoded_feature": "windows",
+      "source_columns": [
+        "windows"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Boolean to 0/1"
+    },
+    {
+      "index": 6,
+      "encoded_feature": "mac",
+      "source_columns": [
+        "mac"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Boolean to 0/1"
+    },
+    {
+      "index": 7,
+      "encoded_feature": "linux",
+      "source_columns": [
+        "linux"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Boolean to 0/1"
+    },
+    {
+      "index": 8,
+      "encoded_feature": "genre_count",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "List length"
+    },
+    {
+      "index": 9,
+      "encoded_feature": "category_count",
+      "source_columns": [
+        "categories"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Parsed list length"
+    },
+    {
+      "index": 10,
+      "encoded_feature": "tag_count",
+      "source_columns": [
+        "tags"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Parsed mapping/list length; no tag identities used"
+    },
+    {
+      "index": 11,
+      "encoded_feature": "supported_language_count",
+      "source_columns": [
+        "supported_languages"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Parsed list length"
+    },
+    {
+      "index": 12,
+      "encoded_feature": "full_audio_language_count",
+      "source_columns": [
+        "full_audio_languages"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Parsed list length"
+    },
+    {
+      "index": 13,
+      "encoded_feature": "has_english",
+      "source_columns": [
+        "supported_languages"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Case-insensitive list membership"
+    },
+    {
+      "index": 14,
+      "encoded_feature": "has_traditional_chinese",
+      "source_columns": [
+        "supported_languages"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Case-insensitive list membership"
+    },
+    {
+      "index": 15,
+      "encoded_feature": "discount",
+      "source_columns": [
+        "discount"
+      ],
+      "semantic_type": "continuous",
+      "transformation": "Numeric; 2024 snapshot lacks field and is not in main model"
+    },
+    {
+      "index": 16,
+      "encoded_feature": "developer_count",
+      "source_columns": [
+        "developers"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Parsed list length; names and identities excluded"
+    },
+    {
+      "index": 17,
+      "encoded_feature": "publisher_count",
+      "source_columns": [
+        "publishers"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Parsed list length; names and identities excluded"
+    },
+    {
+      "index": 18,
+      "encoded_feature": "screenshot_count",
+      "source_columns": [
+        "screenshots"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Parsed media list length; URLs excluded"
+    },
+    {
+      "index": 19,
+      "encoded_feature": "movie_count",
+      "source_columns": [
+        "movies"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Parsed media list length; URLs excluded"
+    },
+    {
+      "index": 20,
+      "encoded_feature": "has_website",
+      "source_columns": [
+        "website"
+      ],
+      "semantic_type": "discrete",
+      "transformation": "Binary presence indicator"
+    },
+    {
+      "index": 21,
+      "encoded_feature": "genre::Indie",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 22,
+      "encoded_feature": "genre::Adventure",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 23,
+      "encoded_feature": "genre::Action",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 24,
+      "encoded_feature": "genre::Casual",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 25,
+      "encoded_feature": "genre::Simulation",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 26,
+      "encoded_feature": "genre::RPG",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 27,
+      "encoded_feature": "genre::Strategy",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 28,
+      "encoded_feature": "genre::Early Access",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 29,
+      "encoded_feature": "genre::Free To Play",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 30,
+      "encoded_feature": "genre::Sports",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 31,
+      "encoded_feature": "genre::Racing",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    },
+    {
+      "index": 32,
+      "encoded_feature": "genre::Massively Multiplayer",
+      "source_columns": [
+        "genres"
+      ],
+      "semantic_type": "nominal",
+      "transformation": "Train-fold-fitted binary membership for the observed top-12 genre vocabulary"
+    }
+  ],
+  "encoded_feature_count": 33
+}

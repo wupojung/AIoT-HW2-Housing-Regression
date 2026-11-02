@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "steam-review-multiplier",
+  "run_id": "steam-review-multiplier-run-01",
+  "source_dataset_sha256": "04d8df2778aaa8f8b575934b7072d55224d37a2ded23e8261583f0fcf668dfab",
+  "split_seed": 42,
+  "python": "3.12.15",
+  "pandas": "3.1.0",
+  "numpy": "2.5.4",
+  "scikit_learn": "1.9.1",
+  "source_code_provenance": {
+    "run_01_original_source_code_sha256": {
+      "research_module": "UNKNOWN",
+      "runner": "UNKNOWN"
+    },
+    "current_verifiable_source_code": {
+      "repository_commit": "19f587cfa7f2ab6ab6d6afff023832709554a861",
+      "files": {
+        "python/src/housing_regression/steam_review_multiplier.py": "60933b7e92b02586c8c5921a29e6fbe17963997c66867aa373da786bb912f92a",
+        "tools/steam/run_homework.py": "44c0426b9691713208c92421974452ac6a3de55b68d3e7b5e177b9e843c76c89"
+      },
+      "interpretation": "These hashes identify currently verifiable repository files; they do not prove which exact bytes generated Run 01."
+    }
+  },
+  "development_appid_sha256": "f387c8bc010c97c91455a67f8c5813b02d3826869e0227150313a708970240c5",
+  "holdout_appid_sha256": "f7efc8a8b1e0918c3ce024bc8899ab4bdf70407ffeedeae5c891b30458df4713",
+  "cv_fold_membership_sha256": [
+    {
+      "fold": 1,
+      "train_appid_sha256": "ffa65da480024b38b3afe7f2b2f3965dafdd62912c392ddd10cfaa3c27337b35",
+      "validation_appid_sha256": "3986927909716e340364d5d035c2bc99dc9b227e92ce59639d25c0e62998a52d"
+    },
+    {
+      "fold": 2,
+      "train_appid_sha256": "b77b79ca82342b544712ff9c6521fda6720eefca65eed6c7b0b54e5abcc81695",
+      "validation_appid_sha256": "0cb544fc5f9b60f230913cee72b06e4986df59c518e70120d4b311f6696ac4de"
+    },
+    {
+      "fold": 3,
+      "train_appid_sha256": "ad58941e242ac4578a013492761c1508e578ccf59a168b5449001f9d11fe5068",
+      "validation_appid_sha256": "386adad92a49b14dfa451b48b06c05e6424a671e8d79f6ee73c0ef867c848c27"
+    }
+  ],
+  "raw_data_and_row_predictions_included": false
+}

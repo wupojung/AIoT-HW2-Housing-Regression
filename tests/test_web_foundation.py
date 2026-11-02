@@ -283,17 +283,41 @@ class WebFoundationTests(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(asset).hexdigest(), listed["sha256"])
                     self.assertEqual(listed["mime"], "image/png")
 
-    def test_public_release_has_only_the_two_approved_cases(self):
+    def test_public_release_has_ames_car_and_steam_cases(self):
         release = json.loads((WEB / "data/current-release.json").read_text(encoding="utf-8"))
         self.assertEqual(
             [item["case_id"] for item in release["cases"]],
-            ["ames-full-model-exploration", "used-car-price-optimized"],
+            ["ames-full-model-exploration", "used-car-price-optimized", "steam-review-multiplier"],
         )
-        self.assertIn('const PUBLIC_CASE_IDS = [EXPLORATION_CASE_ID, CAR_CASE_ID];', self.js)
+        self.assertIn('const PUBLIC_CASE_IDS = [EXPLORATION_CASE_ID, CAR_CASE_ID, STEAM_CASE_ID];', self.js)
         self.assertIn('PUBLIC_CASE_IDS.filter((id) => CASES[id])', self.js)
         self.assertIn('caseId: "ames-full-model-exploration"', self.js)
+        self.assertIn('title: "Steam Review Multiplier — Homework"', self.js)
         self.assertIn('const CAR_DISPLAY_NAME = "Used Car Price Prediction — Optimized Modeling";', self.js)
         self.assertNotIn('loadReferencePackage();\n  if (!explorationPackage', self.js)
+
+    def test_steam_release_package_is_hash_bound_and_has_no_private_model_or_rows(self):
+        release = json.loads((WEB / "data/current-release.json").read_text(encoding="utf-8"))
+        entry = next(item for item in release["cases"] if item["case_id"] == "steam-review-multiplier")
+        package_path = WEB / "data" / entry["package_ref"]
+        package_bytes = package_path.read_bytes()
+        self.assertEqual(hashlib.sha256(package_bytes).hexdigest(), entry["package_sha256"])
+        self.assertEqual(len(package_bytes), entry["package_bytes"])
+        manifest = json.loads(package_bytes)
+        self.assertEqual(manifest["case_id"], entry["case_id"])
+        self.assertEqual(manifest["package_status"], "PARTIAL")
+        self.assertFalse(manifest["publication"]["approved"])
+        package_root = package_path.parent
+        for item in manifest["files"]:
+            path = package_root / item["path"]
+            data = path.read_bytes()
+            self.assertEqual(hashlib.sha256(data).hexdigest(), item["sha256"], item["path"])
+            self.assertEqual(len(data), item["bytes"], item["path"])
+            self.assertNotIn(path.suffix.lower(), {".csv", ".joblib", ".pkl", ".pickle"})
+        self.assertIn('function renderSteamPhase(phase)', self.js)
+        self.assertIn('線上互動預測尚未開放', self.js)
+        self.assertNotIn('/api/steam/predict', self.js)
+        self.assertNotIn('id="steam-predict-form"', self.js)
 
     def test_brand_course_and_project_links_are_present(self):
         text = " ".join(self.parser.text)

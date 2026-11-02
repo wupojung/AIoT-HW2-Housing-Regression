@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "steam-review-multiplier",
+  "status": "VERIFIED",
+  "sections": [
+    {
+      "section_id": "background",
+      "title": "研究背景與問題",
+      "body": "Steam 評論數量常被作為遊戲受眾規模的代理線索。本研究將固定 K=30 作為 Owner 經驗基準，並以 K=20、50 做敏感度比較；這些數字都不是正確標籤。SteamSpy estimated_owners 是區間估計，資料不包含可驗證的官方銷售量。"
+    },
+    {
+      "section_id": "questions",
+      "title": "Research Questions",
+      "body": "RQ1：不同 Genre 的 K 代理值分布是否不同？RQ2：Genre、平台、語言、價格及遊戲屬性能否預測 K？RQ3：特徵選擇與迴歸模型如何影響結果？RQ4：ML K 相對固定 K=30，對 SteamSpy 擁有量區間的相容程度如何？"
+    },
+    {
+      "section_id": "hypotheses",
+      "title": "研究假設與成功條件",
+      "body": "假設 Genre 間存在描述性差異；遊戲屬性模型可能改善 holdout K proxy 誤差；特徵選擇方法會改變表現。假設以 holdout 實驗檢驗。成功標準是提出清楚、可追溯的比較並如實解讀，不要求模型一定勝過基準。"
+    },
+    {
+      "section_id": "target",
+      "title": "研究標的與術語",
+      "body": "Review Count 採 num_reviews_total（缺值才回退 positive+negative）；K 區間為 owners_low/review_count 至 owners_high/review_count；單值標籤使用區間中點 proxy。Estimated Ownership = Review Count × Predicted K。Estimated Ownership 不是官方銷售量。"
+    },
+    {
+      "section_id": "source",
+      "title": "資料來源與限制",
+      "body": "來源為 Kaggle Steam Games Dataset 2025，作者 Artemiy Ermilov 與三位協作者，標示 MIT。Kaggle 描述其資料蒐集使用 Steam 商店頁面、Steam API 與 SteamSpy。May 2024／March 2025 Full 與 Cleaned 快照由本機檔案核對；兩個 Cleaned 的精確排除規則未知。"
+    }
+  ]
+}

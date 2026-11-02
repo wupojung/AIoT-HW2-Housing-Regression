@@ -1,0 +1,242 @@
+{
+  "schema_version": "1.1.0",
+  "case_id": "steam-review-multiplier",
+  "status": "VERIFIED",
+  "cv": {
+    "training_rows": 30352,
+    "fold_count": 3,
+    "protocol_id": "steam-3fold-log-k-seed42",
+    "status": "VERIFIED"
+  },
+  "methods": [
+    {
+      "method_id": "ols",
+      "label": "OLS Linear Regression",
+      "parameters": []
+    },
+    {
+      "method_id": "ridge",
+      "label": "Ridge Regression",
+      "parameters": [
+        {
+          "parameter_id": "alpha",
+          "label": "Alpha",
+          "data_type": "number"
+        }
+      ]
+    },
+    {
+      "method_id": "lasso",
+      "label": "Lasso Regression",
+      "parameters": [
+        {
+          "parameter_id": "alpha",
+          "label": "Alpha",
+          "data_type": "number"
+        }
+      ]
+    },
+    {
+      "method_id": "random_forest",
+      "label": "Random Forest Regressor",
+      "parameters": [
+        {
+          "parameter_id": "n_estimators",
+          "label": "Trees",
+          "data_type": "integer"
+        }
+      ]
+    },
+    {
+      "method_id": "select_k_best",
+      "label": "SelectKBest-14 + Ridge",
+      "parameters": [
+        {
+          "parameter_id": "k",
+          "label": "Encoded features",
+          "data_type": "integer"
+        }
+      ]
+    },
+    {
+      "method_id": "ridge_rfe",
+      "label": "RFE-14 + Ridge",
+      "parameters": [
+        {
+          "parameter_id": "k",
+          "label": "Encoded features",
+          "data_type": "integer"
+        }
+      ]
+    }
+  ],
+  "execution_runs": [
+    {
+      "execution_run_id": "steam-review-multiplier-run-01",
+      "source_manifest_sha256": "04d8df2778aaa8f8b575934b7072d55224d37a2ded23e8261583f0fcf668dfab",
+      "status": "VERIFIED"
+    }
+  ],
+  "configurations": [
+    {
+      "configuration_id": "ols-all",
+      "execution_run_id": "steam-review-multiplier-run-01",
+      "method_id": "ols",
+      "track_id": "training_only_cv",
+      "params": {
+        "feature_selection": "all",
+        "model": "ols",
+        "seed": 42,
+        "estimator_parameters": {
+          "fit_intercept": true
+        },
+        "selector_parameters": {}
+      },
+      "protocol_id": "steam-3fold-log-k-seed42",
+      "cv_metrics_ref": "phases/phase-04/configurations/ols-all/cv-metrics.json",
+      "status": "VERIFIED",
+      "metadata_ref": "phases/phase-04/configurations/ols-all/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/ols-all/fold-tasks.json",
+      "selected_features_ref": "phases/phase-04/configurations/ols-all/selected-features.json"
+    },
+    {
+      "configuration_id": "ridge-all",
+      "execution_run_id": "steam-review-multiplier-run-01",
+      "method_id": "ridge",
+      "track_id": "training_only_cv",
+      "params": {
+        "feature_selection": "all",
+        "model": "ridge",
+        "seed": 42,
+        "estimator_parameters": {
+          "alpha": 10.0
+        },
+        "selector_parameters": {}
+      },
+      "protocol_id": "steam-3fold-log-k-seed42",
+      "cv_metrics_ref": "phases/phase-04/configurations/ridge-all/cv-metrics.json",
+      "status": "VERIFIED",
+      "metadata_ref": "phases/phase-04/configurations/ridge-all/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/ridge-all/fold-tasks.json",
+      "selected_features_ref": "phases/phase-04/configurations/ridge-all/selected-features.json"
+    },
+    {
+      "configuration_id": "lasso-all",
+      "execution_run_id": "steam-review-multiplier-run-01",
+      "method_id": "lasso",
+      "track_id": "training_only_cv",
+      "params": {
+        "feature_selection": "all",
+        "model": "lasso",
+        "seed": 42,
+        "estimator_parameters": {
+          "alpha": 0.001,
+          "max_iter": 5000
+        },
+        "selector_parameters": {}
+      },
+      "protocol_id": "steam-3fold-log-k-seed42",
+      "cv_metrics_ref": "phases/phase-04/configurations/lasso-all/cv-metrics.json",
+      "status": "VERIFIED",
+      "metadata_ref": "phases/phase-04/configurations/lasso-all/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/lasso-all/fold-tasks.json",
+      "selected_features_ref": "phases/phase-04/configurations/lasso-all/selected-features.json"
+    },
+    {
+      "configuration_id": "random_forest-all",
+      "execution_run_id": "steam-review-multiplier-run-01",
+      "method_id": "random_forest",
+      "track_id": "training_only_cv",
+      "params": {
+        "feature_selection": "all",
+        "model": "random_forest",
+        "seed": 42,
+        "estimator_parameters": {
+          "n_estimators": 100,
+          "min_samples_leaf": 5,
+          "max_features": 0.8,
+          "random_state": 42,
+          "n_jobs": -1
+        },
+        "selector_parameters": {}
+      },
+      "protocol_id": "steam-3fold-log-k-seed42",
+      "cv_metrics_ref": "phases/phase-04/configurations/random_forest-all/cv-metrics.json",
+      "status": "VERIFIED",
+      "metadata_ref": "phases/phase-04/configurations/random_forest-all/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/random_forest-all/fold-tasks.json",
+      "selected_features_ref": "phases/phase-04/configurations/random_forest-all/selected-features.json"
+    },
+    {
+      "configuration_id": "ridge-select_k_14",
+      "execution_run_id": "steam-review-multiplier-run-01",
+      "method_id": "select_k_best",
+      "track_id": "training_only_cv",
+      "params": {
+        "feature_selection": "select_k_14",
+        "model": "ridge",
+        "seed": 42,
+        "estimator_parameters": {
+          "alpha": 10.0
+        },
+        "selector_parameters": {
+          "k": 14
+        }
+      },
+      "protocol_id": "steam-3fold-log-k-seed42",
+      "cv_metrics_ref": "phases/phase-04/configurations/ridge-select_k_14/cv-metrics.json",
+      "status": "VERIFIED",
+      "metadata_ref": "phases/phase-04/configurations/ridge-select_k_14/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/ridge-select_k_14/fold-tasks.json",
+      "selected_features_ref": "phases/phase-04/configurations/ridge-select_k_14/selected-features.json"
+    },
+    {
+      "configuration_id": "ridge-lasso_rfe_14",
+      "execution_run_id": "steam-review-multiplier-run-01",
+      "method_id": "ridge_rfe",
+      "track_id": "training_only_cv",
+      "params": {
+        "feature_selection": "lasso_rfe_14",
+        "model": "ridge",
+        "seed": 42,
+        "estimator_parameters": {
+          "alpha": 10.0
+        },
+        "selector_parameters": {
+          "estimator": "Ridge(alpha=10.0)",
+          "n_features_to_select": 14,
+          "step": 0.5
+        }
+      },
+      "protocol_id": "steam-3fold-log-k-seed42",
+      "cv_metrics_ref": "phases/phase-04/configurations/ridge-lasso_rfe_14/cv-metrics.json",
+      "status": "VERIFIED",
+      "metadata_ref": "phases/phase-04/configurations/ridge-lasso_rfe_14/metadata.json",
+      "fold_tasks_ref": "phases/phase-04/configurations/ridge-lasso_rfe_14/fold-tasks.json",
+      "selected_features_ref": "phases/phase-04/configurations/ridge-lasso_rfe_14/selected-features.json"
+    }
+  ],
+  "default_configuration_id": "random_forest-all",
+  "charts": [
+    {
+      "chart_id": "model-comparison",
+      "chart_type": "bar",
+      "points_ref": "phases/phase-04/charts/model-comparison.json",
+      "axes": {
+        "x": "configuration_id",
+        "y": "mean_log_rmse"
+      },
+      "comparison_protocol": {
+        "protocol_id": "steam-3fold-log-k-seed42",
+        "fold_count": 3,
+        "track_id": "training_only_cv",
+        "metric_source": "fold_mean",
+        "metric": "RMSE",
+        "target_unit": "log1p(K proxy)",
+        "lower_is_better": true,
+        "status": "VERIFIED"
+      },
+      "status": "VERIFIED"
+    }
+  ]
+}

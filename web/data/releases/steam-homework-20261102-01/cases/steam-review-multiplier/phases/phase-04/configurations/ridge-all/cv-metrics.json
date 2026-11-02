@@ -1,0 +1,17 @@
+{
+  "configuration_id": "ridge-all",
+  "model_id": "ridge",
+  "feature_selection": "all",
+  "fold_count": 3,
+  "estimator_parameters": {
+    "alpha": 10.0
+  },
+  "selector_parameters": {},
+  "fold_log_rmse": [
+    0.9781877088073816,
+    0.9965764763681326,
+    0.990556632468885
+  ],
+  "mean_log_rmse": 0.9884402725481332,
+  "sd_log_rmse": 0.009375282800345611
+}
