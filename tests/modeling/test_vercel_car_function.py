@@ -3,9 +3,11 @@ from __future__ import annotations
 import os
 import unittest
 import csv
+import base64
 import io
 import json
 import threading
+import zipfile
 from http.client import HTTPConnection
 from http.server import HTTPServer
 from unittest.mock import patch
@@ -81,6 +83,26 @@ def _request_schema(origin):
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
+
+
+def _asset_archive(entries, *, compression=zipfile.ZIP_DEFLATED):
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=compression) as archive:
+        for name, payload in entries:
+            archive.writestr(name, payload)
+    return buffer.getvalue()
+
+
+def _corrupt_stored_asset_member(payload):
+    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        info = archive.getinfo("final-model.joblib")
+    header = payload
+    name_length = int.from_bytes(header[info.header_offset + 26:info.header_offset + 28], "little")
+    extra_length = int.from_bytes(header[info.header_offset + 28:info.header_offset + 30], "little")
+    data_offset = info.header_offset + 30 + name_length + extra_length
+    corrupted = bytearray(payload)
+    corrupted[data_offset] ^= 1
+    return bytes(corrupted)
 
 
 class VercelCarFunctionGateTests(unittest.TestCase):
@@ -243,6 +265,62 @@ class VercelCarFunctionGateTests(unittest.TestCase):
                 self.assertNotIn("/private/path", " ".join(captured.output))
                 self.assertNotIn("/do-not-log", " ".join(captured.output))
                 self.assertNotIn("private module path", document["error"]["message"])
+        vercel_car_function._RUNTIME = None
+
+    def test_asset_decode_substages_emit_only_fixed_stage_and_category(self):
+        expected_entries = [
+            ("final-model.joblib", b"synthetic-model"),
+            ("prediction-input-schema.json", b"synthetic-schema"),
+            ("run-manifest.json", b"synthetic-manifest"),
+        ]
+        invalid_inventory = base64.b64encode(
+            _asset_archive([("unexpected-private-name", b"synthetic")])
+        ).decode("ascii")
+        invalid_zip = base64.b64encode(b"private-not-a-zip").decode("ascii")
+        oversized_member = base64.b64encode(_asset_archive([
+            ("final-model.joblib", b"\x00" * (1024 * 1024 + 1)),
+            ("prediction-input-schema.json", b"schema"),
+            ("run-manifest.json", b"manifest"),
+        ])).decode("ascii")
+        corrupt_member = base64.b64encode(_corrupt_stored_asset_member(
+            _asset_archive(expected_entries, compression=zipfile.ZIP_STORED)
+        )).decode("ascii")
+        cases = (
+            ("", "asset_env_presence", "missing_configuration"),
+            ("A" * (64 * 1024 + 1), "asset_env_size", "encoded_size_limit"),
+            ("!!", "base64_decode", "invalid_base64"),
+            (invalid_zip, "zip_open", "invalid_archive"),
+            (invalid_inventory, "archive_inventory", "inventory_mismatch"),
+            (oversized_member, "member_size_limit", "member_size_invalid"),
+            (corrupt_member, "member_read", "member_read_failure"),
+        )
+        environment = {
+            "VERCEL_ENV": "preview",
+            "VERCEL_GIT_COMMIT_REF": vercel_car_function._BRANCH,
+            "VERCEL_URL": "regscope-preview.example.vercel.app",
+        }
+        for encoded, stage, category in cases:
+            with self.subTest(stage=stage):
+                vercel_car_function._RUNTIME = None
+                with patch.dict(os.environ, {
+                    **environment,
+                    "REGSCOPE_P6_CAR_RUN03_ASSETS_ZIP_B64": encoded,
+                }, clear=False):
+                    with self.assertLogs(vercel_car_function._LOGGER, level="ERROR") as captured:
+                        status, document = _request_schema(
+                            "https://regscope-preview.example.vercel.app"
+                        )
+                self.assertEqual(status, 503)
+                self.assertEqual(document["error"]["code"], "model_unavailable")
+                self.assertEqual(
+                    captured.output,
+                    [
+                        "ERROR:housing_regression.vercel_car_function:"
+                        f"car_runtime_initialization_failed stage={stage} category={category}"
+                    ],
+                )
+                self.assertNotIn("private", " ".join(captured.output))
+                self.assertNotIn("private", document["error"]["message"])
         vercel_car_function._RUNTIME = None
 
     def test_model_loading_is_rejected_outside_exact_preview_branch(self):
