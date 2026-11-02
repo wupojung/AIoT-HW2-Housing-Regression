@@ -55,6 +55,22 @@ class SyntheticModel:
         return np.asarray([math.log1p(12.5)])
 
 
+class SyntheticBlobResponse:
+    status = 200
+
+    def __init__(self, payload):
+        self.payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return None
+
+    def read(self, _limit):
+        return self.payload
+
+
 class SteamPredictionApiTests(unittest.TestCase):
     def setUp(self):
         steam.reset_runtime_for_tests()
@@ -69,6 +85,26 @@ class SteamPredictionApiTests(unittest.TestCase):
         self.assertEqual(schema["case_id"], "steam-review-multiplier")
         self.assertEqual(len(schema["input_fields"]), 22)
         self.assertEqual(set(schema["required"]), set(schema["input_fields"]) | {"review_count"})
+
+    def test_private_blob_fetch_uses_passed_oidc_token_and_pinned_digest(self):
+        payload = b"synthetic-private-model"
+        expected_sha = steam.hashlib.sha256(payload).hexdigest()
+        captured = {}
+
+        def opener(request, timeout):
+            captured["authorization"] = request.get_header("Authorization")
+            captured["url"] = request.full_url
+            captured["timeout"] = timeout
+            return SyntheticBlobResponse(payload)
+
+        with patch.dict(os.environ, {"BLOB_STORE_ID": "store_Test123"}, clear=False), patch.object(
+            steam, "MODEL_SHA256", expected_sha
+        ), patch.object(steam, "MODEL_BLOB_PATH", f"steam/run-01/{expected_sha}/model.bin"):
+            result = steam._read_private_model_bytes("synthetic-oidc-token", opener=opener)
+        self.assertEqual(result, payload)
+        self.assertEqual(captured["authorization"], "Bearer synthetic-oidc-token")
+        self.assertIn(expected_sha, captured["url"])
+        self.assertEqual(captured["timeout"], 8)
 
     def test_valid_input_runs_pipeline_and_calculates_ownership_baseline(self):
         runtime = steam.SteamPredictionRuntime(SyntheticModel(), _schema(), b"synthetic")
@@ -172,8 +208,11 @@ class SteamPredictionApiTests(unittest.TestCase):
         }
         with patch.dict(os.environ, environment, clear=False), patch(
             "housing_regression.vercel_car_function._steam_runtime", return_value=runtime
-        ):
-            status, schema_doc = self._request("GET", "/api/schema?case_id=steam-review-multiplier")
+        ) as runtime_loader:
+            oidc_headers = {"x-vercel-oidc-token": "synthetic-oidc-token"}
+            status, schema_doc = self._request(
+                "GET", "/api/schema?case_id=steam-review-multiplier", headers=oidc_headers
+            )
             self.assertEqual(status, 200)
             self.assertEqual(schema_doc["model_id"], steam.MODEL_ID)
             payload = {
@@ -185,11 +224,12 @@ class SteamPredictionApiTests(unittest.TestCase):
             }
             status, prediction = self._request(
                 "POST", "/api/predict", json.dumps(payload),
-                {"Origin": "https://steam-preview.example.vercel.app", "Content-Type": "application/json"},
+                {"Origin": "https://steam-preview.example.vercel.app", "Content-Type": "application/json", **oidc_headers},
             )
             self.assertEqual(status, 200)
             self.assertEqual(prediction["predicted_k"], 12.5)
             self.assertEqual(prediction["estimated_ownership"], 3125)
+            runtime_loader.assert_called_with("synthetic-oidc-token")
 
     def test_batch_route_dispatches_and_untrusted_origin_is_rejected_before_body_read(self):
         runtime = steam.SteamPredictionRuntime(SyntheticModel(), _schema(), b"synthetic")
@@ -203,16 +243,21 @@ class SteamPredictionApiTests(unittest.TestCase):
         writer = csv.DictWriter(output, fieldnames=fields)
         writer.writeheader()
         writer.writerow(_valid_inputs() | {"genres": "Indie|Adventure", "review_count": 250})
-        headers = {"Origin": "https://steam-preview.example.vercel.app", "Content-Type": "text/csv"}
+        headers = {
+            "Origin": "https://steam-preview.example.vercel.app",
+            "Content-Type": "text/csv",
+            "x-vercel-oidc-token": "synthetic-oidc-token",
+        }
         with patch.dict(os.environ, environment, clear=False), patch(
             "housing_regression.vercel_car_function._steam_runtime", return_value=runtime
-        ):
+        ) as runtime_loader:
             status, result = self._request(
                 "POST", "/api/predict-batch?case_id=steam-review-multiplier", output.getvalue(), headers
             )
             self.assertEqual(status, 200)
             self.assertEqual((result["success_rows"], result["error_rows"]), (1, 0))
             self.assertEqual(result["rows"][0]["row_number"], 2)
+            runtime_loader.assert_called_with("synthetic-oidc-token")
             status, rejected = self._request(
                 "POST", "/api/predict-batch?case_id=steam-review-multiplier", output.getvalue(),
                 {**headers, "Origin": "https://attacker.example"},

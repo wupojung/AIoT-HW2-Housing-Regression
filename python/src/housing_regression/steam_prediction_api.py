@@ -121,9 +121,8 @@ def load_schema_bytes() -> bytes:
     return payload
 
 
-def _read_private_model_bytes(opener=urllib.request.urlopen) -> bytes:
+def _read_private_model_bytes(oidc_token: str, opener=urllib.request.urlopen) -> bytes:
     store_id = os.environ.get("BLOB_STORE_ID", "")
-    oidc_token = os.environ.get("VERCEL_OIDC_TOKEN", "")
     if not re.fullmatch(r"store_[A-Za-z0-9]+", store_id) or not oidc_token:
         raise RuntimeError("private model storage unavailable")
     request = urllib.request.Request(
@@ -230,14 +229,16 @@ def validate_inputs(inputs: Any, review_count: Any, schema: dict[str, Any]) -> d
     return result
 
 
-def load_runtime() -> SteamPredictionRuntime:
+def load_runtime(oidc_token: str | None = None) -> SteamPredictionRuntime:
     global _RUNTIME
     if not deployment_is_enabled():
         raise PermissionError("Steam inference is disabled for this deployment")
     if _RUNTIME is not None:
         return _RUNTIME
+    if not oidc_token:
+        raise RuntimeError("Vercel OIDC request token unavailable")
     schema_bytes = load_schema_bytes()
-    model_bytes = _read_private_model_bytes()
+    model_bytes = _read_private_model_bytes(oidc_token)
     model = joblib.load(io.BytesIO(model_bytes))
     steps = getattr(model, "named_steps", {})
     if tuple(steps) != ("encode", "impute", "scale", "model"):

@@ -252,11 +252,11 @@ def _runtime() -> Any:
     return _RUNTIME
 
 
-def _steam_runtime() -> Any:
+def _steam_runtime(oidc_token: str | None = None) -> Any:
     # Import lazily so existing CAR requests do not load the Steam stack.
     from housing_regression.steam_prediction_api import load_runtime
 
-    return load_runtime()
+    return load_runtime(oidc_token)
 
 
 def create_handler():
@@ -322,7 +322,7 @@ def create_handler():
                     self._fail(403, "origin_rejected", "請求來源不允許。")
                     return
                 try:
-                    runtime = _steam_runtime()
+                    runtime = _steam_runtime(self.headers.get("x-vercel-oidc-token"))
                     self._send_json(200, public_schema(runtime))
                 except PermissionError:
                     self._fail(404, "not_found", "找不到此 API 路徑。")
@@ -392,7 +392,7 @@ def create_handler():
                     self._fail(403, "origin_rejected", "請求來源不允許。")
                     return
                 try:
-                    runtime = _steam_runtime()
+                    runtime = _steam_runtime(self.headers.get("x-vercel-oidc-token"))
                     result = predict_steam_csv_batch(runtime, payload)
                     self._send_json(200, result)
                 except SteamPredictionError as exc:
@@ -420,7 +420,7 @@ def create_handler():
                         self._fail(403, "origin_rejected", "請求來源不允許。")
                         return
                     try:
-                        runtime = _steam_runtime()
+                        runtime = _steam_runtime(self.headers.get("x-vercel-oidc-token"))
                         if set(request) != {"case_id", "model_id", "model_version", "inputs", "review_count"}:
                             raise SteamPredictionError("invalid_request", "請求欄位與 Steam 模型契約不符。", 400)
                         if request.get("model_id") != runtime.identity["model_id"]:
