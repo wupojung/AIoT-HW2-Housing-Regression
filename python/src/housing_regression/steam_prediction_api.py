@@ -11,6 +11,8 @@ import math
 import os
 import pickle
 import re
+import socket
+import ssl
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -79,6 +81,17 @@ def _safe_load_failure_category(error: Exception) -> str:
             return "private_blob_client_error"
         return "private_blob_server_error"
     if isinstance(error, urllib.error.URLError):
+        reason = error.reason
+        if isinstance(reason, ssl.SSLCertVerificationError):
+            return "private_blob_tls_certificate_error"
+        if isinstance(reason, ssl.SSLError):
+            return "private_blob_tls_error"
+        if isinstance(reason, socket.gaierror):
+            return "private_blob_dns_error"
+        if isinstance(reason, (socket.timeout, TimeoutError)):
+            return "private_blob_timeout"
+        if isinstance(reason, OSError):
+            return "private_blob_connection_error"
         return "private_blob_transport_error"
     if isinstance(error, (ImportError, ModuleNotFoundError)):
         return "runtime_dependency_error"

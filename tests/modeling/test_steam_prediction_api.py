@@ -5,6 +5,8 @@ import io
 import json
 import math
 import os
+import socket
+import ssl
 import threading
 import unittest
 from http.client import HTTPConnection
@@ -126,6 +128,20 @@ class SteamPredictionApiTests(unittest.TestCase):
             ["ERROR:housing_regression.steam_prediction_api:steam_runtime_load_failed stage=private_model_fetch_and_digest category=private_blob_auth_rejected"],
         )
         self.assertNotIn(private_error, "\n".join(captured.output))
+
+    def test_blob_transport_diagnostics_are_whitelisted(self):
+        self.assertEqual(
+            steam._safe_load_failure_category(__import__("urllib.error", fromlist=["URLError"]).URLError(
+                ssl.SSLCertVerificationError("sensitive tls detail")
+            )),
+            "private_blob_tls_certificate_error",
+        )
+        self.assertEqual(
+            steam._safe_load_failure_category(__import__("urllib.error", fromlist=["URLError"]).URLError(
+                socket.gaierror("sensitive dns detail")
+            )),
+            "private_blob_dns_error",
+        )
 
     def test_valid_input_runs_pipeline_and_calculates_ownership_baseline(self):
         runtime = steam.SteamPredictionRuntime(SyntheticModel(), _schema(), b"synthetic")
