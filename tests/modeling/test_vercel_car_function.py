@@ -65,6 +65,24 @@ def _request_batch(payload, origin):
         thread.join(timeout=2)
 
 
+def _request_schema(origin):
+    server = HTTPServer(("127.0.0.1", 0), vercel_car_function.create_handler())
+    thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True)
+    thread.start()
+    try:
+        connection = HTTPConnection(*server.server_address, timeout=3)
+        connection.request("GET", "/api/schema", headers={"Origin": origin})
+        response = connection.getresponse()
+        status = response.status
+        document = json.loads(response.read())
+        connection.close()
+        return status, document
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
 class VercelCarFunctionGateTests(unittest.TestCase):
     def setUp(self):
         vercel_car_function._RUNTIME = None
@@ -183,6 +201,49 @@ class VercelCarFunctionGateTests(unittest.TestCase):
             self.assertFalse(vercel_car_function._origin_is_authorized(
                 vercel_car_function._PRODUCTION_ORIGIN, required=True
             ))
+
+    def test_schema_runtime_failures_log_only_fixed_stage_and_category(self):
+        environment = {
+            "VERCEL_ENV": "preview",
+            "VERCEL_GIT_COMMIT_REF": vercel_car_function._BRANCH,
+            "VERCEL_URL": "regscope-preview.example.vercel.app",
+        }
+        wrapped_import_error = PredictionInputSchemaError("private wrapper /do-not-log")
+        wrapped_import_error.__cause__ = ModuleNotFoundError("private module path /do-not-log")
+        cases = (
+            (ModuleNotFoundError("private module path /do-not-log"), "import_error"),
+            (FileNotFoundError("/private/path/prediction-input-schema.json"), "file_missing"),
+            (wrapped_import_error, "import_error"),
+        )
+        for failure, category in cases:
+            with self.subTest(category=category):
+                vercel_car_function._RUNTIME = None
+                with patch.dict(os.environ, environment, clear=False):
+                    with patch.object(
+                        vercel_car_function,
+                        "_decode_assets",
+                        return_value=(b"synthetic-model", b"synthetic-schema", b"synthetic-manifest"),
+                    ), patch.object(
+                        vercel_car_function,
+                        "load_verified_car_runtime",
+                        side_effect=failure,
+                    ), self.assertLogs(vercel_car_function._LOGGER, level="ERROR") as captured:
+                        status, document = _request_schema(
+                            "https://regscope-preview.example.vercel.app"
+                        )
+                self.assertEqual(status, 503)
+                self.assertEqual(document["error"]["code"], "model_unavailable")
+                self.assertEqual(
+                    captured.output,
+                    [
+                        "ERROR:housing_regression.vercel_car_function:"
+                        f"car_runtime_initialization_failed stage=model_contract_load category={category}"
+                    ],
+                )
+                self.assertNotIn("/private/path", " ".join(captured.output))
+                self.assertNotIn("/do-not-log", " ".join(captured.output))
+                self.assertNotIn("private module path", document["error"]["message"])
+        vercel_car_function._RUNTIME = None
 
     def test_model_loading_is_rejected_outside_exact_preview_branch(self):
         with patch.dict(os.environ, {"VERCEL_ENV": "production", "VERCEL_GIT_COMMIT_REF": "deploy"}, clear=False):

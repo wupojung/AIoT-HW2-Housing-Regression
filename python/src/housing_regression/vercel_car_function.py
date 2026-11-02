@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+import logging
 import os
 import tempfile
 import zipfile
@@ -35,6 +36,43 @@ _PRODUCTION_BRANCH = "deploy"
 _PRODUCTION_ORIGIN = "https://regscope-aiot.vercel.app"
 PRODUCTION_MAX_BATCH_ROWS = 10
 _RUNTIME: Any | None = None
+_LOGGER = logging.getLogger(__name__)
+
+
+def _runtime_error_category(exc: Exception) -> str:
+    """Return a fixed, non-sensitive category for private runtime diagnostics."""
+    chain: list[Exception] = []
+    current: Exception | None = exc
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen and len(chain) < 8:
+        chain.append(current)
+        seen.add(id(current))
+        current = current.__cause__ or current.__context__
+
+    for error in reversed(chain):
+        if isinstance(error, (ModuleNotFoundError, ImportError)):
+            return "import_error"
+        if isinstance(error, FileNotFoundError):
+            return "file_missing"
+        if isinstance(error, PermissionError):
+            return "permission_error"
+        if isinstance(error, OSError):
+            return "file_io_error"
+        if isinstance(error, PredictionInputSchemaError):
+            return "schema_or_asset_validation_error"
+        if isinstance(error, (ValueError, TypeError, KeyError)):
+            return "invalid_asset_error"
+    return "unexpected_error"
+
+
+def _log_runtime_failure(stage: str, exc: Exception) -> None:
+    allowed_stages = {"asset_decode", "ephemeral_asset_write", "model_contract_load"}
+    safe_stage = stage if stage in allowed_stages else "runtime_initialization"
+    _LOGGER.error(
+        "car_runtime_initialization_failed stage=%s category=%s",
+        safe_stage,
+        _runtime_error_category(exc),
+    )
 
 
 def _preview_branch_allowed() -> bool:
@@ -104,24 +142,31 @@ def _runtime() -> Any:
     if _RUNTIME is not None:
         return _RUNTIME
 
-    model, schema, manifest = _decode_assets()
-    if not model or not schema or not manifest:
-        raise PredictionInputSchemaError("trusted Preview model assets are empty")
+    stage = "asset_decode"
+    try:
+        model, schema, manifest = _decode_assets()
+        if not model or not schema or not manifest:
+            raise PredictionInputSchemaError("trusted Preview model assets are empty")
 
-    # The only disk copy is private ephemeral function storage. It is removed
-    # immediately after the pinned loader hashes and deserializes the model.
-    with tempfile.TemporaryDirectory(prefix="regscope-car-") as temp_dir:
-        root = Path(temp_dir)
-        private = root / "private"
-        private.mkdir(mode=0o700)
-        (private / "final-model.joblib").write_bytes(model)
-        (private / "run-manifest.json").write_bytes(manifest)
-        schema_path = root / "prediction-input-schema.json"
-        schema_path.write_bytes(schema)
-        for path in (private / "final-model.joblib", private / "run-manifest.json", schema_path):
-            path.chmod(0o600)
-        contract_schema = Path(__file__).resolve().parent / "prediction-input-schema-v0.1.schema.json"
-        _RUNTIME = load_verified_car_runtime(root, schema_path, contract_schema_path=contract_schema)
+        # The only disk copy is private ephemeral function storage. It is removed
+        # immediately after the pinned loader hashes and deserializes the model.
+        stage = "ephemeral_asset_write"
+        with tempfile.TemporaryDirectory(prefix="regscope-car-") as temp_dir:
+            root = Path(temp_dir)
+            private = root / "private"
+            private.mkdir(mode=0o700)
+            (private / "final-model.joblib").write_bytes(model)
+            (private / "run-manifest.json").write_bytes(manifest)
+            schema_path = root / "prediction-input-schema.json"
+            schema_path.write_bytes(schema)
+            for path in (private / "final-model.joblib", private / "run-manifest.json", schema_path):
+                path.chmod(0o600)
+            stage = "model_contract_load"
+            contract_schema = Path(__file__).resolve().parent / "prediction-input-schema-v0.1.schema.json"
+            _RUNTIME = load_verified_car_runtime(root, schema_path, contract_schema_path=contract_schema)
+    except Exception as exc:
+        _log_runtime_failure(stage, exc)
+        raise
     return _RUNTIME
 
 
