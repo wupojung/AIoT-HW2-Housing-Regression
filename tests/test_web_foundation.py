@@ -329,6 +329,19 @@ class WebFoundationTests(unittest.TestCase):
         )
         self.assertNotIn("if (!steamPackage && !steamPackageError && !steamPackageLoading)", render_body)
 
+    def test_vercel_release_route_allows_only_release_index_package_paths(self):
+        vercel = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
+        deny_rule = next(route for route in vercel["routes"] if route.get("status") == 404 and route.get("src", "").startswith("^/data/releases/"))
+        pattern = re.compile(deny_rule["src"])
+        release = json.loads((WEB / "data/current-release.json").read_text(encoding="utf-8"))
+        for case in release["cases"]:
+            package_ref = case["package_ref"].removeprefix("releases/")
+            package_dir = package_ref.rsplit("/", 1)[0]
+            request_path = f"/data/releases/{package_dir}/phase1/business-understanding.json"
+            with self.subTest(case_id=case["case_id"]):
+                self.assertIsNone(pattern.match(request_path))
+        self.assertIsNotNone(pattern.match("/data/releases/unapproved/cases/example/package.json"))
+
     def test_brand_course_and_project_links_are_present(self):
         text = " ".join(self.parser.text)
         self.assertIn("RegScope", text)
