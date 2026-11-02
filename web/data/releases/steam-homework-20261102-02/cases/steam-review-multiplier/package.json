@@ -1,0 +1,414 @@
+{
+  "package_schema_version": "1.0.0",
+  "package_id": "steam-review-multiplier-steam-homework-20261102-02",
+  "case_id": "steam-review-multiplier",
+  "package_revision": "steam-homework-20261102-02",
+  "package_status": "PARTIAL",
+  "publication": {
+    "approved": false,
+    "release_id": null,
+    "review_status": "PENDING"
+  },
+  "case_ref": "case.json",
+  "phases": {
+    "phase1": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-01/content.json"
+    },
+    "phase2": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-02/analyses.json"
+    },
+    "phase3": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-03/preparation.json"
+    },
+    "phase4": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-04/modeling.json"
+    },
+    "phase5": {
+      "status": "PLANNED",
+      "data_ref": "phases/phase-05/evaluations.json"
+    },
+    "phase6": {
+      "status": "VERIFIED",
+      "data_ref": "phases/phase-06/inference-catalog.json"
+    }
+  },
+  "asset_manifest_ref": "assets/figure-manifest.json",
+  "files": [
+    {
+      "path": "assets/execution-manifest.json",
+      "sha256": "e35af36d4b4a918c0a70f6a092df3343cfdf8f963976b668f0c254c8e744a3db",
+      "bytes": 1955,
+      "mime": "application/json"
+    },
+    {
+      "path": "assets/figure-manifest.json",
+      "sha256": "633bacd9772641d23c1580a3652681bf81d1e14e203101f97c95fd60a578f205",
+      "bytes": 3082,
+      "mime": "application/json"
+    },
+    {
+      "path": "case.json",
+      "sha256": "3550de9eb864e942c961c058d658e28f2b0ee224769254d2ca4ad5121f14606c",
+      "bytes": 2858,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-01/content.json",
+      "sha256": "4dac3419fac79e90534658aacee1b37f7c109fb7d6a19eb30b0e624292595bbc",
+      "bytes": 2014,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-02/analyses.json",
+      "sha256": "31299f372faf5b1373c3ab8bb2cba1291999a6c2aa039f224713b6195409b9d8",
+      "bytes": 4669,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-02/data-understanding.json",
+      "sha256": "8c80db75cc9f732f98296ef357ab99c2ec01b6587ce0f83b459a7f74c96100aa",
+      "bytes": 17763,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-02/figures/dataset-overview.png",
+      "sha256": "297ae31775ef4e77508ef2f5c5df07b301c30bcc0f9ffd94ea58845c116c458a",
+      "bytes": 30840,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-02/figures/dataset-overview.svg",
+      "sha256": "440763e1bc3b8d84ec729e1e0348901fe7a895312ab02eb910467af078d536c8",
+      "bytes": 27990,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-02/figures/fixed-k-interval-compatibility.png",
+      "sha256": "a4666faafc533652bb38ada27ab8fbd3d6b5fa671d9605c607fddc7441d06520",
+      "bytes": 26045,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-02/figures/fixed-k-interval-compatibility.svg",
+      "sha256": "b03051907c58b86b43117e83e0ba57f5d5f7a6cf3b2ade83fdd1101f997433cd",
+      "bytes": 29900,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-02/figures/genre-distribution.png",
+      "sha256": "9e51633c165450455f37ee28661db24b361d3545dc03bc93060d145e2664cf67",
+      "bytes": 50473,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-02/figures/genre-distribution.svg",
+      "sha256": "28ca0423bbc47cf8eade9aa31568c2c7a98746189e694a858fa7d5ffc01f5026",
+      "bytes": 50701,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-02/figures/k-by-genre.png",
+      "sha256": "7d57baf34a0983d963ea2070d8c9ae8d72d81a4da5718db2c0a38997a036011f",
+      "bytes": 48501,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-02/figures/k-by-genre.svg",
+      "sha256": "0553355dfceb2a325c1b0ce4d3cfdf9a1d55f9da7eac0fea2088e4ac6802ed33",
+      "bytes": 57098,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-02/figures/k-vs-price.png",
+      "sha256": "b4d5613a0255ec290025421f6eeffb8ccdf022ec6818c343c1e35ff0e77a6d4e",
+      "bytes": 56378,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-02/figures/k-vs-price.svg",
+      "sha256": "4fe337cfa27a6842a1dc2503e8deff48bff8d42b00ad329edbd4ea831258fa99",
+      "bytes": 34432,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-02/figures/missingness-overview.png",
+      "sha256": "950c1603f46a5fdff2de1952028ed65027e905cad169ed5bd49d2b3d6f261f67",
+      "bytes": 36541,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-02/figures/missingness-overview.svg",
+      "sha256": "10385b4259c0829cb924792db388a7fac53d9e5d87bccac18e953a3962b9c008",
+      "bytes": 38475,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-02/figures/owners-distribution.png",
+      "sha256": "6dd74cafbe2d0094157a5816edd24f9844e508f67be7a4b897377cc855682843",
+      "bytes": 29953,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-02/figures/owners-distribution.svg",
+      "sha256": "fb350692e6c7523326d5138f2d384565e032156ed81ed73512db87cd27d33681",
+      "bytes": 46542,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-02/figures/review-count-distribution.png",
+      "sha256": "560ea4e7d054a8822792040bfcc0968223ac7dee132c0cdf371e8dfbabf53962",
+      "bytes": 26331,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-02/figures/review-count-distribution.svg",
+      "sha256": "474045ee0f8d4a53b8d7678491b6684506cdbdc007a28cb6a612f2d9f415a310",
+      "bytes": 40292,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "phases/phase-03/feature-lineage.json",
+      "sha256": "1b13924e12e3ae939aeba7f09d794061a306d3979a4c65048c0ac0c0b6ffbb75",
+      "bytes": 14419,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-03/preparation.json",
+      "sha256": "858cab8463854dcc78a106ceb958c81e521d85b0e2d187c87c62f41d60402a1d",
+      "bytes": 2669,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/charts/model-comparison.json",
+      "sha256": "5b12d57662f4c4a2e7220312cf6282c1ec7686391c3ef0c43af80b94934612e0",
+      "bytes": 1150,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/lasso-all/cv-metrics.json",
+      "sha256": "6c94df81df128aea90454bf9a5192373858b8cf73efd3361bb1c2072b351dab8",
+      "bytes": 387,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/lasso-all/fold-tasks.json",
+      "sha256": "5f5d53b099d8a63f1fa4c34efdd1355a853c6ad91662c876ccd3cccb7643ba87",
+      "bytes": 168,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/lasso-all/metadata.json",
+      "sha256": "12d35b6fe80dca3b002491d7dcbbd4a1240bb58b82d6209bb373cc4e3edbaceb",
+      "bytes": 210,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/lasso-all/selected-features.json",
+      "sha256": "6b48adf96014b85daf8d1e0ec77ca98594f9a6d8dbe8cc2414749538fe485a13",
+      "bytes": 176,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ols-all/cv-metrics.json",
+      "sha256": "76f4d3cad23d71c8a190b78437d1c7d68b9b960edbc737eaa2d58f278e5363e6",
+      "bytes": 369,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ols-all/fold-tasks.json",
+      "sha256": "f7aacb326d0952104830bee86c05b39520d05754cf101477c1dfe022a6b97ba0",
+      "bytes": 166,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ols-all/metadata.json",
+      "sha256": "cde551733fe699c16e25872999cbed7d20b49ec46a987275f670ec1aebe741d9",
+      "bytes": 206,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ols-all/selected-features.json",
+      "sha256": "6b48adf96014b85daf8d1e0ec77ca98594f9a6d8dbe8cc2414749538fe485a13",
+      "bytes": 176,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/random_forest-all/cv-metrics.json",
+      "sha256": "51702e1a69ca9ec4ef726fa4190c8b2a2c554384d63c250265bd16c283adc308",
+      "bytes": 481,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/random_forest-all/fold-tasks.json",
+      "sha256": "58a76f997c9b74e6594bd987993a314a31290e324c5708bc8b2e438b549b0ada",
+      "bytes": 176,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/random_forest-all/metadata.json",
+      "sha256": "1587cf39d64263b180a4d708f1b33a5ea001bdc5235b627cc43a284ed76dbbc0",
+      "bytes": 226,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/random_forest-all/selected-features.json",
+      "sha256": "937b01e63e0512644eb14abc89855d863c89385755301378b47b03a1a85f9f27",
+      "bytes": 888,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-all/cv-metrics.json",
+      "sha256": "3eaaf9d1da65fd26e356841d3067d7763512b533529d632010e7ac991504f4f1",
+      "bytes": 364,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-all/fold-tasks.json",
+      "sha256": "5646c4e9c68235e19091b961e6603e802842492d9d01e8eaee74e3e3ec9bf6c1",
+      "bytes": 167,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-all/metadata.json",
+      "sha256": "c1be14f528548996953b2cd24b74051adbcf2a20476ce092e5ff5cebffd49769",
+      "bytes": 210,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-all/selected-features.json",
+      "sha256": "6b48adf96014b85daf8d1e0ec77ca98594f9a6d8dbe8cc2414749538fe485a13",
+      "bytes": 176,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-lasso_rfe_14/cv-metrics.json",
+      "sha256": "2ad5dab7b4b1eb7e211ed7418a00664ed118b611b9df40a00cff73aa7e69726f",
+      "bytes": 471,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-lasso_rfe_14/fold-tasks.json",
+      "sha256": "9b55ec0eedd20ab8991fc942bb57b4100c425472875a981ccd2150073ca444e4",
+      "bytes": 177,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-lasso_rfe_14/metadata.json",
+      "sha256": "e298bb1345f704fec937495ab5bb07559de70c1f81e69af5234b1efd36840c41",
+      "bytes": 228,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-lasso_rfe_14/selected-features.json",
+      "sha256": "6b48adf96014b85daf8d1e0ec77ca98594f9a6d8dbe8cc2414749538fe485a13",
+      "bytes": 176,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-select_k_14/cv-metrics.json",
+      "sha256": "10dee103b47876a98937bd741093946e64a58a3fab3853e93b6b0fab35ebffa4",
+      "bytes": 394,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-select_k_14/fold-tasks.json",
+      "sha256": "a8c4d509284521137f9a76ba5cc70434a12f2bcec61d2256647b961ff2c2dd5f",
+      "bytes": 175,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-select_k_14/metadata.json",
+      "sha256": "59a60cad41013b9d0dcd5a4c59c50cc1f593ad55deed3fc5f2514da3dc10463f",
+      "bytes": 226,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/configurations/ridge-select_k_14/selected-features.json",
+      "sha256": "6b48adf96014b85daf8d1e0ec77ca98594f9a6d8dbe8cc2414749538fe485a13",
+      "bytes": 176,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/figures/cv-model-comparison.png",
+      "sha256": "28abe386d8e3408154e2808ef447f8d7b188a2710bc42d7e2a142c8d267f5140",
+      "bytes": 38786,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-04/modeling-details.json",
+      "sha256": "21ebcfb96045407504878269ebf00db42a0ec13a23613ca8bad7e19c8752791f",
+      "bytes": 6202,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-04/modeling.json",
+      "sha256": "7b7ca4678ea304c354f1ac4cd12db483b6be3c690af9bedeb059d4b09bf45b90",
+      "bytes": 7746,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-05/actual-predicted-bins.json",
+      "sha256": "a6c6ecafbccd528f6b96d2a0b855ecbd8665262d624f9b3e7a4a3edee3834823",
+      "bytes": 3554,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-05/evaluation-summary.json",
+      "sha256": "4d44a0bab84b92c87a23d4cffcd57515cbed03b1a0d8eddf383fe40eaee8a89d",
+      "bytes": 15947,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-05/evaluations.json",
+      "sha256": "bf565bbae9409f4a789b6d3dea2ead71b26981b06c8feaee2ee6a06bd1738531",
+      "bytes": 4020,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-05/figures/actual-vs-predicted.png",
+      "sha256": "de058298fde46f638fef3d4130ee0580e576944a8ffc2b4140d25bb8574d8194",
+      "bytes": 52843,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-05/figures/genre-predicted-k.png",
+      "sha256": "0ba816e55793060b0170ca2ed4ba4ec86e8d2d24d573db51843a96d596d54151",
+      "bytes": 50993,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-05/figures/holdout-baseline-comparison.png",
+      "sha256": "956e8b25cada5c367db371490baeb590c92425e8776f2e61df646a8d6777f009",
+      "bytes": 39364,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-05/figures/holdout-interval-compatibility.png",
+      "sha256": "7b2edbbbd255bcca09d6deda17def636a6c40c223b78eb2ae7ad4a8bef3b42c0",
+      "bytes": 41176,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-05/figures/residual-distribution.png",
+      "sha256": "656a5e793f8711da862e730c9bba560f20f4ce0eba3c22dd3bc7fc218e751d43",
+      "bytes": 31234,
+      "mime": "image/png"
+    },
+    {
+      "path": "phases/phase-06/inference-catalog.json",
+      "sha256": "a8b72f4f66d4842c9cf729a84cee12fa2eaa25a4f7111bb5c7450ee921b013ff",
+      "bytes": 1070,
+      "mime": "application/json"
+    },
+    {
+      "path": "phases/phase-06/input-schema.json",
+      "sha256": "b7135570418ed2c1a0d96f32ed906e894da58a0f7148f3e1d6c5eb2a494293bc",
+      "bytes": 1942,
+      "mime": "application/json"
+    }
+  ]
+}

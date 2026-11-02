@@ -1,0 +1,10 @@
+{
+  "configuration_id": "random_forest-all",
+  "fold_count": 3,
+  "seed": 42,
+  "fold_log_rmse": [
+    0.9292370153632153,
+    0.9391193103754405,
+    0.9431454898608581
+  ]
+}

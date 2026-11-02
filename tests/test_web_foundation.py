@@ -315,9 +315,11 @@ class WebFoundationTests(unittest.TestCase):
             self.assertEqual(len(data), item["bytes"], item["path"])
             self.assertNotIn(path.suffix.lower(), {".csv", ".joblib", ".pkl", ".pickle"})
         self.assertIn('function renderSteamPhase(phase)', self.js)
-        self.assertIn('線上互動預測尚未開放', self.js)
         self.assertNotIn('/api/steam/predict', self.js)
-        self.assertNotIn('id="steam-predict-form"', self.js)
+        self.assertIn('id="steam-predict-form"', self.js)
+        self.assertIn('未載入 Mock Prediction', self.js)
+        self.assertIn('線上 Steam 預測目前不可用', self.js)
+        self.assertIn('未載入 Mock Prediction，也不會改用固定 K。', self.js)
 
     def test_steam_package_load_is_lazy_until_steam_is_selected(self):
         render_start = self.js.index("function render() {")
@@ -366,6 +368,38 @@ class WebFoundationTests(unittest.TestCase):
 
         config = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
         self.assertEqual(config["outputDirectory"], "web")
+
+    def test_steam_phase6_uses_verified_contract_and_real_same_origin_api(self):
+        self.assertIn('if (state.caseId === STEAM_CASE_ID && !steamPackage', self.js)
+        self.assertIn('void loadSteamInferenceSchema();', self.js)
+        self.assertIn('document.schema_sha256 !== schemaEntry.sha256', self.js)
+        self.assertIn('JSON.stringify(inputSchema) !== JSON.stringify(packageSchema)', self.js)
+        self.assertIn('data-action="steam-fill-demo"', self.js)
+        self.assertIn('data-action="steam-mode-batch"', self.js)
+        self.assertIn('fetch("/api/predict"', self.js)
+        self.assertIn('fetch("/api/predict-batch?case_id=steam-review-multiplier"', self.js)
+        self.assertIn('data-action="steam-batch-download"', self.js)
+        self.assertIn('22 個工程輸入均須提供', self.js)
+        self.assertIn('K = 30 基準', self.js)
+        self.assertIn('不會改用固定 K', self.js)
+
+    def test_steam_release_revision_keeps_partial_unapproved_and_package_bound(self):
+        import hashlib
+        import json
+
+        release = json.loads((WEB / "data/current-release.json").read_text(encoding="utf-8"))
+        pointer = next(item for item in release["cases"] if item["case_id"] == "steam-review-multiplier")
+        package_path = WEB / "data" / pointer["package_ref"]
+        package_bytes = package_path.read_bytes()
+        self.assertEqual(hashlib.sha256(package_bytes).hexdigest(), pointer["package_sha256"])
+        package = json.loads(package_bytes)
+        self.assertEqual(package["package_status"], "PARTIAL")
+        self.assertFalse(package["publication"]["approved"])
+        self.assertEqual(package["package_revision"], "steam-homework-20261102-02")
+        for entry in package["files"]:
+            payload = (package_path.parent / entry["path"]).read_bytes()
+            self.assertEqual(hashlib.sha256(payload).hexdigest(), entry["sha256"])
+            self.assertEqual(len(payload), entry["bytes"])
 
 
 if __name__ == "__main__":

@@ -1,0 +1,17 @@
+{
+  "configuration_id": "ols-all",
+  "model_id": "ols",
+  "feature_selection": "all",
+  "fold_count": 3,
+  "estimator_parameters": {
+    "fit_intercept": true
+  },
+  "selector_parameters": {},
+  "fold_log_rmse": [
+    0.9781863551136062,
+    0.9965832777310227,
+    0.9905557108409015
+  ],
+  "mean_log_rmse": 0.9884417812285102,
+  "sd_log_rmse": 0.009378870627768144
+}
