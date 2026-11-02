@@ -20,7 +20,7 @@
       "dest": "/api/predict-batch.py"
     },
     {
-      "src": "^/data/releases/(?!ames-full-model-exploration-20261028-02/cases/ames-full-model-exploration(?:/|$)|run03-r1/cases/used-car-price-optimized(?:/|$)).*",
+      "src": "^/data/releases/(?!ames-full-model-exploration-20261028-02/cases/ames-full-model-exploration(?:/|$)|run03-r1/cases/used-car-price-optimized(?:/|$)|steam-homework-20261102-01/cases/steam-review-multiplier(?:/|$)).*",
       "status": 404
     },
     {
