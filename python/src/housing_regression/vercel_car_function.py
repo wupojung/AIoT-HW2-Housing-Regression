@@ -41,18 +41,27 @@ _LOGGER = logging.getLogger(__name__)
 
 def _runtime_error_category(exc: Exception) -> str:
     """Return a fixed, non-sensitive category for private runtime diagnostics."""
-    if isinstance(exc, (ModuleNotFoundError, ImportError)):
-        return "import_error"
-    if isinstance(exc, FileNotFoundError):
-        return "file_missing"
-    if isinstance(exc, PermissionError):
-        return "permission_error"
-    if isinstance(exc, OSError):
-        return "file_io_error"
-    if isinstance(exc, PredictionInputSchemaError):
-        return "schema_or_asset_validation_error"
-    if isinstance(exc, (ValueError, TypeError, KeyError)):
-        return "invalid_asset_error"
+    chain: list[Exception] = []
+    current: Exception | None = exc
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen and len(chain) < 8:
+        chain.append(current)
+        seen.add(id(current))
+        current = current.__cause__ or current.__context__
+
+    for error in reversed(chain):
+        if isinstance(error, (ModuleNotFoundError, ImportError)):
+            return "import_error"
+        if isinstance(error, FileNotFoundError):
+            return "file_missing"
+        if isinstance(error, PermissionError):
+            return "permission_error"
+        if isinstance(error, OSError):
+            return "file_io_error"
+        if isinstance(error, PredictionInputSchemaError):
+            return "schema_or_asset_validation_error"
+        if isinstance(error, (ValueError, TypeError, KeyError)):
+            return "invalid_asset_error"
     return "unexpected_error"
 
 

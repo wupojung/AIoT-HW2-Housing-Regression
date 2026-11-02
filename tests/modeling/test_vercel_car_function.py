@@ -208,9 +208,12 @@ class VercelCarFunctionGateTests(unittest.TestCase):
             "VERCEL_GIT_COMMIT_REF": vercel_car_function._BRANCH,
             "VERCEL_URL": "regscope-preview.example.vercel.app",
         }
+        wrapped_import_error = PredictionInputSchemaError("private wrapper /do-not-log")
+        wrapped_import_error.__cause__ = ModuleNotFoundError("private module path /do-not-log")
         cases = (
             (ModuleNotFoundError("private module path /do-not-log"), "import_error"),
             (FileNotFoundError("/private/path/prediction-input-schema.json"), "file_missing"),
+            (wrapped_import_error, "import_error"),
         )
         for failure, category in cases:
             with self.subTest(category=category):
