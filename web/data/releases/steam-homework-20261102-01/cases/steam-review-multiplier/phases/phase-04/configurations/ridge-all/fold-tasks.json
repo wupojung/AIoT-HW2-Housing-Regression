@@ -1,0 +1,10 @@
+{
+  "configuration_id": "ridge-all",
+  "fold_count": 3,
+  "seed": 42,
+  "fold_log_rmse": [
+    0.9781877088073816,
+    0.9965764763681326,
+    0.990556632468885
+  ]
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "configuration_id": "ols-all",
+    "model_id": "ols",
+    "feature_selection": "all",
+    "mean_log_rmse": 0.9884417812285102,
+    "sd_log_rmse": 0.009378870627768144
+  },
+  {
+    "configuration_id": "ridge-all",
+    "model_id": "ridge",
+    "feature_selection": "all",
+    "mean_log_rmse": 0.9884402725481332,
+    "sd_log_rmse": 0.009375282800345611
+  },
+  {
+    "configuration_id": "lasso-all",
+    "model_id": "lasso",
+    "feature_selection": "all",
+    "mean_log_rmse": 0.988413775320374,
+    "sd_log_rmse": 0.009196128213962356
+  },
+  {
+    "configuration_id": "random_forest-all",
+    "model_id": "random_forest",
+    "feature_selection": "all",
+    "mean_log_rmse": 0.9371672718665046,
+    "sd_log_rmse": 0.007156762988123272
+  },
+  {
+    "configuration_id": "ridge-select_k_14",
+    "model_id": "ridge",
+    "feature_selection": "select_k_14",
+    "mean_log_rmse": 0.9950895138130113,
+    "sd_log_rmse": 0.00798269742296123
+  },
+  {
+    "configuration_id": "ridge-lasso_rfe_14",
+    "model_id": "ridge",
+    "feature_selection": "lasso_rfe_14",
+    "mean_log_rmse": 0.9907744994310773,
+    "sd_log_rmse": 0.00874687927354094
+  }
+]

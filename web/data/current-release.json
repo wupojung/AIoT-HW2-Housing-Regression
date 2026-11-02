@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "release_id": "research-cases-20261029-01",
+  "release_id": "research-cases-20261102-01",
   "cases": [
     {
       "case_id": "ames-full-model-exploration",
@@ -15,6 +15,13 @@
       "package_status": "PARTIAL",
       "package_sha256": "8497909f812cfd2e87205c2ad5591079e8188a7439447ebee5aaf79391c07de7",
       "package_bytes": 22336
+    },
+    {
+      "case_id": "steam-review-multiplier",
+      "package_ref": "releases/steam-homework-20261102-01/cases/steam-review-multiplier/package.json",
+      "package_status": "PARTIAL",
+      "package_sha256": "31664cb9c27975a1fa822f405b81a3f90a93475e9ac3273e83d6d61a9f04a55e",
+      "package_bytes": 14462
     }
   ]
 }

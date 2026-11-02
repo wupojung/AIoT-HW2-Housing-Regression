@@ -619,3 +619,7 @@ details.disclosure summary { color: #126879; }
 
 .package-figure { display: block; width: 100%; max-height: 560px; object-fit: contain; margin: 18px 0; background: #fff; border: 1px solid #d9e2e7; border-radius: 8px; }
 .package-json { overflow-x: auto; padding: 12px; background: #f4f7f8; border-radius: 8px; }
+.steam-evidence-figure { min-width: 0; margin: 0 0 18px; }
+.steam-evidence-figure figcaption { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.steam-phase-table { width: 100%; }
+.steam-unavailable { border-left: 4px solid #c28a45; }

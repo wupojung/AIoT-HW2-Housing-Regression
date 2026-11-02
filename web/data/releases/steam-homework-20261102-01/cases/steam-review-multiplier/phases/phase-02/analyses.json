@@ -1,0 +1,104 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "steam-review-multiplier",
+  "status": "VERIFIED",
+  "default_analysis_id": "overview",
+  "analyses": [
+    {
+      "id": "overview",
+      "figure_id": "FIG-STEAM-01",
+      "title": "Dataset overview",
+      "status": "VERIFIED",
+      "image_ref": "phases/phase-02/figures/dataset-overview.svg",
+      "table_ref": "phases/phase-02/data-understanding.json",
+      "description": "四份本機快照資料列數與欄數；由逐檔串流盤點產生。",
+      "finding": null,
+      "limitations": "圖表由指定 Kaggle CSV 彙總產生；owners 與 K 為區間／代理值，非官方銷量。",
+      "provenance_ref": "assets/execution-manifest.json"
+    },
+    {
+      "id": "missingness",
+      "figure_id": "FIG-STEAM-02",
+      "title": "Missingness overview",
+      "status": "VERIFIED",
+      "image_ref": "phases/phase-02/figures/missingness-overview.svg",
+      "table_ref": "phases/phase-02/data-understanding.json",
+      "description": "2025 Cleaned 缺值比例最高的欄位。",
+      "finding": null,
+      "limitations": "圖表由指定 Kaggle CSV 彙總產生；owners 與 K 為區間／代理值，非官方銷量。",
+      "provenance_ref": "assets/execution-manifest.json"
+    },
+    {
+      "id": "reviews",
+      "figure_id": "FIG-STEAM-03",
+      "title": "Review count distribution",
+      "status": "VERIFIED",
+      "image_ref": "phases/phase-02/figures/review-count-distribution.svg",
+      "table_ref": "phases/phase-02/data-understanding.json",
+      "description": "num_reviews_total 在正值與有效 owners 區間資料中的長尾分布。",
+      "finding": null,
+      "limitations": "圖表由指定 Kaggle CSV 彙總產生；owners 與 K 為區間／代理值，非官方銷量。",
+      "provenance_ref": "assets/execution-manifest.json"
+    },
+    {
+      "id": "owners",
+      "figure_id": "FIG-STEAM-04",
+      "title": "Estimated owners distribution",
+      "status": "VERIFIED",
+      "image_ref": "phases/phase-02/figures/owners-distribution.svg",
+      "table_ref": "phases/phase-02/data-understanding.json",
+      "description": "SteamSpy owners 區間中點 proxy 的長尾分布，不是真實銷量。",
+      "finding": null,
+      "limitations": "圖表由指定 Kaggle CSV 彙總產生；owners 與 K 為區間／代理值，非官方銷量。",
+      "provenance_ref": "assets/execution-manifest.json"
+    },
+    {
+      "id": "genres",
+      "figure_id": "FIG-STEAM-05",
+      "title": "Genre distribution",
+      "status": "VERIFIED",
+      "image_ref": "phases/phase-02/figures/genre-distribution.svg",
+      "table_ref": "phases/phase-02/data-understanding.json",
+      "description": "一款遊戲可同時屬於多個 Genre，各組樣本有重疊。",
+      "finding": null,
+      "limitations": "圖表由指定 Kaggle CSV 彙總產生；owners 與 K 為區間／代理值，非官方銷量。",
+      "provenance_ref": "assets/execution-manifest.json"
+    },
+    {
+      "id": "genre-k",
+      "figure_id": "FIG-STEAM-06",
+      "title": "K proxy by genre",
+      "status": "VERIFIED",
+      "image_ref": "phases/phase-02/figures/k-by-genre.svg",
+      "table_ref": "phases/phase-02/data-understanding.json",
+      "description": "高頻 Genre K proxy 箱型圖；為可讀性只裁切圖面上尾，統計摘要未裁切。",
+      "finding": null,
+      "limitations": "圖表由指定 Kaggle CSV 彙總產生；owners 與 K 為區間／代理值，非官方銷量。",
+      "provenance_ref": "assets/execution-manifest.json"
+    },
+    {
+      "id": "price-k",
+      "figure_id": "FIG-STEAM-07",
+      "title": "K proxy by price",
+      "status": "VERIFIED",
+      "image_ref": "phases/phase-02/figures/k-vs-price.svg",
+      "table_ref": "phases/phase-02/data-understanding.json",
+      "description": "付費遊戲價格分位組的 K proxy 中位數。",
+      "finding": null,
+      "limitations": "圖表由指定 Kaggle CSV 彙總產生；owners 與 K 為區間／代理值，非官方銷量。",
+      "provenance_ref": "assets/execution-manifest.json"
+    },
+    {
+      "id": "fixed-k",
+      "figure_id": "FIG-STEAM-08",
+      "title": "K baseline interval compatibility",
+      "status": "VERIFIED",
+      "image_ref": "phases/phase-02/figures/fixed-k-interval-compatibility.svg",
+      "table_ref": "phases/phase-02/data-understanding.json",
+      "description": "固定 K=20／30／50 落在 K 區間內的比例。",
+      "finding": null,
+      "limitations": "圖表由指定 Kaggle CSV 彙總產生；owners 與 K 為區間／代理值，非官方銷量。",
+      "provenance_ref": "assets/execution-manifest.json"
+    }
+  ]
+}

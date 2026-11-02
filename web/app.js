@@ -145,6 +145,19 @@ CASES["ames-housing-formal"] = {
   packageRevision: "local-staging-p5-formal-data-test-20261027-01"
 };
 CASES["ames-housing"].packageMode = "mock";
+const STEAM_CASE_ID = "steam-review-multiplier";
+CASES[STEAM_CASE_ID] = {
+  id: STEAM_CASE_ID,
+  title: "Steam Review Multiplier — Homework",
+  status: "PARTIAL",
+  packageMode: "steam",
+  packageRevision: "steam-homework-20261102-01",
+  source: "Steam Games Dataset 2025 · Kaggle",
+  sourceUrl: "https://www.kaggle.com/datasets/artermiloff/steam-games-dataset",
+  license: "MIT (Kaggle-listed; review pending)",
+  target: { column: "Review Multiplier K", label: "K midpoint proxy", unit: "multiplier" },
+  sections: [], analyses: [], inference: { status: "UNAVAILABLE", models: [], reasonCode: "NO_PUBLIC_INFERENCE_SERVICE", message: "線上互動預測尚未開放。" }
+};
 
 const state = {
   caseId: "ames-full-model-exploration", route: "home", analysisId: "overview", perspective: "method_comparison",
@@ -199,6 +212,8 @@ function banner(caseInfo = caseData()) {
     ? `Formal Case Package ${caseInfo.packageRevision} · only Phase 5 reads local staging; Phases 1–4 remain MOCK UI previews. This is not a public release.`
     : caseInfo.packageMode === "car"
     ? `CAR research package ${caseInfo.packageRevision} · local review only; publication approval is pending.`
+    : caseInfo.packageMode === "steam"
+    ? `Steam research package ${caseInfo.packageRevision} · aggregate research evidence; online inference is unavailable.`
     : caseInfo.packageMode === "reference"
     ? `公開 Case Package ${caseInfo.packageRevision} · INIT B 正式 Development 計算；Phase 5 為 OOF 評估，研究發布審查仍待完成。`
     : explorationPackageMode
@@ -207,7 +222,7 @@ function banner(caseInfo = caseData()) {
     ? `UI fixture only · package revision ${caseInfo.packageRevision} · ${SOURCE}. These values are not approved research results.`
     : "Planned placeholder only · no research package, data, or model is available.";
   const bannerStatus = caseInfo.status;
-  return `<div class="fixture-banner"><span><strong>${formalPackage ? "Formal package preview" : explorationPackageMode ? "Historical exploration package" : caseInfo.status === "MOCK" ? "Fixture preview" : "Planned case"}</strong> · ${esc(reason)}</span>${badge(bannerStatus)}</div>`;
+  return `<div class="fixture-banner"><span><strong>${formalPackage ? "Formal package preview" : caseInfo.packageMode === "steam" ? "Steam Review Multiplier" : explorationPackageMode ? "Historical exploration package" : caseInfo.status === "MOCK" ? "Fixture preview" : "Planned case"}</strong> · ${esc(reason)}</span>${badge(bannerStatus)}</div>`;
 }
 function updateShell() {
   const phase = routePhase();
@@ -221,10 +236,11 @@ function updateShell() {
   if (LOCAL_CAR_PHASE6_PREVIEW) publicCases = [[CAR_CASE_ID, CASES[CAR_CASE_ID]]];
   caseSelect.innerHTML = publicCases.map(([key, c]) => `<option value="${esc(key)}" ${key === state.caseId ? "selected" : ""}>${esc(c.title)} · ${esc(c.status)}</option>`).join("");
   const caseLoadStatus = document.querySelector("#case-load-status");
-  const loading = explorationPackageLoading || carPackageLoading;
+  const loading = explorationPackageLoading || carPackageLoading || steamPackageLoading;
   const failedCases = [
     explorationPackageError ? "Full Model Exploration" : null,
-    carPackageError ? "Used Car Price Prediction" : null
+    carPackageError ? "Used Car Price Prediction" : null,
+    steamPackageError ? "Steam Review Multiplier" : null
   ].filter(Boolean);
   caseSelect.disabled = loading;
   caseLoadStatus.classList.toggle("is-error", failedCases.length > 0);
@@ -256,9 +272,13 @@ let explorationPackageLoading = false;
 let carPackage = null;
 let carPackageError = null;
 let carPackageLoading = false;
+let steamPackage = null;
+let steamPackageError = null;
+let steamPackageLoading = false;
+let steamAssetUrls = {};
 const EXPLORATION_CASE_ID = "ames-full-model-exploration";
 const CAR_CASE_ID = "used-car-price-optimized";
-const PUBLIC_CASE_IDS = [EXPLORATION_CASE_ID, CAR_CASE_ID];
+const PUBLIC_CASE_IDS = [EXPLORATION_CASE_ID, CAR_CASE_ID, STEAM_CASE_ID];
 const CAR_DISPLAY_NAME = "Used Car Price Prediction — Optimized Modeling";
 const CAR_UI_PREVIEW_TITLE = `${CAR_DISPLAY_NAME} — UI Prototype`;
 if (LOCAL_CAR_PHASE6_PREVIEW) {
@@ -705,6 +725,177 @@ async function loadCarPackage() {
     updateShell();
     if (state.caseId === CAR_CASE_ID) render();
   }
+}
+
+async function loadSteamPackage() {
+  if (steamPackage || steamPackageError || steamPackageLoading) return;
+  steamPackageLoading = true;
+  let stage = "release_index";
+  try {
+    const releaseResponse = await fetch(REFERENCE_RELEASE_INDEX);
+    if (!releaseResponse.ok) throw new Error(`Release index request failed (${releaseResponse.status}).`);
+    const releaseIndex = await releaseResponse.json();
+    if (releaseIndex.schema_version !== "1.0.0" || !Array.isArray(releaseIndex.cases)) throw new Error("Invalid Case Package release index.");
+    const releaseCase = releaseIndex.cases.find((entry) => entry.case_id === STEAM_CASE_ID);
+    if (!releaseCase) throw new Error("Release index has no Steam Case Package reference.");
+    const packageRef = releaseCase.package_ref;
+    const parts = typeof packageRef === "string" ? packageRef.split("/") : [];
+    if (!safePackageRef(packageRef) || parts.length !== 5 || parts[0] !== "releases" || parts[2] !== "cases"
+        || parts[3] !== STEAM_CASE_ID || parts[4] !== "package.json" || !/^[a-z0-9][a-z0-9._-]{2,79}$/.test(parts[1])) {
+      throw new Error("Release index has an unsafe Steam Case Package reference.");
+    }
+    const root = `${WEB_BASE}/data/${parts.slice(0, -1).join("/")}`;
+    stage = "package_manifest";
+    const packageResponse = await fetch(`${WEB_BASE}/data/${packageRef}`);
+    if (!packageResponse.ok) throw new Error(`Steam Case Package request failed (${packageResponse.status}).`);
+    const packageBytes = await packageResponse.arrayBuffer();
+    const packageDigest = await window.RegScopeInputContract.sha256Hex(packageBytes);
+    if (packageDigest !== releaseCase.package_sha256 || packageBytes.byteLength !== releaseCase.package_bytes) throw new Error("Steam release pointer digest/size mismatch.");
+    const manifest = JSON.parse(new TextDecoder().decode(packageBytes));
+    if (manifest.case_id !== STEAM_CASE_ID || manifest.package_revision !== parts[1]
+        || manifest.package_status !== releaseCase.package_status || !Array.isArray(manifest.files)
+        || !manifest.phases || manifest.publication?.approved !== false) throw new Error("Steam package identity or publication state mismatch.");
+    const listed = new Map(manifest.files.map((entry) => [entry.path, entry]));
+    if (listed.size !== manifest.files.length || manifest.files.some((entry) => !safePackageRef(entry.path)
+        || !/^[0-9a-f]{64}$/.test(entry.sha256 || "") || !Number.isInteger(entry.bytes) || entry.bytes < 0
+        || typeof entry.mime !== "string")) throw new Error("Steam package manifest has duplicate or invalid file entries.");
+    const pkg = { manifest, root, files: {}, phases: {}, case: null };
+    const byteCache = new Map();
+    async function boundBytes(ref) {
+      if (!safePackageRef(ref)) throw new Error("Unsafe Steam package reference.");
+      if (byteCache.has(ref)) return byteCache.get(ref);
+      const entry = listed.get(ref);
+      if (!entry) throw new Error(`Steam file is not manifest-listed: ${ref}`);
+      const response = await fetch(`${root}/${encodeURI(ref)}`);
+      if (!response.ok) throw new Error(`Steam package asset request failed (${response.status}).`);
+      const bytes = await response.arrayBuffer();
+      const digest = await window.RegScopeInputContract.sha256Hex(bytes);
+      if (digest !== entry.sha256 || bytes.byteLength !== entry.bytes) throw new Error(`Steam manifest digest/size mismatch: ${ref}`);
+      byteCache.set(ref, bytes);
+      return bytes;
+    }
+    stage = "phase_documents_and_assets";
+    for (let phase = 1; phase <= 6; phase += 1) {
+      const ref = manifest.phases[`phase${phase}`]?.data_ref;
+      const entry = listed.get(ref);
+      if (!entry) throw new Error(`Steam Phase ${phase} reference is not package-listed.`);
+      const document = JSON.parse(new TextDecoder().decode(await boundBytes(ref)));
+      if (document.case_id !== STEAM_CASE_ID || document.status !== manifest.phases[`phase${phase}`].status) throw new Error(`Steam Phase ${phase} identity/status mismatch.`);
+      pkg.phases[phase] = document;
+    }
+    const caseEntry = listed.get(manifest.case_ref);
+    if (!caseEntry) throw new Error("Steam case narrative is not package-listed.");
+    pkg.case = JSON.parse(new TextDecoder().decode(await boundBytes(manifest.case_ref)));
+    if (pkg.case.case_id !== STEAM_CASE_ID || pkg.case.case_status !== manifest.package_status) throw new Error("Steam case document identity/status mismatch.");
+    const assets = manifest.files;
+    for (let start = 0; start < assets.length; start += 6) {
+      await Promise.all(assets.slice(start, start + 6).map(async (entry) => {
+        const bytes = await boundBytes(entry.path);
+        pkg.files[entry.path] = { bytes, mime: entry.mime };
+        if (entry.mime.startsWith("image/")) steamAssetUrls[entry.path] = URL.createObjectURL(new Blob([bytes], { type: entry.mime }));
+      }));
+    }
+    steamPackage = pkg;
+    CASES[STEAM_CASE_ID] = {
+      ...CASES[STEAM_CASE_ID], title: "Steam Review Multiplier — Homework",
+      status: manifest.package_status, packageRevision: manifest.package_revision,
+      source: pkg.case.source?.label || CASES[STEAM_CASE_ID].source,
+      sourceUrl: pkg.case.source?.url || CASES[STEAM_CASE_ID].sourceUrl,
+      license: pkg.case.source?.license || "UNKNOWN",
+      target: { column: pkg.case.target?.raw_field_id, label: pkg.case.target?.label, unit: pkg.case.target?.unit },
+      sections: pkg.case.sections || [], analyses: pkg.phases[2].analyses || [], inference: pkg.phases[6]
+    };
+  } catch (error) {
+    steamPackageError = error instanceof Error ? error.message : "Unable to verify Steam Case Package.";
+    logPackageLoadFailure(STEAM_CASE_ID, stage, error);
+  } finally {
+    steamPackageLoading = false;
+    updateShell();
+    if (state.caseId === STEAM_CASE_ID) render();
+  }
+}
+
+function steamPackageFile(path) {
+  const item = steamPackage?.files?.[path];
+  if (!item) return null;
+  try { return JSON.parse(new TextDecoder().decode(item.bytes)); } catch { return null; }
+}
+function steamImage(path, alt) {
+  const src = steamAssetUrls[path];
+  return src
+    ? `<figure class="steam-evidence-figure"><img class="package-figure" src="${esc(src)}" alt="${esc(alt)}"><figcaption>${esc(alt)}</figcaption></figure>`
+    : `<p class="stage-note" role="status">圖表無法載入或未列入已驗證套件。</p>`;
+}
+function steamTable(headers, rows) {
+  if (!rows.length) return `<p class="stage-note">此套件沒有可展示的彙總列。</p>`;
+  return `<div class="table-scroll"><table class="steam-phase-table"><thead><tr>${headers.map((item) => `<th scope="col">${esc(item)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((item) => `<td>${esc(item)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+function steamFooter(phase) {
+  const prev = phase > 1 ? `<a class="button" href="#phase-${phase - 1}">← ${esc(PHASES[phase - 2][2])}</a>` : "<span></span>";
+  const next = phase < 6 ? `<a class="button primary" href="#phase-${phase + 1}">${esc(PHASES[phase][2])} →</a>` : "<span></span>";
+  return `<nav class="phase-footer" aria-label="前後階段">${prev}${next}</nav>`;
+}
+function steamPage(phase, title, subtitle, body, statusOverride = null) {
+  const doc = steamPackage?.phases?.[phase];
+  return `<div class="page">${banner(CASES[STEAM_CASE_ID])}${pageHeading(`PHASE 0${phase} / ${PHASES[phase - 1][1].toUpperCase()}`, title, subtitle, statusOverride || doc?.status || "UNAVAILABLE")}${body}${steamFooter(phase)}<p class="stage-note">Package ${esc(steamPackage?.manifest?.package_revision || "unavailable")} · publication status ${esc(steamPackage?.manifest?.publication?.status || "PENDING")} · no public Steam inference service.</p></div>`;
+}
+function renderSteamPhase(phase) {
+  if (steamPackageError) return `<div class="page">${banner(CASES[STEAM_CASE_ID])}${pageHeading("CASE PACKAGE ERROR", "Steam 研究資料無法驗證", "未顯示未通過完整性檢查的研究產物。", "ERROR")}<section class="state-panel" role="alert"><p>${esc(steamPackageError)}</p></section></div>`;
+  if (!steamPackage) return `<div class="page">${banner(CASES[STEAM_CASE_ID])}${pageHeading("CASE PACKAGE", "正在驗證 Steam 研究資料", "確認 Release Index、Manifest 與套件檔案雜湊。", "UNAVAILABLE")}<section class="state-panel" role="status"><p>研究證據載入中…</p></section></div>`;
+  const pkg = steamPackage;
+  if (phase === 1) {
+    const source = pkg.case.source || {};
+    const sections = (pkg.phases[1].sections || []).map((section) => `<article class="card"><div class="card-head"><h2>${esc(section.title)}</h2>${badge(pkg.phases[1].status)}</div><div class="card-body"><p class="body-copy">${esc(section.body)}</p></div></article>`).join("");
+    const sourceLink = source.url ? `<a class="text-link" href="${esc(source.url)}" target="_blank" rel="noreferrer">Kaggle 資料來源 ↗</a>` : "來源連結未提供";
+    const citation = source.citation || "作者與版本資訊依 Case Package 記錄。";
+    const license = source.license || "UNKNOWN";
+    return steamPage(phase, "業務理解 · Business Understanding", "研究背景、問題、目標、預測標的與資料來源。", `<div class="grid two">${sections}</div><article class="card" style="margin-top:18px"><div class="card-head"><h2>資料來源與發布狀態</h2>${badge(pkg.manifest.package_status)}</div><div class="card-body"><p>${sourceLink}</p><p>${esc(citation)}</p><p>資料頁標示授權：${esc(license)}；授權審查狀態：${esc(source.license_review || "PENDING")}。競賽專屬規則尚未獨立核對，不在此宣稱已確認。</p><p>本頁公開的是 Case Package 中列出的研究摘要、彙總數據與圖表；不包含原始逐筆資料或模型二進位檔。</p><p>目標為 SteamSpy 擁有量區間中點除以評論數所得的 K proxy，不代表官方銷量或已驗證的實際擁有量。</p></div></article>`);
+  }
+  if (phase === 2) {
+    const audit = steamPackageFile("phases/phase-02/data-understanding.json") || {};
+    const analyses = pkg.phases[2].analyses || [];
+    const counts = (audit.inventory || []).map((item) => [item.file, Number(item.rows).toLocaleString(), item.columns, item.appid_field, item.duplicate_appids]);
+    const gallery = analyses.map((item) => `<article class="card"><div class="card-head"><h2>${esc(item.title)}</h2>${badge(item.status || pkg.phases[2].status)}</div><div class="card-body">${steamImage(item.image_ref, item.description || item.title)}<p>${esc(item.description || "")}</p></div></article>`).join("");
+    const overlap = audit.cross_snapshot_overlap || {};
+    return steamPage(phase, "資料理解 · Data Understanding", "以來源快照及聚合統計檢視欄位、樣本品質與分布。", `<article class="card"><div class="card-body"><h2>資料快照盤點</h2>${steamTable(["Dataset", "Rows", "Columns", "AppID field", "Duplicate AppIDs"], counts)}<p>主要分析樣本 ${Number(audit.analysis_rows_after_review_minimum || 0).toLocaleString()}；評論數與 positive + negative 不一致比例 ${((audit.review_total_disagreement_rate || 0) * 100).toFixed(1)}%。零評論 ${Number(audit.zero_review_rows || 0).toLocaleString()}、1–19 則評論 ${Number(audit.low_review_rows_1_to_19 || 0).toLocaleString()}。</p><p>免費／付費遊戲列數 ${Number(audit.price_groups?.free || 0).toLocaleString()}／${Number(audit.price_groups?.paid || 0).toLocaleString()}；跨快照有效配對 ${Number(overlap.both_snapshots_valid_k_n || 0).toLocaleString()}，Spearman ρ ${Number(overlap.log_k_spearman_rank_correlation || 0).toFixed(3)}（描述性結果，不代表時間外推）。</p></div></article><div class="grid two">${gallery}</div>`);
+  }
+  if (phase === 3) {
+    const prep = pkg.phases[3] || {};
+    const lineage = steamPackageFile("phases/phase-03/feature-lineage.json") || {};
+    const stages = (prep.stages || []).map((stage) => [stage.label, stage.total, stage.unit, stage.fit_population || "—"]);
+    const inputs = (lineage.model_inputs || []).map((item) => [item.field, item.meaning, (item.source_fields || []).join(", "), item.transformation]);
+    return steamPage(phase, "資料準備 · Data Preparation", "顯示可追溯的欄位整理、特徵工程與資料切分。", `<article class="card"><div class="card-head"><h2>資料處理階段</h2>${badge(prep.status)}</div><div class="card-body">${steamTable(["Stage", "Count", "Unit", "Fit population"], stages)}<p>合格樣本 ${Number(lineage.eligible_rows || 0).toLocaleString()} → Development ${Number(lineage.train_rows || 0).toLocaleString()} → Holdout ${Number(lineage.holdout_rows || 0).toLocaleString()}；split seed 42。</p><p>Holdout 未參與前處理或交叉驗證 fit。研究紀錄說明曾檢視初次 Holdout 分數，後續僅因缺失清單語意修正而重算；因此不宣稱為預先封存的盲測集。</p><p>標籤為 SteamSpy owners 區間中點除以 review count 的 K proxy；低評論數與零 owners 上界依既有研究規則排除。</p></div></article><article class="card"><div class="card-head"><h2>${Number(lineage.raw_candidate_field_count || (lineage.raw_candidate_fields || []).length)} 個原始候選欄位 · ${inputs.length} 個工程輸入</h2>${badge(prep.status)}</div><div class="card-body">${steamTable(["Input", "Meaning", "Source field", "Transformation"], inputs)}<p>One-Hot 展開維度另依模型 lineage 記錄；不得與原始輸入欄位數混為一談。排除識別碼、遊戲名稱、評論數及 popularity outcome，以減少識別與目標分母洩漏。</p></div></article>`);
+  }
+  if (phase === 4) {
+    const modeling = pkg.phases[4] || {};
+    const details = steamPackageFile("phases/phase-04/modeling-details.json") || {};
+    const cv = (details.cv_configurations || []).map((item) => [item.configuration_id, (item.fold_log_rmse || []).map((value) => Number(value).toFixed(4)).join(" / "), Number(item.mean_log_rmse).toFixed(4), Number(item.sd_log_rmse).toFixed(4)]);
+    const importance = (details.feature_importance || []).slice(0, 12).map((item) => [item.feature, Number(item.importance).toFixed(4)]);
+    const method = (modeling.methods || []).find((item) => item.method_id === "random_forest");
+    return steamPage(phase, "模型建立 · Modeling", "以固定的三折 Development CV 比較模型與特徵選擇設定。", `<article class="card"><div class="card-head"><h2>候選模型與交叉驗證</h2>${badge(modeling.status)}</div><div class="card-body">${steamImage("phases/phase-04/figures/cv-model-comparison.png", "三折交叉驗證模型比較圖")}<p>選定設定：${esc(details.selected_configuration || "UNKNOWN")} · ${esc(method?.label || "Random Forest Regressor")}。前處理、補值、縮放與特徵選擇均在各折訓練資料內 fit。</p>${steamTable(["Configuration", "Fold RMSE (log K)", "Mean", "Sample SD"], cv)}</div></article><article class="card" style="margin-top:18px"><div class="card-head"><h2>特徵重要性摘要</h2><span class="status unavailable">描述性排序</span></div><div class="card-body">${steamTable(["Feature", "Importance"], importance)}<p>Random Forest impurity importance 是模型內部排序，不代表因果效果。</p></div></article>`);
+  }
+  if (phase === 5) {
+    const evaluationDoc = pkg.phases[5] || {};
+    const evaluation = steamPackageFile("phases/phase-05/evaluation-summary.json") || {};
+    const rows = (evaluation.holdout_metrics || []).map((item) => [item.model, Number(item.mae).toFixed(2), Number(item.rmse).toFixed(2), Number(item.r2).toFixed(4), `${(Number(item.owners_interval_compatibility_rate) * 100).toFixed(1)}%`]);
+    const genres = (evaluation.genre_holdout_summary || []).slice(0, 20).map((item) => [item.genre, item.n, Number(item.median_observed_k_proxy).toFixed(1), Number(item.median_predicted_k).toFixed(1), Number(item.median_training_genre_baseline_k).toFixed(1)]);
+    const metricStatuses = (evaluationDoc.evaluations || []).flatMap((item) => Object.entries(item.metrics || {}).map(([name, value]) => `${name.toUpperCase()}: ${value.status || "UNKNOWN"}`));
+    const holdoutMetricsComplete = rows.length > 0 && (evaluationDoc.evaluations || []).some((item) => Object.keys(item.metrics || {}).length >= 3 && Object.values(item.metrics || {}).every((metric) => metric.status === "VERIFIED"));
+    const phaseDisplayStatus = evaluationDoc.status === "PLANNED" && holdoutMetricsComplete ? "PARTIAL" : evaluationDoc.status || "PLANNED";
+    return steamPage(phase, "模型評估 · Evaluation", "獨立 Holdout 指標已計算；Publication Review 尚未完成。", `<div class="grid two"><article class="card"><div class="card-head"><h2>Holdout 指標與基準比較</h2>${badge(phaseDisplayStatus)}</div><div class="card-body">${steamImage("phases/phase-05/figures/holdout-baseline-comparison.png", "K proxy Holdout 誤差比較")}<p>Holdout n=${Number((evaluationDoc.evaluations || [])[0]?.n || evaluation.holdout_rows || 0).toLocaleString()}；指標來源為 Case Package 的彙總評估文件。</p>${steamTable(["Model", "MAE", "RMSE", "R²", "Owners interval compatible"], rows)}<p>已記錄的 ML 候選 K proxy MAE 較低，但 R² 接近 0；owners 區間相容率未勝過固定 K=50。此結果不是 Steam 銷量預測準確度證明。</p><p>指標欄位狀態：${esc([...new Set(metricStatuses)].join(" · ") || "UNKNOWN")}。Case Package 的 Phase 5 狀態仍記為 ${esc(evaluationDoc.status || "UNKNOWN")}；Publication Review：${esc(evaluationDoc.publication_review || "PENDING")}。</p></div></article><article class="card"><div class="card-head"><h2>Holdout 診斷圖</h2>${badge(evaluationDoc.publication_review || "PENDING")}</div><div class="card-body">${steamImage("phases/phase-05/figures/holdout-interval-compatibility.png", "SteamSpy owners 區間相容率")} ${steamImage("phases/phase-05/figures/actual-vs-predicted.png", "聚合 Holdout 校準區間")} ${steamImage("phases/phase-05/figures/residual-distribution.png", "Holdout K proxy 殘差分布")}</div></article></div><article class="card" style="margin-top:18px"><div class="card-head"><h2>Genre Holdout 彙總（多標籤）</h2></div><div class="card-body">${steamImage("phases/phase-05/figures/genre-predicted-k.png", "各 Genre 預測 K 中位數")} ${steamTable(["Genre", "n", "Observed median K proxy", "Predicted median K", "Train-only genre baseline"], genres)}</div></article>`, phaseDisplayStatus);
+  }
+  if (phase === 6) {
+    const catalog = pkg.phases[6] || {};
+    const input = steamPackageFile("phases/phase-06/input-schema.json") || {};
+    const lineage = steamPackageFile("phases/phase-03/feature-lineage.json") || {};
+    const model = (catalog.models || [])[0] || {};
+    const evaluation = steamPackageFile("phases/phase-05/evaluation-summary.json") || {};
+    const selected = (evaluation.holdout_metrics || []).find((item) => item.model === "machine-learning") || {};
+    const encoded = (steamPackageFile("phases/phase-04/modeling-details.json")?.selected_features || []).length;
+    const rawFieldCount = Number(lineage.raw_candidate_field_count || (lineage.raw_candidate_fields || []).length);
+    return steamPage(phase, "部署與研究成果 · Deployment", "展示已封裝模型身分與離線評估；正式網站尚未提供 Steam 線上互動推論。", `<div class="grid two"><article class="card"><div class="card-head"><h2>模型與特徵摘要</h2>${badge(model.model_status || "UNAVAILABLE")}</div><div class="card-body"><dl class="data-row"><dt>Model</dt><dd>Random Forest Regressor · ${esc(model.model_version || "UNKNOWN")}</dd></dl><dl class="data-row"><dt>Model ID</dt><dd>${esc(model.model_id || "UNKNOWN")}</dd></dl><dl class="data-row"><dt>Run / Configuration</dt><dd>${esc(model.source_execution_run_id || "UNKNOWN")} · ${esc(model.source_configuration_id || "UNKNOWN")}</dd></dl><dl class="data-row"><dt>Raw candidate fields</dt><dd>${rawFieldCount}</dd></dl><dl class="data-row"><dt>Engineered model inputs</dt><dd>${Number(input.input_fields?.length || 0)}</dd></dl><dl class="data-row"><dt>Selected encoded features</dt><dd>${encoded}</dd></dl><dl class="data-row"><dt>Holdout MAE / RMSE / R²</dt><dd>${Number(selected.mae).toFixed(2)} / ${Number(selected.rmse).toFixed(2)} / ${Number(selected.r2).toFixed(4)}</dd></dl><p>目標是 SteamSpy owners 區間中點／review count 的 K proxy，不是實際銷量；指標屬研究評估摘要，單筆遊戲輸出不代表已驗證預測。</p></div></article><article class="card"><div class="card-head"><h2>研究評估結果與線上服務狀態</h2>${badge("UNAVAILABLE")}</div><div class="card-body">${steamImage("phases/phase-05/figures/actual-vs-predicted.png", "Aggregated Holdout actual versus predicted K proxy")}<section class="state-panel steam-unavailable" role="status"><h3>線上互動預測尚未開放</h3><p>目前公開網站不提供 Steam Prediction API。此頁不會載入輸入表單、提交預測或產生合成結果。</p></section><p>上圖及指標為 Holdout 彙總研究結果，不是指定遊戲的估計值。模型資產未包含於公開 Case Package。</p><p>模型品質與 Holdout 限制請見 Phase 5；R² 接近 0，owners 區間相容率未勝過固定 K=50 基準。</p></div></article></div>`, "UNAVAILABLE");
+  }
+  return "";
 }
 
 async function loadExplorationArtifact(pkg, ref) {
@@ -1958,6 +2149,15 @@ function renderPhase6() {
 }
 function renderDashboardVerified() {
   const c = caseData();
+  if (c.packageMode === "steam") {
+    const pkg = steamPackage;
+    if (!pkg) return `<div class="state-panel"><h3>載入 Steam 研究摘要中</h3><p>${esc(steamPackageError || "正在驗證正式 Case Package。")}</p>${badge(steamPackageError ? "ERROR" : "UNAVAILABLE")}</div>`;
+    const modeling = pkg.phases[4] || {};
+    const evaluations = steamPackageFile("phases/phase-05/evaluation-summary.json") || {};
+    const ml = (evaluations.holdout_metrics || []).find((item) => item.model === "machine-learning") || {};
+    const evalDoc = pkg.phases[5] || {};
+    return `<div class="grid three"><article class="card"><div class="card-head"><div><p class="eyebrow">STEAM REVIEW MULTIPLIER</p><h2>${esc(c.title)}</h2></div>${badge(pkg.manifest.package_status)}</div><div class="card-body"><p>${esc(pkg.case.source?.label || "Source unknown")} · Target ${esc(pkg.case.target?.label || "UNKNOWN")}</p><p>Run ${esc(modeling.execution_runs?.[0]?.execution_run_id || "UNKNOWN")} · ${Number(modeling.cv?.training_rows || 0).toLocaleString()} Development rows · ${modeling.cv?.fold_count || "—"}-fold CV</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">MODEL SELECTION</p><h2>${esc(steamPackageFile("phases/phase-04/modeling-details.json")?.selected_configuration || "UNKNOWN")}</h2></div>${badge(modeling.status || "UNKNOWN")}</div><div class="card-body"><p>${modeling.configurations?.length || 0} configurations · selected from the recorded CV protocol.</p><p>Selected encoded feature dimensions: ${steamPackageFile("phases/phase-04/modeling-details.json")?.selected_features?.length || "UNKNOWN"}.</p></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">HOLDOUT EVALUATION</p><h2>MAE · RMSE · R²</h2></div>${badge(evalDoc.status || "PLANNED")}</div><div class="card-body"><p>${Number(ml.mae).toFixed(2)} · ${Number(ml.rmse).toFixed(2)} · ${Number(ml.r2).toFixed(4)}</p><p>Aggregate metrics are present; publication review ${esc(evalDoc.publication_review || "PENDING")}.</p><p>K proxy evaluation only; not verified Steam sales.</p></div></article></div><div class="button-row" style="margin-top:18px">${PHASES.map(([n,,zh]) => `<a class="button" href="#phase-${n}">Phase ${n} · ${esc(zh)}</a>`).join("")}</div>`;
+  }
   if (c.packageMode === "car") {
     const pkg = carPackage;
     if (!pkg) return `<div class="state-panel"><h3>載入中古車研究摘要中</h3><p>${esc(carPackageError || "正在驗證本機 Case Package。")}</p>${badge(carPackageError ? "ERROR" : "UNAVAILABLE")}</div>`;
@@ -2007,6 +2207,7 @@ function render() {
   } else {
     if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage();
     if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage();
+    if (state.caseId === STEAM_CASE_ID && !steamPackage && !steamPackageError && !steamPackageLoading) loadSteamPackage();
   }
   const localCarPhase6Route = LOCAL_CAR_PREDICTION_API_MODE
     && state.caseId === CAR_CASE_ID && routePhase() === 6
@@ -2030,6 +2231,7 @@ function render() {
   else if (phase && caseData().packageMode === "car"
     && !(phase === 6 && (LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_ONLINE_INFERENCE_MODE) && LOCAL_CAR_PREDICTION_API_MODE
       && state.caseId === CAR_CASE_ID && carPackage)) app.innerHTML = renderCarPackagePhase(phase);
+  else if (phase && caseData().packageMode === "steam") app.innerHTML = renderSteamPhase(phase);
   else if (phase === 1) app.innerHTML = renderPhase1();
   else if (phase === 2) app.innerHTML = renderPhase2();
   else if (phase === 3) app.innerHTML = renderPhase3();
@@ -2075,7 +2277,7 @@ caseSelect.addEventListener("change", () => {
   state.explorationP5Figure = "FIG-P5-01";
   state.explorationMode = "comparison";
   state.explorationPerspective = "selected_features";
-  const selectedExplorationPackage = state.caseId === CAR_CASE_ID ? carPackage : explorationPackage;
+  const selectedExplorationPackage = state.caseId === CAR_CASE_ID ? carPackage : state.caseId === STEAM_CASE_ID ? null : explorationPackage;
   state.explorationConfigurationId = selectedExplorationPackage?.docs[4]?.default_configuration_id || "";
   state.explorationMethodId = selectedExplorationPackage?.docs[4]?.configurations.find((item) => item.configuration_id === state.explorationConfigurationId)?.method_id || "";
   state.phase5ConfigId = "";
