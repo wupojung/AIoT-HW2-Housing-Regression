@@ -163,8 +163,12 @@ def _read_private_model_bytes(oidc_token: str, opener=urllib.request.urlopen) ->
     store_id = os.environ.get("BLOB_STORE_ID", "")
     if not re.fullmatch(r"store_[A-Za-z0-9]+", store_id) or not oidc_token:
         raise RuntimeError("private model storage unavailable")
+    # BLOB_STORE_ID uses the `store_` prefix, while the private delivery
+    # hostname uses the bare store identifier. Keep the prefix in credentials
+    # and remove it only when constructing the HTTPS hostname.
+    store_host = store_id.removeprefix("store_")
     request = urllib.request.Request(
-        f"https://{store_id}.private.blob.vercel-storage.com/{MODEL_BLOB_PATH}",
+        f"https://{store_host}.private.blob.vercel-storage.com/{MODEL_BLOB_PATH}",
         headers={"Authorization": f"Bearer {oidc_token}", "Accept": "application/octet-stream"},
         method="GET",
     )

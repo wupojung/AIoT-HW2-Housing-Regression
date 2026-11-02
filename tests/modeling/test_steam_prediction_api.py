@@ -11,6 +11,7 @@ import threading
 import unittest
 from http.client import HTTPConnection
 from http.server import HTTPServer
+from urllib.parse import urlsplit
 from unittest.mock import patch
 
 import numpy as np
@@ -105,6 +106,7 @@ class SteamPredictionApiTests(unittest.TestCase):
             result = steam._read_private_model_bytes("synthetic-oidc-token", opener=opener)
         self.assertEqual(result, payload)
         self.assertEqual(captured["authorization"], "Bearer synthetic-oidc-token")
+        self.assertEqual(urlsplit(captured["url"]).hostname, "test123.private.blob.vercel-storage.com")
         self.assertIn(expected_sha, captured["url"])
         self.assertEqual(captured["timeout"], 8)
 
