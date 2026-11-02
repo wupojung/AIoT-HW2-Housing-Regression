@@ -31,6 +31,8 @@ from housing_regression.prediction_input_schema import PredictionInputSchemaErro
 
 _BRANCH = "feat/phase6-online-preview-delivery-20261102"
 _PREVIEW_BRANCH_ALIAS = "regscope-git-feat-phase6-online-8ac39b-wupojung-8919s-projects.vercel.app"
+_PRODUCTION_BRANCH = "deploy"
+_PRODUCTION_ORIGIN = "https://regscope-aiot.vercel.app"
 _RUNTIME: Any | None = None
 
 
@@ -41,15 +43,26 @@ def _preview_branch_allowed() -> bool:
     )
 
 
-def _origin_is_authorized_preview(origin: str | None, *, required: bool) -> bool:
+def _production_branch_allowed() -> bool:
+    return (
+        os.environ.get("VERCEL_ENV") == "production"
+        and os.environ.get("VERCEL_GIT_COMMIT_REF") == _PRODUCTION_BRANCH
+        and os.environ.get("REGSCOPE_CAR_PRODUCTION_INFERENCE") == "1"
+    )
+
+
+def _origin_is_authorized(origin: str | None, *, required: bool) -> bool:
     if not origin:
         return not required
+    if _production_branch_allowed():
+        return origin == _PRODUCTION_ORIGIN
+    if not _preview_branch_allowed():
+        return False
     expected_host = os.environ.get("VERCEL_URL", "")
     if not expected_host or "/" in expected_host:
         return False
     allowed_origins = {f"https://{expected_host}"}
-    if _preview_branch_allowed():
-        allowed_origins.add(f"https://{_PREVIEW_BRANCH_ALIAS}")
+    allowed_origins.add(f"https://{_PREVIEW_BRANCH_ALIAS}")
     return origin in allowed_origins
 
 
@@ -85,8 +98,8 @@ def _decode_assets() -> tuple[bytes, bytes, bytes]:
 
 def _runtime() -> Any:
     global _RUNTIME
-    if not _preview_branch_allowed():
-        raise PermissionError("CAR inference is only available in its protected Preview branch")
+    if not (_preview_branch_allowed() or _production_branch_allowed()):
+        raise PermissionError("CAR inference is only available in its authorized Preview or Production branch")
     if _RUNTIME is not None:
         return _RUNTIME
 
@@ -136,8 +149,8 @@ def create_handler():
         def _fail(self, status: int, code: str, message: str) -> None:
             self._send_json(status, {"error": {"code": code, "message": message}})
 
-        def _origin_is_same_preview(self, *, required: bool) -> bool:
-            return _origin_is_authorized_preview(self.headers.get("Origin"), required=required)
+        def _origin_is_same_authorized_origin(self, *, required: bool) -> bool:
+            return _origin_is_authorized(self.headers.get("Origin"), required=required)
 
         def _read_body(self, maximum: int) -> bytes | None:
             length = self.headers.get("Content-Length", "")
@@ -158,7 +171,7 @@ def create_handler():
             if route != "/api/schema":
                 self._fail(404, "not_found", "找不到此 API 路徑。")
                 return
-            if not self._origin_is_same_preview(required=False):
+            if not self._origin_is_same_authorized_origin(required=False):
                 self._fail(403, "origin_rejected", "請求來源不允許。")
                 return
             try:
@@ -187,7 +200,7 @@ def create_handler():
             if route not in {"/api/predict", "/api/predict-batch"}:
                 self._fail(404, "not_found", "找不到此 API 路徑。")
                 return
-            if not self._origin_is_same_preview(required=True):
+            if not self._origin_is_same_authorized_origin(required=True):
                 self._fail(403, "origin_rejected", "請求來源不允許。")
                 return
             is_batch = route == "/api/predict-batch"

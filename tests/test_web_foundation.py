@@ -68,9 +68,9 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('if (state.caseId === CAR_CASE_ID)', self.js)
         self.assertIn('caseInfo.packageMode === "car"', self.js)
         self.assertIn('else if (phase && caseData().packageMode === "car"', self.js)
-        self.assertIn('&& !(phase === 6 && (LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_VERCEL_PREVIEW_MODE) && LOCAL_CAR_PREDICTION_API_MODE', self.js)
+        self.assertIn('&& !(phase === 6 && (LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_ONLINE_INFERENCE_MODE) && LOCAL_CAR_PREDICTION_API_MODE', self.js)
         self.assertIn('&& state.caseId === CAR_CASE_ID && carPackage)) app.innerHTML = renderCarPackagePhase(phase);', self.js)
-        self.assertIn('if ((LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_VERCEL_PREVIEW_MODE) && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage) return renderCarPhase6LocalInference();', self.js)
+        self.assertIn('if ((LOCAL_CAR_TAILNET_PREVIEW || LOCAL_CAR_ONLINE_INFERENCE_MODE) && LOCAL_CAR_PREDICTION_API_MODE && state.caseId === CAR_CASE_ID && carPackage) return renderCarPhase6LocalInference();', self.js)
         self.assertIn('const LOCAL_CAR_TAILNET_PREVIEW = location.protocol === "http:"', self.js)
         self.assertIn('PHASE6_QUERY.get("car-tailnet-preview") === "1"', self.js)
         self.assertIn('isTailscaleIPv4Host(location.hostname)', self.js)
@@ -80,6 +80,10 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('location.origin === "http://127.0.0.1:8766"', self.js)
         self.assertIn('const LOCAL_CAR_VERCEL_PREVIEW_MODE = location.protocol === "https:"', self.js)
         self.assertIn('&& isAuthorizedCarOnlinePreviewHost(location.hostname)', self.js)
+        self.assertIn('const LOCAL_CAR_VERCEL_PRODUCTION_MODE = isAuthorizedCarProductionHost(location.protocol, location.hostname);', self.js)
+        self.assertIn('const LOCAL_CAR_SAME_ORIGIN_API_MODE', self.js)
+        self.assertIn('const LOCAL_CAR_API_BASE = LOCAL_CAR_SAME_ORIGIN_API_MODE ? ""', self.js)
+        self.assertIn('if (localCarSchemaError || !localCarSchema)', self.js)
         self.assertNotIn('location.hostname.endsWith(".vercel.app")', self.js)
         self.assertIn('const LOCAL_CAR_PREDICTION_API_MODE =', self.js)
         self.assertIn('const localCarPhase6Route = LOCAL_CAR_PREDICTION_API_MODE', self.js)
@@ -90,6 +94,49 @@ class WebFoundationTests(unittest.TestCase):
         self.assertIn('One-Hot 編碼後產生 ${lineage.encoded_features.length.toLocaleString()} 個模型特徵', self.js)
         self.assertIn('Publication review：PENDING', self.js)
         self.assertIn('Prediction unavailable', self.js)
+
+    def test_car_phase1_displays_case_package_rights_without_changing_review_state(self):
+        self.assertIn('pkg.publicationStatus = await boundJson("assets/publication-status.json");', self.js)
+        self.assertIn('const source = pkg.caseDoc.source || {};', self.js)
+        self.assertIn('source.license_review || "PENDING"', self.js)
+        self.assertIn('publication.status || pkg.manifest.package_status', self.js)
+        self.assertIn('https://creativecommons.org/licenses/by-nc-sa/4.0/', self.js)
+        self.assertIn('href="${esc(source.url)}"', self.js)
+        self.assertIn('Owner 聲明本服務用途為非商業大學課程作業與個人研究展示', self.js)
+        self.assertIn('Competition-specific rules 尚未獨立核對', self.js)
+        self.assertIn('Package publication：${esc(publication.status || pkg.manifest.package_status || "UNKNOWN")}', self.js)
+
+    def test_car_phase6_keeps_quality_and_batch_safety_notices(self):
+        self.assertIn('R² 為負值；單筆推論結果不是模型準確度證據', self.js)
+        self.assertIn('1 MiB／100 筆', self.js)
+        batch_source = (ROOT / "python/src/housing_regression/car_batch_prediction.py").read_text(encoding="utf-8")
+        self.assertIn("MAX_BATCH_REQUEST_BYTES = 1024 * 1024", batch_source)
+        self.assertIn("MAX_BATCH_ROWS = 100", batch_source)
+        self.assertIn("MAX_BATCH_RESPONSE_BYTES = 4_000_000", batch_source)
+
+    def test_car_production_mode_is_exact_https_host_without_query_flag(self):
+        host = "regscope-aiot.vercel.app"
+        self.assertIn(f'const LOCAL_CAR_VERCEL_PRODUCTION_HOST = "{host}";', self.js)
+        self.assertIn('const LOCAL_CAR_VERCEL_PRODUCTION_MODE = isAuthorizedCarProductionHost(location.protocol, location.hostname);', self.js)
+        function = re.search(
+            r"function isAuthorizedCarProductionHost\(protocol, hostname\) \{\s*return protocol === \"https:\" && hostname === LOCAL_CAR_VERCEL_PRODUCTION_HOST;\s*\}",
+            self.js,
+        )
+        self.assertIsNotNone(function)
+        node = shutil.which("node")
+        if node is None:
+            self.skipTest("Node.js is unavailable; exact-host source assertions still apply")
+        script = (
+            f'const LOCAL_CAR_VERCEL_PRODUCTION_HOST = "{host}";\n'
+            f'{function.group(0)}\n'
+            'const assert = require("node:assert/strict");\n'
+            'assert.equal(isAuthorizedCarProductionHost("https:", "regscope-aiot.vercel.app"), true);\n'
+            'assert.equal(isAuthorizedCarProductionHost("http:", "regscope-aiot.vercel.app"), false);\n'
+            'assert.equal(isAuthorizedCarProductionHost("https:", "sub.regscope-aiot.vercel.app"), false);\n'
+            'assert.equal(isAuthorizedCarProductionHost("https:", "regscope-other-preview.vercel.app"), false);\n'
+        )
+        result = subprocess.run([node, "-e", script], capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_car_online_preview_host_allows_only_authorized_branch_alias(self):
         host = "regscope-git-feat-phase6-online-8ac39b-wupojung-8919s-projects.vercel.app"
