@@ -2,10 +2,67 @@ from __future__ import annotations
 
 import os
 import unittest
+import csv
+import io
+import json
+import threading
+from http.client import HTTPConnection
+from http.server import HTTPServer
 from unittest.mock import patch
 
 from housing_regression import vercel_car_function
 from housing_regression.prediction_input_schema import PredictionInputSchemaError
+
+
+class SyntheticBatchRuntime:
+    def __init__(self):
+        self.contract = {
+            "case_id": "synthetic-car",
+            "model_id": "synthetic-model",
+            "model_version": "synthetic-v1",
+            "source_evidence": {"run_id": "synthetic-run", "configuration_id": "synthetic-config"},
+            "input_features": [
+                {"name": f"field_{index:02d}", "data_type": "number", "nullable": False}
+                for index in range(15)
+            ],
+        }
+        self.schema_sha256 = "c" * 64
+        self.schema_bytes = json.dumps(self.contract).encode("utf-8")
+        self.calls = []
+
+    def predict(self, inputs):
+        self.calls.append(inputs)
+        return {"prediction": float(len(self.calls)), "unit": None}
+
+
+def _synthetic_csv(row_count):
+    output = io.StringIO(newline="")
+    writer = csv.writer(output, lineterminator="\r\n")
+    writer.writerow([f"field_{index:02d}" for index in range(15)])
+    for _ in range(row_count):
+        writer.writerow([str(index + 1) for index in range(15)])
+    return output.getvalue().encode("utf-8")
+
+
+def _request_batch(payload, origin):
+    server = HTTPServer(("127.0.0.1", 0), vercel_car_function.create_handler())
+    thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True)
+    thread.start()
+    try:
+        connection = HTTPConnection(*server.server_address, timeout=3)
+        connection.request(
+            "POST", "/api/predict-batch", body=payload,
+            headers={"Content-Type": "text/csv; charset=utf-8", "Origin": origin},
+        )
+        response = connection.getresponse()
+        status = response.status
+        document = json.loads(response.read())
+        connection.close()
+        return status, document
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
 
 
 class VercelCarFunctionGateTests(unittest.TestCase):
@@ -155,6 +212,40 @@ class VercelCarFunctionGateTests(unittest.TestCase):
         self.assertIn("/api/predict-batch", routes)
         self.assertNotIn("final-model.joblib", routes)
         self.assertNotIn("prediction-input-schema.json", routes)
+
+    def test_production_batch_rejects_row_eleven_before_inference(self):
+        runtime = SyntheticBatchRuntime()
+        vercel_car_function._RUNTIME = runtime
+        environment = {
+            "VERCEL_ENV": "production",
+            "VERCEL_GIT_COMMIT_REF": "deploy",
+            "REGSCOPE_CAR_PRODUCTION_INFERENCE": "1",
+        }
+        with patch.dict(os.environ, environment, clear=False):
+            status, document = _request_batch(
+                _synthetic_csv(11), vercel_car_function._PRODUCTION_ORIGIN
+            )
+        self.assertEqual(status, 413)
+        self.assertEqual(document["error"]["code"], "too_many_rows")
+        self.assertIn("10", document["error"]["message"])
+        self.assertEqual(runtime.calls, [])
+
+    def test_preview_batch_keeps_shared_one_hundred_row_cap(self):
+        runtime = SyntheticBatchRuntime()
+        vercel_car_function._RUNTIME = runtime
+        environment = {
+            "VERCEL_ENV": "preview",
+            "VERCEL_GIT_COMMIT_REF": vercel_car_function._BRANCH,
+            "VERCEL_URL": "regscope-preview.example.vercel.app",
+        }
+        with patch.dict(os.environ, environment, clear=False):
+            status, document = _request_batch(
+                _synthetic_csv(100), "https://regscope-preview.example.vercel.app"
+            )
+        self.assertEqual(status, 200)
+        self.assertEqual(document["total_rows"], 100)
+        self.assertEqual(document["valid_rows"], 100)
+        self.assertEqual(len(runtime.calls), 100)
 
 
 if __name__ == "__main__":

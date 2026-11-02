@@ -175,6 +175,23 @@ class CarBatchPredictionTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "too_many_rows")
         self.assertEqual(runtime.calls, [])
 
+    def test_configured_row_limit_rejects_row_eleven_before_inference(self):
+        runtime = SyntheticRuntime()
+        payload = make_csv([values() for _ in range(11)])
+        with self.assertRaises(PredictionApiError) as caught:
+            predict_csv_batch(runtime, payload, max_rows=10)
+        self.assertEqual(caught.exception.status, 413)
+        self.assertEqual(caught.exception.code, "too_many_rows")
+        self.assertIn("10", str(caught.exception))
+        self.assertEqual(runtime.calls, [])
+
+    def test_configured_ten_row_limit_accepts_ten_rows(self):
+        runtime = SyntheticRuntime()
+        result = predict_csv_batch(runtime, make_csv([values() for _ in range(10)]), max_rows=10)
+        self.assertEqual(result["total_rows"], 10)
+        self.assertEqual(result["valid_rows"], 10)
+        self.assertEqual(len(runtime.calls), 10)
+
     def test_exactly_one_hundred_rows_succeeds_and_runtime_is_reused(self):
         runtime = SyntheticRuntime()
         result = predict_csv_batch(runtime, make_csv([values() for _ in range(MAX_BATCH_ROWS)]))

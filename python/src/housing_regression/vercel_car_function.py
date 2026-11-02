@@ -33,6 +33,7 @@ _BRANCH = "feat/phase6-online-preview-delivery-20261102"
 _PREVIEW_BRANCH_ALIAS = "regscope-git-feat-phase6-online-8ac39b-wupojung-8919s-projects.vercel.app"
 _PRODUCTION_BRANCH = "deploy"
 _PRODUCTION_ORIGIN = "https://regscope-aiot.vercel.app"
+PRODUCTION_MAX_BATCH_ROWS = 10
 _RUNTIME: Any | None = None
 
 
@@ -221,7 +222,15 @@ def create_handler():
                 return
             try:
                 if is_batch:
-                    result = predict_csv_batch(runtime, payload)
+                    batch_row_limit = (
+                        PRODUCTION_MAX_BATCH_ROWS
+                        if _production_branch_allowed()
+                        else None
+                    )
+                    if batch_row_limit is None:
+                        result = predict_csv_batch(runtime, payload)
+                    else:
+                        result = predict_csv_batch(runtime, payload, max_rows=batch_row_limit)
                     body = json.dumps(result, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
                     if len(body) > MAX_BATCH_RESPONSE_BYTES:
                         raise PredictionApiError("batch_response_too_large", "批次結果超過安全回應上限。", 413)

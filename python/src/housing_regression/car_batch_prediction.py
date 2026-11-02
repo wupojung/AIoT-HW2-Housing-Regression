@@ -39,7 +39,9 @@ def batch_result_columns(contract: Mapping[str, Any]) -> list[str]:
     return names + list(_RESULT_COLUMNS)
 
 
-def _parse_csv(payload: bytes, expected_names: list[str]) -> tuple[list[str], list[tuple[int, list[str]]]]:
+def _parse_csv(
+    payload: bytes, expected_names: list[str], *, max_rows: int
+) -> tuple[list[str], list[tuple[int, list[str]]]]:
     if not isinstance(payload, bytes) or not payload:
         raise PredictionApiError("empty_csv", "CSV 檔案沒有內容。", 400)
     if len(payload) > MAX_BATCH_REQUEST_BYTES:
@@ -68,8 +70,8 @@ def _parse_csv(payload: bytes, expected_names: list[str]) -> tuple[list[str], li
         records: list[tuple[int, list[str]]] = []
         previous_physical_line = reader.line_num
         for row in reader:
-            if len(records) >= MAX_BATCH_ROWS:
-                raise PredictionApiError("too_many_rows", "CSV 最多可包含 100 筆資料列。", 413)
+            if len(records) >= max_rows:
+                raise PredictionApiError("too_many_rows", f"CSV 最多可包含 {max_rows} 筆資料列。", 413)
             source_line = previous_physical_line + 1
             previous_physical_line = reader.line_num
             records.append((source_line, row))
@@ -110,7 +112,9 @@ def _typed_inputs(
     return raw, typed
 
 
-def predict_csv_batch(runtime: Any, payload: bytes) -> dict[str, Any]:
+def predict_csv_batch(
+    runtime: Any, payload: bytes, *, max_rows: int = MAX_BATCH_ROWS
+) -> dict[str, Any]:
     """Validate a complete CSV, then predict each valid row independently.
 
     CSV structure and limits are checked before the first model call. Uploaded
@@ -119,7 +123,9 @@ def predict_csv_batch(runtime: Any, payload: bytes) -> dict[str, Any]:
     contract = runtime.contract
     columns = batch_result_columns(contract)
     input_names = columns[:-len(_RESULT_COLUMNS)]
-    headers, records = _parse_csv(payload, input_names)
+    if not isinstance(max_rows, int) or isinstance(max_rows, bool) or not 1 <= max_rows <= MAX_BATCH_ROWS:
+        raise ValueError("max_rows must be an integer between 1 and MAX_BATCH_ROWS")
+    headers, records = _parse_csv(payload, input_names, max_rows=max_rows)
     rows: list[dict[str, Any]] = []
     successful = 0
     for source_line, csv_row in records:
