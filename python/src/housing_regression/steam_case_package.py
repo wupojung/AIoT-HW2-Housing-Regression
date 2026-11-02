@@ -62,6 +62,20 @@ def build_candidate(repo_root: Path, run_dir: Path) -> dict[str, Any]:
     phase2 = json.loads((run_dir / "phase-02/data-understanding.json").read_text(encoding="utf-8"))
     model = json.loads((run_dir / "phase-04/modeling-results.json").read_text(encoding="utf-8"))
     evaluation = json.loads((run_dir / "phase-05/holdout-evaluation.json").read_text(encoding="utf-8"))
+    source_code_provenance = {
+        "run_01_original_source_code_sha256": {"research_module": "UNKNOWN", "runner": "UNKNOWN"},
+        "current_verifiable_source_code": {
+            "repository_commit": "19f587cfa7f2ab6ab6d6afff023832709554a861",
+            "files": {
+                "python/src/housing_regression/steam_review_multiplier.py": _sha(repo_root / "python/src/housing_regression/steam_review_multiplier.py"),
+                "tools/steam/run_homework.py": _sha(repo_root / "tools/steam/run_homework.py"),
+            },
+            "interpretation": "These hashes identify currently verifiable repository files; they do not prove which exact bytes generated Run 01.",
+        },
+    }
+    # Do not present persisted hashes as Run 01 provenance when its source snapshot is unavailable.
+    evaluation.pop("source_code_sha256", None)
+    evaluation["source_code_provenance"] = source_code_provenance
     train_rows, holdout_rows = evaluation["train_rows"], evaluation["holdout_rows"]
     eligible_rows = evaluation["eligible_rows"]
     execution_id = evaluation["run_id"]
@@ -230,7 +244,8 @@ def build_candidate(repo_root: Path, run_dir: Path) -> dict[str, Any]:
                 }
     write_json(destination / "phases/phase-04/modeling-details.json", {
         "selected_configuration": model["selected_configuration"], "selected_features": model["selected_features"],
-        "feature_importance": evaluation["feature_importance"][:20], "cv_configurations": model["cv"]})
+        "feature_importance": evaluation["feature_importance"][:20], "cv_configurations": model["cv"],
+        "source_code_provenance": source_code_provenance})
     write_json(destination / PHASE_REFS[4], modeling)
 
     model_row = next(x for x in evaluation["holdout_metrics"] if x["model"] == "machine-learning")
@@ -318,7 +333,7 @@ def build_candidate(repo_root: Path, run_dir: Path) -> dict[str, Any]:
         "source_dataset_sha256": evaluation["data_sha256"], "split_seed": 42,
         "python": evaluation["software"]["python"], "pandas": evaluation["software"]["pandas"],
         "numpy": evaluation["software"]["numpy"], "scikit_learn": evaluation["software"]["scikit_learn"],
-        "source_code_sha256": evaluation["source_code_sha256"],
+        "source_code_provenance": source_code_provenance,
         "development_appid_sha256": evaluation["split"]["development_appid_sha256"],
         "holdout_appid_sha256": evaluation["split"]["holdout_appid_sha256"],
         "cv_fold_membership_sha256": evaluation["cv"]["fold_membership_sha256"],

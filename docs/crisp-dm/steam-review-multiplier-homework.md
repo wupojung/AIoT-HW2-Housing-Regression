@@ -54,7 +54,7 @@ Machine-readable inventory, missingness, review reconciliation, interval summari
 
 ## Phase 3 — Data Preparation
 
-The primary supervised population uses March 2025 cleaned rows with a parseable owner interval, positive review count, at least 20 reviews, and a positive owner upper bound. The label is the log-transformed K midpoint proxy. The holdout split is a reproducible random 80/20 split of unique AppIDs (seed 42). Median imputation, scaling and any feature selection are fitted inside each training fold or on the development partition only. AppID, names, descriptions, review counts, review scores and popularity measures are excluded from model inputs.
+The primary supervised population uses March 2025 cleaned rows with a parseable owner interval, positive review count, at least 20 reviews, and a positive owner upper bound. The label is the log-transformed K midpoint proxy. The recorded holdout uses an 80/20 random split of unique AppIDs (seed 42), with split and fold membership digests retained. Median imputation, scaling and any feature selection are fitted inside each training fold or on the development partition only. AppID, names, descriptions, review counts, review scores and popularity measures are excluded from model inputs.
 
 The initial implementation listed 14 raw candidate fields, but that was a hand-curated list rather than a data-quality-ranked boundary. Incremental feature review found five further defensible sources in March 2025 Cleaned: `developers`, `publishers`, `screenshots`, `movies`, and `website`. The expanded 19-source candidate set includes only low-cardinality counts/presence derived from these fields; names, identities and URLs are not model inputs. The 22 engineered model inputs include the multi-label `genres` input, numeric and binary attributes, and derived counts. The fitted encoder excludes the raw genre-list column and emits 12 train-fold-fitted common-genre indicators alongside the 21 non-genre inputs, for 33 encoded dimensions. The 14 in SelectKBest-14 and RFE-14 are per-experiment selector settings; all-feature candidates use every encoded dimension.
 
@@ -70,9 +70,11 @@ The reserved 20% holdout reports K-proxy MAE/RMSE/R² and the share of estimated
 
 The local RegScope preview loads this case only when explicitly opened with the local Steam preview flag. Its case selector, CRISP-DM stepper and Phase 1–6 pages use the generated candidate package. The K prediction endpoint binds to the private local fitted model; it is not a Production API. Package and publication statuses remain `PARTIAL` / `PENDING`.
 
-## Reproduction
+## Reproduction with the currently available source
 
-Use Python 3.12. This run used the existing main-checkout interpreter at `../AIoT-HW2-Housing-Regression/.venv/bin/python` without changing its packages. For a standalone environment, create `.venv` in this worktree and install the exact pins in `tools/steam/requirements.txt`. From the repository root, with the dataset directory supplied to `--data-dir`:
+Use Python 3.12. The following commands can regenerate the analyses from the named local CSV snapshots with the currently available source and pinned environment. However, the exact original Run 01 research-program snapshot is no longer available for byte-level verification. The Run 01 original program SHA-256 is therefore **UNKNOWN**; preserved CV, Holdout metrics and figures are reported as recorded experimental evidence, not as output independently recreated from a verified historical source snapshot. The current verifiable source files are separately identified in the execution manifest: commit `19f587cfa7f2ab6ab6d6afff023832709554a861`, research module SHA-256 `60933b7e92b02586c8c5921a29e6fbe17963997c66867aa373da786bb912f92a`, and runner SHA-256 `44c0426b9691713208c92421974452ac6a3de55b68d3e7b5e177b9e843c76c89`. These identify current files and do not establish which exact bytes generated Run 01.
+
+This run used the existing main-checkout interpreter at `../AIoT-HW2-Housing-Regression/.venv/bin/python` without changing its packages. For a standalone environment, create `.venv` in this worktree and install the exact pins in `tools/steam/requirements.txt`. From the repository root, with the dataset directory supplied to `--data-dir`:
 
 ```sh
 PYTHONPATH=python/src ../AIoT-HW2-Housing-Regression/.venv/bin/python -m unittest tests.research.test_steam_review_multiplier -v
@@ -82,7 +84,7 @@ PYTHONPATH=python/src ../AIoT-HW2-Housing-Regression/.venv/bin/python tools/stea
 PYTHONPATH=python/src ../AIoT-HW2-Housing-Regression/.venv/bin/python -m housing_regression.steam_preview_server --repo-root "$PWD" --run-dir /absolute/path/to/local/steam-review-multiplier/run-01
 ```
 
-The raw dataset directory is supplied as an argument and remains read-only. Aggregate candidate package files contain no row-level records. Model and row-level holdout predictions stay under ignored `local/steam-review-multiplier/`.
+The raw dataset directory is supplied as an argument and remains read-only. Aggregate candidate package files contain no row-level records. Model and row-level holdout predictions stay under ignored `local/steam-review-multiplier/`. Re-running these commands with current source would produce a new execution; it would not retroactively verify the Run 01 source snapshot.
 
 ## Recorded experimental result (Run 01)
 

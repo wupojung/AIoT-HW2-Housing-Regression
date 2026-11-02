@@ -542,10 +542,6 @@
     "numpy": "2.5.4",
     "scikit_learn": "1.9.1"
   },
-  "source_code_sha256": {
-    "research_module": "c7ec8d1a9132aa96e6cbb5a0bcf60ed1ff89c33169bace078cc922a6d13faafd",
-    "runner": "44c0426b9691713208c92421974452ac6a3de55b68d3e7b5e177b9e843c76c89"
-  },
   "limitations": [
     "SteamSpy estimated_owners are interval estimates, not observed sales.",
     "The single-value target is the interval midpoint divided by review count.",
@@ -553,5 +549,19 @@
     "The 2025 snapshot is cross-sectional and does not establish causal effects.",
     "Random split metrics describe this dataset's proxy target, not future sales accuracy.",
     "Holdout metrics were inspected during implementation and rerun after correcting missing-list handling; no model or feature-selection choice was changed from holdout results, but this is not a sealed preregistered test."
-  ]
+  ],
+  "source_code_provenance": {
+    "run_01_original_source_code_sha256": {
+      "research_module": "UNKNOWN",
+      "runner": "UNKNOWN"
+    },
+    "current_verifiable_source_code": {
+      "repository_commit": "19f587cfa7f2ab6ab6d6afff023832709554a861",
+      "files": {
+        "python/src/housing_regression/steam_review_multiplier.py": "60933b7e92b02586c8c5921a29e6fbe17963997c66867aa373da786bb912f92a",
+        "tools/steam/run_homework.py": "44c0426b9691713208c92421974452ac6a3de55b68d3e7b5e177b9e843c76c89"
+      },
+      "interpretation": "These hashes identify currently verifiable repository files; they do not prove which exact bytes generated Run 01."
+    }
+  }
 }
