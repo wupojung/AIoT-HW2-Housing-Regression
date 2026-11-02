@@ -2207,7 +2207,7 @@ function render() {
   } else {
     if (!explorationPackage && !explorationPackageError && !explorationPackageLoading) loadExplorationPackage();
     if (!carPackage && !carPackageError && !carPackageLoading) loadCarPackage();
-    if (!steamPackage && !steamPackageError && !steamPackageLoading) loadSteamPackage();
+    if (state.caseId === STEAM_CASE_ID && !steamPackage && !steamPackageError && !steamPackageLoading) loadSteamPackage();
   }
   const localCarPhase6Route = LOCAL_CAR_PREDICTION_API_MODE
     && state.caseId === CAR_CASE_ID && routePhase() === 6

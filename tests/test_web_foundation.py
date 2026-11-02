@@ -319,6 +319,16 @@ class WebFoundationTests(unittest.TestCase):
         self.assertNotIn('/api/steam/predict', self.js)
         self.assertNotIn('id="steam-predict-form"', self.js)
 
+    def test_steam_package_load_is_lazy_until_steam_is_selected(self):
+        render_start = self.js.index("function render() {")
+        render_end = self.js.index("\nfunction ", render_start + 1)
+        render_body = self.js[render_start:render_end]
+        self.assertIn(
+            "state.caseId === STEAM_CASE_ID && !steamPackage && !steamPackageError && !steamPackageLoading",
+            render_body,
+        )
+        self.assertNotIn("if (!steamPackage && !steamPackageError && !steamPackageLoading)", render_body)
+
     def test_brand_course_and_project_links_are_present(self):
         text = " ".join(self.parser.text)
         self.assertIn("RegScope", text)
