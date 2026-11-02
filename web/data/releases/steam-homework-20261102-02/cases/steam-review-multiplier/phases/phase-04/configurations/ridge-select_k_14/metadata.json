@@ -1,0 +1,11 @@
+{
+  "configuration_id": "ridge-select_k_14",
+  "model_id": "ridge",
+  "feature_selection": "select_k_14",
+  "software": {
+    "python": "3.12.15",
+    "pandas": "3.1.0",
+    "numpy": "2.5.4",
+    "scikit_learn": "1.9.1"
+  }
+}

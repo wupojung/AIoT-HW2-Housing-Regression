@@ -3,7 +3,8 @@
   "outputDirectory": "web",
   "functions": {
     "api/*.py": {
-      "excludeFiles": "{docs/**,tests/**,web/**,local/**,**/*.csv,**/*.joblib,**/*.pkl,**/*.parquet}"
+      "excludeFiles": "{docs/**,tests/**,web/**,local/**,**/*.csv,**/*.joblib,**/*.pkl,**/*.parquet}",
+      "includeFiles": "web/data/releases/steam-homework-20261102-02/cases/steam-review-multiplier/phases/phase-06/input-schema.json"
     }
   },
   "routes": [
@@ -20,7 +21,7 @@
       "dest": "/api/predict-batch.py"
     },
     {
-      "src": "^/data/releases/(?!ames-full-model-exploration-20261028-02/cases/ames-full-model-exploration(?:/|$)|run03-r1/cases/used-car-price-optimized(?:/|$)|steam-homework-20261102-01/cases/steam-review-multiplier(?:/|$)).*",
+      "src": "^/data/releases/(?!ames-full-model-exploration-20261028-02/cases/ames-full-model-exploration(?:/|$)|run03-r1/cases/used-car-price-optimized(?:/|$)|steam-homework-20261102-01/cases/steam-review-multiplier(?:/|$)|steam-homework-20261102-02/cases/steam-review-multiplier(?:/|$)).*",
       "status": 404
     },
     {

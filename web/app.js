@@ -276,6 +276,19 @@ let steamPackage = null;
 let steamPackageError = null;
 let steamPackageLoading = false;
 let steamAssetUrls = {};
+let steamApiSchema = null;
+let steamApiSchemaError = null;
+let steamApiSchemaLoading = false;
+let steamApiPrediction = null;
+let steamApiError = null;
+let steamApiPending = false;
+let steamFormValues = {};
+let steamInputMode = "single";
+let steamBatchText = "";
+let steamBatchFileName = "";
+let steamBatchError = null;
+let steamBatchPending = false;
+let steamBatchResult = null;
 const EXPLORATION_CASE_ID = "ames-full-model-exploration";
 const CAR_CASE_ID = "used-car-price-optimized";
 const PUBLIC_CASE_IDS = [EXPLORATION_CASE_ID, CAR_CASE_ID, STEAM_CASE_ID];
@@ -837,7 +850,223 @@ function steamFooter(phase) {
 }
 function steamPage(phase, title, subtitle, body, statusOverride = null) {
   const doc = steamPackage?.phases?.[phase];
-  return `<div class="page">${banner(CASES[STEAM_CASE_ID])}${pageHeading(`PHASE 0${phase} / ${PHASES[phase - 1][1].toUpperCase()}`, title, subtitle, statusOverride || doc?.status || "UNAVAILABLE")}${body}${steamFooter(phase)}<p class="stage-note">Package ${esc(steamPackage?.manifest?.package_revision || "unavailable")} · publication status ${esc(steamPackage?.manifest?.publication?.status || "PENDING")} · no public Steam inference service.</p></div>`;
+  const phase6Status = phase === 6
+    ? (steamApiSchema ? "Steam Prediction API 已通過模型身分檢查。" : "Steam Prediction API 目前未就緒；不會顯示合成預測結果。")
+    : "本階段內容來自已驗證的 Steam Case Package。";
+  return `<div class="page">${banner(CASES[STEAM_CASE_ID])}${pageHeading(`PHASE 0${phase} / ${PHASES[phase - 1][1].toUpperCase()}`, title, subtitle, statusOverride || doc?.status || "UNAVAILABLE")}${body}${steamFooter(phase)}<p class="stage-note">Package ${esc(steamPackage?.manifest?.package_revision || "unavailable")} · publication status ${esc(steamPackage?.manifest?.publication?.status || "PENDING")} · ${phase6Status}</p></div>`;
+}
+
+const STEAM_DEMO_VALUES = Object.freeze({
+  genres: ["Indie", "Adventure"], price: 9.99, required_age: 0, dlc_count: 0,
+  achievements: 30, release_year: 2024, windows: true, mac: false, linux: false,
+  genre_count: 2, category_count: 1, tag_count: 10, supported_language_count: 10,
+  full_audio_language_count: 1, has_english: true, has_traditional_chinese: false,
+  discount: 0, developer_count: 1, publisher_count: 1, screenshot_count: 4,
+  movie_count: 0, has_website: true, review_count: 250
+});
+const STEAM_BOOLEAN_FIELDS = new Set(["windows", "mac", "linux", "has_english", "has_traditional_chinese", "has_website"]);
+const STEAM_COUNT_FIELDS = new Set(["required_age", "dlc_count", "achievements", "genre_count", "category_count", "tag_count", "supported_language_count", "full_audio_language_count", "developer_count", "publisher_count", "screenshot_count", "movie_count"]);
+const STEAM_FIELD_LABELS = Object.freeze({
+  genres: "遊戲類型 Genre", price: "價格 Price", required_age: "年齡限制 Required age",
+  dlc_count: "DLC 數量", achievements: "成就數量 Achievements", release_year: "發行年份 Release year",
+  windows: "支援 Windows", mac: "支援 macOS", linux: "支援 Linux", genre_count: "類型數量 Genre count",
+  category_count: "類別數量 Category count", tag_count: "標籤數量 Tag count",
+  supported_language_count: "支援語言數量", full_audio_language_count: "完整語音語言數量",
+  has_english: "支援英文", has_traditional_chinese: "支援繁體中文", discount: "折扣 Discount",
+  developer_count: "開發者數量", publisher_count: "發行商數量", screenshot_count: "截圖數量",
+  movie_count: "影片數量", has_website: "有官方網站", review_count: "評論數 Review count"
+});
+
+async function loadSteamInferenceSchema() {
+  if (steamApiSchema || steamApiSchemaLoading) return;
+  steamApiSchemaLoading = true;
+  steamApiSchemaError = null;
+  render();
+  try {
+    const response = await fetch("/api/schema?case_id=steam-review-multiplier", {
+      cache: "no-store", credentials: "same-origin", headers: { Accept: "application/json" }
+    });
+    const document = await response.json();
+    if (!response.ok) throw new Error(document?.error?.message || `模型服務尚未就緒（HTTP ${response.status}）。`);
+    const inputSchema = document.input_schema;
+    const schemaEntry = steamPackage?.manifest?.files?.find((item) => item.path === "phases/phase-06/input-schema.json");
+    const packageSchema = steamPackageFile("phases/phase-06/input-schema.json");
+    const model = steamPackage?.phases?.[6]?.models?.[0];
+    if (!schemaEntry || !packageSchema || document.schema_sha256 !== schemaEntry.sha256
+        || JSON.stringify(inputSchema) !== JSON.stringify(packageSchema)
+        || document.case_id !== STEAM_CASE_ID || document.model_id !== model?.model_id
+        || document.model_version !== model?.model_version
+        || document.run_id !== model?.source_execution_run_id
+        || document.configuration_id !== model?.source_configuration_id
+        || !Array.isArray(inputSchema.input_fields) || inputSchema.input_fields.length !== 22
+        || !Array.isArray(inputSchema.required) || !inputSchema.required.includes("review_count")) {
+      throw new Error("線上模型的輸入契約或實驗身分與已驗證 Case Package 不一致。");
+    }
+    steamApiSchema = document;
+  } catch (error) {
+    steamApiSchemaError = error instanceof Error ? error.message : "Steam Prediction API 尚未就緒。";
+  } finally {
+    steamApiSchemaLoading = false;
+    render();
+  }
+}
+
+function steamFieldControl(field, schema) {
+  const value = steamFormValues[field] ?? "";
+  const title = STEAM_FIELD_LABELS[field] || field;
+  if (field === "genres") {
+    const options = (schema.genre_options || []).map((option) => `<option value="${esc(option)}" ${(Array.isArray(value) && value.includes(option)) ? "selected" : ""}>${esc(option)}</option>`).join("");
+    return `<label class="steam-input-field"><span>${esc(title)} <code>${esc(field)}</code></span><select multiple size="4" data-steam-field="${esc(field)}" aria-label="${esc(field)}">${options}</select><small>可複選；選項來自已驗證的 Phase 6 契約。</small></label>`;
+  }
+  if (STEAM_BOOLEAN_FIELDS.has(field)) {
+    return `<label class="steam-input-field"><span>${esc(title)} <code>${esc(field)}</code></span><select data-steam-field="${esc(field)}"><option value="true" ${value === true ? "selected" : ""}>是 / true</option><option value="false" ${value === false ? "selected" : ""}>否 / false</option></select></label>`;
+  }
+  const limits = schema.limits || {};
+  const min = field === "price" ? limits.price_min : field === "release_year" ? limits.release_year_min : field === "review_count" ? limits.review_count_min : STEAM_COUNT_FIELDS.has(field) ? 0 : null;
+  const max = field === "price" ? limits.price_max : field === "release_year" ? limits.release_year_max : field === "review_count" ? Math.min(limits.review_count_max || 10000000, 10000000) : null;
+  const step = field === "price" || field === "discount" ? "any" : "1";
+  return `<label class="steam-input-field"><span>${esc(title)} <code>${esc(field)}</code></span><input type="number" data-steam-field="${esc(field)}" value="${esc(value)}" ${min === null ? "" : `min="${min}"`} ${max === null ? "" : `max="${max}"`} step="${step}" required><small>${min !== null || max !== null ? `契約界限：${min ?? "未定義"}–${max ?? "未定義"}` : "契約未定義額外上下限；API 仍會驗證型別與有限數值。"}</small></label>`;
+}
+
+function renderSteamInferenceForm() {
+  if (!steamApiSchema) {
+    return `<section class="state-panel" role="status"><h3>${steamApiSchemaLoading ? "正在驗證線上 Steam 模型…" : "線上 Steam 預測目前不可用"}</h3><p>${esc(steamApiSchemaError || "只有 API 回傳模型與 Schema 身分相符時，才會顯示可操作表單。")}</p><p>未載入 Mock Prediction，也不會改用固定 K。</p><button type="button" class="button" data-action="steam-api-retry" ${steamApiSchemaLoading ? "disabled" : ""}>重新檢查服務</button></section>`;
+  }
+  const schema = steamApiSchema.input_schema;
+  const modelFields = schema.input_fields || [];
+  const groups = [
+    ["遊戲與價格", ["genres", "price", "required_age", "release_year", "discount"]],
+    ["內容與支援平台", ["windows", "mac", "linux", "supported_language_count", "full_audio_language_count", "has_english", "has_traditional_chinese", "has_website"]],
+    ["模型工程輸入", ["dlc_count", "achievements", "genre_count", "category_count", "tag_count", "developer_count", "publisher_count", "screenshot_count", "movie_count"]]
+  ];
+  const grouped = groups.map(([title, fields]) => `<fieldset class="steam-input-group"><legend>${esc(title)}</legend><div class="steam-input-grid">${fields.filter((field) => modelFields.includes(field)).map((field) => steamFieldControl(field, schema)).join("")}</div></fieldset>`).join("");
+  const result = steamApiPrediction
+    ? `<section class="steam-prediction-result" role="status"><p class="eyebrow">真實 Run 01 模型輸出 · K PROXY</p><strong>${Number(steamApiPrediction.predicted_k).toLocaleString("en-US", { maximumFractionDigits: 3 })} K</strong><dl class="data-row"><dt>預估擁有量</dt><dd>${Number(steamApiPrediction.estimated_ownership).toLocaleString("en-US", { maximumFractionDigits: 1 })}</dd></dl><dl class="data-row"><dt>K = 30 基準</dt><dd>${Number(steamApiPrediction.fixed_k_30_ownership).toLocaleString("en-US", { maximumFractionDigits: 1 })}</dd></dl><p>Estimated ownership = K × 使用者輸入評論數；K=30 僅作比較基準。</p><small>Run ${esc(steamApiPrediction.run_id)} · ${esc(steamApiPrediction.configuration_id)} · Model ${esc(steamApiPrediction.model_version)} · 模型 SHA ${esc(steamApiPrediction.model_sha256)}</small></section>`
+    : `<div class="state-panel"><h3>尚未執行推論</h3><p>此處只顯示真正 API 回傳；模型品質有限，K proxy 不是官方銷量或實際擁有量。</p></div>`;
+  return `<div class="steam-p6-tabs" role="tablist" aria-label="Prediction mode"><button type="button" class="${steamInputMode === "single" ? "active" : ""}" data-action="steam-mode-single" aria-selected="${steamInputMode === "single"}">單筆預測</button><button type="button" class="${steamInputMode === "batch" ? "active" : ""}" data-action="steam-mode-batch" aria-selected="${steamInputMode === "batch"}">CSV 批次預測</button></div><div class="steam-p6-context"><span>Model ${esc(steamApiSchema.model_id)} · ${esc(steamApiSchema.model_version)}</span><span>Run ${esc(steamApiSchema.run_id)} · ${esc(steamApiSchema.configuration_id)}</span><span>22 個工程輸入 + Review Count</span><span>Schema SHA-256 已與 Case Package 核對</span></div>${steamApiError ? `<p class="steam-api-error" role="alert">${esc(steamApiError)}</p>` : ""}${steamInputMode === "single" ? `<div class="grid two steam-p6-layout"><form id="steam-predict-form" class="card steam-p6-form"><div class="card-head"><div><p class="eyebrow">CONTRACT-DRIVEN INPUTS</p><h2>遊戲特徵</h2></div>${badge("22 MODEL INPUTS")}</div><div class="card-body"><p class="stage-note">所有 22 個工程輸入均須提供；另外輸入 Review Count 供 Estimated Ownership 計算。欄位預設留白，不會隱含補值。</p>${grouped}<label class="steam-input-field steam-review-count"><span>評論數 Review Count <code>review_count</code></span><input type="number" data-steam-field="review_count" value="${esc(steamFormValues.review_count ?? "")}" min="${schema.limits.review_count_min}" max="${Math.min(schema.limits.review_count_max, 10000000)}" step="1" required><small>用於換算擁有量，不是模型的 22 個輸入特徵。</small></label><div class="button-row"><button type="button" class="button" data-action="steam-fill-demo">載入合成測試輸入</button><button type="submit" class="button primary" ${steamApiPending ? "disabled" : ""}>${steamApiPending ? "預測中…" : "執行真實預測"}</button></div><p class="stage-note">合成輸入只供操作測試，不代表真實遊戲紀錄；實際輸出依 Run 01 模型計算。</p></div></form><section class="card"><div class="card-head"><div><p class="eyebrow">MODEL OUTPUT</p><h2>預估 K 與擁有量</h2></div>${badge(steamApiPending ? "RUNNING" : steamApiPrediction ? "REAL INFERENCE" : "READY")}</div><div class="card-body">${result}<p class="stage-note">研究品質警告：Run 01 的 Holdout R² 接近 0，且 owners 區間相容率未勝過固定 K=50 基準。個別遊戲預測不是銷量、官方 owners 或投資建議。</p></div></section></div>` : renderSteamBatchPanel(schema)}<section class="card steam-p6-provenance"><div class="card-body"><strong>研究來源與限制</strong><p>模型：Random Forest · Run 01 · ${esc(steamApiSchema.model_version)}。模型二進位檔不在公開 Case Package；API 讀取私有且 SHA 固定的部署資產。</p><p>目標為 SteamSpy owners 區間中點／review count 的 K proxy，研究分數不證明個別預測準確。</p><p>資料頁授權 ${esc(steamPackage?.case?.source?.license || "UNKNOWN")}；競賽專屬規則未獨立核實。線上結果僅供課程研究展示。</p></div></section>`;
+}
+
+function renderSteamBatchPanel(schema) {
+  const required = [...schema.input_fields, "review_count"];
+  const status = steamBatchResult
+    ? `<div class="steam-batch-summary"><strong>${steamBatchResult.success_rows} SUCCESS</strong><strong>${steamBatchResult.error_rows} ERROR</strong><span>${steamBatchResult.total_rows} 列 · Run ${esc(steamBatchResult.run_id)}</span></div><div class="table-scroll"><table class="steam-phase-table"><thead><tr><th>CSV 行</th><th>狀態</th><th>預估 K</th><th>Estimated Ownership</th><th>錯誤</th></tr></thead><tbody>${steamBatchResult.rows.map((row) => `<tr><td>${row.row_number}</td><td>${esc(row.prediction_status)}</td><td>${row.predicted_k === undefined ? "—" : Number(row.predicted_k).toLocaleString("en-US", { maximumFractionDigits: 3 })}</td><td>${row.estimated_ownership === undefined ? "—" : Number(row.estimated_ownership).toLocaleString("en-US", { maximumFractionDigits: 1 })}</td><td>${esc(row.error_code || row.error_message || "—")}</td></tr>`).join("")}</tbody></table></div><button type="button" class="button primary" data-action="steam-batch-download">下載結果 CSV</button>`
+    : `<div class="state-panel"><h3>尚未執行批次預測</h3><p>CSV 僅於本次請求送至同源 API 處理；伺服器不保存上傳內容。</p></div>`;
+  return `<div class="grid two steam-p6-layout"><section class="card"><div class="card-head"><div><p class="eyebrow">STEAM BATCH PREDICTION</p><h2>上傳 CSV</h2></div>${badge("MAX 10 ROWS")}</div><div class="card-body"><p>完整欄位共 ${required.length} 欄；欄位順序可不同。每次最多 1 MiB、10 筆資料。</p><div class="button-row"><button type="button" class="button" data-action="steam-csv-template">下載 CSV 範本</button><button type="button" class="button" data-action="steam-csv-demo">載入合成 CSV</button></div><label class="steam-upload-zone"><span>選擇 CSV 檔案</span><input id="steam-batch-file" type="file" accept=".csv,text/csv"><small>${steamBatchFileName ? esc(steamBatchFileName) : "UTF-8 CSV，含完整 23 欄標題列"}</small></label><p class="stage-note" role="status">${steamBatchText ? `${steamBatchText.length.toLocaleString()} 個字元；選取檔案後才會送至 API。` : "尚未選擇檔案。"}</p>${steamBatchError ? `<p class="steam-api-error" role="alert">${esc(steamBatchError)}</p>` : ""}<button type="button" class="button primary" data-action="steam-batch-run" ${!steamBatchText || steamBatchPending ? "disabled" : ""}>${steamBatchPending ? "批次推論中…" : "執行批次預測"}</button><p class="stage-note">CSV 的 genres 欄可用 `|` 分隔多個契約選項。錯誤列保留行號，其餘有效列照常推論。</p></div></section><section class="card"><div class="card-head"><div><p class="eyebrow">BATCH RESULTS</p><h2>執行摘要與下載</h2></div>${badge(steamBatchPending ? "RUNNING" : steamBatchResult ? "COMPLETE" : "UNAVAILABLE")}</div><div class="card-body">${status}<p class="stage-note">輸出保留原始列、Row Number、預測 K、Estimated Ownership、K=30 基準與逐列錯誤狀態；文字公式前綴會跳脫，數值維持數值。</p></div></section></div>`;
+}
+
+function steamFieldValue(element) {
+  if (element.name === "genres" || element.dataset.steamField === "genres") return [...element.selectedOptions].map((option) => option.value);
+  if (STEAM_BOOLEAN_FIELDS.has(element.dataset.steamField)) return element.value === "true";
+  if (element.value.trim() === "") return "";
+  return Number(element.value);
+}
+
+function steamPredictionIdentityMatches(result) {
+  return result?.case_id === STEAM_CASE_ID
+    && result?.model_id === steamApiSchema?.model_id
+    && result?.model_version === steamApiSchema?.model_version
+    && result?.run_id === steamApiSchema?.run_id
+    && result?.configuration_id === steamApiSchema?.configuration_id
+    && result?.model_sha256 === steamApiSchema?.model_sha256
+    && result?.schema_sha256 === steamApiSchema?.schema_sha256;
+}
+
+async function submitSteamPrediction(event) {
+  event?.preventDefault();
+  if (!steamApiSchema || steamApiPending) return;
+  steamApiPending = true; steamApiError = null; steamApiPrediction = null; render();
+  try {
+    const inputs = {};
+    for (const field of steamApiSchema.input_schema.input_fields) inputs[field] = steamFormValues[field];
+    const reviewCount = steamFormValues.review_count;
+    if (Object.values(inputs).some((value) => value === "" || value === undefined) || reviewCount === "" || reviewCount === undefined) {
+      throw new Error("請先填寫全部 22 個模型欄位及 Review Count。");
+    }
+    const response = await fetch("/api/predict", {
+      method: "POST", cache: "no-store", credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ case_id: STEAM_CASE_ID, model_id: steamApiSchema.model_id, model_version: steamApiSchema.model_version, inputs, review_count: reviewCount })
+    });
+    const document = await response.json();
+    if (!response.ok) throw new Error(document?.error?.message || `預測失敗（HTTP ${response.status}）。`);
+    if (!steamPredictionIdentityMatches(document) || !Number.isFinite(document.predicted_k) || !Number.isFinite(document.estimated_ownership)) throw new Error("API 回應的模型身分或數值驗證失敗。");
+    steamApiPrediction = document;
+  } catch (error) {
+    steamApiError = error instanceof Error ? error.message : "Steam 預測失敗，沒有顯示結果。";
+  } finally {
+    steamApiPending = false; render();
+  }
+}
+
+function steamCsvCell(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  let text = value === null || value === undefined ? "" : String(value);
+  if (/^[=+@-]/.test(text)) text = `'${text}`;
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function downloadSteamBatchResults() {
+  if (!steamBatchResult) return;
+  const csv = [steamBatchResult.columns.map(steamCsvCell).join(","), ...steamBatchResult.rows.map((row) => steamBatchResult.columns.map((name) => steamCsvCell(row[name])).join(","))].join("\r\n") + "\r\n";
+  const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+  const anchor = document.createElement("a"); anchor.href = url; anchor.download = "steam-prediction-results.csv"; anchor.click(); URL.revokeObjectURL(url);
+}
+
+function downloadSteamCsvTemplate() {
+  if (!steamApiSchema) return;
+  const headers = [...steamApiSchema.input_schema.input_fields, "review_count"];
+  const url = URL.createObjectURL(new Blob(["\uFEFF", `${headers.map(steamCsvCell).join(",")}\r\n`], { type: "text/csv;charset=utf-8" }));
+  const anchor = document.createElement("a"); anchor.href = url; anchor.download = "steam-input-template.csv"; anchor.click(); URL.revokeObjectURL(url);
+}
+
+async function readSteamBatchFile(file) {
+  steamBatchError = null;
+  steamBatchResult = null;
+  steamBatchText = "";
+  steamBatchFileName = "";
+  if (!file) { render(); return; }
+  if (!file.name.toLowerCase().endsWith(".csv") || file.size < 1 || file.size > 1024 * 1024) {
+    steamBatchError = "請選擇非空且不超過 1 MiB 的 CSV 檔案。";
+    render();
+    return;
+  }
+  try {
+    steamBatchText = await file.text();
+    steamBatchFileName = file.name;
+    if (new TextEncoder().encode(steamBatchText).length > 1024 * 1024) throw new Error("CSV 檔案超過 1 MiB。");
+  } catch (error) {
+    steamBatchText = "";
+    steamBatchFileName = "";
+    steamBatchError = error instanceof Error ? error.message : "無法讀取 CSV 檔案。";
+  }
+  render();
+}
+
+function fillSteamDemoCsv() {
+  if (!steamApiSchema) return;
+  const headers = [...steamApiSchema.input_schema.input_fields, "review_count"];
+  const row = headers.map((field) => field === "genres" ? STEAM_DEMO_VALUES.genres.join("|") : String(STEAM_DEMO_VALUES[field]));
+  steamBatchText = `${headers.map(steamCsvCell).join(",")}\r\n${row.map(steamCsvCell).join(",")}\r\n`;
+  steamBatchFileName = "synthetic-steam-input.csv"; steamBatchResult = null; steamBatchError = null; render();
+}
+
+async function submitSteamBatchPrediction() {
+  if (!steamApiSchema || !steamBatchText || steamBatchPending) return;
+  steamBatchPending = true; steamBatchError = null; steamBatchResult = null; render();
+  try {
+    const response = await fetch("/api/predict-batch?case_id=steam-review-multiplier", {
+      method: "POST", cache: "no-store", credentials: "same-origin",
+      headers: { "Content-Type": "text/csv; charset=utf-8" }, body: steamBatchText
+    });
+    const document = await response.json();
+    if (!response.ok) throw new Error(document?.error?.message || `批次預測失敗（HTTP ${response.status}）。`);
+    if (!steamPredictionIdentityMatches(document) || !Array.isArray(document.rows) || document.rows.length !== document.total_rows) throw new Error("Batch API 回應的模型身分或資料列驗證失敗。");
+    steamBatchResult = document;
+  } catch (error) {
+    steamBatchError = error instanceof Error ? error.message : "Steam 批次預測失敗，沒有產生結果。";
+  } finally {
+    steamBatchPending = false; render();
+  }
 }
 function renderSteamPhase(phase) {
   if (steamPackageError) return `<div class="page">${banner(CASES[STEAM_CASE_ID])}${pageHeading("CASE PACKAGE ERROR", "Steam 研究資料無法驗證", "未顯示未通過完整性檢查的研究產物。", "ERROR")}<section class="state-panel" role="alert"><p>${esc(steamPackageError)}</p></section></div>`;
@@ -893,7 +1122,7 @@ function renderSteamPhase(phase) {
     const selected = (evaluation.holdout_metrics || []).find((item) => item.model === "machine-learning") || {};
     const encoded = (steamPackageFile("phases/phase-04/modeling-details.json")?.selected_features || []).length;
     const rawFieldCount = Number(lineage.raw_candidate_field_count || (lineage.raw_candidate_fields || []).length);
-    return steamPage(phase, "部署與研究成果 · Deployment", "展示已封裝模型身分與離線評估；正式網站尚未提供 Steam 線上互動推論。", `<div class="grid two"><article class="card"><div class="card-head"><h2>模型與特徵摘要</h2>${badge(model.model_status || "UNAVAILABLE")}</div><div class="card-body"><dl class="data-row"><dt>Model</dt><dd>Random Forest Regressor · ${esc(model.model_version || "UNKNOWN")}</dd></dl><dl class="data-row"><dt>Model ID</dt><dd>${esc(model.model_id || "UNKNOWN")}</dd></dl><dl class="data-row"><dt>Run / Configuration</dt><dd>${esc(model.source_execution_run_id || "UNKNOWN")} · ${esc(model.source_configuration_id || "UNKNOWN")}</dd></dl><dl class="data-row"><dt>Raw candidate fields</dt><dd>${rawFieldCount}</dd></dl><dl class="data-row"><dt>Engineered model inputs</dt><dd>${Number(input.input_fields?.length || 0)}</dd></dl><dl class="data-row"><dt>Selected encoded features</dt><dd>${encoded}</dd></dl><dl class="data-row"><dt>Holdout MAE / RMSE / R²</dt><dd>${Number(selected.mae).toFixed(2)} / ${Number(selected.rmse).toFixed(2)} / ${Number(selected.r2).toFixed(4)}</dd></dl><p>目標是 SteamSpy owners 區間中點／review count 的 K proxy，不是實際銷量；指標屬研究評估摘要，單筆遊戲輸出不代表已驗證預測。</p></div></article><article class="card"><div class="card-head"><h2>研究評估結果與線上服務狀態</h2>${badge("UNAVAILABLE")}</div><div class="card-body">${steamImage("phases/phase-05/figures/actual-vs-predicted.png", "Aggregated Holdout actual versus predicted K proxy")}<section class="state-panel steam-unavailable" role="status"><h3>線上互動預測尚未開放</h3><p>目前公開網站不提供 Steam Prediction API。此頁不會載入輸入表單、提交預測或產生合成結果。</p></section><p>上圖及指標為 Holdout 彙總研究結果，不是指定遊戲的估計值。模型資產未包含於公開 Case Package。</p><p>模型品質與 Holdout 限制請見 Phase 5；R² 接近 0，owners 區間相容率未勝過固定 K=50 基準。</p></div></article></div>`, "UNAVAILABLE");
+    return steamPage(phase, "部署與研究成果 · Deployment", "使用 Steam Run 01 Random Forest 進行 K proxy 推論；輸入契約與模型身分須由正式 API 驗證。", `<div class="grid two"><article class="card"><div class="card-head"><h2>模型與特徵摘要</h2>${badge(model.model_status || "UNAVAILABLE")}</div><div class="card-body"><dl class="data-row"><dt>Model</dt><dd>Random Forest Regressor · ${esc(model.model_version || "UNKNOWN")}</dd></dl><dl class="data-row"><dt>Model ID</dt><dd>${esc(model.model_id || "UNKNOWN")}</dd></dl><dl class="data-row"><dt>Run / Configuration</dt><dd>${esc(model.source_execution_run_id || "UNKNOWN")} · ${esc(model.source_configuration_id || "UNKNOWN")}</dd></dl><dl class="data-row"><dt>Raw candidate fields</dt><dd>${rawFieldCount}</dd></dl><dl class="data-row"><dt>Engineered model inputs</dt><dd>${Number(input.input_fields?.length || 0)}</dd></dl><dl class="data-row"><dt>Selected encoded features</dt><dd>${encoded}</dd></dl><dl class="data-row"><dt>Holdout MAE / RMSE / R²</dt><dd>${Number(selected.mae).toFixed(2)} / ${Number(selected.rmse).toFixed(2)} / ${Number(selected.r2).toFixed(4)}</dd></dl><p>目標是 SteamSpy owners 區間中點／review count 的 K proxy，不是實際銷量；指標屬研究評估摘要，單筆遊戲輸出不代表已驗證預測。</p></div></article><article class="card"><div class="card-head"><h2>模型推論工作區</h2>${badge(steamApiSchema ? "API READY" : "CHECKING")}</div><div class="card-body">${steamImage("phases/phase-05/figures/actual-vs-predicted.png", "Aggregated Holdout actual versus predicted K proxy")}<p>上圖及指標為 Holdout 彙總研究結果，不是指定遊戲的估計值。模型資產不在公開 Case Package。</p><p>模型品質與 Holdout 限制請見 Phase 5；R² 接近 0，owners 區間相容率未勝過固定 K=50 基準。</p></div></article></div>${renderSteamInferenceForm()}`, steamApiSchema ? "PARTIAL" : "UNAVAILABLE");
   }
   return "";
 }
@@ -2202,6 +2431,7 @@ function renderDashboard() {
   return `<div class="page">${banner(c)}${pageHeading("INTEGRATED REGRESSION ANALYSIS", "Dashboard", "獨立的分析工作區。Verified Research 與 Custom Dataset 互斥；兩種模式不共享研究結果。", c.status)}<div class="mode-switch" role="group" aria-label="Dashboard mode"><button type="button" data-dashboard-mode="verified" aria-pressed="${state.dashboardMode === "verified"}">Verified Research</button><button type="button" data-dashboard-mode="custom" aria-pressed="${state.dashboardMode === "custom"}">Custom Dataset</button></div><div style="margin-top:18px">${state.dashboardMode === "verified" ? renderDashboardVerified() : customPanel()}</div><div class="button-row" style="margin-top:22px"><a class="button" href="#phase-1">← Back to CRISP-DM Home</a></div></div>`;
 }
 function render() {
+  const phase = routePhase();
   if (LOCAL_CAR_PHASE6_PREVIEW) {
     if (!carUiPrototypeFixtures && !carUiPrototypeFixtureError && !carUiPrototypeFixtureLoading) loadCarUiPrototypeFixtures();
   } else {
@@ -2213,8 +2443,11 @@ function render() {
     && state.caseId === CAR_CASE_ID && routePhase() === 6
     && (LOCAL_CAR_PHASE6_PREVIEW || Boolean(carPackage));
   if (localCarPhase6Route && !localCarSchema && !localCarSchemaError && !localCarSchemaLoading) loadLocalCarPredictionSchema();
+  if (!LOCAL_CAR_PHASE6_PREVIEW && state.caseId === STEAM_CASE_ID && phase === 6
+      && steamPackage && !steamApiSchema && !steamApiSchemaError && !steamApiSchemaLoading) {
+    void loadSteamInferenceSchema();
+  }
   updateShell();
-  const phase = routePhase();
   if (LOCAL_CAR_PHASE6_PREVIEW) {
     if (phase === 6) {
       app.innerHTML = renderPhase6();
@@ -2321,6 +2554,22 @@ app.addEventListener("click", (event) => {
     localCarSchemaError = null; localCarSchema = null; localCarApiReady = false;
     loadLocalCarPredictionSchema(); render();
   }
+  else if (target.dataset.action === "steam-api-retry") {
+    steamApiSchemaError = null; steamApiSchema = null;
+    void loadSteamInferenceSchema();
+  }
+  else if (target.dataset.action === "steam-mode-single" || target.dataset.action === "steam-mode-batch") {
+    steamInputMode = target.dataset.action === "steam-mode-single" ? "single" : "batch";
+    steamApiError = null; render();
+  }
+  else if (target.dataset.action === "steam-fill-demo") {
+    steamFormValues = { ...STEAM_DEMO_VALUES, genres: [...STEAM_DEMO_VALUES.genres] };
+    steamApiPrediction = null; steamApiError = null; render();
+  }
+  else if (target.dataset.action === "steam-csv-template") downloadSteamCsvTemplate();
+  else if (target.dataset.action === "steam-csv-demo") fillSteamDemoCsv();
+  else if (target.dataset.action === "steam-batch-run") void submitSteamBatchPrediction();
+  else if (target.dataset.action === "steam-batch-download") downloadSteamBatchResults();
   else if (target.dataset.action === "phase6-use-csv-row") {
     const csv = state.phase6Csv; const row = csv?.rows[csv.selectedIndex] || [];
     const value = (name) => { const index = csv?.headers.indexOf(name) ?? -1; return index < 0 ? null : row[index]?.trim() ?? ""; };
@@ -2344,6 +2593,9 @@ app.addEventListener("click", (event) => {
     render();
   }
 });
+app.addEventListener("submit", (event) => {
+  if (event.target?.id === "steam-predict-form") void submitSteamPrediction(event);
+});
 app.addEventListener("toggle", (event) => {
   const group = event.target.closest?.("details[data-car-field-group]");
   if (group && Object.prototype.hasOwnProperty.call(state.carUiGroupOpen, group.dataset.carFieldGroup)) {
@@ -2353,6 +2605,12 @@ app.addEventListener("toggle", (event) => {
 app.addEventListener("change", (event) => {
   if (event.target.id === "car-local-batch-file") {
     void readLocalCarBatchFile(event.target.files?.[0] || null);
+  } else if (event.target.id === "steam-batch-file") {
+    void readSteamBatchFile(event.target.files?.[0] || null);
+  } else if (event.target.matches?.("[data-steam-field]")) {
+    steamFormValues[event.target.dataset.steamField] = steamFieldValue(event.target);
+    steamApiPrediction = null;
+    steamApiError = null;
   } else if (event.target.id === "p6-contract-model") {
     state.phase6ModelId = event.target.value;
     render();
@@ -2421,7 +2679,11 @@ app.addEventListener("change", (event) => {
   }
 });
 app.addEventListener("input", (event) => {
-  if (LOCAL_CAR_PREDICTION_API_MODE && event.target.closest?.("#car-local-prediction-form [name]")) {
+  if (event.target.matches?.("[data-steam-field]")) {
+    steamFormValues[event.target.dataset.steamField] = steamFieldValue(event.target);
+    steamApiPrediction = null;
+    steamApiError = null;
+  } else if (LOCAL_CAR_PREDICTION_API_MODE && event.target.closest?.("#car-local-prediction-form [name]")) {
     localCarSyntheticInput = false;
     localCarPrediction = null;
     localCarPredictionError = null;

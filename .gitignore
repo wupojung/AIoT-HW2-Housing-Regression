@@ -50,3 +50,8 @@ service-account*.json
 node_modules/
 .coverage
 htmlcov/
+.vercel/
+.env
+.env.local
+.env.*.local
+_uv/

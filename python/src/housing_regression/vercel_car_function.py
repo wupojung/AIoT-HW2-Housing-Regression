@@ -13,7 +13,7 @@ import zipfile
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from housing_regression.car_batch_prediction import (
     MAX_BATCH_REQUEST_BYTES,
@@ -252,6 +252,13 @@ def _runtime() -> Any:
     return _RUNTIME
 
 
+def _steam_runtime(oidc_token: str | None = None) -> Any:
+    # Import lazily so existing CAR requests do not load the Steam stack.
+    from housing_regression.steam_prediction_api import load_runtime
+
+    return load_runtime(oidc_token)
+
+
 def create_handler():
     class VercelCarHandler(BaseHTTPRequestHandler):
         server_version = "RegScopePreviewInference/1"
@@ -295,9 +302,32 @@ def create_handler():
             self._fail(405, "method_not_allowed", "此同源端點不接受 OPTIONS。")
 
         def do_GET(self) -> None:  # noqa: N802
-            route = urlsplit(self.path).path
+            parsed_url = urlsplit(self.path)
+            route = parsed_url.path
             if route != "/api/schema":
                 self._fail(404, "not_found", "找不到此 API 路徑。")
+                return
+            if parse_qs(parsed_url.query).get("case_id") == ["steam-review-multiplier"]:
+                from housing_regression.steam_prediction_api import (
+                    authorized_host,
+                    authorized_origin,
+                    public_schema,
+                )
+
+                if not authorized_host(self.headers.get("Host")):
+                    self._fail(404, "not_found", "找不到此 API 路徑。")
+                    return
+                origin = self.headers.get("Origin")
+                if origin and not authorized_origin(origin):
+                    self._fail(403, "origin_rejected", "請求來源不允許。")
+                    return
+                try:
+                    runtime = _steam_runtime(self.headers.get("x-vercel-oidc-token"))
+                    self._send_json(200, public_schema(runtime))
+                except PermissionError:
+                    self._fail(404, "not_found", "找不到此 API 路徑。")
+                except Exception:
+                    self._fail(503, "model_unavailable", "Steam 模型服務目前不可用。")
                 return
             if not self._origin_is_same_authorized_origin(required=False):
                 self._fail(403, "origin_rejected", "請求來源不允許。")
@@ -324,17 +354,89 @@ def create_handler():
             self.wfile.write(body)
 
         def do_POST(self) -> None:  # noqa: N802
-            route = urlsplit(self.path).path
+            parsed_url = urlsplit(self.path)
+            route = parsed_url.path
             if route not in {"/api/predict", "/api/predict-batch"}:
                 self._fail(404, "not_found", "找不到此 API 路徑。")
-                return
-            if not self._origin_is_same_authorized_origin(required=True):
-                self._fail(403, "origin_rejected", "請求來源不允許。")
                 return
             is_batch = route == "/api/predict-batch"
             expected_type = "text/csv" if is_batch else "application/json"
             if self.headers.get_content_type() != expected_type:
                 self._fail(415, "content_type_required", "請求內容類型不符合此端點要求。")
+                return
+            if is_batch and parse_qs(parsed_url.query).get("case_id") == ["steam-review-multiplier"]:
+                from housing_regression.steam_prediction_api import authorized_host, authorized_origin
+
+                origin_ok = authorized_host(self.headers.get("Host")) and authorized_origin(self.headers.get("Origin"))
+            else:
+                origin_ok = self._origin_is_same_authorized_origin(required=True)
+                if not origin_ok:
+                    from housing_regression.steam_prediction_api import authorized_host, authorized_origin
+
+                    origin_ok = authorized_host(self.headers.get("Host")) and authorized_origin(self.headers.get("Origin"))
+            if not origin_ok:
+                self._fail(403, "origin_rejected", "請求來源不允許。")
+                return
+            payload = self._read_body(MAX_BATCH_REQUEST_BYTES if is_batch else MAX_REQUEST_BYTES)
+            if payload is None:
+                return
+            if is_batch and parse_qs(parsed_url.query).get("case_id") == ["steam-review-multiplier"]:
+                from housing_regression.steam_prediction_api import (
+                    SteamPredictionError,
+                    authorized_host,
+                    authorized_origin,
+                    predict_csv_batch as predict_steam_csv_batch,
+                )
+
+                if not authorized_host(self.headers.get("Host")) or not authorized_origin(self.headers.get("Origin")):
+                    self._fail(403, "origin_rejected", "請求來源不允許。")
+                    return
+                try:
+                    runtime = _steam_runtime(self.headers.get("x-vercel-oidc-token"))
+                    result = predict_steam_csv_batch(runtime, payload)
+                    self._send_json(200, result)
+                except SteamPredictionError as exc:
+                    self._send_json(exc.status, {"error": {"code": exc.code, "message": str(exc), "field": exc.field}})
+                except PermissionError:
+                    self._fail(404, "not_found", "找不到此 API 路徑。")
+                except Exception:
+                    self._fail(503, "model_unavailable", "Steam 模型服務目前不可用。")
+                return
+            request: Any | None = None
+            if not is_batch:
+                try:
+                    request = _decode_json(payload)
+                except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+                    self._fail(400, "invalid_json", "請求不是有效 JSON，或包含重複欄位／非有限數字。")
+                    return
+                if isinstance(request, dict) and request.get("case_id") == "steam-review-multiplier":
+                    from housing_regression.steam_prediction_api import (
+                        SteamPredictionError,
+                        authorized_host,
+                        authorized_origin,
+                    )
+
+                    if not authorized_host(self.headers.get("Host")) or not authorized_origin(self.headers.get("Origin")):
+                        self._fail(403, "origin_rejected", "請求來源不允許。")
+                        return
+                    try:
+                        runtime = _steam_runtime(self.headers.get("x-vercel-oidc-token"))
+                        if set(request) != {"case_id", "model_id", "model_version", "inputs", "review_count"}:
+                            raise SteamPredictionError("invalid_request", "請求欄位與 Steam 模型契約不符。", 400)
+                        if request.get("model_id") != runtime.identity["model_id"]:
+                            raise SteamPredictionError("model_not_available", "指定模型目前不可用。", 404)
+                        if request.get("model_version") != runtime.identity["model_version"]:
+                            raise SteamPredictionError("model_version_mismatch", "指定模型版本與目前模型不一致。", 409)
+                        self._send_json(200, runtime.predict(request["inputs"], request["review_count"]))
+                    except SteamPredictionError as exc:
+                        self._send_json(exc.status, {"error": {"code": exc.code, "message": str(exc), "field": exc.field}})
+                    except PermissionError:
+                        self._fail(404, "not_found", "找不到此 API 路徑。")
+                    except Exception:
+                        self._fail(503, "model_unavailable", "Steam 模型服務目前不可用。")
+                    return
+            if not self._origin_is_same_authorized_origin(required=True):
+                self._fail(403, "origin_rejected", "請求來源不允許。")
                 return
             try:
                 runtime = _runtime()
@@ -343,9 +445,6 @@ def create_handler():
                 return
             except Exception:
                 self._fail(503, "model_unavailable", "受保護 Preview 的模型服務目前不可用。")
-                return
-            payload = self._read_body(MAX_BATCH_REQUEST_BYTES if is_batch else MAX_REQUEST_BYTES)
-            if payload is None:
                 return
             try:
                 if is_batch:
@@ -363,7 +462,6 @@ def create_handler():
                         raise PredictionApiError("batch_response_too_large", "批次結果超過安全回應上限。", 413)
                     self._send(200, body)
                     return
-                request = _decode_json(payload)
                 if not isinstance(request, dict) or set(request) != {"case_id", "model_id", "model_version", "inputs"}:
                     raise PredictionApiError("invalid_request", "請求只能包含案例、模型版本與一筆輸入。", 400)
                 if request["case_id"] != CAR_CASE_ID or request["model_id"] != CAR_MODEL_ID:

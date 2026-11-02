@@ -1,0 +1,122 @@
+[
+  {
+    "n": 380,
+    "mean_predicted_k": 62.08341614888683,
+    "mean_observed_k_proxy": 126.34349476514544,
+    "mean_residual_actual_minus_predicted": 64.26007861625861
+  },
+  {
+    "n": 380,
+    "mean_predicted_k": 87.54540836588649,
+    "mean_observed_k_proxy": 146.4877732937611,
+    "mean_residual_actual_minus_predicted": 58.94236492787463
+  },
+  {
+    "n": 380,
+    "mean_predicted_k": 103.87708959421825,
+    "mean_observed_k_proxy": 196.4522934805491,
+    "mean_residual_actual_minus_predicted": 92.57520388633083
+  },
+  {
+    "n": 380,
+    "mean_predicted_k": 117.01973701564177,
+    "mean_observed_k_proxy": 205.6769991302341,
+    "mean_residual_actual_minus_predicted": 88.65726211459233
+  },
+  {
+    "n": 380,
+    "mean_predicted_k": 130.82099292043702,
+    "mean_observed_k_proxy": 304.8137389065237,
+    "mean_residual_actual_minus_predicted": 173.99274598608676
+  },
+  {
+    "n": 380,
+    "mean_predicted_k": 144.52446222195104,
+    "mean_observed_k_proxy": 256.08997021985215,
+    "mean_residual_actual_minus_predicted": 111.56550799790107
+  },
+  {
+    "n": 380,
+    "mean_predicted_k": 158.77618348968164,
+    "mean_observed_k_proxy": 271.97426798541915,
+    "mean_residual_actual_minus_predicted": 113.19808449573749
+  },
+  {
+    "n": 380,
+    "mean_predicted_k": 173.00493735901102,
+    "mean_observed_k_proxy": 282.42941858652375,
+    "mean_residual_actual_minus_predicted": 109.42448122751276
+  },
+  {
+    "n": 380,
+    "mean_predicted_k": 187.58299117065633,
+    "mean_observed_k_proxy": 283.4842032348569,
+    "mean_residual_actual_minus_predicted": 95.90121206420059
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 201.4752036717012,
+    "mean_observed_k_proxy": 372.5237572672278,
+    "mean_residual_actual_minus_predicted": 171.04855359552664
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 215.20027706700657,
+    "mean_observed_k_proxy": 371.64370814069025,
+    "mean_residual_actual_minus_predicted": 156.44343107368368
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 228.85297473480983,
+    "mean_observed_k_proxy": 318.20901428684425,
+    "mean_residual_actual_minus_predicted": 89.3560395520344
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 242.34873617735363,
+    "mean_observed_k_proxy": 447.9634267384312,
+    "mean_residual_actual_minus_predicted": 205.6146905610776
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 256.0715152968004,
+    "mean_observed_k_proxy": 442.0340840598823,
+    "mean_residual_actual_minus_predicted": 185.96256876308186
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 272.25793758910265,
+    "mean_observed_k_proxy": 475.55214386217756,
+    "mean_residual_actual_minus_predicted": 203.29420627307482
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 292.80552902794153,
+    "mean_observed_k_proxy": 466.6186954142305,
+    "mean_residual_actual_minus_predicted": 173.81316638628897
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 315.10092422982547,
+    "mean_observed_k_proxy": 450.14930260868545,
+    "mean_residual_actual_minus_predicted": 135.04837837886006
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 345.88302938230913,
+    "mean_observed_k_proxy": 629.6289051474112,
+    "mean_residual_actual_minus_predicted": 283.7458757651021
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 397.0828909944704,
+    "mean_observed_k_proxy": 748.6243943447041,
+    "mean_residual_actual_minus_predicted": 351.54150335023365
+  },
+  {
+    "n": 379,
+    "mean_predicted_k": 567.822873027497,
+    "mean_observed_k_proxy": 1118.2458037404062,
+    "mean_residual_actual_minus_predicted": 550.422930712909
+  }
+]

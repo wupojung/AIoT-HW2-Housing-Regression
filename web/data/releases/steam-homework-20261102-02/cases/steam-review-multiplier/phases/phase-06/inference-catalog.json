@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "steam-review-multiplier",
+  "status": "VERIFIED",
+  "models": [
+    {
+      "model_id": "steam-review-multiplier-random-forest",
+      "model_version": "1.0.0",
+      "source_execution_run_id": "steam-review-multiplier-run-01",
+      "source_configuration_id": "random_forest-all",
+      "model_status": "PRIVATE_ARTIFACT_PINNED",
+      "input_schema_ref": "phases/phase-06/input-schema.json",
+      "readiness": {
+        "predict_enabled": true,
+        "scope": "preview-and-production-feature-flag-gated",
+        "message": "Prediction is available only when the deployment loads the private artifact and verifies its pinned Model and Schema identities."
+      },
+      "model_sha256": "228ad27ea48cfe53652cbf0f33141445bdc045047ad55c02689ee5da0f63ac53"
+    }
+  ],
+  "readiness": {
+    "predict_enabled": true,
+    "reason_code": "PRIVATE_ARTIFACT_IDENTITY_GATED",
+    "message": "Steam inference uses the private, SHA-pinned model artifact behind deployment environment gates; publication review remains pending."
+  }
+}

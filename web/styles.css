@@ -623,3 +623,27 @@ details.disclosure summary { color: #126879; }
 .steam-evidence-figure figcaption { color: var(--muted); font-size: 12px; line-height: 1.5; }
 .steam-phase-table { width: 100%; }
 .steam-unavailable { border-left: 4px solid #c28a45; }
+.steam-p6-tabs { display: flex; gap: 8px; margin: 18px 0; }
+.steam-p6-tabs button { padding: 10px 16px; border: 1px solid #cbd9df; border-radius: 8px; background: #fff; color: #25465a; cursor: pointer; }
+.steam-p6-tabs button.active { border-color: #087e82; background: #e7f7f4; color: #075c64; font-weight: 750; }
+.steam-p6-context { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 18px; }
+.steam-p6-context span { padding: 6px 9px; border: 1px solid #d5e2e9; border-radius: 7px; color: #476276; font-size: 11px; }
+.steam-input-group { min-width: 0; margin: 16px 0; padding: 14px; border: 1px solid #d8e4ea; border-radius: 9px; }
+.steam-input-group legend { padding: 0 7px; color: #24556a; font-weight: 750; }
+.steam-input-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.steam-input-field { display: grid; min-width: 0; gap: 6px; margin: 10px 0; color: #345266; font-size: 12px; }
+.steam-input-field span { overflow-wrap: anywhere; font-weight: 700; }
+.steam-input-field code { color: #60798a; font-size: 10px; font-weight: 500; }
+.steam-input-field input, .steam-input-field select { box-sizing: border-box; width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid #cbd9df; border-radius: 7px; background: #fff; color: #203d50; }
+.steam-input-field select[multiple] { min-height: 105px; }
+.steam-input-field small { color: #708593; line-height: 1.5; }
+.steam-input-field.steam-review-count { max-width: 340px; margin: 18px 0; }
+.steam-prediction-result { padding: 16px; border: 1px solid #bbddd6; border-radius: 9px; background: #f1faf7; }
+.steam-prediction-result > strong { display: block; margin: 10px 0; color: #075c64; font-size: clamp(26px, 4vw, 38px); font-variant-numeric: tabular-nums; }
+.steam-api-error { padding: 11px 13px; border-left: 4px solid #b44b42; border-radius: 5px; background: #fff3f0; color: #78382f; }
+.steam-upload-zone { display: grid; gap: 9px; margin: 15px 0; padding: 18px; border: 1px dashed #9fb8c3; border-radius: 9px; background: #f6fafb; color: #345266; }
+.steam-upload-zone small { overflow-wrap: anywhere; color: #708593; }
+.steam-batch-summary { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
+.steam-batch-summary strong, .steam-batch-summary span { padding: 7px 10px; border-radius: 7px; background: #f1f6f8; }
+.steam-p6-provenance { margin-top: 18px; }
+@media (max-width: 760px) { .steam-input-grid { grid-template-columns: minmax(0, 1fr); } .steam-p6-tabs { flex-wrap: wrap; } }

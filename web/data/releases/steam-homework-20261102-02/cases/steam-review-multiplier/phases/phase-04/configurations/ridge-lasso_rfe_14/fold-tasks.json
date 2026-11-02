@@ -1,0 +1,10 @@
+{
+  "configuration_id": "ridge-lasso_rfe_14",
+  "fold_count": 3,
+  "seed": 42,
+  "fold_log_rmse": [
+    0.9809099575308967,
+    0.9975845368337878,
+    0.9938290039285476
+  ]
+}
