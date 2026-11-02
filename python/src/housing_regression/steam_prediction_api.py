@@ -6,8 +6,10 @@ import csv
 import hashlib
 import io
 import json
+import logging
 import math
 import os
+import pickle
 import re
 import urllib.error
 import urllib.request
@@ -56,6 +58,7 @@ _PRODUCTION_ORIGIN = "https://regscope-aiot.vercel.app"
 _PREVIEW_BRANCH = "feat/steam-phase6-online-prediction-20261102"
 _PRODUCTION_BRANCH = "deploy"
 _RUNTIME: "SteamPredictionRuntime | None" = None
+_LOGGER = logging.getLogger(__name__)
 
 
 class SteamPredictionError(ValueError):
@@ -64,6 +67,28 @@ class SteamPredictionError(ValueError):
         self.code = code
         self.status = status
         self.field = field
+
+
+def _safe_load_failure_category(error: Exception) -> str:
+    if isinstance(error, urllib.error.HTTPError):
+        if error.code in {401, 403}:
+            return "private_blob_auth_rejected"
+        if error.code == 404:
+            return "private_blob_not_found"
+        if 400 <= error.code < 500:
+            return "private_blob_client_error"
+        return "private_blob_server_error"
+    if isinstance(error, urllib.error.URLError):
+        return "private_blob_transport_error"
+    if isinstance(error, (ImportError, ModuleNotFoundError)):
+        return "runtime_dependency_error"
+    if isinstance(error, (pickle.UnpicklingError, EOFError, AttributeError, ValueError)):
+        return "model_artifact_decode_error"
+    if isinstance(error, OSError):
+        return "runtime_io_error"
+    if isinstance(error, RuntimeError):
+        return "identity_or_integrity_rejected"
+    return "unexpected_runtime_error"
 
 
 def deployment_is_enabled() -> bool:
@@ -235,19 +260,34 @@ def load_runtime(oidc_token: str | None = None) -> SteamPredictionRuntime:
         raise PermissionError("Steam inference is disabled for this deployment")
     if _RUNTIME is not None:
         return _RUNTIME
-    if not oidc_token:
-        raise RuntimeError("Vercel OIDC request token unavailable")
-    schema_bytes = load_schema_bytes()
-    model_bytes = _read_private_model_bytes(oidc_token)
-    model = joblib.load(io.BytesIO(model_bytes))
-    steps = getattr(model, "named_steps", {})
-    if tuple(steps) != ("encode", "impute", "scale", "model"):
-        raise RuntimeError("model pipeline contract rejected")
-    if not hasattr(steps["encode"], "genre_vocabulary_") or not hasattr(steps["model"], "estimators_"):
-        raise RuntimeError("model identity rejected")
-    schema = json.loads(schema_bytes)
-    _RUNTIME = SteamPredictionRuntime(model=model, schema=schema, schema_bytes=schema_bytes)
-    return _RUNTIME
+    stage = "request_oidc"
+    try:
+        if not oidc_token:
+            raise RuntimeError("OIDC request token unavailable")
+        stage = "schema_validation"
+        schema_bytes = load_schema_bytes()
+        stage = "private_model_fetch_and_digest"
+        model_bytes = _read_private_model_bytes(oidc_token)
+        stage = "model_deserialization"
+        model = joblib.load(io.BytesIO(model_bytes))
+        stage = "pipeline_identity_validation"
+        steps = getattr(model, "named_steps", {})
+        if tuple(steps) != ("encode", "impute", "scale", "model"):
+            raise RuntimeError("model pipeline contract rejected")
+        if not hasattr(steps["encode"], "genre_vocabulary_") or not hasattr(steps["model"], "estimators_"):
+            raise RuntimeError("model identity rejected")
+        schema = json.loads(schema_bytes)
+        _RUNTIME = SteamPredictionRuntime(model=model, schema=schema, schema_bytes=schema_bytes)
+        return _RUNTIME
+    except PermissionError:
+        raise
+    except Exception as error:
+        _LOGGER.error(
+            "steam_runtime_load_failed stage=%s category=%s",
+            stage,
+            _safe_load_failure_category(error),
+        )
+        raise
 
 
 def public_schema(runtime: SteamPredictionRuntime) -> dict[str, Any]:

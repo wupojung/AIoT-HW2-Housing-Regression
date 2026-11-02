@@ -106,6 +106,27 @@ class SteamPredictionApiTests(unittest.TestCase):
         self.assertIn(expected_sha, captured["url"])
         self.assertEqual(captured["timeout"], 8)
 
+    def test_runtime_failure_logs_only_fixed_stage_and_safe_category(self):
+        environment = {
+            "VERCEL_ENV": "preview",
+            "VERCEL_GIT_COMMIT_REF": steam._PREVIEW_BRANCH,
+        }
+        private_error = "private-detail-must-not-be-logged"
+        blob_error = __import__("urllib.error", fromlist=["HTTPError"]).HTTPError(
+            "https://private.invalid/secret-path", 403, private_error, None, None
+        )
+        with patch.dict(os.environ, environment, clear=False), patch.object(
+            steam, "load_schema_bytes", return_value=b"{}"
+        ), patch.object(steam, "_read_private_model_bytes", side_effect=blob_error):
+            with self.assertLogs(steam._LOGGER, level="ERROR") as captured:
+                with self.assertRaises(Exception):
+                    steam.load_runtime("synthetic-oidc-token")
+        self.assertEqual(
+            captured.output,
+            ["ERROR:housing_regression.steam_prediction_api:steam_runtime_load_failed stage=private_model_fetch_and_digest category=private_blob_auth_rejected"],
+        )
+        self.assertNotIn(private_error, "\n".join(captured.output))
+
     def test_valid_input_runs_pipeline_and_calculates_ownership_baseline(self):
         runtime = steam.SteamPredictionRuntime(SyntheticModel(), _schema(), b"synthetic")
         result = runtime.predict(_valid_inputs(), 250)
