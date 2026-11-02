@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "steam-review-multiplier",
+  "figures": [
+    {
+      "figure_id": "FIG-STEAM-01",
+      "case_id": "steam-review-multiplier",
+      "phase": 2,
+      "analysis_id": "overview",
+      "svg_ref": "phases/phase-02/figures/dataset-overview.svg",
+      "png_ref": null,
+      "sha256_svg": "440763e1bc3b8d84ec729e1e0348901fe7a895312ab02eb910467af078d536c8",
+      "sha256_png": null,
+      "status": "VERIFIED"
+    },
+    {
+      "figure_id": "FIG-STEAM-02",
+      "case_id": "steam-review-multiplier",
+      "phase": 2,
+      "analysis_id": "missingness",
+      "svg_ref": "phases/phase-02/figures/missingness-overview.svg",
+      "png_ref": null,
+      "sha256_svg": "10385b4259c0829cb924792db388a7fac53d9e5d87bccac18e953a3962b9c008",
+      "sha256_png": null,
+      "status": "VERIFIED"
+    },
+    {
+      "figure_id": "FIG-STEAM-03",
+      "case_id": "steam-review-multiplier",
+      "phase": 2,
+      "analysis_id": "reviews",
+      "svg_ref": "phases/phase-02/figures/review-count-distribution.svg",
+      "png_ref": null,
+      "sha256_svg": "474045ee0f8d4a53b8d7678491b6684506cdbdc007a28cb6a612f2d9f415a310",
+      "sha256_png": null,
+      "status": "VERIFIED"
+    },
+    {
+      "figure_id": "FIG-STEAM-04",
+      "case_id": "steam-review-multiplier",
+      "phase": 2,
+      "analysis_id": "owners",
+      "svg_ref": "phases/phase-02/figures/owners-distribution.svg",
+      "png_ref": null,
+      "sha256_svg": "fb350692e6c7523326d5138f2d384565e032156ed81ed73512db87cd27d33681",
+      "sha256_png": null,
+      "status": "VERIFIED"
+    },
+    {
+      "figure_id": "FIG-STEAM-05",
+      "case_id": "steam-review-multiplier",
+      "phase": 2,
+      "analysis_id": "genres",
+      "svg_ref": "phases/phase-02/figures/genre-distribution.svg",
+      "png_ref": null,
+      "sha256_svg": "28ca0423bbc47cf8eade9aa31568c2c7a98746189e694a858fa7d5ffc01f5026",
+      "sha256_png": null,
+      "status": "VERIFIED"
+    },
+    {
+      "figure_id": "FIG-STEAM-06",
+      "case_id": "steam-review-multiplier",
+      "phase": 2,
+      "analysis_id": "genre-k",
+      "svg_ref": "phases/phase-02/figures/k-by-genre.svg",
+      "png_ref": null,
+      "sha256_svg": "0553355dfceb2a325c1b0ce4d3cfdf9a1d55f9da7eac0fea2088e4ac6802ed33",
+      "sha256_png": null,
+      "status": "VERIFIED"
+    },
+    {
+      "figure_id": "FIG-STEAM-07",
+      "case_id": "steam-review-multiplier",
+      "phase": 2,
+      "analysis_id": "price-k",
+      "svg_ref": "phases/phase-02/figures/k-vs-price.svg",
+      "png_ref": null,
+      "sha256_svg": "4fe337cfa27a6842a1dc2503e8deff48bff8d42b00ad329edbd4ea831258fa99",
+      "sha256_png": null,
+      "status": "VERIFIED"
+    },
+    {
+      "figure_id": "FIG-STEAM-08",
+      "case_id": "steam-review-multiplier",
+      "phase": 2,
+      "analysis_id": "fixed-k",
+      "svg_ref": "phases/phase-02/figures/fixed-k-interval-compatibility.svg",
+      "png_ref": null,
+      "sha256_svg": "b03051907c58b86b43117e83e0ba57f5d5f7a6cf3b2ade83fdd1101f997433cd",
+      "sha256_png": null,
+      "status": "VERIFIED"
+    }
+  ]
+}

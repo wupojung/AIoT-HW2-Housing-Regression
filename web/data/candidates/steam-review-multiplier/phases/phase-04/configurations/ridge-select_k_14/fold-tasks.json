@@ -1,0 +1,10 @@
+{
+  "configuration_id": "ridge-select_k_14",
+  "fold_count": 3,
+  "seed": 42,
+  "fold_log_rmse": [
+    0.9859772852395616,
+    1.0008493415064312,
+    0.998441914693041
+  ]
+}

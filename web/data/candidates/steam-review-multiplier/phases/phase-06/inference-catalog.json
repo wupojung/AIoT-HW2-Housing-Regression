@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "steam-review-multiplier",
+  "status": "VERIFIED",
+  "models": [
+    {
+      "model_id": "steam-review-multiplier-random-forest",
+      "model_version": "1.0.0",
+      "source_execution_run_id": "steam-review-multiplier-run-01",
+      "source_configuration_id": "random_forest-all",
+      "model_status": "LOCAL_PRIVATE_VERIFIED",
+      "input_schema_ref": "phases/phase-06/input-schema.json",
+      "readiness": {
+        "predict_enabled": true,
+        "scope": "local-loopback-preview-only",
+        "message": "Fitted model is available to the local preview service; no public or Production inference endpoint."
+      }
+    }
+  ],
+  "readiness": {
+    "predict_enabled": true,
+    "reason_code": "LOCAL_LOOPBACK_PREVIEW",
+    "message": "本機 loopback 預覽可使用已訓練模型；不提供 Production API。"
+  }
+}

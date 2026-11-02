@@ -1,0 +1,4 @@
+{
+  "note": "The selected winner's exact fit features are listed in modeling.json; per-fold one-hot vocabularies are fit inside each training fold.",
+  "winner_features": []
+}
